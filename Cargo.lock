@@ -2631,6 +2631,7 @@ dependencies = [
  "iced",
  "parking_lot",
  "phpthunder",
+ "png",
  "portable-pty",
  "quick-xml 0.42.0",
  "regex",

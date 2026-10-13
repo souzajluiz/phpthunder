@@ -65,7 +65,7 @@ fn window_settings() -> window::Settings {
 }
 
 /// Entry point: builds the iced application around `App` (boot, update, view,
-/// subscription), applies the Thunder Dark theme and default font, registers
+/// subscription), applies the Thunder Purple theme and default font, registers
 /// the embedded fonts and runs the event loop until the window closes.
 ///
 /// # Errors

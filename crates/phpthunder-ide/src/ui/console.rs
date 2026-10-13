@@ -16,7 +16,7 @@ pub const TERMINAL_CHAR_WIDTH: f32 = TERMINAL_SIZE * 0.6;
 /// Padding around the terminal grid.
 pub const TERMINAL_PADDING: f32 = 8.0;
 
-/// The 16 ANSI colors, tuned to the Thunder Dark palette.
+/// The 16 ANSI colors, tuned to the Thunder Purple palette.
 const ANSI: [u32; 16] = [
     0x1E222B, 0xF7768E, 0x9ECE6A, 0xE0AF68, 0x7AA2F7, 0xBB9AF7, 0x5FD4C4, 0xC3C8D2, //
     0x4A5163, 0xFF8FA3, 0xB9F27C, 0xF2C14E, 0x9AB8FF, 0xD0B3FF, 0x7FE8DA, 0xFFFFFF,

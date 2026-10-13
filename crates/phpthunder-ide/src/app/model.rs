@@ -231,6 +231,10 @@ pub enum Message {
     GutterMoved(f32),
     /// The line-number gutter was clicked: toggle a breakpoint there.
     GutterPressed,
+    /// Development: capture the window (see `PHPTHUNDER_SNAPSHOT`).
+    TakeSnapshot,
+    /// Development: the window capture arrived.
+    Snapshot(iced::window::Screenshot),
 }
 
 /// Where a debug session is.

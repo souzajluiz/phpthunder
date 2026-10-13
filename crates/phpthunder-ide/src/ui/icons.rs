@@ -58,6 +58,28 @@ pub enum Icon {
     StepOut,
     /// Debugger: stop (`square`).
     Stop,
+    /// JSON and lock files (`braces`).
+    Braces,
+    /// XML and HTML files (`code-xml`).
+    Markup,
+    /// Plain text and config files (`text-align-start`).
+    Lines,
+    /// Ignore files (`ban`).
+    Ignore,
+    /// Expanded folder (`folder-open`).
+    FolderOpen,
+    /// Image files (`image`).
+    Image,
+    /// Markdown arrow and dropdowns (`arrow-down`).
+    ArrowDown,
+    /// SQL and database files, migrations (`database`).
+    Database,
+    /// Environment files (`key-round`).
+    Key,
+    /// Docker files (`container`).
+    Docker,
+    /// Package manifests: Composer, npm (`package`).
+    Package,
 }
 
 impl Icon {
@@ -89,6 +111,17 @@ impl Icon {
             Icon::StepInto => include_str!("../../assets/icons/arrow-down-to-dot.svg"),
             Icon::StepOut => include_str!("../../assets/icons/arrow-up-from-dot.svg"),
             Icon::Stop => include_str!("../../assets/icons/square.svg"),
+            Icon::Braces => include_str!("../../assets/icons/braces.svg"),
+            Icon::Markup => include_str!("../../assets/icons/code-xml.svg"),
+            Icon::Lines => include_str!("../../assets/icons/text-align-start.svg"),
+            Icon::Ignore => include_str!("../../assets/icons/ban.svg"),
+            Icon::FolderOpen => include_str!("../../assets/icons/folder-open.svg"),
+            Icon::Image => include_str!("../../assets/icons/image.svg"),
+            Icon::ArrowDown => include_str!("../../assets/icons/arrow-down.svg"),
+            Icon::Database => include_str!("../../assets/icons/database.svg"),
+            Icon::Key => include_str!("../../assets/icons/key-round.svg"),
+            Icon::Docker => include_str!("../../assets/icons/container.svg"),
+            Icon::Package => include_str!("../../assets/icons/package.svg"),
         }
     }
 }
@@ -96,7 +129,7 @@ impl Icon {
 /// Which brand artwork to draw with `logo`; both live in `assets/brand`.
 #[derive(Clone, Copy)]
 pub enum Logo {
-    /// Spider mark alone (`logo-mark.svg`, 1:1): title bar.
+    /// Spider mark alone (`logo-mark.svg`, 1:1): bottom of the tool rail.
     Mark,
     /// Spider over the PhpThunder wordmark (`logo.svg`, 100:116): welcome screen.
     Lockup,

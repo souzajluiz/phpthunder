@@ -10,6 +10,7 @@ mod laravel;
 mod model;
 mod navigation;
 mod refactor;
+mod snapshot;
 mod state;
 mod template;
 mod terminal;

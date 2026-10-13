@@ -1,4 +1,5 @@
-//! Thunder Dark: palette, fonts, and widget styles.
+//! Thunder Purple: palette, fonts, and widget styles. The window is a
+//! purple-gray frame holding rounded "islands" (tree, editor, panels).
 
 use iced::font::Weight;
 use iced::widget::{button, container, scrollable, text_editor, text_input};
@@ -12,70 +13,75 @@ pub const fn rgb(hex: u32) -> Color {
 }
 
 // Surfaces
-/// Editor background and the active tab; also the iced theme background.
-pub const BG: Color = rgb(0x101218);
-/// Side surfaces: project tree, inactive tabs, find bar, bottom tool panel.
-pub const PANEL: Color = rgb(0x0E1015);
-/// Outer chrome: title bar, tool rail and status bar.
-pub const CHROME: Color = rgb(0x0B0D12);
+/// Island surface: editor, project tree and bottom panel; also the iced
+/// theme background.
+pub const BG: Color = rgb(0x1D1D26);
+/// Side surfaces inside islands: find bar, bottom tool panel headers.
+pub const PANEL: Color = rgb(0x1D1D26);
+/// Window frame around the islands: title bar, tool rail and status bar.
+pub const CHROME: Color = rgb(0x2F2F40);
 /// Background of floating surfaces drawn with `popup`.
-pub const POPUP: Color = rgb(0x161A22);
+pub const POPUP: Color = rgb(0x2C2C3B);
 /// 1px separators between panes (`hsep` / `vsep` in the workbench view).
-pub const BORDER: Color = rgb(0x1E222B);
+pub const BORDER: Color = rgb(0x2E2D3D);
 /// Outline of floating surfaces drawn with `popup`.
-pub const BORDER_STRONG: Color = rgb(0x2A3040);
+pub const BORDER_STRONG: Color = rgb(0x4E4C63);
 /// Selected tree/list rows, the active rail button, hovered completion and palette rows.
-pub const SELECTED: Color = rgb(0x1C2130);
+pub const SELECTED: Color = rgb(0x34334A);
 /// Selected row in the completion popup and the navigation palette.
-pub const SELECTED_STRONG: Color = rgb(0x24304A);
+pub const SELECTED_STRONG: Color = rgb(0x5C3A7A);
 /// Band behind the caret's line in the editor.
-pub const CURRENT_LINE: Color = rgb(0x161A23);
+pub const CURRENT_LINE: Color = rgb(0x242433);
 
 // Text
 /// Default foreground text; also the iced theme text color.
-pub const TEXT: Color = rgb(0xD6D9E0);
+pub const TEXT: Color = rgb(0xD0D0D9);
 /// Emphasized text: active tab, selected rows, dialog titles, input values.
 pub const TEXT_BRIGHT: Color = rgb(0xFFFFFF);
 /// Secondary text: files in the tree, usage locations, shortcut labels.
-pub const TEXT_SOFT: Color = rgb(0xC3C8D2);
+pub const TEXT_SOFT: Color = rgb(0xC9C9D1);
 /// De-emphasized text and icons: hints, counts, placeholders, inactive tabs.
-pub const MUTED: Color = rgb(0x8A91A0);
+pub const MUTED: Color = rgb(0x8785A6);
 /// Editor line numbers, except the caret line which uses `TEXT`.
-pub const GUTTER: Color = rgb(0x4A5163);
-/// Brand yellow: logo, active rail icon, active-tab line, fuzzy-match letters,
-/// find marks, enabled toggles and the primary button.
-pub const ACCENT: Color = rgb(0xF2C14E);
+pub const GUTTER: Color = rgb(0x575566);
+/// Lavender accent: active rail icon, fuzzy-match letters, find marks,
+/// enabled toggles and the primary button (dark text on it).
+pub const ACCENT: Color = rgb(0xB98BE8);
 
 // Syntax
 /// Keywords, modifiers and PHP tags (`crate::editor::format_token`).
-pub const SYN_KEYWORD: Color = rgb(0x7AA2F7);
+pub const SYN_KEYWORD: Color = rgb(0xE6967A);
 /// Class, interface and namespace names in type position (`crate::editor::format_token`).
-pub const SYN_TYPE: Color = rgb(0x5FD4C4);
+pub const SYN_TYPE: Color = rgb(0xD0D0D9);
 /// Function and method names (`crate::editor::format_token`).
-pub const SYN_FUNCTION: Color = rgb(0xE8B36A);
+pub const SYN_FUNCTION: Color = rgb(0xC7A65D);
 /// Variables and constants (`crate::editor::format_token`); also the editor's default
 /// text and the signature line of the completion and hover popups.
-pub const SYN_VARIABLE: Color = rgb(0xE2E5EC);
+pub const SYN_VARIABLE: Color = rgb(0xC9C9D1);
 /// String literals, heredocs and nowdocs (`crate::editor::format_token`).
-pub const SYN_STRING: Color = rgb(0x9ECE6A);
+pub const SYN_STRING: Color = rgb(0x62A362);
 /// Numeric literals (`crate::editor::format_token`).
-pub const SYN_NUMBER: Color = rgb(0xFF9E64);
+pub const SYN_NUMBER: Color = rgb(0x37AEF3);
 /// Comments (`crate::editor::format_token`).
-pub const SYN_COMMENT: Color = rgb(0x7F8799);
+pub const SYN_COMMENT: Color = rgb(0x676773);
 /// `@tag` words inside doc comments (`crate::editor::format_token`).
-pub const SYN_DOC_TAG: Color = rgb(0xBB9AF7);
+pub const SYN_DOC_TAG: Color = rgb(0x8C6154);
 /// Member and scope operators such as `->` and `::` (`crate::editor::format_token`).
-pub const SYN_PUNCT: Color = rgb(0x9AA3B5);
+pub const SYN_PUNCT: Color = rgb(0xC9C9D1);
+/// Variables, properties and constants (`crate::editor::format_token`).
+pub const SYN_FIELD: Color = rgb(0x93A6F5);
+/// Commas and semicolons, drawn bold (`crate::editor::format_token`).
+pub const SYN_SEPARATOR: Color = rgb(0xE0957B);
 
 // Completion kind badges (background, foreground)
 /// Completion badge for methods and functions (`kind_badge` in the workbench view).
-pub const BADGE_METHOD: (Color, Color) = (rgb(0x3B2F5C), rgb(0xC4A8FF));
+pub const BADGE_METHOD: (Color, Color) = (rgb(0x3D2E52), rgb(0xC7A65D));
 /// Completion badge for properties.
-pub const BADGE_PROPERTY: (Color, Color) = (rgb(0x1F3B39), rgb(0x6FE0D0));
+pub const BADGE_PROPERTY: (Color, Color) = (rgb(0x2B3150), rgb(0x93A6F5));
 /// Completion badge for classes, traits, interfaces and enums.
-pub const BADGE_CLASS: (Color, Color) = (rgb(0x3D3320), rgb(0xF2C14E));
+pub const BADGE_CLASS: (Color, Color) = (rgb(0x4A2E3A), rgb(0xE6967A));
 /// Completion badge for constants and enum cases.
-pub const BADGE_OTHER: (Color, Color) = (rgb(0x262B36), rgb(0xC3C8D2));
+pub const BADGE_OTHER: (Color, Color) = (rgb(0x34334A), rgb(0xC9C9D1));
 
 /// Proportional UI font; installed as the app's default font in `main`.
 pub const UI: Font = Font::with_name("Geist");
@@ -91,6 +97,11 @@ pub const UI_BOLD: Font = Font {
 };
 /// Monospace font for the editor, gutter, code previews and shortcut labels.
 pub const MONO: Font = Font::with_name("Geist Mono");
+/// Bold monospace, for commas and semicolons in code.
+pub const MONO_BOLD: Font = Font {
+    weight: Weight::Semibold,
+    ..MONO
+};
 
 /// Editor metrics. Geist Mono advances 600/1000 em for every glyph.
 pub const CODE_SIZE: f32 = 13.5;
@@ -119,16 +130,31 @@ pub const FONTS: [&[u8]; 6] = [
 /// by `main`; widgets needing finer control use the style functions below.
 pub fn app_theme() -> Theme {
     Theme::custom(
-        "Thunder Dark".to_string(),
+        "Thunder Purple".to_string(),
         iced::theme::Palette {
             background: BG,
             text: TEXT,
             primary: ACCENT,
-            success: rgb(0x9ECE6A),
+            success: rgb(0x76B366),
             warning: rgb(0xE0AF68),
-            danger: rgb(0xF7768E),
+            danger: rgb(0xDD3962),
         },
     )
+}
+
+/// Corner radius of islands (tree, editor, bottom panel).
+pub const ISLAND_RADIUS: f32 = 10.0;
+
+/// Gap between islands and around them, showing the window frame.
+pub const ISLAND_GAP: f32 = 5.0;
+
+/// Container style of an island: a rounded `BG` surface on the frame.
+pub fn island(_: &Theme) -> container::Style {
+    container::Style {
+        background: Some(BG.into()),
+        border: border::rounded(ISLAND_RADIUS),
+        ..Default::default()
+    }
 }
 
 /// Container style that paints a solid `color` background. Used for panes,

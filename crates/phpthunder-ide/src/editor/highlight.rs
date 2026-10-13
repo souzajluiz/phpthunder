@@ -6,8 +6,8 @@
 //! settings, versioned so the editor re-highlights only when they change.
 
 use crate::ui::{
-    SYN_COMMENT, SYN_DOC_TAG, SYN_FUNCTION, SYN_KEYWORD, SYN_NUMBER, SYN_PUNCT, SYN_STRING,
-    SYN_TYPE, SYN_VARIABLE,
+    MONO_BOLD, SYN_COMMENT, SYN_DOC_TAG, SYN_FIELD, SYN_FUNCTION, SYN_KEYWORD, SYN_NUMBER,
+    SYN_PUNCT, SYN_SEPARATOR, SYN_STRING, SYN_TYPE,
 };
 use iced::advanced::text::highlighter::{self, Format};
 use iced::{Font, Theme};
@@ -37,6 +37,8 @@ pub enum Token {
     DocTag,
     /// Member and scope operators: `->`, `?->`, `::`, `=>`.
     Punct,
+    /// Commas and semicolons.
+    Separator,
 }
 
 /// Per-line spans: the outer index is the line, ranges are byte offsets
@@ -111,23 +113,28 @@ impl highlighter::Highlighter for PhpHighlighter {
     }
 }
 
-/// Maps a `Token` to its Thunder Dark syntax color, leaving the font
+/// Maps a `Token` to its Thunder Purple syntax color, leaving the font
 /// unchanged. Passed to `highlight_with` in the workbench `editor_area`.
 pub fn format_token(token: &Token, _theme: &Theme) -> Format<Font> {
     let color = match token {
         Token::Keyword => SYN_KEYWORD,
         Token::Type => SYN_TYPE,
         Token::Function => SYN_FUNCTION,
-        Token::Variable => SYN_VARIABLE,
+        Token::Variable => SYN_FIELD,
         Token::String => SYN_STRING,
         Token::Number => SYN_NUMBER,
         Token::Comment => SYN_COMMENT,
         Token::DocTag => SYN_DOC_TAG,
         Token::Punct => SYN_PUNCT,
+        Token::Separator => SYN_SEPARATOR,
+    };
+    let font = match token {
+        Token::Separator => Some(MONO_BOLD),
+        _ => None,
     };
     Format {
         color: Some(color),
-        font: None,
+        font,
     }
 }
 
@@ -141,6 +148,7 @@ fn classify(node: Node) -> Option<Token> {
     if !node.is_named() {
         return match kind {
             "->" | "?->" | "::" | "=>" => Some(Token::Punct),
+            "," | ";" => Some(Token::Separator),
             "$" if parent == "variable_name" => Some(Token::Variable),
             _ if kind.chars().all(|c| c.is_ascii_alphabetic() || c == '_') => Some(Token::Keyword),
             _ if kind.starts_with("<?") || kind == "?>" => Some(Token::Keyword),

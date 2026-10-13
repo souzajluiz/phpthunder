@@ -262,11 +262,12 @@ impl App {
             .nth(1)
             .map(PathBuf::from)
             .filter(|p| p.is_dir());
+        let snapshot = App::snapshot_tasks(folder.as_deref());
         let task = match folder {
             Some(dir) => Task::done(Message::FolderPicked(Some(dir))),
             None => Task::none(),
         };
-        (app, task)
+        (app, Task::batch([task, snapshot]))
     }
 
     /// Window title: `file — project — PhpThunder`, dropping parts that do
@@ -384,6 +385,8 @@ impl App {
                 Task::none()
             }
             Message::GutterPressed => self.toggle_breakpoint_at_gutter(),
+            Message::TakeSnapshot => self.take_snapshot(),
+            Message::Snapshot(shot) => self.save_snapshot(shot),
             Message::LaravelScanned(project) => {
                 self.laravel = project;
                 Task::none()
@@ -1377,7 +1380,8 @@ impl App {
         });
     }
 
-    /// Namespace › Class › member for the cursor position.
+    /// Class › member (or function) at the cursor, for the status bar;
+    /// empty outside declarations.
     pub fn breadcrumb(&self) -> Vec<String> {
         let Some(doc) = self.doc() else {
             return Vec::new();
@@ -1390,12 +1394,14 @@ impl App {
             .iter()
             .find(|s| s.kind.is_class_like() && contains(s))
         {
-            if let Some((ns, short)) = class.fqn.rsplit_once('\\') {
-                out.push(ns.to_string());
-                out.push(short.to_string());
-            } else {
-                out.push(class.fqn.clone());
-            }
+            out.push(
+                class
+                    .fqn
+                    .rsplit('\\')
+                    .next()
+                    .unwrap_or(&class.fqn)
+                    .to_string(),
+            );
             if let Some(m) = symbols
                 .iter()
                 .find(|s| s.kind == Kind::Method && !s.is_virtual && contains(s))
@@ -1407,19 +1413,6 @@ impl App {
             .find(|s| s.kind == Kind::Function && contains(s))
         {
             out.push(format!("{}()", f.fqn));
-        }
-        if out.is_empty() {
-            // Outside any declaration: show where the file lives instead.
-            let rel = self
-                .tree
-                .root
-                .as_ref()
-                .and_then(|r| doc.path.strip_prefix(r).ok())
-                .unwrap_or(&doc.path);
-            out = rel
-                .iter()
-                .map(|c| c.to_string_lossy().into_owned())
-                .collect();
         }
         out
     }

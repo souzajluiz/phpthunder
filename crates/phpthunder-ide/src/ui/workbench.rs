@@ -1,4 +1,4 @@
-//! The Thunder Dark layout: title bar, tool rail, project tree, tabs,
+//! The Thunder Purple layout: title bar, tool rail, project tree, tabs,
 //! breadcrumb, editor with completion/hover popups, usages panel, status bar.
 
 use crate::app::{
@@ -87,15 +87,6 @@ fn format_elapsed(d: std::time::Duration) -> String {
     }
 }
 
-/// Color of the file dot in the project tree: indigo for `.php`, muted otherwise.
-fn file_color(name: &str) -> Color {
-    if name.ends_with(".php") {
-        rgb(0x8892D6)
-    } else {
-        MUTED
-    }
-}
-
 impl App {
     /// Root view, called by iced after every update (wired in main.rs). Shows the
     /// welcome screen until a project is open; otherwise lays out title bar,
@@ -105,20 +96,20 @@ impl App {
         if self.tree.root.is_none() {
             return self.welcome();
         }
-        let mut body = row![self.rail(), vsep()];
+        let mut body = row![self.rail()].spacing(ISLAND_GAP).padding(Padding {
+            right: ISLAND_GAP,
+            ..Padding::ZERO
+        });
         if self.sidebar {
-            body = body.push(self.sidebar()).push(vsep());
+            body = body.push(self.sidebar());
         }
         body = body.push(self.main_area());
-        let base = column![
-            self.title_bar(),
-            hsep(),
-            body.height(Fill),
-            hsep(),
-            self.status_bar()
-        ]
-        .width(Fill)
-        .height(Fill);
+        let base = container(
+            column![self.title_bar(), body.height(Fill), self.status_bar()]
+                .width(Fill)
+                .height(Fill),
+        )
+        .style(fill(CHROME));
         let modal: Option<El<'_>> = match (&self.palette, &self.search_dialog, &self.rename) {
             (Some(p), _, _) => Some(self.palette_view(p)),
             (None, Some(_), _) => Some(self.search_dialog_view()),
@@ -173,27 +164,49 @@ impl App {
             .as_deref()
             .map(crate::app::file_name)
             .unwrap_or_default();
-        let mut bar = row![
-            space().width(TRAFFIC_LIGHTS_INSET),
-            logo(Logo::Mark, 20.0),
-            label(crate::APP_NAME, 13.0, TEXT).font(UI_BOLD),
-            label(root, 13.0, MUTED),
-            space().width(Fill),
-        ]
-        .spacing(10)
-        .align_y(Center)
-        .padding(Padding {
-            left: 0.0,
-            right: 16.0,
-            top: 0.0,
-            bottom: 0.0,
-        });
+        let initials: String = root
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|w| !w.is_empty())
+            .take(2)
+            .filter_map(|w| w.chars().next())
+            .collect::<String>()
+            .to_uppercase();
+        let project = button(
+            row![
+                container(label(initials, 10.0, TEXT_BRIGHT).font(UI_BOLD))
+                    .width(20)
+                    .height(20)
+                    .center(20)
+                    .style(|_: &Theme| container::Style {
+                        background: Some(rgb(0x5C6E5A).into()),
+                        border: iced::border::rounded(4),
+                        ..Default::default()
+                    }),
+                label(root, 13.0, TEXT).font(UI_MEDIUM),
+                icon(Icon::ChevronDown, 12.0, 2.0, MUTED),
+            ]
+            .spacing(8)
+            .align_y(Center),
+        )
+        .padding([2, 6])
+        .style(ghost_button)
+        .on_press(Message::OpenFolderDialog);
+        let mut bar = row![space().width(TRAFFIC_LIGHTS_INSET), project]
+            .spacing(6)
+            .align_y(Center)
+            .padding(Padding {
+                left: 0.0,
+                right: 12.0,
+                top: 0.0,
+                bottom: 0.0,
+            });
         if let Some(branch) = &self.branch {
             bar = bar.push(
                 button(
                     row![
                         icon(Icon::Branch, 14.0, 2.0, MUTED),
-                        label(branch.clone(), 13.0, MUTED)
+                        label(branch.clone(), 13.0, TEXT),
+                        icon(Icon::ChevronDown, 12.0, 2.0, MUTED),
                     ]
                     .spacing(6)
                     .align_y(Center),
@@ -203,6 +216,50 @@ impl App {
                 .on_press(Message::GitShowBranches),
             );
         }
+        bar = bar.push(space().width(Fill));
+        if let Some(doc) = self.doc() {
+            bar = bar.push(
+                row![file_icon(&doc.path, 13.0), label(doc.title(), 13.0, TEXT)]
+                    .spacing(2)
+                    .align_y(Center),
+            );
+        }
+        let tool = |which: Icon, color: Color, msg: Message, tip: String| -> El<'_> {
+            tooltip(
+                button(icon(which, 16.0, 2.0, color))
+                    .padding(6)
+                    .style(ghost_button)
+                    .on_press(msg),
+                container(label(tip, 12.0, TEXT))
+                    .padding([4, 8])
+                    .style(popup),
+                tooltip::Position::Bottom,
+            )
+            .into()
+        };
+        bar = bar
+            .push(tool(
+                Icon::Resume,
+                rgb(0x76B366),
+                Message::RunTests(TestTarget::Context),
+                format!("{}  {}", tr!("rail-run-tests"), hint(Cmd::RunTests)),
+            ))
+            .push(tool(
+                Icon::Bug,
+                rgb(0x76B366),
+                Message::DebugTest,
+                format!("{}  {}", tr!("debug-test"), hint(Cmd::DebugTest)),
+            ))
+            .push(tool(
+                Icon::Search,
+                TEXT_SOFT,
+                Message::Command(Cmd::SearchEverywhere),
+                format!(
+                    "{}  {}",
+                    tr!("action-search-everywhere"),
+                    hint(Cmd::SearchEverywhere)
+                ),
+            ));
         let bar = container(bar)
             .height(TITLE_BAR_HEIGHT)
             .width(Fill)
@@ -278,10 +335,13 @@ impl App {
                 Some(Message::Command(Cmd::Commit)),
                 format!("{}  {}", tr!("panel-commit"), hint(Cmd::Commit))
             ),
+            space().height(Fill),
+            container(logo(Logo::Mark, 22.0)).padding(8),
         ]
         .spacing(4)
+        .height(Fill)
         .padding(Padding {
-            top: 8.0,
+            top: 4.0,
             ..Padding::ZERO
         })
         .align_x(Center);
@@ -299,8 +359,8 @@ impl App {
     fn sidebar(&self) -> El<'_> {
         let active = self.doc().map(|d| d.path.as_path());
         let rows = self.tree.rows().into_iter().map(|r| {
-            let indent = space().width(8.0 + r.depth as f32 * 16.0);
-            let marker: El<'_> = if r.entry.is_dir {
+            let indent = space().width(4.0 + r.depth as f32 * 16.0);
+            let chevron: El<'_> = if r.entry.is_dir {
                 icon(
                     if r.expanded {
                         Icon::ChevronDown
@@ -313,15 +373,12 @@ impl App {
                 )
                 .into()
             } else {
-                container(space())
-                    .width(8)
-                    .height(8)
-                    .style(move |_: &Theme| container::Style {
-                        background: Some(file_color(&r.entry.name).into()),
-                        border: iced::border::rounded(2),
-                        ..Default::default()
-                    })
-                    .into()
+                space().width(12).into()
+            };
+            let marker: El<'_> = if r.entry.is_dir {
+                folder_icon(&r.entry.path, self.tree.root.as_deref(), r.expanded, 15.0)
+            } else {
+                file_icon(&r.entry.path, 15.0)
             };
             let selected = active == Some(r.entry.path.as_path());
             let msg = if r.entry.is_dir {
@@ -348,10 +405,11 @@ impl App {
             button(
                 row![
                     indent,
-                    container(marker).width(14).center_x(14),
+                    chevron,
+                    marker,
                     label(r.entry.name.clone(), 13.0, color)
                 ]
-                .spacing(6)
+                .spacing(4)
                 .align_y(Center),
             )
             .on_press(msg)
@@ -366,17 +424,25 @@ impl App {
             .style(row_button(selected))
             .into()
         });
-        let header = container(label(tr!("sidebar-project"), 11.0, MUTED).font(UI_BOLD))
-            .padding([0, 16])
-            .height(36)
-            .center_y(36);
+        let header = container(
+            row![
+                label(tr!("rail-project"), 13.0, TEXT).font(UI_BOLD),
+                icon(Icon::ChevronDown, 12.0, 2.0, MUTED)
+            ]
+            .spacing(6)
+            .align_y(Center),
+        )
+        .padding([0, 16])
+        .height(40)
+        .center_y(40);
         let list = scrollable(column(rows).spacing(1).padding([0, 8]))
             .height(Fill)
             .style(scrollbars);
         container(column![header, list])
-            .width(260)
+            .width(280)
             .height(Fill)
-            .style(fill(PANEL))
+            .style(island)
+            .clip(true)
             .into()
     }
 
@@ -384,28 +450,26 @@ impl App {
     /// editor and optional bottom panel. With no open document it shows the
     /// shortcut cheat sheet instead.
     fn main_area(&self) -> El<'_> {
-        let Some(doc) = self.doc() else {
-            let mut col = column![container(self.shortcuts()).center(Fill).style(fill(BG))];
-            if let Some(panel) = self.bottom_panel() {
-                col = col.push(hsep()).push(panel);
+        let editor: El<'_> = match self.doc() {
+            None => container(self.shortcuts())
+                .center(Fill)
+                .style(island)
+                .into(),
+            Some(doc) => {
+                let mut col = column![self.tabs()];
+                if let Some(bar) = self.find_bar_view() {
+                    col = col.push(bar);
+                }
+                col = col.push(self.editor_area(doc));
+                container(col.width(Fill).height(Fill))
+                    .style(island)
+                    .clip(true)
+                    .into()
             }
-            return col.width(Fill).height(Fill).into();
         };
-        let mut col = column![
-            self.tabs(),
-            hsep(),
-            self.breadcrumb_bar(),
-            container(space())
-                .height(1)
-                .width(Fill)
-                .style(fill(rgb(0x191D25)))
-        ];
-        if let Some(bar) = self.find_bar_view() {
-            col = col.push(bar).push(hsep());
-        }
-        col = col.push(self.editor_area(doc));
+        let mut col = column![editor].spacing(ISLAND_GAP);
         if let Some(panel) = self.bottom_panel() {
-            col = col.push(hsep()).push(panel);
+            col = col.push(panel);
         }
         col.width(Fill).height(Fill).into()
     }
@@ -450,74 +514,81 @@ impl App {
                 .style(ghost_button)
                 .on_press(Message::CloseTab(i));
             let content = row![
-                button(label(title, 13.0, if active { TEXT_BRIGHT } else { MUTED }))
-                    .padding(0)
-                    .style(|_, _| button::Style::default())
-                    .on_press(Message::SelectTab(i)),
+                button(
+                    row![
+                        file_icon(&d.path, 13.0),
+                        label(title, 13.0, if active { TEXT_BRIGHT } else { MUTED })
+                    ]
+                    .spacing(2)
+                    .align_y(Center)
+                )
+                .padding(0)
+                .style(|_, _| button::Style::default())
+                .on_press(Message::SelectTab(i)),
                 close,
             ]
-            .spacing(8)
+            .spacing(4)
             .align_y(Center)
             .padding(Padding {
-                left: 16.0,
-                right: 8.0,
+                left: 6.0,
+                right: 4.0,
                 top: 0.0,
                 bottom: 0.0,
             });
             container(content)
-                .height(38)
-                .center_y(38)
+                .height(28)
+                .center_y(28)
                 .style(move |_: &Theme| container::Style {
-                    background: Some(if active { BG } else { PANEL }.into()),
-                    shadow: if active {
-                        Shadow {
-                            color: ACCENT,
-                            offset: Vector::new(0.0, -2.0),
-                            blur_radius: 0.0,
+                    background: active.then(|| rgb(0x2C2C3B).into()),
+                    border: if active {
+                        iced::Border {
+                            color: rgb(0x5C4A80),
+                            width: 1.0,
+                            radius: 6.0.into(),
                         }
                     } else {
-                        Shadow::default()
+                        iced::border::rounded(6)
                     },
                     ..Default::default()
                 })
                 .into()
         });
-        let mut bar = row![];
-        for tab in tabs {
-            bar = bar.push(tab).push(vsep());
-        }
+        let bar = row(tabs).spacing(4).align_y(Center);
         container(
-            scrollable(bar.height(38)).direction(scrollable::Direction::Horizontal(
+            scrollable(bar.height(40)).direction(scrollable::Direction::Horizontal(
                 scrollable::Scrollbar::new().width(0).scroller_width(0),
             )),
         )
         .width(Fill)
-        .height(38)
-        .padding(Padding {
-            top: 2.0,
-            ..Padding::ZERO
-        })
-        .style(fill(PANEL))
+        .height(40)
+        .padding([0, 8])
+        .center_y(40)
         .into()
     }
 
-    /// Breadcrumb under the tabs (from `App::breadcrumb`), last segment emphasized.
-    fn breadcrumb_bar(&self) -> El<'_> {
-        let parts = self.breadcrumb();
-        let last = parts.len().saturating_sub(1);
+    /// Breadcrumb for the status bar: project, the active file with its
+    /// icon, then the class and member at the caret (`App::breadcrumb`).
+    fn breadcrumb_row(&self) -> El<'_> {
         let mut r = row![].spacing(6).align_y(Center);
-        for (i, part) in parts.into_iter().enumerate() {
-            if i > 0 {
-                r = r.push(label("›", 12.0, MUTED));
-            }
-            r = r.push(label(part, 12.0, if i == last { TEXT } else { MUTED }));
+        if let Some(root) = self.tree.root.as_deref() {
+            r = r.push(label(crate::app::file_name(root), 12.0, MUTED));
         }
-        container(r)
-            .height(28)
-            .center_y(28)
-            .padding([0, 16])
-            .width(Fill)
-            .into()
+        if let Some(doc) = self.doc() {
+            r = r.push(label("›", 12.0, MUTED)).push(
+                row![
+                    file_icon(&doc.path, 12.0),
+                    label(doc.title(), 12.0, TEXT_SOFT)
+                ]
+                .spacing(2)
+                .align_y(Center),
+            );
+        }
+        for part in self.breadcrumb() {
+            r = r
+                .push(label("›", 12.0, MUTED))
+                .push(label(part, 12.0, MUTED));
+        }
+        r.into()
     }
 
     /// The editor for `doc`: line-number gutter and `text_editor` with PHP
@@ -754,9 +825,10 @@ impl App {
         };
         Some(
             container(column![header, hsep(), body])
-                .height(230)
+                .height(260)
                 .width(Fill)
-                .style(fill(PANEL))
+                .style(island)
+                .clip(true)
                 .into(),
         )
     }
@@ -1175,13 +1247,14 @@ impl App {
             }
         };
         let mut bar = row![
+            self.breadcrumb_row(),
+            space().width(Fill),
             row![
-                icon(Icon::Bolt, 12.0, 2.4, ACCENT),
-                label(indexing, 12.0, ACCENT)
+                icon(Icon::Bolt, 12.0, 2.4, MUTED),
+                label(indexing, 12.0, MUTED)
             ]
             .spacing(6)
             .align_y(Center),
-            space().width(Fill),
         ]
         .spacing(18)
         .align_y(Center)
