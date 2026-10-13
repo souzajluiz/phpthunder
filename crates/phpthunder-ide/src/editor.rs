@@ -3,7 +3,9 @@
 mod blade;
 mod document;
 mod highlight;
+mod lexer;
 
 pub use blade::*;
 pub use document::*;
 pub use highlight::*;
+pub use lexer::*;

@@ -2,6 +2,7 @@
 //! cursor math, and line-oriented editing operations.
 
 use crate::editor::LineSpans;
+use crate::filetype::FileType;
 use iced::widget::text_editor::{Action, Content, Cursor, Edit, Motion, Position};
 use phpthunder::syntax::Pos;
 use std::path::PathBuf;
@@ -39,6 +40,9 @@ enum EditKind {
 pub struct Document {
     /// File on disk this document was opened from and saves to.
     pub path: PathBuf,
+    /// Kind of file, detected when it opens; picks the highlighter and gates
+    /// PHP-only features.
+    pub file_type: FileType,
     /// iced editor buffer that renders the text and owns the cursor.
     pub content: Content,
     /// Mirror of `content` as one string, refreshed after every edit.
@@ -47,7 +51,7 @@ pub struct Document {
     saved_text: String,
     /// Whether the text differs from what is on disk; shown in the tab title.
     pub dirty: bool,
-    /// Per-line syntax highlight spans for the current text (empty for non-PHP files).
+    /// Per-line syntax highlight spans for the current text, by file type (empty for plain text).
     pub highlights: Arc<LineSpans>,
     /// Bumped whenever `highlights` changes so the highlighter knows to refresh.
     pub highlight_version: u64,
@@ -77,8 +81,11 @@ impl Document {
     ///
     /// Computes the initial highlighting so the first render is already colored.
     pub fn new(path: PathBuf, text: String) -> Self {
+        let first_line = text.lines().next();
+        let file_type = FileType::detect(&path, first_line);
         let mut doc = Self {
             path,
+            file_type,
             content: Content::with_text(&text),
             saved_text: text.clone(),
             text,
@@ -105,30 +112,23 @@ impl Document {
             .unwrap_or_default()
     }
 
-    /// Whether the file is PHP code (a `.php` extension, Blade templates
-    /// excluded); gates highlighting, inspections and PHP-only features.
+    /// Whether the file is PHP code (see [`FileType::detect`]: `.php`,
+    /// `artisan`, a `php` shebang; Blade templates excluded); gates
+    /// inspections, completion and other PHP-only features.
     pub fn is_php(&self) -> bool {
-        self.path.extension().is_some_and(|e| e == "php") && !self.is_blade()
-    }
-
-    /// Whether the file is a Blade template (`.blade.php`).
-    pub fn is_blade(&self) -> bool {
-        self.path
-            .file_name()
-            .is_some_and(|n| n.to_string_lossy().ends_with(".blade.php"))
+        self.file_type == FileType::Php
     }
 
     /// Recomputes syntax highlighting after any text change and bumps `highlight_version`.
     ///
-    /// Blade templates use the Blade scanner; other non-PHP files get no spans.
+    /// The highlighter depends on [`Self::file_type`]: tree-sitter for PHP,
+    /// the Blade scanner for templates and markup, the generic lexer for the
+    /// rest (see [`crate::editor::compute_file_highlights`]).
     fn refresh_highlights(&mut self) {
-        self.highlights = Arc::new(if self.is_blade() {
-            crate::editor::compute_blade_highlights(&self.text)
-        } else if self.is_php() {
-            crate::editor::compute_highlights(&self.text)
-        } else {
-            Vec::new()
-        });
+        self.highlights = Arc::new(crate::editor::compute_file_highlights(
+            &self.text,
+            self.file_type,
+        ));
         self.highlight_version += 1;
     }
 

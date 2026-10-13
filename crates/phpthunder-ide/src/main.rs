@@ -6,6 +6,7 @@ mod app;
 mod composer;
 mod debug;
 mod editor;
+mod filetype;
 mod formatter;
 mod git;
 mod i18n;

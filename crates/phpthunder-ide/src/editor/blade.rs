@@ -68,17 +68,18 @@ fn scan_template(src: &str, out: &mut Vec<Span>) {
     let b = src.as_bytes();
     let mut i = 0;
     while i < b.len() {
-        let rest = &src[i..];
-        if rest.starts_with("{{--") {
+        // Bytes, not `&src[i..]`: `i` may sit inside a multi-byte character.
+        let rest = &b[i..];
+        if rest.starts_with(b"{{--") {
             let (_, end) = after(src, i + 4, "--}}");
             out.push((i, end, Token::Comment));
             i = end;
-        } else if rest.starts_with("<!--") {
+        } else if rest.starts_with(b"<!--") {
             let (_, end) = after(src, i + 4, "-->");
             out.push((i, end, Token::Comment));
             i = end;
-        } else if rest.starts_with("{!!") || rest.starts_with("{{") {
-            let (open, close) = if rest.starts_with("{!!") {
+        } else if rest.starts_with(b"{!!") || rest.starts_with(b"{{") {
+            let (open, close) = if rest.starts_with(b"{!!") {
                 ("{!!", "!!}")
             } else {
                 ("{{", "}}")
@@ -252,12 +253,12 @@ fn scan_expression(src: &str, start: usize, end: usize, out: &mut Vec<Span>) {
                 i += 1;
             }
             out.push((s, i, Token::Number));
-        } else if src[i..end].starts_with("?->") {
+        } else if b[i..end].starts_with(b"?->") {
             out.push((i, i + 3, Token::Punct));
             i += 3;
-        } else if src[i..end].starts_with("->")
-            || src[i..end].starts_with("::")
-            || src[i..end].starts_with("=>")
+        } else if b[i..end].starts_with(b"->")
+            || b[i..end].starts_with(b"::")
+            || b[i..end].starts_with(b"=>")
         {
             out.push((i, i + 2, Token::Punct));
             i += 2;
@@ -271,7 +272,7 @@ fn scan_expression(src: &str, start: usize, end: usize, out: &mut Vec<Span>) {
             while k < end && b[k] == b' ' {
                 k += 1;
             }
-            let after_arrow = s >= 2 && (&src[s - 2..s] == "->" || &src[s - 2..s] == "::");
+            let after_arrow = s >= 2 && (&b[s - 2..s] == b"->" || &b[s - 2..s] == b"::");
             let token = if KEYWORDS.contains(&word.to_ascii_lowercase().as_str()) && !after_arrow {
                 Some(Token::Keyword)
             } else if b.get(k) == Some(&b'(') && k < end {

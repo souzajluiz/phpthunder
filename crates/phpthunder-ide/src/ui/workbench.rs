@@ -1312,11 +1312,7 @@ impl App {
                     MUTED,
                 ))
                 .push(label("UTF-8", 12.0, MUTED));
-            if doc.is_php() {
-                bar = bar.push(label("PHP", 12.0, MUTED));
-            } else if doc.is_blade() {
-                bar = bar.push(label("Blade", 12.0, MUTED));
-            }
+            bar = bar.push(label(doc.file_type.name(), 12.0, MUTED));
         }
         container(bar)
             .height(26)
