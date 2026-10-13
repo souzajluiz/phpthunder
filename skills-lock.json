@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "iced-rs": {
+      "source": "vanillagreencom/kendex",
+      "sourceType": "github",
+      "skillPath": "skills/iced-rs/SKILL.md",
+      "computedHash": "e92afd53d3babb29ccca795a6763a59c88f938c4137316b851136bc7ac2c04cf"
+    },
     "logo-generator": {
       "source": "op7418/logo-generator-skill",
       "sourceType": "github",
@@ -18,6 +24,12 @@
       "sourceType": "github",
       "skillPath": "skills/rust-best-practices/SKILL.md",
       "computedHash": "a3db351ec552ed9d36b59e547d6c1d94077867eb5bcb98b3f802dfebb0a8a248"
+    },
+    "rust-desktop-gui": {
+      "source": "nledford/engineering-review-board",
+      "sourceType": "github",
+      "skillPath": "skills/rust-desktop-gui/SKILL.md",
+      "computedHash": "ef3f5cec259d02f021195bf380dd9fbb18cc7dc12cb596384e2dc5aed7b9270f"
     },
     "rust-engineer": {
       "source": "jeffallan/claude-skills",
