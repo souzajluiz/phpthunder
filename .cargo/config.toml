@@ -1,0 +1,5 @@
+# The only future-incompat warning comes from `block` 0.1.6, pulled by
+# iced 0.14 → wgpu 27 → metal on macOS; nothing to fix here until iced
+# moves to a newer wgpu. Re-enable when upgrading iced.
+[future-incompat-report]
+frequency = "never"
