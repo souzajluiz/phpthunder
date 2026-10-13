@@ -84,6 +84,10 @@ pub enum Target {
     CreateBranch(String),
     /// Run a file operation from the project tree.
     FileAction(crate::app::FileAction),
+    /// Open a file with the caret at the start of a 0-based line.
+    Location(std::path::PathBuf, usize),
+    /// Paste this text at the caret (clipboard history).
+    Paste(String),
     /// Run a command (Find Action).
     Action(crate::keymap::Cmd),
     /// Surround the selection with a block construct.

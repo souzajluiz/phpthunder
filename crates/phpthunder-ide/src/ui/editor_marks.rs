@@ -176,6 +176,26 @@ impl App {
         out
     }
 
+    /// A bookmark glyph in the gutter beside each bookmarked line.
+    pub(crate) fn bookmark_marks<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
+        let Some(lines) = self.bookmarks.get(&doc.path) else {
+            return Vec::new();
+        };
+        let layout = self.wrap_layout(doc);
+        lines
+            .iter()
+            .filter(|l| **l < doc.line_count())
+            .map(|&line| {
+                pin(container(icon(Icon::Bookmark, 12.0, 2.0, ACCENT))
+                    .height(CODE_LINE)
+                    .center_y(CODE_LINE))
+                .x(4.0)
+                .y(row_top(&layout, line, 0))
+                .into()
+            })
+            .collect()
+    }
+
     /// Headers of the blocks enclosing the first visible line, pinned to
     /// the top of the editor; clicking one jumps to it. `None` at the top
     /// of the file or outside any block.

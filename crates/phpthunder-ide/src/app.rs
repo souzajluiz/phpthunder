@@ -8,6 +8,7 @@ mod dock;
 mod files;
 mod generate;
 mod git;
+mod history;
 mod inspection;
 mod intention;
 mod laravel;

@@ -87,6 +87,8 @@ pub enum Icon {
     Package,
     /// New file or folder in the project tree header (`plus`).
     Plus,
+    /// Bookmarked line in the gutter (`bookmark`).
+    Bookmark,
     /// Markdown preview only (`eye`).
     Eye,
     /// Markdown source beside its preview (`columns-2`).
@@ -137,6 +139,7 @@ impl Icon {
             Icon::PanelBottom => include_str!("../../assets/icons/panel-bottom.svg"),
             Icon::Plus => include_str!("../../assets/icons/plus.svg"),
             Icon::Eye => include_str!("../../assets/icons/eye.svg"),
+            Icon::Bookmark => include_str!("../../assets/icons/bookmark.svg"),
             Icon::Columns => include_str!("../../assets/icons/columns-2.svg"),
         }
     }

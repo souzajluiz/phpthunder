@@ -768,6 +768,9 @@ impl App {
         for mark in self.whitespace_marks(doc) {
             content = content.push(mark);
         }
+        for mark in self.bookmark_marks(doc) {
+            content = content.push(mark);
+        }
         for mark in self.diagnostic_marks(doc) {
             content = content.push_under(mark);
         }

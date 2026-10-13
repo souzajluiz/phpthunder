@@ -220,7 +220,7 @@ impl App {
     }
 
     /// `path` relative to the project root, for titles and prompts.
-    fn relative(&self, path: &Path) -> String {
+    pub(crate) fn relative(&self, path: &Path) -> String {
         self.tree
             .root
             .as_deref()

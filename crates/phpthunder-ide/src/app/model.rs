@@ -148,6 +148,8 @@ pub enum Message {
     // Window
     /// Show or hide the project sidebar.
     ToggleSidebar,
+    /// Copy or cut is about to run: remember the selection for `⇧⌘V`.
+    RememberSelection,
     /// Move the caret to the start of a line (sticky line clicked).
     JumpToLine(usize),
     /// Re-read the Claude plan limits the panel's CLI last reported.

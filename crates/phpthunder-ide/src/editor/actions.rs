@@ -831,6 +831,202 @@ impl Document {
     }
 }
 
+impl Document {
+    /// Lines of the statement on `line`: a block opened there runs to its
+    /// closing brace (through `} else {` chains), a closing brace takes its
+    /// whole block, anything else is the line itself.
+    fn statement_lines(&self, line: usize) -> (usize, usize) {
+        let text = self.line_text(line).trim();
+        if text.starts_with('}') && !text.ends_with('{') {
+            let close = self.line_start(line) + self.line_text(line).find('}').unwrap_or(0);
+            if let Some(open) = self.matching_bracket(close) {
+                let header = self.position_of(open).line;
+                return (self.statement_lines(header).0, line);
+            }
+        }
+        let mut hi = line;
+        while self.line_text(hi).trim_end().ends_with('{') {
+            let open = self.line_start(hi) + self.line_text(hi).trim_end().len() - 1;
+            match self.matching_bracket(open) {
+                Some(close) => hi = self.position_of(close).line,
+                None => break,
+            }
+            if !self.line_text(hi).trim_end().ends_with('{') {
+                break;
+            }
+        }
+        (line, hi)
+    }
+
+    /// `⇧⌘↑` / `⇧⌘↓`: swaps the statement at the caret (a whole block when
+    /// it opens one) with the neighbouring statement, staying inside the
+    /// enclosing block.
+    pub fn move_statement(&mut self, down: bool) {
+        let (lo, hi) = self.statement_lines(self.selected_lines().0);
+        let last = self.line_count().saturating_sub(1);
+        let (first, second) = if down {
+            if hi >= last || self.line_text(hi + 1).trim_start().starts_with('}') {
+                return;
+            }
+            ((lo, hi), self.statement_lines(hi + 1))
+        } else {
+            if lo == 0 || self.line_text(lo - 1).trim_end().ends_with('{') {
+                return;
+            }
+            let prev = lo - 1;
+            let neighbour = if self.line_text(prev).trim_start().starts_with('}') {
+                self.statement_lines(prev)
+            } else {
+                (prev, prev)
+            };
+            (neighbour, (lo, hi))
+        };
+        let lines: Vec<&str> = self.text.split('\n').collect();
+        let mut out: Vec<&str> = Vec::with_capacity(lines.len());
+        out.extend(&lines[..first.0]);
+        out.extend(&lines[second.0..=second.1]);
+        out.extend(&lines[first.0..=first.1]);
+        out.extend(&lines[second.1 + 1..]);
+        let text = out.join("\n");
+        let mut cursor = self.content.cursor();
+        let shift = if down {
+            (second.1 - second.0 + 1) as isize
+        } else {
+            -((first.1 - first.0 + 1) as isize)
+        };
+        cursor.position.line = (cursor.position.line as isize + shift).max(0) as usize;
+        if let Some(sel) = &mut cursor.selection {
+            sel.line = (sel.line as isize + shift).max(0) as usize;
+        }
+        self.rewrite(text, cursor);
+    }
+
+    /// `⌥⇧⌘←` / `⌥⇧⌘→`: swaps the argument or array element at the caret
+    /// with its neighbour in the enclosing parentheses or brackets.
+    pub fn move_element(&mut self, right: bool) {
+        let caret = self.offset(self.cursor());
+        let Some((open, close)) = self.enclosing_pair(caret, caret, None) else {
+            return;
+        };
+        if self.text[open..].starts_with('{') {
+            return;
+        }
+        let elements = self.top_level_elements(open + 1, close);
+        let Some(i) = elements
+            .iter()
+            .position(|(a, b)| *a <= caret && caret <= *b)
+        else {
+            return;
+        };
+        let j = if right { i + 1 } else { i.wrapping_sub(1) };
+        let Some(&other) = elements.get(j) else {
+            return;
+        };
+        let here = elements[i];
+        let (a, b) = if here.0 < other.0 {
+            (here, other)
+        } else {
+            (other, here)
+        };
+        let first = self.text[a.0..a.1].to_string();
+        let second = self.text[b.0..b.1].to_string();
+        let between = self.text[a.1..b.0].to_string();
+        let offset_in = caret - here.0;
+        self.checkpoint();
+        self.replace(a.0, b.1, &format!("{second}{between}{first}"));
+        let moved_start = if here.0 < other.0 {
+            a.0 + second.len() + between.len()
+        } else {
+            a.0
+        };
+        let pos = self.position_of(moved_start + offset_in);
+        self.move_to(pos);
+    }
+
+    /// Trimmed ranges of the comma-separated elements in `from..to`,
+    /// splitting only at commas outside nested brackets and literals.
+    fn top_level_elements(&self, from: usize, to: usize) -> Vec<(usize, usize)> {
+        let mut out = Vec::new();
+        let mut depth = 0usize;
+        let mut start = from;
+        for (i, c) in self.text[from..to].char_indices() {
+            let at = from + i;
+            if self.in_literal(at) {
+                continue;
+            }
+            match c {
+                '(' | '[' | '{' => depth += 1,
+                ')' | ']' | '}' => depth = depth.saturating_sub(1),
+                ',' if depth == 0 => {
+                    out.push(trim_range(&self.text, (start, at)));
+                    start = at + 1;
+                }
+                _ => {}
+            }
+        }
+        out.push(trim_range(&self.text, (start, to)));
+        out.retain(|(a, b)| a < b);
+        out
+    }
+
+    /// `⌥⌦` / `⌥⌫`: deletes from the caret to the end (or start) of the
+    /// word, skipping the whitespace next to the caret first.
+    pub fn delete_word(&mut self, forward: bool) {
+        let caret = self.offset(self.cursor());
+        let (a, b) = if forward {
+            let rest = &self.text[caret..];
+            let ws = rest.len() - rest.trim_start_matches([' ', '\t']).len();
+            // The word after the whitespace, or a single other character.
+            let len = match rest[ws..]
+                .char_indices()
+                .take_while(|(_, c)| is_word(*c) || *c == '$')
+                .last()
+            {
+                Some((i, c)) => ws + i + c.len_utf8(),
+                None => ws + rest[ws..].chars().next().map_or(0, char::len_utf8),
+            };
+            (caret, caret + len)
+        } else {
+            let before = &self.text[..caret];
+            let trimmed = before.trim_end_matches([' ', '\t']);
+            let word_start = trimmed
+                .char_indices()
+                .rev()
+                .take_while(|(_, c)| is_word(*c) || *c == '$')
+                .last()
+                .map_or(
+                    trimmed
+                        .char_indices()
+                        .next_back()
+                        .map_or(trimmed.len(), |(i, _)| i),
+                    |(i, _)| i,
+                );
+            (word_start, caret)
+        };
+        if a < b {
+            self.checkpoint();
+            self.replace(a, b, "");
+        }
+    }
+
+    /// `⌥⇧G`: turns a multi-line selection into one caret at the end of
+    /// each selected line.
+    pub fn add_caret_per_line(&mut self) {
+        if self.selection().is_none() {
+            return;
+        }
+        let (lo, hi) = self.selected_lines();
+        self.extra_carets = (lo..hi)
+            .map(|l| {
+                let end = self.line_end(l);
+                (end, end)
+            })
+            .collect();
+        let pos = self.position_of(self.line_end(hi));
+        self.move_to(pos);
+    }
+}
+
 /// A whole-line transform for [`Document::transform_lines`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LineTransform {
@@ -1009,5 +1205,44 @@ mod tests {
         let mut d = doc("if (1) {");
         d.start_new_line(false);
         assert_eq!(d.text, "if (1) {\n    ");
+    }
+    #[test]
+    fn move_statement_should_move_a_whole_block_down() {
+        let mut d = doc("<?php\nif ($a) {\n    f();\n}\ng();");
+        at(&mut d, 7);
+        d.move_statement(true);
+        assert_eq!(d.text, "<?php\ng();\nif ($a) {\n    f();\n}");
+    }
+
+    #[test]
+    fn move_statement_should_stay_inside_its_block() {
+        let mut d = doc("<?php\nif ($a) {\n    f();\n}");
+        at(&mut d, 20);
+        d.move_statement(false);
+        assert_eq!(d.text, "<?php\nif ($a) {\n    f();\n}");
+    }
+
+    #[test]
+    fn move_element_should_swap_arguments() {
+        let mut d = doc("<?php f($a, [1, 2], $c);");
+        at(&mut d, 9);
+        d.move_element(true);
+        assert_eq!(d.text, "<?php f([1, 2], $a, $c);");
+    }
+
+    #[test]
+    fn delete_word_should_remove_to_the_word_end() {
+        let mut d = doc("foo bar");
+        at(&mut d, 3);
+        d.delete_word(true);
+        assert_eq!(d.text, "foo");
+    }
+
+    #[test]
+    fn delete_word_should_remove_to_the_word_start() {
+        let mut d = doc("foo bar");
+        at(&mut d, 7);
+        d.delete_word(false);
+        assert_eq!(d.text, "foo ");
     }
 }

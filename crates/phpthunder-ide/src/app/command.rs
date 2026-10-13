@@ -153,6 +153,23 @@ impl App {
                 self.show_whitespace = !self.show_whitespace;
                 Task::none()
             }
+            Cmd::MoveStatementUp => self.edit_with(|d| d.move_statement(false), None),
+            Cmd::MoveStatementDown => self.edit_with(|d| d.move_statement(true), None),
+            Cmd::MoveElementLeft => self.edit_with(|d| d.move_element(false), None),
+            Cmd::MoveElementRight => self.edit_with(|d| d.move_element(true), None),
+            Cmd::DeleteWordEnd => self.edit_with(|d| d.delete_word(true), None),
+            Cmd::DeleteWordStart => self.edit_with(|d| d.delete_word(false), None),
+            Cmd::AddCaretPerLine => self.caret_action(Document::add_caret_per_line),
+            Cmd::ToggleBookmark => self.toggle_bookmark(),
+            Cmd::ShowBookmarks => self.open_bookmarks(),
+            Cmd::JumpToLastEdit => self.jump_to_last_edit(),
+            Cmd::RecentLocations => self.open_recent_locations(),
+            Cmd::PasteFromHistory if has_doc => self.open_clipboard_history(),
+            Cmd::PasteFromHistory => Task::none(),
+            Cmd::CopyReference => self.copy_reference(),
+            Cmd::GotoSuperMethod => self.goto_super_method(),
+            Cmd::GotoTypeDeclaration => self.goto_type_declaration(),
+            Cmd::GotoTest => self.goto_test(),
         }
     }
 
@@ -327,6 +344,17 @@ impl App {
             Target::CreateBranch(name) => self.git_create_branch(name),
             Target::FileAction(action) => self.run_file_action(action),
             Target::Action(cmd) => self.command(cmd),
+            Target::Location(path, line) => self.open_at_line(path, line),
+            Target::Paste(text) => self.edit_with(
+                |d| {
+                    d.checkpoint();
+                    let (a, b) = d
+                        .selection()
+                        .unwrap_or_else(|| (d.offset(d.cursor()), d.offset(d.cursor())));
+                    d.replace(a, b, &text);
+                },
+                None,
+            ),
             Target::Surround(construct) => self.edit_with(|d| d.surround_with(construct), None),
             Target::Line(line, col) => {
                 let Some(doc) = self.doc() else {

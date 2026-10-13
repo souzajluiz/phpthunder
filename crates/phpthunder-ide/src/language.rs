@@ -296,6 +296,34 @@ impl Language {
         refactor::overriding_methods(&self.index.read(), class, method)
     }
 
+    /// The member `name` of kind `tag` that `class`'s nearest supertype
+    /// declares (not `class` itself): what a method overrides.
+    pub fn super_member(
+        &self,
+        class: &str,
+        tag: phpthunder::symbol::MemberTag,
+        name: &str,
+    ) -> Option<(PathBuf, Symbol)> {
+        let index = self.index.read();
+        index.hierarchy(class).iter().skip(1).find_map(|cls| {
+            index
+                .lookup(&phpthunder::index::member_key(cls, tag, name))
+                .into_iter()
+                .next()
+                .map(|(p, s)| (p.to_path_buf(), s.clone()))
+        })
+    }
+
+    /// Where class-like `fqn` is declared, if indexed.
+    pub fn class_declaration(&self, fqn: &str) -> Option<(PathBuf, Symbol)> {
+        let index = self.index.read();
+        index
+            .classes(fqn)
+            .into_iter()
+            .next()
+            .map(|(p, s)| (p.to_path_buf(), s.clone()))
+    }
+
     /// `class` and its supertypes, nearest first, each with its declaration
     /// when indexed. Used by the type hierarchy panel.
     pub fn supertypes(&self, class: &str) -> Vec<(String, Option<(PathBuf, Symbol)>)> {

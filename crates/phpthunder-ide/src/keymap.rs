@@ -186,11 +186,43 @@ pub enum Cmd {
     QuickDoc,
     /// Show spaces and tabs as dots and arrows.
     ToggleWhitespace,
+    /// Move the statement up (`⇧⌘↑`).
+    MoveStatementUp,
+    /// Move the statement down (`⇧⌘↓`).
+    MoveStatementDown,
+    /// Move the argument left (`⌥⇧⌘←`).
+    MoveElementLeft,
+    /// Move the argument right (`⌥⇧⌘→`).
+    MoveElementRight,
+    /// Delete to the end of the word (`⌥⌦`).
+    DeleteWordEnd,
+    /// Delete to the start of the word (`⌥⌫`).
+    DeleteWordStart,
+    /// One caret at the end of each selected line (`⌥⇧G`).
+    AddCaretPerLine,
+    /// Add or remove a bookmark on the line (`F3`).
+    ToggleBookmark,
+    /// List the bookmarks (`⌘F3`).
+    ShowBookmarks,
+    /// Go to the last edit location (`⇧⌘⌫`).
+    JumpToLastEdit,
+    /// Recent edit and navigation locations (`⇧⌘E`).
+    RecentLocations,
+    /// Paste from the clipboard history (`⇧⌘V`).
+    PasteFromHistory,
+    /// Copy a reference to the symbol at the caret (`⌥⇧⌘C`).
+    CopyReference,
+    /// Go to the method this one overrides (`⌘U`).
+    GotoSuperMethod,
+    /// Go to the class of the value at the caret (`⇧⌘B`).
+    GotoTypeDeclaration,
+    /// Switch between a class and its test (`⇧⌘T`).
+    GotoTest,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 87] = {
+    pub const ALL: [Cmd; 103] = {
         use Cmd::*;
         [
             Save,
@@ -280,6 +312,22 @@ impl Cmd {
             PreviousError,
             QuickDoc,
             ToggleWhitespace,
+            MoveStatementUp,
+            MoveStatementDown,
+            MoveElementLeft,
+            MoveElementRight,
+            DeleteWordEnd,
+            DeleteWordStart,
+            AddCaretPerLine,
+            ToggleBookmark,
+            ShowBookmarks,
+            JumpToLastEdit,
+            RecentLocations,
+            PasteFromHistory,
+            CopyReference,
+            GotoSuperMethod,
+            GotoTypeDeclaration,
+            GotoTest,
         ]
     };
 
@@ -348,6 +396,12 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("u", true, false) => ToggleCase,
             ("t", false, true) => SurroundWith,
             ("a", true, false) => FindAction,
+            ("e", true, false) => RecentLocations,
+            ("v", true, false) => PasteFromHistory,
+            ("c", true, true) => CopyReference,
+            ("u", false, false) => GotoSuperMethod,
+            ("b", true, false) => GotoTypeDeclaration,
+            ("t", true, false) => GotoTest,
             ("}", true, false) | ("]", true, false) => NextTab,
             ("{", true, false) | ("[", true, false) => PrevTab,
             _ => return None,
@@ -361,6 +415,11 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             DebugTest
         }
         Key::Character(c) if m.control() && !cmd && c.eq_ignore_ascii_case("h") => TypeHierarchy,
+        Key::Character(c)
+            if alt && shift && !cmd && !m.control() && c.eq_ignore_ascii_case("g") =>
+        {
+            AddCaretPerLine
+        }
         Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("j") => {
             JoinLines
         }
@@ -406,11 +465,18 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Named(Named::F9) => Resume,
         Key::Named(Named::F2) if cmd => StopDebug,
         Key::Named(Named::F7) if alt => FindUsages,
-        Key::Named(Named::F3) if shift => FindPrevious,
-        Key::Named(Named::F3) => FindNext,
+        Key::Named(Named::F3) if cmd => ShowBookmarks,
+        Key::Named(Named::F3) if !shift && !alt => ToggleBookmark,
         Key::Named(Named::Backspace) if cmd => DeleteLine,
         Key::Named(Named::ArrowUp) if alt && shift => MoveLineUp,
         Key::Named(Named::ArrowDown) if alt && shift => MoveLineDown,
+        Key::Named(Named::ArrowUp) if cmd && shift && !alt => MoveStatementUp,
+        Key::Named(Named::ArrowDown) if cmd && shift && !alt => MoveStatementDown,
+        Key::Named(Named::ArrowLeft) if cmd && shift && alt => MoveElementLeft,
+        Key::Named(Named::ArrowRight) if cmd && shift && alt => MoveElementRight,
+        Key::Named(Named::Delete) if alt && !cmd && !shift => DeleteWordEnd,
+        Key::Named(Named::Backspace) if alt && !cmd && !shift => DeleteWordStart,
+        Key::Named(Named::Backspace) if cmd && shift => JumpToLastEdit,
         Key::Named(Named::ArrowUp) if alt && !cmd && !shift => ExtendSelection,
         Key::Named(Named::ArrowDown) if alt && !cmd && !shift => ShrinkSelection,
         Key::Named(Named::ArrowUp) if cmd && alt => AddCaretAbove,
@@ -513,6 +579,22 @@ pub fn hint(cmd: Cmd) -> &'static str {
         PreviousError => "⇧F2",
         QuickDoc => "F1",
         ToggleWhitespace => "",
+        MoveStatementUp => "⇧⌘↑",
+        MoveStatementDown => "⇧⌘↓",
+        MoveElementLeft => "⌥⇧⌘←",
+        MoveElementRight => "⌥⇧⌘→",
+        DeleteWordEnd => "⌥⌦",
+        DeleteWordStart => "⌥⌫",
+        AddCaretPerLine => "⌥⇧G",
+        ToggleBookmark => "F3",
+        ShowBookmarks => "⌘F3",
+        JumpToLastEdit => "⇧⌘⌫",
+        RecentLocations => "⇧⌘E",
+        PasteFromHistory => "⇧⌘V",
+        CopyReference => "⌥⇧⌘C",
+        GotoSuperMethod => "⌘U",
+        GotoTypeDeclaration => "⇧⌘B",
+        GotoTest => "⇧⌘T",
     }
 }
 

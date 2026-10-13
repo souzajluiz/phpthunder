@@ -149,6 +149,14 @@ pub struct App {
     pub phpstan_running: bool,
     /// Route names, views and config keys of a Laravel project.
     pub laravel: LaravelScan,
+    /// Bookmarked lines (0-based) by file (`F3`).
+    pub bookmarks: std::collections::BTreeMap<PathBuf, std::collections::BTreeSet<usize>>,
+    /// Latest edit locations as (file, line), oldest first.
+    pub edit_locations: Vec<(PathBuf, usize)>,
+    /// How far back the last `⇧⌘⌫` went; reset by the next edit.
+    pub edit_back: usize,
+    /// Copied and cut texts, newest first (`⇧⌘V`).
+    pub clipboard_history: Vec<String>,
     /// Whether spaces and tabs are drawn as dots and arrows.
     pub show_whitespace: bool,
     /// Claude plan limits last reported by the Claude panel's CLI.
@@ -210,6 +218,24 @@ pub fn bindings(
     }
     if let Some(cmd) = keymap::command(&key.key, m) {
         return custom(Message::Command(cmd));
+    }
+    // Copy and cut also feed the clipboard history (`⇧⌘V`).
+    if m.command()
+        && !m.shift()
+        && !m.alt()
+        && let Key::Character(c) = key.key.as_ref()
+    {
+        let action = match c {
+            "c" => Some(Binding::Copy),
+            "x" => Some(Binding::Cut),
+            _ => None,
+        };
+        if let Some(action) = action {
+            return Some(Binding::Sequence(vec![
+                Binding::Custom(Message::RememberSelection),
+                action,
+            ]));
+        }
     }
     let plain = !m.command() && !m.control() && !m.alt();
     match key.key.as_ref() {
@@ -322,6 +348,10 @@ impl App {
             packages: crate::packages::Installs::default(),
             claude_usage: crate::claude_usage::Usage::default(),
             show_whitespace: false,
+            bookmarks: std::collections::BTreeMap::new(),
+            edit_locations: Vec::new(),
+            edit_back: 0,
+            clipboard_history: Vec::new(),
             git: None,
             git_base: Default::default(),
             git_marks: Default::default(),
@@ -769,6 +799,10 @@ impl App {
             }
             Message::ToggleSidebar => {
                 self.sidebar = !self.sidebar;
+                Task::none()
+            }
+            Message::RememberSelection => {
+                self.remember_selection();
                 Task::none()
             }
             Message::JumpToLine(line) => {
@@ -1347,6 +1381,7 @@ impl App {
         }
         self.inspect_pending = true;
         self.intentions = None;
+        self.record_edit_location();
         let _ = self.refresh_find(false);
     }
 
