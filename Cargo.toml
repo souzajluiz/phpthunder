@@ -29,6 +29,14 @@ missing_docs_in_private_items = { level = "warn", priority = 9 }
 # without debug info keeps `target/debug` a fraction of the size.
 [profile.dev.package."*"]
 debug = false
+# Optimized even in dev: loading a large project's index cache (bincode,
+# serde) and rendering stay fast while the IDE crate itself builds quickly.
+opt-level = 2
+
+# The analysis engine does the heavy lifting on project open; unoptimized it
+# makes `scripts/dev.sh` several times slower than a release build.
+[profile.dev.package.phpthunder]
+opt-level = 2
 
 # Shipped builds: cross-crate inlining and one codegen unit make the engine
 # faster, and stripping symbols keeps the bundle small.

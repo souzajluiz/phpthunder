@@ -156,22 +156,28 @@ impl Language {
             progress.begin(IndexPhase::Scan, changed.len());
             index::index_files(&self.index, &changed, |done, _| progress.advance(done));
             let mut removed = 0;
-            {
+            let indexed = {
                 // Files deleted since the cache was written.
                 let keep: std::collections::HashSet<&PathBuf> = files.iter().collect();
                 let builtins = index::write_builtins().ok();
                 let mut idx = self.index.write();
-                for path in idx.paths() {
-                    if !keep.contains(&path) && Some(&path) != builtins.as_ref() {
-                        idx.remove(&path);
+                let paths = idx.paths();
+                for path in &paths {
+                    if !keep.contains(path) && Some(path) != builtins.as_ref() {
+                        idx.remove(path);
                         removed += 1;
                     }
                 }
-            }
+                // Changed files that made it into the index: unreadable ones
+                // (binary or non-UTF-8 data shipped as `.php`) never do, and
+                // must not force a cache rewrite on every start.
+                let present: std::collections::HashSet<&PathBuf> = paths.iter().collect();
+                changed.iter().filter(|p| present.contains(p)).count()
+            };
             // An untouched project keeps its cache: rewriting it costs about
             // as much as loading it.
             if let Some(cache) = cache
-                && (!changed.is_empty() || removed > 0)
+                && (indexed > 0 || removed > 0)
             {
                 // A write failure only costs the next start its head start.
                 let _ = index::save_cache(&self.index.read(), &cache);
