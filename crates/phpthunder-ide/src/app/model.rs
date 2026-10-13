@@ -8,7 +8,7 @@ use iced::Point;
 use iced::keyboard::{self};
 use iced::widget::scrollable::Viewport;
 use iced::widget::text_editor::Action;
-use phpthunder::analysis::{Candidate, Definition, Usage};
+use phpthunder::analysis::{Definition, Usage};
 use phpthunder::inspection::{Diagnostic, Fix};
 use phpthunder::refactor::{RenamePlan, SignatureHelp};
 use phpthunder::syntax::Pos;
@@ -59,8 +59,10 @@ pub enum Message {
     Scrolled(Viewport),
     /// Move the completion selection by this delta (wraps around).
     CompletionMove(i32),
-    /// Insert the selected completion item.
+    /// Insert the selected completion item (Enter).
     CompletionAccept,
+    /// Insert the selected item over the rest of the word (Tab).
+    CompletionReplace,
     /// Insert the completion item at this index (mouse click).
     CompletionPick(usize),
     /// Escape: dismiss completion, hover, notice, and the find bar.
@@ -233,6 +235,8 @@ pub enum Message {
     GutterPressed,
     /// Development: capture the window (see `PHPTHUNDER_SNAPSHOT`).
     TakeSnapshot,
+    /// Development: type text and open completion before the snapshot.
+    SnapshotType(String),
     /// Development: the window capture arrived.
     Snapshot(iced::window::Screenshot),
 }
@@ -393,8 +397,8 @@ pub enum Indexing {
 
 /// Open completion popup state; rebuilt by [`App::refresh_completion`].
 pub struct Completion {
-    /// Candidates, best first.
-    pub items: Vec<Candidate>,
+    /// Ranked proposals, best first, with their matched ranges.
+    pub items: Vec<phpthunder::analysis::Ranked>,
     /// Index of the highlighted candidate.
     pub selected: usize,
     /// Byte offset where the replaced prefix starts.

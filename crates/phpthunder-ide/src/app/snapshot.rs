@@ -1,7 +1,9 @@
 //! Development snapshots: with `PHPTHUNDER_SNAPSHOT=out.png` the IDE opens
 //! `PHPTHUNDER_SNAPSHOT_FILE` (relative to the project) if given, waits for
-//! indexing to settle, saves a PNG of its window and quits. Used to check
-//! the look without a screen recorder.
+//! indexing to settle, saves a PNG of its window and quits. With
+//! `PHPTHUNDER_SNAPSHOT_TYPE=text` (and `PHPTHUNDER_SNAPSHOT_LINE=n`, 1-based)
+//! it first types `text` on a new line after line `n` and opens completion.
+//! Used to check the look without a screen recorder.
 
 use super::*;
 use iced::Task;
@@ -12,8 +14,14 @@ use std::time::Duration;
 /// Delay before opening the snapshot file.
 const OPEN_DELAY: Duration = Duration::from_secs(3);
 
+/// Delay before typing the snapshot text (after indexing).
+const TYPE_DELAY: Duration = Duration::from_secs(14);
+
 /// Delay before taking the snapshot.
 const SHOT_DELAY: Duration = Duration::from_secs(8);
+
+/// Delay before the snapshot when text is typed first.
+const SHOT_AFTER_TYPING: Duration = Duration::from_secs(16);
 
 impl App {
     /// Tasks that open the snapshot file and take the snapshot, when
@@ -26,13 +34,49 @@ impl App {
             (Some(root), Some(file)) => {
                 let path = root.join(file);
                 Task::perform(tokio::time::sleep(OPEN_DELAY), move |()| {
-                    Message::OpenFile(path.clone())
+                    Message::OpenFile(path)
                 })
             }
             _ => Task::none(),
         };
-        let shot = Task::perform(tokio::time::sleep(SHOT_DELAY), |()| Message::TakeSnapshot);
-        Task::batch([open, shot])
+        let typing = std::env::var("PHPTHUNDER_SNAPSHOT_TYPE").ok();
+        let delay = if typing.is_some() {
+            SHOT_AFTER_TYPING
+        } else {
+            SHOT_DELAY
+        };
+        let typed = match typing {
+            Some(text) => Task::perform(tokio::time::sleep(TYPE_DELAY), move |()| {
+                Message::SnapshotType(text)
+            }),
+            None => Task::none(),
+        };
+        let shot = Task::perform(tokio::time::sleep(delay), |()| Message::TakeSnapshot);
+        Task::batch([open, typed, shot])
+    }
+
+    /// Types `text` on a new line after `PHPTHUNDER_SNAPSHOT_LINE` (default
+    /// 1) of the active document and opens completion.
+    pub(crate) fn snapshot_type(&mut self, text: &str) -> Task<Message> {
+        let line = std::env::var("PHPTHUNDER_SNAPSHOT_LINE")
+            .ok()
+            .and_then(|l| l.parse::<usize>().ok())
+            .unwrap_or(1)
+            .max(1);
+        let wanted = std::env::var_os("PHPTHUNDER_SNAPSHOT_FILE")
+            .zip(self.tree.root.clone())
+            .map(|(file, root)| root.join(file));
+        if let Some(i) = wanted.and_then(|w| self.docs.iter().position(|d| d.path == w)) {
+            self.active = Some(i);
+        }
+        let Some(doc) = self.doc_mut() else {
+            return Task::none();
+        };
+        let at = doc.line_end(line - 1);
+        doc.replace(at, at, &format!("\n{text}"));
+        self.after_change(true);
+        self.refresh_completion(true);
+        self.reveal_cursor()
     }
 
     /// Captures the window (answered by [`Message::Snapshot`]).

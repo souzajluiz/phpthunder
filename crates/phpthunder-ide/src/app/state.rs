@@ -134,6 +134,8 @@ pub struct App {
     pub debug: Option<DebugView>,
     /// Last mouse y over the line-number gutter, in content pixels.
     pub gutter_y: f32,
+    /// How often each completion proposal was picked, for ranking.
+    pub completion_stats: std::collections::HashMap<String, u32>,
 }
 
 /// Whether `c` can be part of a PHP identifier; used to decide when
@@ -164,7 +166,8 @@ pub fn bindings(
         match key.key.as_ref() {
             Key::Named(Named::ArrowDown) => return custom(Message::CompletionMove(1)),
             Key::Named(Named::ArrowUp) => return custom(Message::CompletionMove(-1)),
-            Key::Named(Named::Enter | Named::Tab) => return custom(Message::CompletionAccept),
+            Key::Named(Named::Enter) => return custom(Message::CompletionAccept),
+            Key::Named(Named::Tab) => return custom(Message::CompletionReplace),
             Key::Named(Named::Escape) => return custom(Message::CloseOverlays),
             _ => {}
         }
@@ -257,6 +260,7 @@ impl App {
             breakpoints: Default::default(),
             debug: None,
             gutter_y: 0.0,
+            completion_stats: completion::load_completion_stats(),
         };
         let folder = std::env::args()
             .nth(1)
@@ -386,6 +390,7 @@ impl App {
             }
             Message::GutterPressed => self.toggle_breakpoint_at_gutter(),
             Message::TakeSnapshot => self.take_snapshot(),
+            Message::SnapshotType(text) => self.snapshot_type(&text),
             Message::Snapshot(shot) => self.save_snapshot(shot),
             Message::LaravelScanned(project) => {
                 self.laravel = project;
@@ -470,9 +475,10 @@ impl App {
                 if let Some(c) = &mut self.completion {
                     c.selected = i;
                 }
-                self.accept_completion()
+                self.accept_completion(false)
             }
-            Message::CompletionAccept => self.accept_completion(),
+            Message::CompletionAccept => self.accept_completion(false),
+            Message::CompletionReplace => self.accept_completion(true),
             Message::CloseOverlays => {
                 self.close_overlays();
                 if self.find.is_some() {
@@ -1061,107 +1067,6 @@ impl App {
         self.inspect_pending = true;
         self.intentions = None;
         let _ = self.refresh_find(false);
-    }
-
-    /// Whether typing `c` should open completion unprompted: after `->`,
-    /// `::`, `$`, or the first character of a new identifier in PHP files.
-    fn should_auto_complete(&self, c: char) -> bool {
-        let Some(doc) = self.doc() else { return false };
-        if !doc.is_php() {
-            return false;
-        }
-        let offset = doc.offset(doc.cursor());
-        let before = &doc.text[..offset];
-        match c {
-            '>' => before.ends_with("->"),
-            ':' => before.ends_with("::"),
-            '$' => true,
-            c if is_ident(c) => {
-                // Start of a new word only, so the popup does not flicker per key.
-                let word = phpthunder::analysis::ident_start(&doc.text, offset);
-                offset - word == c.len_utf8()
-            }
-            _ => false,
-        }
-    }
-
-    /// Recomputes completion candidates at the cursor and opens or updates
-    /// the popup, keeping the current selection index where possible. The
-    /// replaced prefix includes a leading `$`. `explicit` is set for
-    /// `Cmd::Complete`, which shows a "No suggestions" notice when empty;
-    /// implicit refreshes from typing just close the popup.
-    pub fn refresh_completion(&mut self, explicit: bool) {
-        let Some(doc) = self.doc() else { return };
-        let offset = doc.offset(doc.cursor());
-        let (start, items) = match self.laravel_candidates(&doc.text, offset) {
-            Some(keys) => keys,
-            None => {
-                let mut start = phpthunder::analysis::ident_start(&doc.text, offset);
-                if start > 0 && doc.text.as_bytes()[start - 1] == b'$' {
-                    start -= 1;
-                }
-                (start, self.lang.complete(&doc.text, offset))
-            }
-        };
-        if items.is_empty() {
-            self.completion = None;
-            if explicit {
-                self.notice = Some(tr!("notice-no-suggestions"));
-            }
-            return;
-        }
-        let pos = doc.position_of(start);
-        let (line, col) = (pos.line, doc.visual_column(pos));
-        let selected = self
-            .completion
-            .as_ref()
-            .map(|c| c.selected)
-            .unwrap_or(0)
-            .min(items.len() - 1);
-        self.completion = Some(Completion {
-            items,
-            selected,
-            start,
-            line,
-            col,
-        });
-    }
-
-    /// Replaces the typed prefix with the selected candidate as one undo step.
-    /// Avoids doubling `$` for members, and inserts the candidate's `use`
-    /// import above the cursor when it has one, shifting the cursor down by
-    /// the inserted lines.
-    fn accept_completion(&mut self) -> Task<Message> {
-        let Some(completion) = self.completion.take() else {
-            return Task::none();
-        };
-        let Some(item) = completion.items.get(completion.selected).cloned() else {
-            return Task::none();
-        };
-        let Some(doc) = self.doc_mut() else {
-            return Task::none();
-        };
-        let offset = doc.offset(doc.cursor());
-        let mut start = completion.start.min(offset);
-        // A variable candidate already carries `$`; a member never does.
-        if !item.insert_text.starts_with('$') && doc.text[start..offset].starts_with('$') {
-            start += 1;
-        }
-        doc.checkpoint();
-        doc.replace(start, offset, &item.insert_text);
-        let after = doc.cursor();
-        if let Some((at, text)) = &item.import
-            && *at <= start
-        {
-            doc.replace(*at, *at, text);
-            let shift = text.matches('\n').count();
-            doc.move_to(Position {
-                line: after.line + shift,
-                column: after.column,
-            });
-        }
-        self.after_change(true);
-        self.reveal_cursor()
     }
 
     /// Scrolls the editor just enough to keep the cursor line visible, with

@@ -41,7 +41,7 @@ const COMPLETION_ROWS: usize = 8;
 /// Height of one completion row.
 const COMPLETION_ROW: f32 = 28.0;
 /// Width of the completion list column.
-const COMPLETION_LIST_WIDTH: f32 = 340.0;
+const COMPLETION_LIST_WIDTH: f32 = 460.0;
 /// Width of the completion details pane beside the list.
 const COMPLETION_DOC_WIDTH: f32 = 300.0;
 /// Width of the hover popup; also used to clamp it inside the editor.
@@ -1344,9 +1344,103 @@ fn kind_badge<'a>(kind: Kind) -> El<'a> {
         .into()
 }
 
+/// Parameter list and result type of a proposal, from its detail: a
+/// signature gives `(int $a)` and its return type, a property its declared
+/// type; other proposals (classes, variables, keywords) give neither.
+fn signature_parts(candidate: &phpthunder::analysis::Candidate) -> (String, String) {
+    let detail = candidate.detail.as_str();
+    match candidate.kind {
+        Kind::Method | Kind::Function => {
+            let Some(open) = detail.find('(') else {
+                return (String::new(), String::new());
+            };
+            let mut depth = 0usize;
+            let mut close = detail.len();
+            for (i, ch) in detail[open..].char_indices() {
+                match ch {
+                    '(' => depth += 1,
+                    ')' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            close = open + i + 1;
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            let params = detail[open..close.min(detail.len())].to_string();
+            let ret = detail[close.min(detail.len())..]
+                .trim()
+                .trim_start_matches(':')
+                .trim()
+                .to_string();
+            (params, ret)
+        }
+        Kind::Property if detail != "variable" => {
+            let ty: Vec<&str> = detail
+                .split_whitespace()
+                .take_while(|w| !w.starts_with('$'))
+                .filter(|w| {
+                    !matches!(
+                        *w,
+                        "public"
+                            | "protected"
+                            | "private"
+                            | "static"
+                            | "readonly"
+                            | "var"
+                            | "@property"
+                            | "@property-read"
+                    )
+                })
+                .collect();
+            (String::new(), ty.join(" "))
+        }
+        _ => (String::new(), String::new()),
+    }
+}
+
+/// Longest parameter list shown after a proposal's name.
+const MAX_TAIL_CHARS: usize = 44;
+
+/// `text` cut to `max` characters with an ellipsis.
+fn shorten(text: &str, max: usize) -> String {
+    if text.chars().count() > max {
+        format!("{}…", text.chars().take(max - 1).collect::<String>())
+    } else {
+        text.to_string()
+    }
+}
+
+/// The proposal's label with the matched letters in bold accent color.
+fn highlighted_label<'a>(item: &phpthunder::analysis::Ranked, selected: bool) -> El<'a> {
+    let text_color = if selected { TEXT_BRIGHT } else { TEXT };
+    let label_text = &item.candidate.label;
+    let mut spans: Vec<Span<'static, (), Font>> = Vec::new();
+    let mut at = 0;
+    for range in &item.fragments {
+        if range.start > at {
+            spans.push(Span::new(label_text[at..range.start].to_string()).color(text_color));
+        }
+        spans.push(
+            Span::new(label_text[range.clone()].to_string())
+                .color(ACCENT)
+                .font(MONO_BOLD),
+        );
+        at = range.end;
+    }
+    if at < label_text.len() {
+        spans.push(Span::new(label_text[at..].to_string()).color(text_color));
+    }
+    rich_text(spans).font(MONO).size(13).into()
+}
+
 /// The completion list (a window of rows around the selection) plus a
-/// details pane. Returns the popup and its size, which `overlays` needs to
-/// place it above or below the caret line.
+/// details pane. Each row shows a kind badge, the label with its matched
+/// letters highlighted, the parameter list, and the result type (or the
+/// namespace of a class to import) on the right. Returns the popup and its
+/// size, which `overlays` needs to place it above or below the caret line.
 fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
     let first = c.selected.saturating_sub(COMPLETION_ROWS - 1);
     let rows = c
@@ -1357,28 +1451,41 @@ fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
         .take(COMPLETION_ROWS)
         .map(|(i, item)| {
             let selected = i == c.selected;
-            let hint = item.import.as_ref().map(|_| {
-                item.detail
+            let candidate = &item.candidate;
+            let (params, ret) = signature_parts(candidate);
+            let right = match &candidate.import {
+                Some(_) => candidate
+                    .detail
                     .rsplit_once('\\')
                     .map(|(ns, _)| ns)
                     .unwrap_or("")
-                    .to_string()
-            });
-            let mut r = row![
-                kind_badge(item.kind),
-                label(
-                    item.label.clone(),
-                    13.0,
-                    if selected { TEXT_BRIGHT } else { TEXT }
-                )
-                .font(MONO)
-                .width(Fill),
+                    .to_string(),
+                None => ret,
+            };
+            let badge: El<'_> = if candidate.detail == phpthunder::analysis::KEYWORD_DETAIL {
+                container(label("kw", 10.0, SYN_KEYWORD).font(MONO))
+                    .center(18)
+                    .style(badge(BADGE_OTHER))
+                    .into()
+            } else {
+                kind_badge(candidate.kind)
+            };
+            let r = row![
+                badge,
+                row![
+                    highlighted_label(item, selected),
+                    label(shorten(&params, MAX_TAIL_CHARS), 12.0, MUTED)
+                        .font(MONO)
+                        .wrapping(Wrapping::None)
+                ]
+                .spacing(0)
+                .align_y(Center)
+                .width(Fill)
+                .clip(true),
+                label(right, 11.0, MUTED),
             ]
             .spacing(10)
             .align_y(Center);
-            if let Some(ns) = hint {
-                r = r.push(label(ns, 11.0, MUTED));
-            }
             button(r)
                 .on_press(Message::CompletionPick(i))
                 .width(Fill)
@@ -1399,7 +1506,7 @@ fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
     let shown = c.items.len().min(COMPLETION_ROWS);
     let list = column(rows).width(COMPLETION_LIST_WIDTH).padding(4);
     let height = shown as f32 * COMPLETION_ROW + 8.0 + 2.0;
-    let item = &c.items[c.selected];
+    let item = &c.items[c.selected].candidate;
     let details = column![
         label(item.detail.clone(), 12.0, SYN_VARIABLE).font(MONO),
         space().height(Fill),
@@ -1419,10 +1526,7 @@ fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
     .height(Fill);
     let body = row![
         list,
-        container(space())
-            .width(1)
-            .height(Fill)
-            .style(fill(rgb(0x262B36))),
+        container(space()).width(1).height(Fill).style(fill(BORDER)),
         details
     ]
     .height(height - 2.0);

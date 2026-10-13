@@ -132,6 +132,19 @@ impl Document {
         self.highlight_version += 1;
     }
 
+    /// Highlight token covering byte `offset`, if any (comments, strings, …);
+    /// used to keep completion from popping up inside comments and strings.
+    pub fn token_at(&self, offset: usize) -> Option<crate::editor::Token> {
+        let pos = self.position_of(offset);
+        let line_start = self.line_start(pos.line);
+        let col = offset - line_start;
+        self.highlights
+            .get(pos.line)?
+            .iter()
+            .find(|(range, _)| range.start <= col && col < range.end)
+            .map(|(_, token)| *token)
+    }
+
     /// Highlighter settings handed to the iced editor widget when the view is built.
     ///
     /// Cloning the `Arc` is cheap; `version` lets the highlighter detect stale spans.
