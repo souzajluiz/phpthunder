@@ -387,6 +387,8 @@ pub enum Bottom {
     Hierarchy,
     /// The integrated terminal.
     Terminal,
+    /// The Claude CLI, running in its own terminal session.
+    Claude,
     /// Test results.
     Tests,
     /// Git changes and commit.

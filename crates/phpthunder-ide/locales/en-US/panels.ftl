@@ -7,6 +7,7 @@ panel-problems = Problems
 panel-hierarchy = Hierarchy
 panel-tests = Tests
 panel-terminal = Terminal
+panel-claude = Claude
 
 problems-no-file = No file open
 problems-none = No problems in { $file }

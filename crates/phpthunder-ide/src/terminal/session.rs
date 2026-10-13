@@ -55,6 +55,28 @@ impl Session {
     /// Returns a message when the PTY cannot be opened or the shell fails to
     /// start.
     pub fn spawn(cwd: &Path, rows: u16, cols: u16) -> Result<Self, String> {
+        Self::start(CommandBuilder::new_default_prog(), cwd, rows, cols)
+    }
+
+    /// Starts `program` (a command line, e.g. `claude`) in `cwd` through the
+    /// user's login shell (`$SHELL -lc 'exec …'`), so it is found on the
+    /// `PATH` the user's profile sets up even when the IDE was launched from
+    /// the Finder. The session ends when the program exits.
+    ///
+    /// # Errors
+    /// Returns a message when the PTY cannot be opened or the shell fails to
+    /// start. A program missing from `PATH` is reported by the shell, inside
+    /// the session.
+    pub fn spawn_program(cwd: &Path, rows: u16, cols: u16, program: &str) -> Result<Self, String> {
+        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into());
+        let mut cmd = CommandBuilder::new(shell);
+        cmd.args(["-lc", &format!("exec {program}")]);
+        Self::start(cmd, cwd, rows, cols)
+    }
+
+    /// Opens a PTY, runs `cmd` in it with `cwd` as working directory and a
+    /// `rows` x `cols` screen, and starts the output reader thread.
+    fn start(mut cmd: CommandBuilder, cwd: &Path, rows: u16, cols: u16) -> Result<Self, String> {
         let pty = native_pty_system()
             .openpty(PtySize {
                 rows,
@@ -63,7 +85,6 @@ impl Session {
                 pixel_height: 0,
             })
             .map_err(|e| tr!("error-terminal-open", error = e.to_string()))?;
-        let mut cmd = CommandBuilder::new_default_prog();
         cmd.cwd(cwd);
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
@@ -202,5 +223,23 @@ mod tests {
         assert!(seen.contains("phpthunder-42"), "screen was: {seen}");
         session.resize(20, 80);
         assert_eq!(session.with_screen(vt100::Screen::size), (20, 80));
+    }
+
+    #[test]
+    fn spawn_program_should_run_it_through_the_login_shell_and_end_with_it() {
+        let session = Session::spawn_program(
+            &std::env::temp_dir(),
+            10,
+            60,
+            "printf 'phpthunder-%s' $((40+2))",
+        )
+        .expect("program starts");
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while Instant::now() < deadline && !session.has_exited() {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let seen = session.with_screen(vt100::Screen::contents);
+        assert!(seen.contains("phpthunder-42"), "screen was: {seen}");
+        assert!(session.has_exited());
     }
 }

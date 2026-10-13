@@ -5,6 +5,7 @@ notice-no-suggestions = No suggestions
 notice-no-declaration = No declaration found
 notice-nothing-to-search = Nothing to search: place the cursor on a symbol
 notice-open-failed = Could not open { $path }: { $error }
+preview-binary = Binary file ({ $size }), not shown in the editor
 notice-read-failed = Could not read { $path }
 notice-write-failed = Could not write { $path }: { $error }
 notice-save-failed = Could not save { $file }: { $error }

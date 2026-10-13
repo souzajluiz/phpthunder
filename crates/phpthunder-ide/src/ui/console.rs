@@ -108,7 +108,7 @@ impl App {
     /// The terminal panel body: the screen grid, an exited banner, and the
     /// hidden input that holds focus while the terminal is active.
     pub(crate) fn terminal_body(&self) -> Element<'_, Message> {
-        let Some(session) = &self.terminal else {
+        let Some(session) = self.console_session() else {
             return container(
                 row![
                     label(tr!("terminal-none"), 12.0, MUTED),

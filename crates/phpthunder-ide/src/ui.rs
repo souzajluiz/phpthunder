@@ -7,6 +7,7 @@ mod git;
 mod icons;
 mod panel;
 mod popup;
+mod preview;
 mod theme;
 mod workbench;
 
@@ -16,5 +17,6 @@ pub(crate) use git::*;
 pub use icons::*;
 pub(crate) use panel::*;
 pub(crate) use popup::*;
+pub use preview::*;
 pub use theme::*;
 pub use workbench::*;

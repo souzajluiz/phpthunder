@@ -85,6 +85,8 @@ pub enum Cmd {
     Problems,
     /// Show or hide the terminal (`⌥F12`).
     ToggleTerminal,
+    /// Show or hide the Claude panel, starting the `claude` CLI (`⌥⌘A`).
+    ToggleClaude,
     /// Run the tests for the caret's context (`⌃⇧R`).
     RunTests,
     /// Reformat the file with the project's formatter (`⌥⌘L`).
@@ -136,6 +138,7 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("d", false, false) => Duplicate,
             ("b", false, false) => GotoDeclaration,
             ("b", false, true) => GotoImplementation,
+            ("a", false, true) => ToggleClaude,
             ("l", false, true) => Reformat,
             ("p", false, false) => ParameterInfo,
             ("6", false, false) => Problems,
@@ -237,6 +240,7 @@ pub fn hint(cmd: Cmd) -> &'static str {
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",
+        ToggleClaude => "⌥⌘A",
         RunTests => "⌃⇧R",
         Reformat => "⌥⌘L",
         Composer => "⌃⌥C",

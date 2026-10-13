@@ -89,6 +89,7 @@ impl App {
             Cmd::FileStructure if has_doc => self.open_palette(Mode::Structure),
             Cmd::FileStructure => Task::none(),
             Cmd::ToggleTerminal => self.toggle_terminal(),
+            Cmd::ToggleClaude => self.toggle_claude(),
             Cmd::RunTests => self.run_tests(TestTarget::Context),
             Cmd::Reformat => self.reformat(),
             Cmd::Composer => self.open_composer(),

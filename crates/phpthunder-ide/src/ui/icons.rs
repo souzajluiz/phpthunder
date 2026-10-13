@@ -20,6 +20,8 @@ pub enum Icon {
     Branch,
     /// Terminal tool in the rail (`square-terminal`).
     Terminal,
+    /// Claude assistant panel in the rail (own `sparkle`).
+    Sparkle,
     /// Collapsed directory in the tree; hidden replace row in the find bar.
     ChevronRight,
     /// Expanded directory in the tree; shown replace row in the find bar.
@@ -92,6 +94,7 @@ impl Icon {
             Icon::Symbols => include_str!("../../assets/icons/code.svg"),
             Icon::Branch => include_str!("../../assets/icons/git-branch.svg"),
             Icon::Terminal => include_str!("../../assets/icons/square-terminal.svg"),
+            Icon::Sparkle => include_str!("../../assets/icons/sparkle.svg"),
             Icon::ChevronRight => include_str!("../../assets/icons/chevron-right.svg"),
             Icon::ChevronDown => include_str!("../../assets/icons/chevron-down.svg"),
             Icon::Close => include_str!("../../assets/icons/x.svg"),
@@ -131,7 +134,8 @@ impl Icon {
 pub enum Logo {
     /// Spider mark alone (`logo-mark.svg`, 1:1): bottom of the tool rail.
     Mark,
-    /// Spider over the PhpThunder wordmark (`logo.svg`, 100:116): welcome screen.
+    /// The app tile, spider over the PhpThunder wordmark (`logo.svg`, 1:1):
+    /// welcome screen.
     Lockup,
 }
 
@@ -148,7 +152,7 @@ impl Logo {
     fn aspect(self) -> f32 {
         match self {
             Logo::Mark => 1.0,
-            Logo::Lockup => 1.16,
+            Logo::Lockup => 1.0,
         }
     }
 }

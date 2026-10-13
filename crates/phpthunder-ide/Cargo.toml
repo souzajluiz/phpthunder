@@ -9,7 +9,10 @@ repository.workspace = true
 [dependencies]
 base64 = "0.23.1"
 fluent-bundle = "0.16.0"
-iced = { version = "0.14.0", features = ["svg", "tokio", "advanced"] }
+iced = { version = "0.14.0", features = ["svg", "tokio", "advanced", "image-without-codecs"] }
+# Image previews: only the common web formats, not every codec iced's
+# `image` feature would pull in.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "ico"] }
 notify = "8.2.0"
 parking_lot.workspace = true
 phpthunder.workspace = true

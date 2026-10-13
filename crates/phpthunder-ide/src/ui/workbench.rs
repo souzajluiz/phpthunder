@@ -325,6 +325,12 @@ impl App {
                 format!("{}  {}", tr!("panel-terminal"), hint(Cmd::ToggleTerminal))
             ),
             item(
+                Icon::Sparkle,
+                self.bottom == Some(Bottom::Claude),
+                Some(Message::Command(Cmd::ToggleClaude)),
+                format!("{}  {}", tr!("panel-claude"), hint(Cmd::ToggleClaude))
+            ),
+            item(
                 Icon::Bug,
                 self.bottom == Some(Bottom::Debug),
                 Some(Message::DebugTest),
@@ -611,6 +617,9 @@ impl App {
     /// find marks drawn underneath, all in one scrollable. Mouse moves feed the
     /// hover logic; popups are layered on top by `overlays`.
     fn editor_area<'a>(&'a self, doc: &'a Document) -> El<'a> {
+        if let Some(preview) = self.file_preview(doc) {
+            return preview;
+        }
         let completion_open = self.completion.is_some();
         let intentions_open = self.intentions.is_some();
         let cursor_line = doc.cursor().line;
@@ -812,6 +821,9 @@ impl App {
             tabs = tabs.push(tab(Bottom::Tests, tr!("panel-tests")));
         }
         tabs = tabs.push(tab(Bottom::Terminal, tr!("panel-terminal")));
+        if self.claude.is_some() {
+            tabs = tabs.push(tab(Bottom::Claude, tr!("panel-claude")));
+        }
         if self.git.is_some() {
             tabs = tabs.push(tab(Bottom::Commit, tr!("panel-commit")));
         }
@@ -833,7 +845,7 @@ impl App {
             Bottom::Find => self.find_results_body(),
             Bottom::Problems => self.problems_body(),
             Bottom::Hierarchy => self.hierarchy_body(),
-            Bottom::Terminal => self.terminal_body(),
+            Bottom::Terminal | Bottom::Claude => self.terminal_body(),
             Bottom::Tests => self.tests_body(),
             Bottom::Commit => self.commit_body(),
             Bottom::Debug => self.debug_body(),

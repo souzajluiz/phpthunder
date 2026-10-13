@@ -113,8 +113,12 @@ pub struct App {
     pub inspect_pending: bool,
     /// Generation of the latest inspection timer; older timers do nothing.
     pub inspect_generation: u64,
+    /// Size facts of open image and binary tabs (see [`crate::ui::Preview`]).
+    pub previews: std::collections::HashMap<PathBuf, crate::ui::Preview>,
     /// The integrated terminal's shell, once started.
     pub terminal: Option<crate::terminal::Session>,
+    /// The Claude CLI session of the Claude panel, once started.
+    pub claude: Option<crate::terminal::Session>,
     /// Whether keys go to the terminal (set by clicking it or `⌥F12`).
     pub terminal_focused: bool,
     /// Last measured terminal grid as (rows, columns).
@@ -256,7 +260,9 @@ impl App {
             hierarchy: None,
             inspect_pending: false,
             inspect_generation: 0,
+            previews: std::collections::HashMap::new(),
             terminal: None,
+            claude: None,
             terminal_focused: false,
             terminal_grid: None,
             tests: None,
@@ -317,7 +323,7 @@ impl App {
     /// keys work even when the editor does not have focus.
     pub fn subscription(&self) -> Subscription<Message> {
         let mut subscriptions = vec![event::listen_with(keyboard_events)];
-        if let Some(session) = &self.terminal {
+        for session in [&self.terminal, &self.claude].into_iter().flatten() {
             subscriptions.push(
                 Subscription::run_with(session.id, crate::terminal::output_events)
                     .map(Message::TerminalOutput),
@@ -545,6 +551,16 @@ impl App {
             }
             Message::SelectBottom(b) => {
                 self.bottom = Some(b);
+                if b == Bottom::Claude {
+                    if self
+                        .claude
+                        .as_ref()
+                        .is_none_or(crate::terminal::Session::has_exited)
+                    {
+                        self.start_claude();
+                    }
+                    return self.focus_terminal();
+                }
                 if b == Bottom::Terminal {
                     if self
                         .terminal
@@ -678,8 +694,10 @@ impl App {
             Message::OpenHierarchy(i) => self.open_hierarchy_row(i),
             Message::TerminalOutput(id) => {
                 // Output of a replaced session is stale: nothing to redraw.
-                if let Some(session) = self.terminal.as_ref().filter(|s| s.id == id) {
-                    session.acknowledge_output();
+                for session in [&self.terminal, &self.claude].into_iter().flatten() {
+                    if session.id == id {
+                        session.acknowledge_output();
+                    }
                 }
                 Task::none()
             }
@@ -693,7 +711,11 @@ impl App {
                 Task::none()
             }
             Message::TerminalRestart => {
-                self.start_terminal();
+                if self.bottom == Some(Bottom::Claude) {
+                    self.start_claude();
+                } else {
+                    self.start_terminal();
+                }
                 self.focus_terminal()
             }
             Message::RunTests(target) => self.run_tests(target),
@@ -711,7 +733,7 @@ impl App {
                 Task::none()
             }
             Message::TerminalScroll(lines) => {
-                if let Some(session) = &mut self.terminal {
+                if let Some(session) = self.console_session_mut() {
                     session.scroll(lines);
                 }
                 Task::none()
@@ -855,6 +877,16 @@ impl App {
     /// Opens (or focuses) a file, optionally placing the cursor at `target`.
     pub fn open(&mut self, path: PathBuf, target: Option<Pos>) -> Task<Message> {
         let Some(i) = self.docs.iter().position(|d| d.path == path) else {
+            // Images and binaries open as preview tabs: nothing to read as text.
+            let file_type = crate::filetype::FileType::detect(&path, None);
+            if matches!(
+                file_type,
+                crate::filetype::FileType::Image | crate::filetype::FileType::Binary
+            ) {
+                self.previews
+                    .insert(path.clone(), crate::ui::Preview::read(&path, file_type));
+                return Task::done(Message::FileLoaded(path, Ok(String::new()), None));
+            }
             let p = path.clone();
             return Task::perform(
                 async move {
@@ -931,9 +963,24 @@ impl App {
         }
     }
 
+    /// Whether the active tab shows an image or binary file instead of
+    /// text; such tabs are read-only and never saved.
+    pub fn preview_active(&self) -> bool {
+        self.doc().is_some_and(|d| {
+            matches!(
+                d.file_type,
+                crate::filetype::FileType::Image | crate::filetype::FileType::Binary
+            )
+        })
+    }
+
     /// Writes the active buffer to disk synchronously (`Cmd::Save`). On
     /// failure the error is shown as a notice and the tab stays dirty.
     pub fn save(&mut self) -> Task<Message> {
+        // A preview tab holds no text: writing it would empty the file.
+        if self.preview_active() {
+            return Task::none();
+        }
         let Some(doc) = self.doc_mut() else {
             return Task::none();
         };
@@ -1013,6 +1060,9 @@ impl App {
     /// a new word), turns Cmd+click into go-to-declaration, and scrolls to
     /// keep the cursor visible for keyboard actions.
     pub fn edit(&mut self, action: Action) -> Task<Message> {
+        if self.preview_active() {
+            return Task::none();
+        }
         let inserted = match &action {
             Action::Edit(Edit::Insert(c)) => Some(*c),
             _ => None,
@@ -1062,6 +1112,9 @@ impl App {
         op: impl FnOnce(&mut Document),
         typed: Option<char>,
     ) -> Task<Message> {
+        if self.preview_active() {
+            return Task::none();
+        }
         let Some(doc) = self.doc_mut() else {
             return Task::none();
         };
