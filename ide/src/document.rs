@@ -631,9 +631,8 @@ impl Document {
             None => false,
         };
         self.perform(Action::Edit(Edit::Insert(c)));
-        if auto_close {
-            self.content
-                .perform(Action::Edit(Edit::Insert(close.unwrap())));
+        if let Some(close) = close.filter(|_| auto_close) {
+            self.content.perform(Action::Edit(Edit::Insert(close)));
             self.content.perform(Action::Move(Motion::Left));
             self.sync_text();
         }

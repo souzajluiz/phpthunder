@@ -333,17 +333,10 @@ impl App {
         let path = file.path.clone();
         let (line, start, end) = (hit.line, hit.start, hit.end);
         self.record_nav();
-        let open = self.open(path.clone(), None);
-        // Select the match once the file is the active document.
-        if self.doc().is_some_and(|d| d.path == path) {
-            let doc = self.doc_mut().unwrap();
-            let base = doc.line_start(line);
-            doc.select(base + start, base + end);
-            let reveal = self.place_selection_view(line);
-            return Task::batch([open, reveal]);
-        }
-        self.pending_select = Some((path, line, start, end));
-        open
+        // The file may still be loading: the selection waits for it.
+        self.pending_select = Some((path.clone(), line, start, end));
+        let open = self.open(path, None);
+        Task::batch([open, self.apply_pending_select()])
     }
 
     fn place_selection_view(&mut self, line: usize) -> Task<Message> {
@@ -364,10 +357,10 @@ impl App {
         let Some((path, line, start, end)) = self.pending_select.take() else {
             return Task::none();
         };
-        if !self.doc().is_some_and(|d| d.path == path) {
+        let Some(doc) = self.doc_mut().filter(|d| d.path == path) else {
+            self.pending_select = Some((path, line, start, end));
             return Task::none();
-        }
-        let doc = self.doc_mut().unwrap();
+        };
         let base = doc.line_start(line);
         doc.select(base + start, base + end);
         self.place_selection_view(line)

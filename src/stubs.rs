@@ -194,8 +194,9 @@ impl Builder<'_> {
             supers: Vec::new(),
             is_virtual: false,
         };
+        let index = self.out.len();
         self.out.push(symbol);
-        self.out.last_mut().unwrap()
+        &mut self.out[index]
     }
 
     /// Native return type, completed by `@return`.

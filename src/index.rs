@@ -84,10 +84,14 @@ pub fn function_key(fqn: &str) -> String {
 
 fn symbol_key(sym: &Symbol) -> String {
     match sym.kind {
-        k if k.is_class_like() => class_key(&sym.fqn),
+        Kind::Class | Kind::Interface | Kind::Trait | Kind::Enum => class_key(&sym.fqn),
         Kind::Function => function_key(&sym.fqn),
         Kind::Constant => format!("g:{}", sym.fqn),
-        k => member_key(&sym.fqn, MemberTag::of(k).unwrap(), &sym.name),
+        Kind::Method => member_key(&sym.fqn, MemberTag::Method, &sym.name),
+        Kind::Property => member_key(&sym.fqn, MemberTag::Property, &sym.name),
+        Kind::ClassConstant | Kind::EnumCase => {
+            member_key(&sym.fqn, MemberTag::Constant, &sym.name)
+        }
     }
 }
 
@@ -242,11 +246,13 @@ impl Index {
             files.dedup();
             for path in files {
                 for sym in self.file_symbols(path) {
-                    if !sym.kind.is_member() || !sym.fqn.eq_ignore_ascii_case(&cls) {
+                    let Some(tag) = MemberTag::of(sym.kind) else {
+                        continue;
+                    };
+                    if !sym.fqn.eq_ignore_ascii_case(&cls) {
                         continue;
                     }
                     // Key without the owner, so an override hides the inherited member.
-                    let tag = MemberTag::of(sym.kind).unwrap();
                     if seen.insert(member_key("", tag, &sym.name)) {
                         out.push((path, sym));
                     }

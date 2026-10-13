@@ -1,9 +1,9 @@
 //! Initial project scan: find PHP files and index them in parallel.
 
 use crate::index::{FileEntry, Index, content_hash, index_source};
+use parking_lot::RwLock;
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
 
 /// Directories that never contain project sources worth indexing.
 const SKIPPED_DIRS: &[&str] = &[
@@ -46,12 +46,12 @@ pub fn index_files(
             .par_iter()
             .filter_map(|p| {
                 let src = std::fs::read_to_string(p).ok()?;
-                let current = index.read().ok()?.is_current(p, content_hash(&src));
+                let current = index.read().is_current(p, content_hash(&src));
                 (!current).then(|| (p.clone(), index_source(&src)))
             })
             .collect();
         {
-            let mut idx = index.write().expect("index lock poisoned");
+            let mut idx = index.write();
             for (p, entry) in entries {
                 idx.update(p, entry);
             }

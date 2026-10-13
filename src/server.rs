@@ -10,9 +10,10 @@ use crate::index::{Index, index_source};
 use crate::stubs::{Kind, Symbol};
 use crate::text::{LineIndex, Pos, Span};
 use crate::workspace;
+use parking_lot::{Mutex, RwLock};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::Arc;
 use tokio::sync::{mpsc, watch};
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::notification::Progress;
@@ -28,7 +29,7 @@ struct Shared {
 
 impl Shared {
     fn load(&self, path: &Path) -> Option<String> {
-        if let Some(text) = self.docs.lock().unwrap().get(path) {
+        if let Some(text) = self.docs.lock().get(path) {
             return Some(text.clone());
         }
         std::fs::read_to_string(path).ok()
@@ -69,9 +70,9 @@ impl Backend {
         self.blocking(move |s| match s.load(&path) {
             Some(text) => {
                 let entry = index_source(&text);
-                s.index.write().unwrap().update(path, entry);
+                s.index.write().update(path, entry);
             }
-            None => s.index.write().unwrap().remove(&path),
+            None => s.index.write().remove(&path),
         })
         .await;
     }
@@ -82,7 +83,7 @@ impl Backend {
     }
 
     async fn index_workspace(&self) {
-        let roots = self.roots.lock().unwrap().clone();
+        let roots = self.roots.lock().clone();
         let token = NumberOrString::String("phpthunder/indexing".into());
         let progress_supported = self
             .client
@@ -232,7 +233,7 @@ impl LanguageServer for Backend {
         if roots.is_empty() {
             roots.extend(params.root_uri.as_ref().and_then(path_of));
         }
-        *self.roots.lock().unwrap() = roots;
+        *self.roots.lock() = roots;
 
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
@@ -283,7 +284,6 @@ impl LanguageServer for Backend {
         self.shared
             .docs
             .lock()
-            .unwrap()
             .insert(path.clone(), params.text_document.text);
         self.reindex(path).await;
     }
@@ -295,11 +295,7 @@ impl LanguageServer for Backend {
         let Some(change) = params.content_changes.into_iter().last() else {
             return;
         };
-        self.shared
-            .docs
-            .lock()
-            .unwrap()
-            .insert(path.clone(), change.text);
+        self.shared.docs.lock().insert(path.clone(), change.text);
         self.reindex(path).await;
     }
 
@@ -307,7 +303,7 @@ impl LanguageServer for Backend {
         let Some(path) = path_of(&params.text_document.uri) else {
             return;
         };
-        self.shared.docs.lock().unwrap().remove(&path);
+        self.shared.docs.lock().remove(&path);
         self.reindex(path).await;
     }
 
@@ -337,11 +333,7 @@ impl LanguageServer for Backend {
                         col: pos.position.character,
                     },
                 );
-                Some(analysis::definitions_at(
-                    &s.index.read().unwrap(),
-                    &src,
-                    byte,
-                ))
+                Some(analysis::definitions_at(&s.index.read(), &src, byte))
             })
             .await
             .unwrap_or_default();
@@ -369,7 +361,7 @@ impl LanguageServer for Backend {
                         col: pos.position.character,
                     },
                 );
-                let index = s.index.read().unwrap();
+                let index = s.index.read();
                 let defs = analysis::definitions_at(&index, &src, byte);
                 Some(analysis::find_references(&index, &defs, |p| s.load(p)))
             })
@@ -399,11 +391,7 @@ impl LanguageServer for Backend {
                         col: pos.position.character,
                     },
                 );
-                Some(analysis::definitions_at(
-                    &s.index.read().unwrap(),
-                    &src,
-                    byte,
-                ))
+                Some(analysis::definitions_at(&s.index.read(), &src, byte))
             })
             .await
             .unwrap_or_default();
@@ -432,7 +420,7 @@ impl LanguageServer for Backend {
                         col: pos.position.character,
                     },
                 );
-                let candidates = analysis::complete(&s.index.read().unwrap(), &src, byte);
+                let candidates = analysis::complete(&s.index.read(), &src, byte);
                 let mut start = analysis::ident_start(&src, byte);
                 if start > 0 && src.as_bytes()[start - 1] == b'$' {
                     start -= 1;
@@ -486,7 +474,7 @@ impl LanguageServer for Backend {
         let uri = params.text_document.uri;
         let symbols = self
             .blocking(move |s| {
-                let index = s.index.read().unwrap();
+                let index = s.index.read();
                 index
                     .file_symbols(&path)
                     .iter()
@@ -513,7 +501,7 @@ impl LanguageServer for Backend {
     ) -> Result<Option<Vec<SymbolInformation>>> {
         let symbols = self
             .blocking(move |s| {
-                let index = s.index.read().unwrap();
+                let index = s.index.read();
                 index
                     .search(&params.query, 500)
                     .into_iter()

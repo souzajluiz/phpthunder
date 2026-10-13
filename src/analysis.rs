@@ -647,6 +647,11 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
             .collect()
     };
 
+    // `Foo::|`: the scope is the first child, the caret is on the second.
+    let constant_scope = (parent.kind() == "class_constant_access_expression")
+        .then(|| parent.named_child(0))
+        .flatten()
+        .filter(|s| s.id() != node.id());
     match parent.kind() {
         "member_call_expression"
         | "member_access_expression"
@@ -659,10 +664,10 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
             let scope = parent.child_by_field_name("scope");
             members(scope.and_then(|s| analyzer.class_of_scope(s, 0)), true)
         }
-        "class_constant_access_expression"
-            if parent.named_child(0).is_some_and(|s| s.id() != node.id()) =>
-        {
-            let scope = parent.named_child(0).unwrap();
+        "class_constant_access_expression" if constant_scope.is_some() => {
+            let Some(scope) = constant_scope else {
+                return Vec::new();
+            };
             let mut out = members(analyzer.class_of_scope(scope, 0), true);
             if "class".starts_with(&prefix.to_lowercase()) {
                 out.push(Candidate {

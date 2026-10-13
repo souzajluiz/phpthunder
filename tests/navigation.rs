@@ -1,11 +1,16 @@
+#![expect(
+    clippy::unwrap_used,
+    reason = "test helpers panic on purpose: a failed lookup is a failed test"
+)]
+
 //! End-to-end checks against the fixture project in tests/fixtures/app.
 
+use parking_lot::RwLock;
 use phpthunder::analysis::{Candidate, complete, definitions_at, find_references};
 use phpthunder::index::Index;
 use phpthunder::stubs::Kind;
 use phpthunder::workspace::{index_files, php_files};
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/app")
@@ -14,7 +19,7 @@ fn root() -> PathBuf {
 fn indexed() -> Index {
     let index = RwLock::new(Index::default());
     index_files(&index, &php_files(&root()), |_, _| {});
-    index.into_inner().unwrap()
+    index.into_inner()
 }
 
 fn read(rel: &str) -> String {
