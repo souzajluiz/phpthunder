@@ -73,3 +73,8 @@ panel-move-bottom = Mover para baixo
 
 # Beside dependencies in composer.json and package.json, when the lock file lacks one.
 package-not-installed = não instalado
+
+# Markdown tab view toggle (tooltips).
+markdown-editor = Só o editor
+markdown-split = Editor e pré-visualização
+markdown-preview = Só a pré-visualização

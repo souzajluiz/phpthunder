@@ -36,6 +36,19 @@ enum EditKind {
     Other,
 }
 
+/// How a Markdown tab is laid out; switched from the toggle in the tab's
+/// top-right corner.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum MarkdownView {
+    /// Source only, like any other file.
+    Editor,
+    /// Source on the left, rendered preview on the right.
+    #[default]
+    Split,
+    /// Rendered preview only.
+    Preview,
+}
+
 /// One open file in an editor tab, owned by the app's list of open documents.
 pub struct Document {
     /// File on disk this document was opened from and saves to.
@@ -75,6 +88,11 @@ pub struct Document {
     /// Carets besides the main one, as `(anchor, head)` byte offsets
     /// (equal when nothing is selected); see `editor::carets`.
     pub extra_carets: Vec<(usize, usize)>,
+    /// Parsed Markdown of `text` for the preview pane; empty unless the file
+    /// is Markdown. Refreshed with the highlights after every edit.
+    pub markdown: Vec<iced::widget::markdown::Item>,
+    /// How a Markdown tab is shown: source, source beside preview, or preview.
+    pub markdown_view: MarkdownView,
 }
 
 /// Leading whitespace (indentation) of `line`, used to carry indentation onto new lines.
@@ -107,6 +125,8 @@ impl Document {
             external_diagnostics: Vec::new(),
             gutter_markers: Vec::new(),
             extra_carets: Vec::new(),
+            markdown: Vec::new(),
+            markdown_view: MarkdownView::default(),
         };
         doc.refresh_highlights();
         doc
@@ -138,6 +158,9 @@ impl Document {
             self.file_type,
         ));
         self.highlight_version += 1;
+        if self.file_type == FileType::Markdown {
+            self.markdown = iced::widget::markdown::parse(&self.text).collect();
+        }
     }
 
     /// Highlight token covering byte `offset`, if any (comments, strings, …);

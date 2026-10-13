@@ -87,6 +87,10 @@ pub enum Icon {
     Package,
     /// New file or folder in the project tree header (`plus`).
     Plus,
+    /// Markdown preview only (`eye`).
+    Eye,
+    /// Markdown source beside its preview (`columns-2`).
+    Columns,
 }
 
 impl Icon {
@@ -132,6 +136,8 @@ impl Icon {
             Icon::PanelRight => include_str!("../../assets/icons/panel-right.svg"),
             Icon::PanelBottom => include_str!("../../assets/icons/panel-bottom.svg"),
             Icon::Plus => include_str!("../../assets/icons/plus.svg"),
+            Icon::Eye => include_str!("../../assets/icons/eye.svg"),
+            Icon::Columns => include_str!("../../assets/icons/columns-2.svg"),
         }
     }
 }

@@ -148,6 +148,11 @@ pub enum Message {
     // Window
     /// Show or hide the project sidebar.
     ToggleSidebar,
+    /// Switch the active Markdown tab between source, split and preview.
+    MarkdownView(crate::editor::MarkdownView),
+    /// A link in the Markdown preview was clicked: web links open in the
+    /// browser, relative ones as files next to the document.
+    MarkdownLink(String),
     /// Mouse pressed on a pane splitter: start resizing that pane.
     ResizeStart(crate::app::Splitter),
     /// Cursor moved while a splitter is dragged (window coordinates).

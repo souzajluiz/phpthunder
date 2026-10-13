@@ -786,10 +786,16 @@ impl App {
             .style(scrollbars);
 
         let overlays = responsive(move |size| self.overlays(doc, size));
-        iced::widget::sensor(stack![scroller, overlays].width(Fill).height(Fill))
-            .on_show(Message::EditorResized)
-            .on_resize(Message::EditorResized)
-            .into()
+        let source: El<'a> =
+            iced::widget::sensor(stack![scroller, overlays].width(Fill).height(Fill))
+                .on_show(Message::EditorResized)
+                .on_resize(Message::EditorResized)
+                .into();
+        if doc.file_type == crate::filetype::FileType::Markdown {
+            markdown_layout(doc, source)
+        } else {
+            source
+        }
     }
 
     /// Extra carets (bars) and their selections (tinted per line), drawn

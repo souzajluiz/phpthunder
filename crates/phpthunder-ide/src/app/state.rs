@@ -755,6 +755,13 @@ impl App {
                 self.sidebar = !self.sidebar;
                 Task::none()
             }
+            Message::MarkdownView(view) => {
+                if let Some(doc) = self.doc_mut() {
+                    doc.markdown_view = view;
+                }
+                Task::none()
+            }
+            Message::MarkdownLink(uri) => self.open_markdown_link(&uri),
             Message::ResizeStart(splitter) => {
                 let room = match splitter {
                     Splitter::Sidebar | Splitter::Right => self.editor_width,
@@ -1426,6 +1433,28 @@ impl App {
                 self.notice = Some(tr!("notice-no-declaration"));
                 Task::none()
             }
+        }
+    }
+
+    /// Follows a link clicked in the Markdown preview: `http(s)`/`mailto`
+    /// links open in the browser; anything else is a path relative to the
+    /// document (its `#fragment` dropped) and opens in a tab when it exists.
+    fn open_markdown_link(&mut self, uri: &str) -> Task<Message> {
+        if ["http://", "https://", "mailto:"]
+            .iter()
+            .any(|scheme| uri.starts_with(scheme))
+        {
+            crate::packages::open_in_browser(uri);
+            return Task::none();
+        }
+        let relative = uri.split('#').next().unwrap_or_default();
+        let target = self
+            .doc()
+            .and_then(|d| d.path.parent())
+            .map(|dir| dir.join(relative));
+        match target {
+            Some(path) if !relative.is_empty() && path.is_file() => self.open(path, None),
+            _ => Task::none(),
         }
     }
 
