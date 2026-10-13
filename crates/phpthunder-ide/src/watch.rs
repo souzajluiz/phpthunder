@@ -112,19 +112,30 @@ mod tests {
         let dir = dir.canonicalize().unwrap();
         let mut stream = Box::pin(file_changes(&dir));
         let file = dir.join("New.php");
+        // The watcher may take a moment to start (FSEvents on a busy
+        // machine): keep touching the file until a change is seen.
         let writer = {
             let file = file.clone();
             tokio::spawn(async move {
-                tokio::time::sleep(Duration::from_millis(300)).await;
-                std::fs::write(file, "<?php").unwrap();
+                for n in 0..30 {
+                    tokio::time::sleep(Duration::from_millis(300)).await;
+                    std::fs::write(&file, format!("<?php // {n}")).unwrap();
+                }
             })
         };
-        let batch = tokio::time::timeout(Duration::from_secs(10), stream.next())
-            .await
-            .expect("a change is reported")
-            .expect("stream open");
-        writer.await.unwrap();
-        assert!(batch.iter().any(|p| p.ends_with("New.php")), "{batch:?}");
+        // Earlier batches may report the folder itself being created.
+        let found = tokio::time::timeout(Duration::from_secs(10), async {
+            while let Some(batch) = stream.next().await {
+                if batch.iter().any(|p| p.ends_with("New.php")) {
+                    return true;
+                }
+            }
+            false
+        })
+        .await
+        .unwrap_or(false);
+        writer.abort();
+        assert!(found, "no change reported for New.php");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

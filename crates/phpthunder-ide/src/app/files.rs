@@ -28,6 +28,10 @@ impl App {
             if let Some(dir) = path.parent() {
                 self.tree.refresh(dir);
             }
+            if path.is_dir() {
+                self.tree.refresh(&path);
+                continue;
+            }
             let exists = path.is_file();
             if !exists {
                 if is_php_source(&path) {

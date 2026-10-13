@@ -115,6 +115,7 @@ impl App {
             (None, Some(_), _) => Some(self.search_dialog_view()),
             (None, None, Some(_)) => Some(self.rename_dialog_view()),
             _ if self.name_prompt.is_some() => Some(self.name_prompt_view()),
+            _ if self.refactor_prompt.is_some() => Some(self.refactor_prompt_view()),
             _ => None,
         };
         match modal {

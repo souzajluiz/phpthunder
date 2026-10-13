@@ -154,3 +154,15 @@ file-deleted = Moved to Trash: { $path }
 file-op-failed = File operation failed: { $error }
 file-bad-name = Type a name inside the project
 file-exists = { $path } already exists
+
+refactor-extract-variable = Extract variable
+refactor-extract-method = Extract method
+refactor-inline-variable = Inline variable
+refactor-change-signature = Change signature
+refactor-move-class = Move class to namespace
+refactor-extract-variable-help = Name of the new variable; identical occurrences in the statement are replaced too.
+refactor-extract-method-help = Name of the new private method; variables defined before become parameters.
+refactor-change-signature-help = Edit the parameter list: reorder, rename types or add parameters (calls pass a new parameter's default, else null).
+refactor-move-class-help = New namespace; the file moves to its PSR-4 folder and imports elsewhere follow.
+refactor-select-first = Select an expression or statements first
+refactor-no-callable = Place the caret on a function or method

@@ -34,6 +34,12 @@ pub enum Message {
     SessionRestored(Vec<(crate::app::SavedTab, String)>, Option<usize>),
     /// Show the action list for a tree entry (right click).
     ShowFileActions(PathBuf),
+    /// Text typed in the refactoring prompt.
+    RefactorInput(String),
+    /// Confirm the refactoring prompt.
+    RefactorSubmit,
+    /// A project-wide refactoring was planned (change signature, move class).
+    RefactorPlanned(Result<phpthunder::refactor::RenamePlan, String>),
     /// Name typed in the file name prompt.
     PromptInput(String),
     /// Confirm the file name prompt.
@@ -529,6 +535,37 @@ pub enum Intention {
     },
     /// Remove unused imports and sort the rest.
     OptimizeImports,
+    /// A refactoring that asks for a name or a list first.
+    Refactor(RefactorAction),
+    /// Replace the variable at the caret by its value.
+    InlineVariable,
+}
+
+/// A refactoring that needs input from a prompt.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RefactorAction {
+    /// Extract the expression in this byte range into a variable.
+    ExtractVariable(usize, usize),
+    /// Extract the statements in this byte range into a method.
+    ExtractMethod(usize, usize),
+    /// Change the parameters of the function or method at this offset.
+    ChangeSignature(usize),
+    /// Move the class of the active file to another namespace.
+    MoveClass,
+}
+
+/// The modal asking for the input of a [`RefactorAction`].
+pub struct RefactorPrompt {
+    /// What the input is for.
+    pub action: RefactorAction,
+    /// Dialog title.
+    pub title: String,
+    /// Help shown under the input.
+    pub help: String,
+    /// Text being typed.
+    pub value: String,
+    /// Why the last submit failed.
+    pub error: Option<String>,
 }
 
 impl Intention {
@@ -538,6 +575,17 @@ impl Intention {
             Intention::Fix(fix) => crate::i18n::fix_title(fix),
             Intention::ImplementMethods { .. } => tr!("intention-implement-methods"),
             Intention::OptimizeImports => tr!("intention-optimize-imports"),
+            Intention::Refactor(RefactorAction::ExtractVariable(..)) => {
+                tr!("refactor-extract-variable")
+            }
+            Intention::Refactor(RefactorAction::ExtractMethod(..)) => {
+                tr!("refactor-extract-method")
+            }
+            Intention::Refactor(RefactorAction::ChangeSignature(_)) => {
+                tr!("refactor-change-signature")
+            }
+            Intention::Refactor(RefactorAction::MoveClass) => tr!("refactor-move-class"),
+            Intention::InlineVariable => tr!("refactor-inline-variable"),
         }
     }
 }

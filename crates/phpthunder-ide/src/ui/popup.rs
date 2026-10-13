@@ -21,6 +21,7 @@ pub(crate) fn intentions_popup(menu: &Intentions) -> (Element<'_, Message>, f32)
             Intention::Fix(_) => ("◆", ACCENT),
             Intention::ImplementMethods { .. } => ("+", SYN_TYPE),
             Intention::OptimizeImports => ("≡", MUTED),
+            Intention::Refactor(_) | Intention::InlineVariable => ("↻", SYN_FUNCTION),
         };
         button(
             row![
@@ -105,6 +106,46 @@ impl App {
         .spacing(12)
         .padding(16)
         .width(Length::Fixed(560.0));
+        if let Some(error) = &p.error {
+            content = content.push(label(error.clone(), 12.0, rgb(0xF7768E)));
+        }
+        container(container(content).style(popup))
+            .width(Fill)
+            .height(Fill)
+            .align_x(iced::alignment::Horizontal::Center)
+            .padding(Padding {
+                top: 110.0,
+                ..Padding::ZERO
+            })
+            .into()
+    }
+
+    /// The input prompt of a refactoring, drawn as a modal.
+    pub(crate) fn refactor_prompt_view(&self) -> Element<'_, Message> {
+        let Some(p) = &self.refactor_prompt else {
+            return space().into();
+        };
+        let input = text_input("", &p.value)
+            .id(Id::new(crate::app::REFACTOR_INPUT))
+            .on_input(Message::RefactorInput)
+            .on_submit(Message::RefactorSubmit)
+            .size(14)
+            .font(MONO)
+            .padding([8, 10])
+            .style(boxed_input);
+        let mut content = column![
+            row![
+                label(p.title.clone(), 14.0, TEXT_BRIGHT).font(UI_BOLD),
+                space().width(Fill),
+                label(tr!("file-prompt-hints"), 11.0, MUTED),
+            ]
+            .align_y(Center),
+            input,
+            label(p.help.clone(), 12.0, MUTED),
+        ]
+        .spacing(12)
+        .padding(16)
+        .width(Length::Fixed(620.0));
         if let Some(error) = &p.error {
             content = content.push(label(error.clone(), 12.0, rgb(0xF7768E)));
         }

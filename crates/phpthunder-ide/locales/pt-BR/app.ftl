@@ -153,3 +153,15 @@ file-deleted = Movido para a Lixeira: { $path }
 file-op-failed = Falha na operação de arquivo: { $error }
 file-bad-name = Digite um nome dentro do projeto
 file-exists = { $path } já existe
+
+refactor-extract-variable = Extrair variável
+refactor-extract-method = Extrair método
+refactor-inline-variable = Incorporar variável
+refactor-change-signature = Alterar assinatura
+refactor-move-class = Mover classe para namespace
+refactor-extract-variable-help = Nome da nova variável; ocorrências idênticas na instrução também são trocadas.
+refactor-extract-method-help = Nome do novo método privado; variáveis definidas antes viram parâmetros.
+refactor-change-signature-help = Edite a lista de parâmetros: reordene, mude tipos ou adicione parâmetros (as chamadas passam o padrão do novo parâmetro, senão null).
+refactor-move-class-help = Novo namespace; o arquivo vai para a pasta PSR-4 e os imports em outros arquivos acompanham.
+refactor-select-first = Selecione uma expressão ou instruções primeiro
+refactor-no-callable = Posicione o cursor em uma função ou método

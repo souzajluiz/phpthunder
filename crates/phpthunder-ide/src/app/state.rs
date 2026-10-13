@@ -104,6 +104,8 @@ pub struct App {
     /// Whether saved tabs are being read back (the session is not saved
     /// meanwhile, so the half-restored state never overwrites it).
     pub restoring: bool,
+    /// Input prompt of a refactoring, while open.
+    pub refactor_prompt: Option<RefactorPrompt>,
     /// Name prompt for a tree file operation, while open.
     pub name_prompt: Option<NamePrompt>,
     /// Content of the type hierarchy panel.
@@ -255,6 +257,7 @@ impl App {
             signature: None,
             rename: None,
             name_prompt: None,
+            refactor_prompt: None,
             session: session::load_session(),
             restoring: false,
             hierarchy: None,
@@ -374,6 +377,15 @@ impl App {
                 Task::none()
             }
             Message::PromptSubmit => self.submit_name_prompt(),
+            Message::RefactorInput(value) => {
+                if let Some(p) = &mut self.refactor_prompt {
+                    p.value = value;
+                    p.error = None;
+                }
+                Task::none()
+            }
+            Message::RefactorSubmit => self.submit_refactor(),
+            Message::RefactorPlanned(plan) => self.apply_refactor_plan(plan),
             Message::FilesListed(files) => {
                 let (vendor, project): (Vec<PathBuf>, Vec<PathBuf>) = files
                     .into_iter()
@@ -651,6 +663,7 @@ impl App {
                 self.palette = None;
                 self.search_dialog = None;
                 self.name_prompt = None;
+                self.refactor_prompt = None;
                 operation::focus(Id::new(EDITOR_ID))
             }
             Message::ToggleSidebar => {

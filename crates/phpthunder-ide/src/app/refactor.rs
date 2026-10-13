@@ -133,6 +133,9 @@ impl App {
         {
             doc.mark_saved();
         }
+        if let Some(dir) = to.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
         if let Err(e) = std::fs::rename(from, to) {
             self.notice = Some(tr!(
                 "notice-rename-failed",

@@ -85,6 +85,12 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
   the terminal
 - Generate (`⌘N`) in a class: constructor, getters, setters, implement
   abstract/interface methods, override parent methods
+- Refactorings (also in the `⌥↵` menu): extract variable (`⌥⌘V`) and
+  method (`⌥⌘M`) from the selection, inline variable (`⌥⌘N`), change
+  signature (`⌘F6`, calls follow), move class to another namespace (`F6`,
+  file moves to its PSR-4 folder, imports follow)
+- Blade: completion of `<x-` components and their attributes, `@`
+  directives and the variables passed to the view
 - Live templates: type an abbreviation and press Tab (`fore`, `forek`,
   `pubf`, `__c`, `try`, `it`, `dd`, …) or pick one with `⌘J`
 - Laravel: completion and go to declaration for route names, views and

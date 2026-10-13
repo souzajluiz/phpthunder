@@ -29,6 +29,7 @@ impl App {
         {
             items.push(Intention::ImplementMethods { class });
         }
+        items.extend(self.refactor_intentions());
         items.push(Intention::OptimizeImports);
         let pos = doc.cursor();
         let (line, col) = (pos.line, doc.visual_column(pos));
@@ -55,6 +56,8 @@ impl App {
             Intention::Fix(fix) => self.apply_fix(fix),
             Intention::ImplementMethods { class } => self.implement_methods(&class),
             Intention::OptimizeImports => self.optimize_imports(),
+            Intention::Refactor(action) => self.start_refactor(action),
+            Intention::InlineVariable => self.inline_variable(),
         }
     }
 

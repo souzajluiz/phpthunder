@@ -51,6 +51,11 @@ impl App {
     /// handled by the caller).
     pub(crate) fn should_auto_complete(&self, c: char) -> bool {
         let Some(doc) = self.doc() else { return false };
+        if doc.file_type == crate::filetype::FileType::Blade {
+            return self
+                .blade_candidates(&doc.text, doc.offset(doc.cursor()))
+                .is_some();
+        }
         if !doc.is_php() {
             return false;
         }
@@ -85,8 +90,12 @@ impl App {
     pub fn refresh_completion(&mut self, explicit: bool) {
         let Some(doc) = self.doc() else { return };
         let offset = doc.offset(doc.cursor());
-        let (start, items) = match self.laravel_candidates(&doc.text, offset) {
+        let keys = self
+            .laravel_candidates(&doc.text, offset)
+            .or_else(|| self.blade_candidates(&doc.text, offset));
+        let (start, items) = match keys {
             Some(keys) => keys,
+            None if doc.file_type == crate::filetype::FileType::Blade => (offset, Vec::new()),
             None => {
                 let mut start = phpthunder::analysis::ident_start(&doc.text, offset);
                 if start > 0 && doc.text.as_bytes()[start - 1] == b'$' {
@@ -176,11 +185,14 @@ impl App {
                 // `foo|()`: reuse the existing parentheses.
                 text = name.to_string();
             } else {
-                let inside = item.detail == KEYWORD_DETAIL || has_parameters(&item.detail);
+                // Keywords and Blade directives with `(` take arguments.
+                let inside = item.detail == KEYWORD_DETAIL
+                    || item.detail == "directive"
+                    || has_parameters(&item.detail);
                 text = format!("{name}()");
                 if inside {
                     caret_back = 1;
-                    show_params = item.detail != KEYWORD_DETAIL;
+                    show_params = item.detail != KEYWORD_DETAIL && item.detail != "directive";
                 }
             }
         }
@@ -207,6 +219,27 @@ impl App {
             self.refresh_signature(true);
         }
         self.reveal_cursor()
+    }
+
+    /// Blade completion in the active Blade template: component tags and
+    /// attributes, directives, and view variables. `None` outside those
+    /// contexts or outside a Laravel project.
+    pub(crate) fn blade_candidates(
+        &self,
+        text: &str,
+        offset: usize,
+    ) -> Option<(usize, Vec<Candidate>)> {
+        let doc = self
+            .doc()
+            .filter(|d| d.file_type == crate::filetype::FileType::Blade)?;
+        let project = self.laravel.as_ref()?;
+        let views = self.tree.root.as_ref()?.join("resources/views");
+        let view = doc.path.strip_prefix(&views).ok().map(|rel| {
+            rel.to_string_lossy()
+                .trim_end_matches(".blade.php")
+                .replace(['/', '\\'], ".")
+        });
+        phpthunder::laravel::blade_completions(project, text, offset, view.as_deref())
     }
 
     /// Writes the usage statistics; failures only cost ranking memory.

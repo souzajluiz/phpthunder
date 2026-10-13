@@ -103,6 +103,16 @@ pub enum Cmd {
     Push,
     /// Pull the current branch (`⌘T`).
     Pull,
+    /// Extract the selected expression into a variable (`⌥⌘V`).
+    ExtractVariable,
+    /// Extract the selected statements into a method (`⌥⌘M`).
+    ExtractMethod,
+    /// Inline the variable at the caret (`⌥⌘N`).
+    InlineVariable,
+    /// Change the parameters of the function at the caret (`⌘F6`).
+    ChangeSignature,
+    /// Move the class of the active file to another namespace (`F6`).
+    MoveClass,
     /// Debug the test at the caret under Xdebug (`⌃⇧D`).
     DebugTest,
     /// Add or remove a breakpoint on the caret line (`⌘F8`).
@@ -150,6 +160,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("n", false, false) => Generate,
             ("j", false, false) => InsertTemplate,
             ("k", false, false) => Commit,
+            ("v", false, true) => ExtractVariable,
+            ("m", false, true) => ExtractMethod,
+            ("n", false, true) => InlineVariable,
             ("k", true, false) => Push,
             ("t", false, false) => Pull,
             ("f", false, false) => Find,
@@ -174,6 +187,8 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Character(c) if m.control() && !cmd && c.eq_ignore_ascii_case("h") => TypeHierarchy,
         Key::Named(Named::Enter) if alt && !cmd => QuickFix,
         Key::Named(Named::F6) if shift => Rename,
+        Key::Named(Named::F6) if cmd => ChangeSignature,
+        Key::Named(Named::F6) => MoveClass,
         Key::Named(Named::F12) if alt => ToggleTerminal,
         Key::Named(Named::F12) if cmd => FileStructure,
         Key::Named(Named::F12) if shift => FindUsages,
@@ -250,6 +265,11 @@ pub fn hint(cmd: Cmd) -> &'static str {
         Push => "⇧⌘K",
         Pull => "⌘T",
         DebugTest => "⌃⇧D",
+        ExtractVariable => "⌥⌘V",
+        ExtractMethod => "⌥⌘M",
+        InlineVariable => "⌥⌘N",
+        ChangeSignature => "⌘F6",
+        MoveClass => "F6",
         ToggleBreakpoint => "⌘F8",
         Resume => "F9",
         StepOver => "F8",

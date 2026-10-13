@@ -181,6 +181,54 @@ impl Language {
         .map_err(|e| tr!("error-rename", error = e.to_string()))?
     }
 
+    /// Plans a parameter change of the function or method at `offset`,
+    /// rewriting every call; runs on a blocking thread.
+    ///
+    /// # Errors
+    /// Returns why the signature cannot be changed.
+    pub async fn change_signature(
+        self,
+        text: String,
+        offset: usize,
+        params: Vec<refactor::ParamChange>,
+        open: HashMap<PathBuf, String>,
+    ) -> Result<RenamePlan, String> {
+        tokio::task::spawn_blocking(move || {
+            refactor::change_signature(&self.index.read(), &text, offset, &params, |p| {
+                load_with(&open, p)
+            })
+        })
+        .await
+        .map_err(|e| tr!("error-rename", error = e.to_string()))?
+    }
+
+    /// Plans moving the class in `path` to `namespace` (and `new_path`);
+    /// runs on a blocking thread.
+    ///
+    /// # Errors
+    /// Returns why the class cannot be moved.
+    pub async fn move_class(
+        self,
+        path: PathBuf,
+        text: String,
+        namespace: String,
+        new_path: Option<PathBuf>,
+        open: HashMap<PathBuf, String>,
+    ) -> Result<RenamePlan, String> {
+        tokio::task::spawn_blocking(move || {
+            refactor::move_class(
+                &self.index.read(),
+                &path,
+                &text,
+                &namespace,
+                new_path,
+                |p| load_with(&open, p),
+            )
+        })
+        .await
+        .map_err(|e| tr!("error-rename", error = e.to_string()))?
+    }
+
     /// `text` with unused imports removed and import blocks sorted.
     pub fn optimize_imports(&self, text: &str) -> String {
         refactor::optimize_imports(&self.index.read(), text)
