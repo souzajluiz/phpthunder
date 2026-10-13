@@ -164,6 +164,10 @@ pub enum Message {
     JumpToLine(usize),
     /// Re-read the Claude plan limits the panel's CLI last reported.
     ClaudeUsageTick,
+    /// Show or hide dot folders in the project tree.
+    ToggleDotFolders,
+    /// Show or hide `node_modules` and `vendor` in the project tree.
+    ToggleDependencies,
     /// Redraw tick while indexing runs, so the progress bar moves.
     IndexTick,
     /// The window gained (`true`) or lost focus; desktop notifications are

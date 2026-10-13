@@ -474,11 +474,48 @@ impl App {
                 tooltip::Position::Bottom,
             )
         });
+        // Filter toggles: lit in the accent color while they hide something.
+        let filter = self.tree.filter;
+        let toggle = |which: Icon, hiding: bool, tip: String, msg: Message| {
+            tooltip(
+                button(icon(which, 14.0, 2.0, if hiding { ACCENT } else { MUTED }))
+                    .padding(5)
+                    .style(ghost_button)
+                    .on_press(msg),
+                container(label(tip, 12.0, TEXT))
+                    .padding([4, 8])
+                    .style(popup),
+                tooltip::Position::Bottom,
+            )
+        };
         let mut title = row![
             label(tr!("rail-project"), 13.0, TEXT).font(UI_BOLD),
             space().width(Fill),
         ]
         .align_y(Center);
+        if self.tree.root.is_some() {
+            title = title
+                .push(toggle(
+                    Icon::Eye,
+                    filter.hide_dot_folders,
+                    if filter.hide_dot_folders {
+                        tr!("tree-show-dot-folders")
+                    } else {
+                        tr!("tree-hide-dot-folders")
+                    },
+                    Message::ToggleDotFolders,
+                ))
+                .push(toggle(
+                    Icon::Package,
+                    filter.hide_dependencies,
+                    if filter.hide_dependencies {
+                        tr!("tree-show-dependencies")
+                    } else {
+                        tr!("tree-hide-dependencies")
+                    },
+                    Message::ToggleDependencies,
+                ));
+        }
         if let Some(button) = new_file {
             title = title.push(button);
         }

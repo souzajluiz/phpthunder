@@ -432,6 +432,20 @@ impl App {
         self.notice = Some(message);
     }
 
+    /// Changes the project tree filter with `change`, rereads the tree and
+    /// saves the filters to the settings file. Used by the filter buttons
+    /// above the tree.
+    fn toggle_tree_filter(
+        &mut self,
+        change: impl FnOnce(&mut crate::project::TreeFilter),
+    ) -> Task<Message> {
+        let mut filter = self.tree.filter;
+        change(&mut filter);
+        self.tree.set_filter(filter);
+        crate::settings::save_tree_filters(filter.hide_dot_folders, filter.hide_dependencies);
+        Task::none()
+    }
+
     /// Sends a desktop notification, but only while the window is in the
     /// background: in front, the in-app notice already shows the same.
     pub(crate) fn notify_background(&self, summary: String, body: String) {
@@ -908,6 +922,12 @@ impl App {
                 Task::none()
             }
             Message::IndexTick => Task::none(),
+            Message::ToggleDotFolders => self.toggle_tree_filter(|f| {
+                f.hide_dot_folders = !f.hide_dot_folders;
+            }),
+            Message::ToggleDependencies => self.toggle_tree_filter(|f| {
+                f.hide_dependencies = !f.hide_dependencies;
+            }),
             Message::WindowFocus(focused) => {
                 self.focused = focused;
                 Task::none()

@@ -44,6 +44,10 @@ claude_command = "claude"
 # the background.
 notifications = true
 
+# Project tree filters, toggled by the buttons above the tree.
+hide_dot_folders = false
+hide_dependencies = false
+
 # Panel sizes in pixels, saved whenever a panel is resized.
 # sidebar_width = 280
 # bottom_height = 260
@@ -69,6 +73,10 @@ pub struct Settings {
     pub claude_command: String,
     /// Desktop notifications while the window is in the background.
     pub notifications: bool,
+    /// Hide folders whose name starts with a dot from the project tree.
+    pub hide_dot_folders: bool,
+    /// Hide `node_modules` and `vendor` from the project tree.
+    pub hide_dependencies: bool,
     /// Width of the project sidebar; written by the IDE on resize.
     pub sidebar_width: Option<u32>,
     /// Height of the bottom tool panel; written by the IDE on resize.
@@ -87,6 +95,8 @@ impl Default for Settings {
             shell: None,
             claude_command: "claude".to_string(),
             notifications: true,
+            hide_dot_folders: false,
+            hide_dependencies: false,
             sidebar_width: None,
             bottom_height: None,
             right_width: None,
@@ -154,20 +164,35 @@ fn load_settings() -> Settings {
     })
 }
 
-/// Writes the panel sizes into the settings file, keeping every other line
-/// and comment: `settings.toml` is edited line by line, `settings.json` (if
-/// that is the file in use) rewritten with the keys set. Called when a
-/// panel drag ends or a handle is reset; failures are reported on stderr.
+/// Writes the panel sizes into the settings file (see [`save_values`]).
+/// Called when a panel drag ends or a handle is reset.
 pub fn save_panel_sizes(sidebar: u32, bottom: u32, right: u32) {
+    save_values(&[
+        ("sidebar_width", sidebar.into()),
+        ("bottom_height", bottom.into()),
+        ("right_width", right.into()),
+    ]);
+}
+
+/// Writes the project tree filters into the settings file (the buttons
+/// above the tree); see [`save_values`].
+pub fn save_tree_filters(hide_dot_folders: bool, hide_dependencies: bool) {
+    save_values(&[
+        ("hide_dot_folders", hide_dot_folders.into()),
+        ("hide_dependencies", hide_dependencies.into()),
+    ]);
+}
+
+/// Sets top-level `keys` in the settings file, keeping every other line
+/// and comment: `settings.toml` is edited line by line, `settings.json`
+/// (if that is the file in use) rewritten with the keys set. Values are
+/// numbers or booleans, written the same way in both formats. Failures
+/// go to the error log.
+fn save_values(keys: &[(&str, serde_json::Value)]) {
     let Some(dir) = config_dir().filter(|_| !is_snapshot()) else {
         return;
     };
     let dir = PathBuf::from(dir);
-    let keys = [
-        ("sidebar_width", sidebar),
-        ("bottom_height", bottom),
-        ("right_width", right),
-    ];
     let json = dir.join(format!("{SETTINGS_FILE}.json"));
     let toml = dir.join(format!("{SETTINGS_FILE}.toml"));
     let written = if json.is_file() && !toml.is_file() {
@@ -175,8 +200,8 @@ pub fn save_panel_sizes(sidebar: u32, bottom: u32, right: u32) {
             let mut value: serde_json::Value =
                 serde_json::from_str(&text).map_err(std::io::Error::other)?;
             if let Some(map) = value.as_object_mut() {
-                for (key, size) in keys {
-                    map.insert(key.to_string(), size.into());
+                for (key, value) in keys {
+                    map.insert((*key).to_string(), value.clone());
                 }
             }
             let text = serde_json::to_string_pretty(&value).map_err(std::io::Error::other)?;
@@ -186,11 +211,11 @@ pub fn save_panel_sizes(sidebar: u32, bottom: u32, right: u32) {
         let text = std::fs::read_to_string(&toml).unwrap_or_else(|_| SETTINGS_TEMPLATE.into());
         let text = keys
             .iter()
-            .fold(text, |text, (key, size)| set_toml_key(&text, key, *size));
+            .fold(text, |text, (key, value)| set_toml_key(&text, key, value));
         std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&toml, text))
     };
     if let Err(error) = written {
-        crate::log::error(format_args!("could not save panel sizes: {error}"));
+        crate::log::error(format_args!("could not save settings: {error}"));
     }
 }
 
@@ -198,7 +223,7 @@ pub fn save_panel_sizes(sidebar: u32, bottom: u32, right: u32) {
 /// form) replaced by `key = <value>`, or appended when neither exists.
 /// Only lines before the first `[table]` count, so a nested key with the
 /// same name is never touched.
-fn set_toml_key(text: &str, key: &str, value: u32) -> String {
+fn set_toml_key(text: &str, key: &str, value: impl std::fmt::Display) -> String {
     let line = format!("{key} = {value}");
     let matches = |l: &str| {
         let l = l.trim_start().trim_start_matches('#').trim_start();

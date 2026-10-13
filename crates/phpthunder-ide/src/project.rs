@@ -9,10 +9,39 @@ const HIDDEN: &[&str] = &[
     ".idea",
     ".vscode",
     ".DS_Store",
-    "node_modules",
     "target",
     ".codegraph",
 ];
+
+/// Dependency folders the tree can hide (see [`TreeFilter::hide_dependencies`]).
+const DEPENDENCIES: &[&str] = &["node_modules", "vendor"];
+
+/// Optional filters for the project tree, toggled by the buttons above it
+/// and remembered in the settings file.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TreeFilter {
+    /// Hide folders whose name starts with a dot (`.github`, `.cache`, …).
+    pub hide_dot_folders: bool,
+    /// Hide `node_modules` and `vendor`.
+    pub hide_dependencies: bool,
+}
+
+impl TreeFilter {
+    /// The filters saved in the settings file.
+    pub fn from_settings() -> Self {
+        let settings = crate::settings::settings();
+        Self {
+            hide_dot_folders: settings.hide_dot_folders,
+            hide_dependencies: settings.hide_dependencies,
+        }
+    }
+
+    /// Whether a directory named `name` is hidden by these filters.
+    fn hides_dir(self, name: &str) -> bool {
+        (self.hide_dot_folders && name.starts_with('.'))
+            || (self.hide_dependencies && DEPENDENCIES.contains(&name))
+    }
+}
 
 /// A file or directory in the project tree.
 #[derive(Clone, Debug)]
@@ -44,12 +73,15 @@ pub struct FileTree {
     children: HashMap<PathBuf, Vec<Entry>>,
     /// Directories currently shown expanded.
     expanded: HashSet<PathBuf>,
+    /// Which folders are left out of the listings.
+    pub filter: TreeFilter,
 }
 
-/// Lists `dir`, skipping `HIDDEN` names; directories first, then case-insensitive by name.
+/// Lists `dir`, skipping `HIDDEN` names and the folders `filter` hides;
+/// directories first, then case-insensitive by name.
 ///
 /// Unreadable directories yield an empty list.
-fn read_dir(dir: &Path) -> Vec<Entry> {
+fn read_dir(dir: &Path, filter: TreeFilter) -> Vec<Entry> {
     let mut entries: Vec<Entry> = std::fs::read_dir(dir)
         .into_iter()
         .flatten()
@@ -60,6 +92,9 @@ fn read_dir(dir: &Path) -> Vec<Entry> {
                 return None;
             }
             let is_dir = e.file_type().ok()?.is_dir();
+            if is_dir && filter.hides_dir(&name) {
+                return None;
+            }
             Some(Entry {
                 path: e.path(),
                 name,
@@ -82,6 +117,7 @@ impl FileTree {
     pub fn open(root: PathBuf) -> Self {
         let mut tree = Self {
             root: Some(root.clone()),
+            filter: TreeFilter::from_settings(),
             ..Default::default()
         };
         tree.expand(&root);
@@ -97,7 +133,8 @@ impl FileTree {
 
     /// Reads `dir` from disk (refreshing any cached listing) and marks it expanded.
     fn expand(&mut self, dir: &Path) {
-        self.children.insert(dir.to_path_buf(), read_dir(dir));
+        self.children
+            .insert(dir.to_path_buf(), read_dir(dir, self.filter));
         self.expanded.insert(dir.to_path_buf());
     }
 
@@ -105,7 +142,17 @@ impl FileTree {
     /// renamed (e.g. by a class rename).
     pub fn refresh(&mut self, dir: &Path) {
         if self.children.contains_key(dir) {
-            self.children.insert(dir.to_path_buf(), read_dir(dir));
+            self.children
+                .insert(dir.to_path_buf(), read_dir(dir, self.filter));
+        }
+    }
+
+    /// Applies `filter` and rereads every loaded directory with it. Called
+    /// by the filter buttons above the tree.
+    pub fn set_filter(&mut self, filter: TreeFilter) {
+        self.filter = filter;
+        for (dir, entries) in &mut self.children {
+            *entries = read_dir(dir, filter);
         }
     }
 
@@ -204,7 +251,9 @@ pub fn list_files(root: &Path) -> Vec<PathBuf> {
             .filter_map(Result::ok)
         {
             let name = entry.file_name();
-            if HIDDEN.contains(&name.to_string_lossy().as_ref()) {
+            let name = name.to_string_lossy();
+            // Installed packages are not project files to search or open.
+            if HIDDEN.contains(&name.as_ref()) || name == "node_modules" {
                 continue;
             }
             match entry.file_type() {
@@ -222,4 +271,33 @@ pub fn list_files(root: &Path) -> Vec<PathBuf> {
 pub fn vendor_bin(root: &Path, name: &str) -> Option<PathBuf> {
     let path = root.join("vendor").join("bin").join(name);
     path.is_file().then_some(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tree_filter_should_hide_dot_folders_when_on() {
+        let filter = TreeFilter {
+            hide_dot_folders: true,
+            hide_dependencies: false,
+        };
+        assert!(filter.hides_dir(".github") && !filter.hides_dir("vendor"));
+    }
+
+    #[test]
+    fn tree_filter_should_hide_dependencies_when_on() {
+        let filter = TreeFilter {
+            hide_dot_folders: false,
+            hide_dependencies: true,
+        };
+        assert!(filter.hides_dir("node_modules") && filter.hides_dir("vendor"));
+    }
+
+    #[test]
+    fn tree_filter_should_hide_nothing_by_default() {
+        let filter = TreeFilter::default();
+        assert!(!filter.hides_dir(".github") && !filter.hides_dir("vendor"));
+    }
 }
