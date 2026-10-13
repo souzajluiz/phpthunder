@@ -38,3 +38,14 @@ fix-blade-echo-raw = Saída sem escape ({"{"}!! !!{"}"})
 fix-blade-echo-escaped = Escapar saída ({"{"}{"{"} {"}"}{"}"})
 fix-rules-to-array = Converter regras para array
 fix-rules-to-string = Converter regras para string
+
+# Syntax-only inspections.
+diagnostic-unreachable-code = Instrução inalcançável
+diagnostic-duplicate-array-key = Chave de array '{ $key }' duplicada; vale o último valor
+diagnostic-assignment-in-condition = Atribuição em condição; queria usar ==?
+diagnostic-loose-null-comparison = Comparação frouxa com null também aceita 0, '' e []
+diagnostic-empty-catch = Bloco catch vazio esconde erros
+diagnostic-self-assignment = Valor atribuído a si mesmo
+diagnostic-unused-private-member = Membro privado { $name } não usado
+fix-use-strict-comparison = Usar comparação estrita
+fix-remove-statement = Remover instrução

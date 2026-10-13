@@ -61,6 +61,20 @@ pub enum Code {
     },
     /// `orderBy(…, 'desc')` that `orderByDesc(…)` says more simply.
     SimplifyOrderBy,
+    /// A statement after `return`, `throw`, `break`, `continue` or `exit`.
+    UnreachableCode,
+    /// An array literal key written twice; carries the key.
+    DuplicateArrayKey(String),
+    /// An assignment used as an `if`/`while` condition.
+    AssignmentInCondition,
+    /// `== null` or `!= null`, which also match `0`, `''` and `[]`.
+    LooseNullComparison,
+    /// A `catch` block with nothing in it.
+    EmptyCatch,
+    /// A variable or property assigned to itself.
+    SelfAssignment,
+    /// A private method or property (`$name`) nothing in its class uses.
+    UnusedPrivateMember(String),
     /// Reported by an external analyser; carries its name (e.g. `PHPStan`).
     External(String),
 }
@@ -136,6 +150,10 @@ pub enum FixKind {
     RulesToArray,
     /// Turns a rule array of plain strings into a rule string.
     RulesToString,
+    /// Turns `==`/`!=` into `===`/`!==`.
+    UseStrictComparison,
+    /// Deletes the statement or declaration the diagnostic is on.
+    RemoveStatement,
     /// Adds a property to a class.
     AddProperty {
         /// Class FQN.

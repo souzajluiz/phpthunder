@@ -24,6 +24,13 @@ fn kind(code: &Code) -> &'static str {
         Code::ReturnTypeMismatch { .. } => "return type mismatch",
         Code::UnknownLaravelKey { .. } => "unknown Laravel key",
         Code::SimplifyOrderBy => "simplify orderBy",
+        Code::UnreachableCode => "unreachable code",
+        Code::DuplicateArrayKey(_) => "duplicate array key",
+        Code::AssignmentInCondition => "assignment in condition",
+        Code::LooseNullComparison => "loose null comparison",
+        Code::EmptyCatch => "empty catch",
+        Code::SelfAssignment => "self assignment",
+        Code::UnusedPrivateMember(_) => "unused private member",
         Code::External(_) => "external",
     }
 }

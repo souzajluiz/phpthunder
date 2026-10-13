@@ -66,12 +66,62 @@ pub fn quick_fixes(
                 }]
             }
         }
+        Code::LooseNullComparison => {
+            let op = &src[diagnostic.start..diagnostic.end];
+            vec![Fix {
+                title: format!("Use {op}="),
+                edits: vec![Edit {
+                    path: None,
+                    start: diagnostic.end,
+                    end: diagnostic.end,
+                    text: "=".into(),
+                }],
+                kind: FixKind::UseStrictComparison,
+            }]
+        }
+        Code::UnreachableCode | Code::SelfAssignment => vec![Fix {
+            title: "Remove statement".into(),
+            edits: vec![remove_lines_edit(src, diagnostic.start, diagnostic.end)],
+            kind: FixKind::RemoveStatement,
+        }],
         Code::UndefinedFunction(_)
+        | Code::DuplicateArrayKey(_)
+        | Code::AssignmentInCondition
+        | Code::EmptyCatch
+        | Code::UnusedPrivateMember(_)
         | Code::UndefinedVariable(_)
         | Code::MissingReturn(_)
         | Code::ReturnTypeMismatch { .. }
         | Code::UnknownLaravelKey { .. }
         | Code::External(_) => Vec::new(),
+    }
+}
+
+/// An edit deleting `start..end` together with its line when nothing else
+/// is on it (with the statement's `;` when it follows directly).
+fn remove_lines_edit(src: &str, start: usize, end: usize) -> Edit {
+    let end = if src[end..].starts_with(';') {
+        end + 1
+    } else {
+        end
+    };
+    let line_start = src[..start].rfind('\n').map_or(0, |i| i + 1);
+    let line_end = src[end..].find('\n').map_or(src.len(), |i| end + i + 1);
+    let alone = src[line_start..start].trim().is_empty() && src[end..line_end].trim().is_empty();
+    if alone {
+        Edit {
+            path: None,
+            start: line_start,
+            end: line_end,
+            text: String::new(),
+        }
+    } else {
+        Edit {
+            path: None,
+            start,
+            end,
+            text: String::new(),
+        }
     }
 }
 

@@ -39,3 +39,14 @@ fix-blade-echo-raw = Output unescaped ({"{"}!! !!{"}"})
 fix-blade-echo-escaped = Escape output ({"{"}{"{"} {"}"}{"}"})
 fix-rules-to-array = Convert rules to an array
 fix-rules-to-string = Convert rules to a string
+
+# Syntax-only inspections.
+diagnostic-unreachable-code = Unreachable statement
+diagnostic-duplicate-array-key = Duplicate array key '{ $key }'; the later value wins
+diagnostic-assignment-in-condition = Assignment in condition; did you mean ==?
+diagnostic-loose-null-comparison = Loose comparison with null also matches 0, '' and []
+diagnostic-empty-catch = Empty catch block hides errors
+diagnostic-self-assignment = Value is assigned to itself
+diagnostic-unused-private-member = Unused private member { $name }
+fix-use-strict-comparison = Use strict comparison
+fix-remove-statement = Remove statement

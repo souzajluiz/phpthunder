@@ -233,6 +233,7 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
     unused_variables(tree.root_node(), src, &mut push);
     missing_returns(index, &analyzer, tree.root_node(), src, &mut push);
     return_mismatches(index, &analyzer, tree.root_node(), src, &mut push);
+    style_checks(tree.root_node(), src, &mut push);
     out.sort_by_key(|d| (d.start, d.severity));
     out
 }

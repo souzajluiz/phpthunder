@@ -46,12 +46,19 @@ fn code_name(code: &Code) -> &'static str {
         Code::ReturnTypeMismatch { .. } => "return-type-mismatch",
         Code::UnknownLaravelKey { .. } => "unknown-laravel-key",
         Code::SimplifyOrderBy => "simplify-order-by",
+        Code::UnreachableCode => "unreachable-code",
+        Code::DuplicateArrayKey(_) => "duplicate-array-key",
+        Code::AssignmentInCondition => "assignment-in-condition",
+        Code::LooseNullComparison => "loose-null-comparison",
+        Code::EmptyCatch => "empty-catch",
+        Code::SelfAssignment => "self-assignment",
+        Code::UnusedPrivateMember(_) => "unused-private-member",
         Code::External(_) => "external",
     }
 }
 
-/// An engine diagnostic as LSP reports it. Unused imports are tagged
-/// `UNNECESSARY`, so editors fade them.
+/// An engine diagnostic as LSP reports it. Unused and unreachable code is
+/// tagged `UNNECESSARY`, so editors fade it.
 pub fn diagnostic(d: &EngineDiagnostic) -> Diagnostic {
     let span = d.span;
     Diagnostic {
@@ -66,8 +73,14 @@ pub fn diagnostic(d: &EngineDiagnostic) -> Diagnostic {
         code: Some(NumberOrString::String(code_name(&d.code).into())),
         source: Some("phpthunder".into()),
         message: d.message.clone(),
-        tags: matches!(d.code, Code::UnusedImport(_) | Code::UnusedVariable(_))
-            .then(|| vec![DiagnosticTag::UNNECESSARY]),
+        tags: matches!(
+            d.code,
+            Code::UnusedImport(_)
+                | Code::UnusedVariable(_)
+                | Code::UnusedPrivateMember(_)
+                | Code::UnreachableCode
+        )
+        .then(|| vec![DiagnosticTag::UNNECESSARY]),
         ..Default::default()
     }
 }

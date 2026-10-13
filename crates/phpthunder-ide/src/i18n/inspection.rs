@@ -47,6 +47,15 @@ pub fn diagnostic_message(diagnostic: &Diagnostic) -> String {
             name = name.as_str()
         ),
         Code::SimplifyOrderBy => tr!("diagnostic-simplify-order-by"),
+        Code::UnreachableCode => tr!("diagnostic-unreachable-code"),
+        Code::DuplicateArrayKey(key) => tr!("diagnostic-duplicate-array-key", key = key.as_str()),
+        Code::AssignmentInCondition => tr!("diagnostic-assignment-in-condition"),
+        Code::LooseNullComparison => tr!("diagnostic-loose-null-comparison"),
+        Code::EmptyCatch => tr!("diagnostic-empty-catch"),
+        Code::SelfAssignment => tr!("diagnostic-self-assignment"),
+        Code::UnusedPrivateMember(name) => {
+            tr!("diagnostic-unused-private-member", name = name.as_str())
+        }
         Code::External(_) => diagnostic.message.clone(),
     }
 }
@@ -62,6 +71,8 @@ pub fn fix_title(fix: &Fix) -> String {
         FixKind::ToggleBladeEcho { to_raw: false } => tr!("fix-blade-echo-escaped"),
         FixKind::RulesToArray => tr!("fix-rules-to-array"),
         FixKind::RulesToString => tr!("fix-rules-to-string"),
+        FixKind::UseStrictComparison => tr!("fix-use-strict-comparison"),
+        FixKind::RemoveStatement => tr!("fix-remove-statement"),
         FixKind::AddMethod { class, name } => {
             tr!("fix-add-method", name = name.as_str(), class = short(class))
         }
