@@ -2,6 +2,7 @@
 //! and find in path.
 
 use crate::app::{App, Bottom, EDITOR_ID, Message, Search, TestTarget};
+use crate::debug::DebugCommand;
 use crate::keymap::Cmd;
 use crate::palette::{self, Mode, Palette, Target};
 use crate::search::{self, SearchDialog};
@@ -96,6 +97,13 @@ impl App {
             Cmd::Commit => self.open_commit_panel(),
             Cmd::Push => self.git_push(),
             Cmd::Pull => self.git_pull(),
+            Cmd::DebugTest => self.debug_test(),
+            Cmd::ToggleBreakpoint => self.toggle_breakpoint_at_caret(),
+            Cmd::Resume => self.debug_send(DebugCommand::Resume),
+            Cmd::StepOver => self.debug_send(DebugCommand::StepOver),
+            Cmd::StepInto => self.debug_send(DebugCommand::StepInto),
+            Cmd::StepOut => self.debug_send(DebugCommand::StepOut),
+            Cmd::StopDebug => self.debug_send(DebugCommand::Stop),
             Cmd::Problems => {
                 self.bottom = Some(Bottom::Problems);
                 Task::none()

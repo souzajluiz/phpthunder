@@ -91,15 +91,7 @@ pub async fn run_tests(root: PathBuf, scope: Scope) -> Result<TestRun, String> {
         .arg("--colors=never")
         .arg("--log-junit")
         .arg(&report);
-    match &scope {
-        Scope::All => {}
-        Scope::File(path) => {
-            cmd.arg(path);
-        }
-        Scope::Filter(path, filter) => {
-            cmd.arg(path).arg("--filter").arg(regex::escape(filter));
-        }
-    }
+    cmd.args(scope_arguments(&scope));
     let started = Instant::now();
     let output = cmd
         .output()
@@ -122,6 +114,21 @@ pub async fn run_tests(root: PathBuf, scope: Scope) -> Result<TestRun, String> {
         elapsed,
         output: console,
     })
+}
+
+/// Command-line arguments that select `scope` for Pest or PHPUnit: the
+/// file, plus `--filter` with the test name escaped as a regex. Shared by
+/// test runs and debug sessions.
+pub fn scope_arguments(scope: &Scope) -> Vec<std::ffi::OsString> {
+    match scope {
+        Scope::All => Vec::new(),
+        Scope::File(path) => vec![path.clone().into_os_string()],
+        Scope::Filter(path, filter) => vec![
+            path.clone().into_os_string(),
+            "--filter".into(),
+            regex::escape(filter).into(),
+        ],
+    }
 }
 
 /// The test at `offset` in a PHP test file: the enclosing `test*` method

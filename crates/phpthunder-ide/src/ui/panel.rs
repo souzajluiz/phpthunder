@@ -164,6 +164,10 @@ impl App {
             action(tr!("tests-run-again"), TestTarget::Again),
             action(tr!("tests-run-file"), TestTarget::File),
             action(tr!("tests-run-all"), TestTarget::All),
+            button(label(tr!("debug-test"), 12.0, TEXT_SOFT))
+                .padding([3, 10])
+                .style(ghost_button)
+                .on_press(Message::DebugTest),
         ]
         .spacing(4);
         let (summary, rows): (Element<'_, Message>, Vec<Element<'_, Message>>) = match &self.tests {

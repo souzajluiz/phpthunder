@@ -267,6 +267,12 @@ impl App {
                 format!("{}  {}", tr!("panel-terminal"), hint(Cmd::ToggleTerminal))
             ),
             item(
+                Icon::Bug,
+                self.bottom == Some(Bottom::Debug),
+                Some(Message::DebugTest),
+                format!("{}  {}", tr!("debug-test"), hint(Cmd::DebugTest))
+            ),
+            item(
                 Icon::Commit,
                 self.bottom == Some(Bottom::Commit),
                 Some(Message::Command(Cmd::Commit)),
@@ -579,7 +585,10 @@ impl App {
 
         let mut content = Stack::new()
             .push(row![
-                gutter,
+                mouse_area(gutter)
+                    .on_move(|p| Message::GutterMoved(p.y))
+                    .on_press(Message::GutterPressed)
+                    .interaction(iced::mouse::Interaction::Pointer),
                 mouse_area(editor)
                     .on_move(Message::MouseMoved)
                     .on_exit(Message::MouseLeft)
@@ -594,6 +603,9 @@ impl App {
         }
         for mark in self.git_gutter_marks(doc) {
             content = content.push(mark);
+        }
+        for mark in self.debug_marks(doc) {
+            content = content.push_under(mark);
         }
 
         let scroller = scrollable(content)
@@ -717,6 +729,9 @@ impl App {
         if self.git.is_some() {
             tabs = tabs.push(tab(Bottom::Commit, tr!("panel-commit")));
         }
+        if self.debug.is_some() {
+            tabs = tabs.push(tab(Bottom::Debug, tr!("panel-debug")));
+        }
         let close = button(icon(Icon::Close, 12.0, 2.0, MUTED))
             .padding(6)
             .style(ghost_button)
@@ -735,6 +750,7 @@ impl App {
             Bottom::Terminal => self.terminal_body(),
             Bottom::Tests => self.tests_body(),
             Bottom::Commit => self.commit_body(),
+            Bottom::Debug => self.debug_body(),
         };
         Some(
             container(column![header, hsep(), body])

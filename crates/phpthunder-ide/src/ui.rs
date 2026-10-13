@@ -1,6 +1,7 @@
 //! Look and layout: the Thunder Dark theme, icons, and the workbench view.
 
 mod console;
+mod debug;
 mod git;
 mod icons;
 mod panel;

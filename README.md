@@ -88,6 +88,13 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
   (asks twice); push (`⇧⌘K`) and fast-forward pull (`⌘T`); branch picker
   from the title bar to switch or create branches; added/modified/deleted
   marks in the gutter while typing; changed files colored in the tree
+- Debugger (Xdebug, DBGp) built around Pest: `⌃⇧D` debugs the test at the
+  caret (or its file) with Pest, or PHPUnit when Pest is absent. Click a
+  line number (or `⌘F8`) for a breakpoint; `F9` resume, `F8` step over,
+  `F7` step into, `⇧F8` step out, `⌘F2` stop. The Debug panel shows the
+  call stack, expandable variables, the test output and an evaluate field.
+  Needs the Xdebug extension: loaded by PHP, Herd Pro's bundled build, or
+  `PHPTHUNDER_XDEBUG=/path/to/xdebug.so`
 
 Shortcuts: `⌘O` open folder, `⌘S` save, `⌘W` close tab, `⌘1` toggle project
 tree, `Esc` close popups/panel.

@@ -101,6 +101,20 @@ pub enum Cmd {
     Push,
     /// Pull the current branch (`⌘T`).
     Pull,
+    /// Debug the test at the caret under Xdebug (`⌃⇧D`).
+    DebugTest,
+    /// Add or remove a breakpoint on the caret line (`⌘F8`).
+    ToggleBreakpoint,
+    /// Debugger: continue to the next breakpoint (`F9`).
+    Resume,
+    /// Debugger: next line in this function (`F8`).
+    StepOver,
+    /// Debugger: into the call on this line (`F7`).
+    StepInto,
+    /// Debugger: until the function returns (`⇧F8`).
+    StepOut,
+    /// Debugger: stop the session (`⌘F2`).
+    StopDebug,
 }
 
 /// Maps a key press and its modifiers to the bound `Cmd`, or `None` if
@@ -151,6 +165,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("r") => {
             RunTests
         }
+        Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("d") => {
+            DebugTest
+        }
         Key::Character(c) if m.control() && !cmd && c.eq_ignore_ascii_case("h") => TypeHierarchy,
         Key::Named(Named::Enter) if alt && !cmd => QuickFix,
         Key::Named(Named::F6) if shift => Rename,
@@ -158,6 +175,12 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Named(Named::F12) if cmd => FileStructure,
         Key::Named(Named::F12) if shift => FindUsages,
         Key::Named(Named::F12) => GotoDeclaration,
+        Key::Named(Named::F8) if cmd => ToggleBreakpoint,
+        Key::Named(Named::F8) if shift => StepOut,
+        Key::Named(Named::F8) => StepOver,
+        Key::Named(Named::F7) if !alt && !cmd && !shift => StepInto,
+        Key::Named(Named::F9) => Resume,
+        Key::Named(Named::F2) if cmd => StopDebug,
         Key::Named(Named::F7) if alt => FindUsages,
         Key::Named(Named::F3) if shift => FindPrevious,
         Key::Named(Named::F3) => FindNext,
@@ -222,5 +245,12 @@ pub fn hint(cmd: Cmd) -> &'static str {
         Commit => "⌘K",
         Push => "⇧⌘K",
         Pull => "⌘T",
+        DebugTest => "⌃⇧D",
+        ToggleBreakpoint => "⌘F8",
+        Resume => "F9",
+        StepOver => "F8",
+        StepInto => "F7",
+        StepOut => "⇧F8",
+        StopDebug => "⌘F2",
     }
 }

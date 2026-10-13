@@ -128,6 +128,12 @@ pub struct App {
     pub git_marks: std::collections::HashMap<PathBuf, Vec<crate::git::LineChange>>,
     /// Commit panel state.
     pub commit: CommitPanel,
+    /// Line breakpoints (0-based lines) by file.
+    pub breakpoints: std::collections::HashMap<PathBuf, std::collections::BTreeSet<usize>>,
+    /// The debugger panel and its session, once one was started.
+    pub debug: Option<DebugView>,
+    /// Last mouse y over the line-number gutter, in content pixels.
+    pub gutter_y: f32,
 }
 
 /// Whether `c` can be part of a PHP identifier; used to decide when
@@ -248,6 +254,9 @@ impl App {
             git_base: Default::default(),
             git_marks: Default::default(),
             commit: CommitPanel::default(),
+            breakpoints: Default::default(),
+            debug: None,
+            gutter_y: 0.0,
         };
         let folder = std::env::args()
             .nth(1)
@@ -358,6 +367,23 @@ impl App {
             Message::GitShowBranches => self.git_show_branches(),
             Message::GitBranches(result) => self.git_branches_arrived(result),
             Message::GitDone(op, result) => self.git_done(op, result),
+            Message::DebugTest => self.debug_test(),
+            Message::Debug(event) => self.debug_event(event),
+            Message::DebugSend(command) => self.debug_send(command),
+            Message::DebugFrame(level) => self.debug_select_frame(level),
+            Message::DebugToggleVar(fullname) => self.debug_toggle_variable(fullname),
+            Message::DebugEvalText(text) => {
+                if let Some(d) = &mut self.debug {
+                    d.eval = text;
+                }
+                Task::none()
+            }
+            Message::DebugEvalSubmit => self.debug_evaluate(),
+            Message::GutterMoved(y) => {
+                self.gutter_y = y;
+                Task::none()
+            }
+            Message::GutterPressed => self.toggle_breakpoint_at_gutter(),
             Message::LaravelScanned(project) => {
                 self.laravel = project;
                 Task::none()

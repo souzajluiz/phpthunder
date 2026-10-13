@@ -212,6 +212,74 @@ pub enum Message {
     GitBranches(Result<Vec<crate::git::Branch>, String>),
     /// A Git operation finished.
     GitDone(GitOp, Result<String, String>),
+    // Debugger
+    /// Debug the test at the caret (or the tests panel's context).
+    DebugTest,
+    /// An event from the debug session.
+    Debug(crate::debug::DebugEvent),
+    /// Send a command to the debug session.
+    DebugSend(crate::debug::DebugCommand),
+    /// Show the variables of a stack frame.
+    DebugFrame(usize),
+    /// Expand or collapse a variable, by its expression.
+    DebugToggleVar(String),
+    /// Expression typed in the evaluate field.
+    DebugEvalText(String),
+    /// Evaluate the typed expression.
+    DebugEvalSubmit,
+    /// The mouse moved over the line-number gutter (y in content px).
+    GutterMoved(f32),
+    /// The line-number gutter was clicked: toggle a breakpoint there.
+    GutterPressed,
+}
+
+/// Where a debug session is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DebugState {
+    /// Waiting for Xdebug to connect.
+    Starting,
+    /// The script runs.
+    Running,
+    /// Stopped at a line.
+    Paused,
+    /// The session ended.
+    Finished,
+}
+
+/// State of the debugger panel and the session behind it.
+pub struct DebugView {
+    /// Commands to the session.
+    pub commands: tokio::sync::mpsc::UnboundedSender<crate::debug::DebugCommand>,
+    /// What is being debugged (the test scope label).
+    pub title: String,
+    /// Session state.
+    pub state: DebugState,
+    /// Call stack while paused, innermost first.
+    pub frames: Vec<crate::debug::Frame>,
+    /// Selected frame.
+    pub frame: usize,
+    /// Variables of the selected frame.
+    pub variables: Vec<crate::debug::Variable>,
+    /// Members loaded on demand, by variable expression.
+    pub children: std::collections::HashMap<String, Vec<crate::debug::Variable>>,
+    /// Expanded variables, by expression.
+    pub expanded: std::collections::HashSet<String>,
+    /// Lines the test process printed.
+    pub output: Vec<String>,
+    /// Expression being typed for evaluation.
+    pub eval: String,
+    /// Past evaluations, most recent last.
+    pub evaluations: Vec<(String, Result<crate::debug::Variable, String>)>,
+}
+
+impl DebugView {
+    /// File and 0-based line where execution is paused.
+    pub fn execution_point(&self) -> Option<(&std::path::Path, usize)> {
+        (self.state == DebugState::Paused)
+            .then(|| self.frames.get(self.frame))
+            .flatten()
+            .map(|f| (f.file.as_path(), f.line))
+    }
 }
 
 /// A Git operation started from the IDE, reported by [`Message::GitDone`].
@@ -305,6 +373,8 @@ pub enum Bottom {
     Tests,
     /// Git changes and commit.
     Commit,
+    /// The debugger.
+    Debug,
 }
 
 /// State of the background project index, shown in the status bar.

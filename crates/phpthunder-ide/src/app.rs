@@ -1,6 +1,7 @@
 //! The application: state, messages, the update loop and command handlers.
 
 mod command;
+mod debug;
 mod generate;
 mod git;
 mod inspection;

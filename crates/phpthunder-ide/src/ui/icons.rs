@@ -46,6 +46,18 @@ pub enum Icon {
     Check,
     /// Commit tool in the rail (`git-commit-horizontal`).
     Commit,
+    /// Debugger: debug a test (`bug`).
+    Bug,
+    /// Debugger: resume (`play`).
+    Resume,
+    /// Debugger: step over (`redo-dot`).
+    StepOver,
+    /// Debugger: step into (`arrow-down-to-dot`).
+    StepInto,
+    /// Debugger: step out (`arrow-up-from-dot`).
+    StepOut,
+    /// Debugger: stop (`square`).
+    Stop,
 }
 
 impl Icon {
@@ -71,6 +83,12 @@ impl Icon {
             Icon::Undo => include_str!("../../assets/icons/undo-2.svg"),
             Icon::Check => include_str!("../../assets/icons/check.svg"),
             Icon::Commit => include_str!("../../assets/icons/git-commit-horizontal.svg"),
+            Icon::Bug => include_str!("../../assets/icons/bug.svg"),
+            Icon::Resume => include_str!("../../assets/icons/play.svg"),
+            Icon::StepOver => include_str!("../../assets/icons/redo-dot.svg"),
+            Icon::StepInto => include_str!("../../assets/icons/arrow-down-to-dot.svg"),
+            Icon::StepOut => include_str!("../../assets/icons/arrow-up-from-dot.svg"),
+            Icon::Stop => include_str!("../../assets/icons/square.svg"),
         }
     }
 }

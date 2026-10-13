@@ -4,6 +4,7 @@
 
 mod app;
 mod composer;
+mod debug;
 mod editor;
 mod formatter;
 mod git;

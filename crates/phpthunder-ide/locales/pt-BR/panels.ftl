@@ -55,3 +55,4 @@ terminal-exited = Processo encerrado
 terminal-restart = Reiniciar
 
 panel-commit = Commit
+panel-debug = Debug

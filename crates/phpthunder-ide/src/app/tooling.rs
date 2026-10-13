@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 impl App {
     /// The scope a [`TestTarget`] means right now.
-    fn test_scope(&self, target: TestTarget) -> Scope {
+    pub(crate) fn test_scope(&self, target: TestTarget) -> Scope {
         let file = self.doc().filter(|d| d.is_php()).map(|d| d.path.clone());
         let is_test_file = file.as_ref().is_some_and(|p| {
             p.components().any(|c| c.as_os_str() == "tests")
