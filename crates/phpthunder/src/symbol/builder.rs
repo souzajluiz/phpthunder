@@ -349,6 +349,36 @@ impl Builder<'_> {
         }
     }
 
+    /// Records members a declaration adds by framework convention (see
+    /// [`eloquent_members_of_method`]) as virtual members of `owner`.
+    fn push_conventions(&mut self, members: Vec<ConventionMember>, owner: &str) {
+        for m in members {
+            let span = self.lines.span(self.src, m.start, m.end);
+            let signature = match m.kind {
+                Kind::Method => format!("{}()", m.name),
+                _ => format!("${}", m.name),
+            };
+            self.out.push(Symbol {
+                kind: m.kind,
+                name: m.name,
+                fqn: owner.to_string(),
+                span,
+                name_span: span,
+                name_start: m.start,
+                is_static: m.is_static,
+                signature,
+                doc: String::new(),
+                ty: m.ty,
+                extends: None,
+                supers: Vec::new(),
+                is_virtual: true,
+                templates: Vec::new(),
+                super_args: Vec::new(),
+                class_string_params: Vec::new(),
+            });
+        }
+    }
+
     /// Records one class body member: methods (plus promoted constructor
     /// properties), properties, constants, and enum cases. A trait `use` instead
     /// adds the traits to the supertypes of the class at `class_index`.
@@ -361,11 +391,13 @@ impl Builder<'_> {
                     return;
                 };
                 let (ty, templates, class_strings) = self.callable_types(node, ctx, Some(owner));
+                let conventions = eloquent_members_of_method(node, src, ctx, &ty);
                 let sym = self.push(Kind::Method, node, name, owner.to_string());
                 sym.is_static = is_static;
                 sym.ty = ty;
                 sym.templates = templates;
                 sym.class_string_params = class_strings;
+                self.push_conventions(conventions, owner);
                 // Constructor property promotion: `__construct(private Foo $foo)`.
                 if text(name, src).eq_ignore_ascii_case("__construct") {
                     let doc = doc_of(node, src);
@@ -418,6 +450,8 @@ impl Builder<'_> {
                     sym.is_static = is_static;
                     sym.ty = native.clone().or(documented);
                 }
+                let conventions = eloquent_members_of_property(node, src, ctx);
+                self.push_conventions(conventions, owner);
             }
             "const_declaration" => {
                 let mut c = node.walk();
@@ -573,5 +607,42 @@ class Post {
             find(Kind::Method, "approved").ty.elem.as_deref(),
             Some("App\\Comment")
         );
+    }
+
+    #[test]
+    fn adds_eloquent_convention_members() {
+        let syms = stubs(
+            r#"<?php
+namespace App\Models;
+use App\Enums\Status;
+class User extends Model {
+    protected $fillable = ['name', 'email'];
+    protected function casts(): array { return ['born_at' => 'datetime', 'status' => Status::class]; }
+    public function posts(): HasMany { return $this->hasMany(Post::class)->latest(); }
+    public function team() { return $this->belongsTo(Team::class); }
+    public function scopeActive($query) { return $query; }
+    public function getFullNameAttribute(): string { return ''; }
+    protected function firstName(): Attribute { return Attribute::make(); }
+}"#,
+        );
+        let find = |name: &str| {
+            syms.iter()
+                .find(|s| s.is_virtual && s.name == name)
+                .unwrap_or_else(|| panic!("no virtual {name}"))
+        };
+        assert_eq!(find("email").kind, Kind::Property);
+        assert_eq!(find("born_at").ty.class.as_deref(), Some("Carbon\\Carbon"));
+        assert_eq!(
+            find("status").ty.class.as_deref(),
+            Some("App\\Enums\\Status")
+        );
+        let posts = find("posts");
+        assert_eq!(posts.kind, Kind::Property);
+        assert_eq!(posts.ty.elem.as_deref(), Some("App\\Models\\Post"));
+        assert_eq!(find("team").ty.class.as_deref(), Some("App\\Models\\Team"));
+        let active = find("active");
+        assert!(active.kind == Kind::Method && active.is_static);
+        assert_eq!(find("full_name").kind, Kind::Property);
+        assert_eq!(find("first_name").kind, Kind::Property);
     }
 }

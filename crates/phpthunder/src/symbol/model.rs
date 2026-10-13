@@ -233,3 +233,24 @@ impl Ty {
         }
     }
 }
+
+/// A member Laravel's Eloquent adds to a model by convention (relation
+/// properties, scopes, accessors, attributes from `$fillable`/`$casts`),
+/// derived from one declaration by [`eloquent_members_of_method`] and
+/// [`eloquent_members_of_property`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConventionMember {
+    /// Property or method.
+    pub kind: Kind,
+    /// Member name (properties without `$`).
+    pub name: String,
+    /// Property type or method return type.
+    pub ty: Ty,
+    /// Called statically (scopes: `User::active()`).
+    pub is_static: bool,
+    /// Byte range in the file to point navigation at (the declaring method
+    /// name or the array entry).
+    pub start: usize,
+    /// End of that range.
+    pub end: usize,
+}

@@ -7,6 +7,7 @@
 pub mod analysis;
 pub mod index;
 pub mod inspection;
+pub mod laravel;
 pub mod refactor;
 pub mod symbol;
 pub mod syntax;

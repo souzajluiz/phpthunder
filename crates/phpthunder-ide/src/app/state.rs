@@ -118,6 +118,8 @@ pub struct App {
     pub last_test_scope: Option<crate::testing::Scope>,
     /// Whether PHPStan is analysing a saved file.
     pub phpstan_running: bool,
+    /// Route names, views and config keys of a Laravel project.
+    pub laravel: LaravelScan,
 }
 
 /// Whether `c` can be part of a PHP identifier; used to decide when
@@ -233,6 +235,7 @@ impl App {
             tests: None,
             last_test_scope: None,
             phpstan_running: false,
+            laravel: None,
         };
         let folder = std::env::args()
             .nth(1)
@@ -316,6 +319,10 @@ impl App {
                     .partition(|p| p.components().any(|c| c.as_os_str() == "vendor"));
                 self.project_files = project;
                 self.vendor_files = vendor;
+                Task::none()
+            }
+            Message::LaravelScanned(project) => {
+                self.laravel = project;
                 Task::none()
             }
             Message::Indexed(Err(error)) => {
@@ -705,8 +712,10 @@ impl App {
         self.search = None;
         self.bottom = None;
         self.indexing = Indexing::Running;
+        self.laravel = None;
         let list_root = root.clone();
         Task::batch([
+            self.scan_laravel(),
             Task::perform(self.lang.clone().index_project(root), Message::Indexed),
             Task::perform(
                 async move {
@@ -828,7 +837,8 @@ impl App {
         }
         doc.mark_saved();
         let path = doc.path.clone();
-        self.phpstan_after_save(path)
+        let rescan = self.rescan_laravel_after_save(&path);
+        Task::batch([rescan, self.phpstan_after_save(path)])
     }
 
     // ----- navigation history -------------------------------------------------
@@ -911,12 +921,14 @@ impl App {
 
         if self.completion.is_some() {
             match (inserted, deleted) {
-                (Some(c), _) if is_ident(c) || c == '$' => self.refresh_completion(false),
+                (Some(c), _) if is_ident(c) || c == '$' || self.in_laravel_key() => {
+                    self.refresh_completion(false)
+                }
                 (None, true) => self.refresh_completion(false),
                 _ => self.completion = None,
             }
         } else if let Some(c) = inserted
-            && self.should_auto_complete(c)
+            && (self.should_auto_complete(c) || self.in_laravel_key())
         {
             self.refresh_completion(false);
         }
@@ -947,6 +959,7 @@ impl App {
         let changed = doc.highlight_version != before;
         self.after_change(changed);
         match typed {
+            Some('\'' | '"') if self.in_laravel_key() => self.refresh_completion(false),
             Some(c) if self.completion.is_some() && !is_ident(c) => self.completion = None,
             _ if typed.is_none() => self.completion = None,
             _ => {}
@@ -1004,11 +1017,16 @@ impl App {
     pub fn refresh_completion(&mut self, explicit: bool) {
         let Some(doc) = self.doc() else { return };
         let offset = doc.offset(doc.cursor());
-        let mut start = phpthunder::analysis::ident_start(&doc.text, offset);
-        if start > 0 && doc.text.as_bytes()[start - 1] == b'$' {
-            start -= 1;
-        }
-        let items = self.lang.complete(&doc.text, offset);
+        let (start, items) = match self.laravel_candidates(&doc.text, offset) {
+            Some(keys) => keys,
+            None => {
+                let mut start = phpthunder::analysis::ident_start(&doc.text, offset);
+                if start > 0 && doc.text.as_bytes()[start - 1] == b'$' {
+                    start -= 1;
+                }
+                (start, self.lang.complete(&doc.text, offset))
+            }
+        };
         if items.is_empty() {
             self.completion = None;
             if explicit {
@@ -1170,6 +1188,11 @@ impl App {
             return Task::none();
         };
         let offset = doc.offset(doc.cursor());
+        if let Some((path, pos)) = self.laravel_definition(&doc.text, offset) {
+            self.close_overlays();
+            self.record_nav();
+            return self.open(path, Some(pos));
+        }
         match self.lang.definitions(&doc.text, offset).into_iter().next() {
             Some(def) => {
                 self.close_overlays();

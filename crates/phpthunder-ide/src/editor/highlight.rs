@@ -227,7 +227,7 @@ fn classify(node: Node) -> Option<Token> {
 /// Records `start..end` (document byte offsets) as `token`, split across the
 /// lines it covers. `starts` holds each line's start offset; newline bytes
 /// are never included in a span.
-fn push_span(
+pub(crate) fn push_span(
     lines: &mut LineSpans,
     starts: &[usize],
     src: &str,

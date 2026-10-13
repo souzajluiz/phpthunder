@@ -14,6 +14,10 @@ use phpthunder::refactor::{RenamePlan, SignatureHelp};
 use phpthunder::syntax::Pos;
 use std::path::PathBuf;
 
+/// Result of the background Laravel key scan, shared with the UI state:
+/// `None` when the project is not a Laravel application.
+pub type LaravelScan = Option<std::sync::Arc<phpthunder::laravel::LaravelProject>>;
+
 /// Every event the UI, async tasks, and subscriptions feed into [`App::update`].
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -26,6 +30,8 @@ pub enum Message {
     FilesListed(Vec<PathBuf>),
     /// Background project indexing finished.
     Indexed(Result<IndexReport, String>),
+    /// Laravel key scan finished (`None` when not a Laravel project).
+    LaravelScanned(LaravelScan),
     /// Expand or collapse a directory in the file tree.
     ToggleDir(PathBuf),
     /// Open a file from the tree or palette, recording navigation history.

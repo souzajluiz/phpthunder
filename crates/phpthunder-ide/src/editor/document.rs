@@ -105,16 +105,26 @@ impl Document {
             .unwrap_or_default()
     }
 
-    /// Whether the file has a `.php` extension; gates highlighting and PHP-only features.
+    /// Whether the file is PHP code (a `.php` extension, Blade templates
+    /// excluded); gates highlighting, inspections and PHP-only features.
     pub fn is_php(&self) -> bool {
-        self.path.extension().is_some_and(|e| e == "php")
+        self.path.extension().is_some_and(|e| e == "php") && !self.is_blade()
+    }
+
+    /// Whether the file is a Blade template (`.blade.php`).
+    pub fn is_blade(&self) -> bool {
+        self.path
+            .file_name()
+            .is_some_and(|n| n.to_string_lossy().ends_with(".blade.php"))
     }
 
     /// Recomputes syntax highlighting after any text change and bumps `highlight_version`.
     ///
-    /// Non-PHP files get no spans.
+    /// Blade templates use the Blade scanner; other non-PHP files get no spans.
     fn refresh_highlights(&mut self) {
-        self.highlights = Arc::new(if self.is_php() {
+        self.highlights = Arc::new(if self.is_blade() {
+            crate::editor::compute_blade_highlights(&self.text)
+        } else if self.is_php() {
             crate::editor::compute_highlights(&self.text)
         } else {
             Vec::new()

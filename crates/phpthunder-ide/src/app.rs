@@ -4,6 +4,7 @@ mod command;
 mod generate;
 mod inspection;
 mod intention;
+mod laravel;
 mod model;
 mod navigation;
 mod refactor;

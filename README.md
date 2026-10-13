@@ -78,6 +78,11 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
   abstract/interface methods, override parent methods
 - Live templates: type an abbreviation and press Tab (`fore`, `forek`,
   `pubf`, `__c`, `try`, `it`, `dd`, …) or pick one with `⌘J`
+- Laravel: completion and go to declaration for route names, views and
+  config keys in `route('…')`, `view('…')`, `config('…')` and Blade
+  `@include`/`@extends`; Eloquent relations, scopes, accessors, `$fillable`
+  and `$casts` attributes are known members of the model; Blade templates
+  get their own highlighting
 
 Shortcuts: `⌘O` open folder, `⌘S` save, `⌘W` close tab, `⌘1` toggle project
 tree, `Esc` close popups/panel.
