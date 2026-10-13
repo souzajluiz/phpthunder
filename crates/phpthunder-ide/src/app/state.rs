@@ -149,6 +149,8 @@ pub struct App {
     pub phpstan_running: bool,
     /// Route names, views and config keys of a Laravel project.
     pub laravel: LaravelScan,
+    /// Claude plan limits last reported by the Claude panel's CLI.
+    pub claude_usage: crate::claude_usage::Usage,
     /// Installed Composer and npm packages, from the project's lock files;
     /// shown beside dependencies in `composer.json` and `package.json`.
     pub packages: crate::packages::Installs,
@@ -316,6 +318,7 @@ impl App {
             phpstan_running: false,
             laravel: None,
             packages: crate::packages::Installs::default(),
+            claude_usage: crate::claude_usage::Usage::default(),
             git: None,
             git_base: Default::default(),
             git_marks: Default::default(),
@@ -391,6 +394,14 @@ impl App {
         // so the drag keeps going when the cursor outruns the thin handle.
         if self.panes.dragging().is_some() {
             subscriptions.push(event::listen_with(resize_events));
+        }
+        // The Claude CLI rewrites its status snapshot as it answers; a slow
+        // poll is enough for limits that move by the minute.
+        if self.claude.as_ref().is_some_and(|s| !s.has_exited()) {
+            subscriptions.push(
+                iced::time::every(std::time::Duration::from_secs(5))
+                    .map(|_| Message::ClaudeUsageTick),
+            );
         }
         if let Some(root) = &self.tree.root {
             subscriptions.push(
@@ -753,6 +764,10 @@ impl App {
             }
             Message::ToggleSidebar => {
                 self.sidebar = !self.sidebar;
+                Task::none()
+            }
+            Message::ClaudeUsageTick => {
+                self.claude_usage = crate::claude_usage::read(&crate::claude_usage::status_file());
                 Task::none()
             }
             Message::MarkdownView(view) => {

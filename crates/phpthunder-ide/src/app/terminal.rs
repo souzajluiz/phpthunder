@@ -80,12 +80,14 @@ impl App {
             .claude_grid
             .or(self.terminal_grid)
             .unwrap_or(DEFAULT_GRID);
-        match Session::spawn_program(
-            &self.console_cwd(),
-            rows,
-            cols,
-            &crate::settings::settings().claude_command,
-        ) {
+        // A stale snapshot from the previous run must not show as current.
+        let _ = std::fs::remove_file(crate::claude_usage::status_file());
+        self.claude_usage = crate::claude_usage::Usage::default();
+        let mut program = crate::settings::settings().claude_command.clone();
+        if let Some(args) = crate::claude_usage::settings_args() {
+            program = format!("{program} {args}");
+        }
+        match Session::spawn_program(&self.console_cwd(), rows, cols, &program) {
             Ok(session) => {
                 self.claude = Some(session);
                 self.notice = None;

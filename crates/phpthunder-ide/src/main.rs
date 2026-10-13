@@ -3,6 +3,7 @@
 //! Usage: `phpthunder-ide [project-folder]`
 
 mod app;
+mod claude_usage;
 mod composer;
 mod debug;
 mod editor;

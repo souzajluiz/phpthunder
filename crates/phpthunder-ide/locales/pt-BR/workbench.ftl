@@ -78,3 +78,9 @@ package-not-installed = não instalado
 markdown-editor = Só o editor
 markdown-split = Editor e pré-visualização
 markdown-preview = Só a pré-visualização
+
+# Claude plan limits in the status bar while the Claude panel runs.
+claude-limit-session = 5h
+claude-limit-week = Semana
+claude-limit-used = { $window }: { $percent }% usado
+claude-limit-resets = {" "}· reinicia em { $left }

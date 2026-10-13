@@ -1601,6 +1601,9 @@ impl App {
                     .spacing(6)
                     .align_y(Center),
             );
+            if !session.has_exited() && self.claude_usage.is_known() {
+                bar = bar.push(claude_limits(&self.claude_usage));
+            }
         }
         container(bar)
             .height(26)
@@ -1609,6 +1612,47 @@ impl App {
             .style(fill(CHROME))
             .into()
     }
+}
+
+/// The Claude plan limits in the status bar: share used of the 5-hour and
+/// weekly windows, amber from 75% and red from 90%, with a tooltip saying
+/// when each resets.
+fn claude_limits<'a>(usage: &crate::claude_usage::Usage) -> El<'a> {
+    let now = crate::claude_usage::now();
+    let windows = [
+        (usage.five_hour, tr!("claude-limit-session")),
+        (usage.seven_day, tr!("claude-limit-week")),
+    ];
+    let mut parts = row![].spacing(10).align_y(Center);
+    let mut tips = Vec::new();
+    for (window, name) in windows {
+        let Some(w) = window else { continue };
+        let color = match w.used_percent {
+            p if p >= 90.0 => rgb(0xDD3962),
+            p if p >= 75.0 => rgb(0xE0AF68),
+            _ => MUTED,
+        };
+        parts = parts.push(label(format!("{name} {:.0}%", w.used_percent), 12.0, color));
+        let resets = w
+            .resets_at
+            .and_then(|at| crate::claude_usage::time_left(at, now))
+            .map_or_else(String::new, |left| tr!("claude-limit-resets", left = left));
+        tips.push(
+            tr!(
+                "claude-limit-used",
+                window = name,
+                percent = format!("{:.0}", w.used_percent)
+            ) + &resets,
+        );
+    }
+    tooltip(
+        parts,
+        container(label(tips.join("\n"), 12.0, TEXT))
+            .padding([4, 8])
+            .style(popup),
+        tooltip::Position::Top,
+    )
+    .into()
 }
 
 /// Colored one-letter badge for a completion item's symbol kind.

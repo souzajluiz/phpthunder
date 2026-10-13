@@ -148,6 +148,8 @@ pub enum Message {
     // Window
     /// Show or hide the project sidebar.
     ToggleSidebar,
+    /// Re-read the Claude plan limits the panel's CLI last reported.
+    ClaudeUsageTick,
     /// Switch the active Markdown tab between source, split and preview.
     MarkdownView(crate::editor::MarkdownView),
     /// A link in the Markdown preview was clicked: web links open in the
