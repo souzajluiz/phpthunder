@@ -48,6 +48,8 @@ pub enum Message {
     OpenUsage(usize),
     CloseUsages,
     ToggleSidebar,
+    DragWindow,
+    ToggleMaximize,
     Key(keyboard::Event),
 }
 
@@ -313,6 +315,8 @@ impl App {
                 self.sidebar = !self.sidebar;
                 Task::none()
             }
+            Message::DragWindow => iced::window::latest().and_then(iced::window::drag),
+            Message::ToggleMaximize => iced::window::latest().and_then(iced::window::toggle_maximize),
             Message::Key(event) => self.global_key(event),
         }
     }
@@ -633,6 +637,11 @@ impl App {
             }
         } else if let Some(f) = symbols.iter().find(|s| s.kind == Kind::Function && contains(s)) {
             out.push(format!("{}()", f.fqn));
+        }
+        if out.is_empty() {
+            // Outside any declaration: show where the file lives instead.
+            let rel = self.tree.root.as_ref().and_then(|r| doc.path.strip_prefix(r).ok()).unwrap_or(&doc.path);
+            out = rel.iter().map(|c| c.to_string_lossy().into_owned()).collect();
         }
         out
     }

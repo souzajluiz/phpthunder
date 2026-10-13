@@ -18,6 +18,12 @@ use phpthunder::stubs::Kind;
 type El<'a> = Element<'a, Message>;
 
 const GUTTER_WIDTH: f32 = 56.0;
+/// Matches the macOS title bar so the window buttons are vertically centered.
+const TITLE_BAR_HEIGHT: f32 = 32.0;
+#[cfg(target_os = "macos")]
+const TRAFFIC_LIGHTS_INSET: f32 = 76.0;
+#[cfg(not(target_os = "macos"))]
+const TRAFFIC_LIGHTS_INSET: f32 = 6.0;
 const ROW_HEIGHT: f32 = 26.0;
 const COMPLETION_ROWS: usize = 8;
 const COMPLETION_ROW: f32 = 28.0;
@@ -79,24 +85,29 @@ impl App {
         ]
         .spacing(16)
         .align_x(Center);
-        container(content).center(Fill).style(fill(BG)).into()
+        let drag = mouse_area(container(space()).height(TITLE_BAR_HEIGHT).width(Fill))
+            .on_press(Message::DragWindow)
+            .on_double_click(Message::ToggleMaximize);
+        column![drag, container(content).center(Fill)].width(Fill).height(Fill).into()
     }
 
     fn title_bar(&self) -> El<'_> {
         let root = self.tree.root.as_deref().map(crate::app::file_name).unwrap_or_default();
         let mut bar = row![
-            icon(Icon::Bolt, 18.0, 2.0, ACCENT),
+            space().width(TRAFFIC_LIGHTS_INSET),
+            icon(Icon::Bolt, 16.0, 2.0, ACCENT),
             label("phpthunder", 13.0, TEXT).font(UI_BOLD),
             label(root, 13.0, MUTED),
             space().width(Fill),
         ]
         .spacing(10)
         .align_y(Center)
-        .padding([0, 16]);
+        .padding(Padding { left: 0.0, right: 16.0, top: 0.0, bottom: 0.0 });
         if let Some(branch) = &self.branch {
             bar = bar.push(row![icon(Icon::Branch, 14.0, 2.0, MUTED), label(branch.clone(), 13.0, MUTED)].spacing(6).align_y(Center));
         }
-        container(bar).height(40).width(Fill).center_y(40).style(fill(CHROME)).into()
+        let bar = container(bar).height(TITLE_BAR_HEIGHT).width(Fill).center_y(TITLE_BAR_HEIGHT).style(fill(CHROME));
+        mouse_area(bar).on_press(Message::DragWindow).on_double_click(Message::ToggleMaximize).into()
     }
 
     fn rail(&self) -> El<'_> {

@@ -35,8 +35,11 @@ pub struct Settings {
 }
 
 impl PartialEq for Settings {
+    /// Each document and each edit gets a fresh allocation, so pointer
+    /// identity tells whether the editor must re-highlight (also when the
+    /// same editor widget switches to another tab).
     fn eq(&self, other: &Self) -> bool {
-        self.version == other.version
+        Arc::ptr_eq(&self.lines, &other.lines) && self.version == other.version
     }
 }
 
@@ -266,3 +269,4 @@ mod tests {
         assert!(has("->", Token::Punct));
     }
 }
+
