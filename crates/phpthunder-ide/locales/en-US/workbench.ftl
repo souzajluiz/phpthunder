@@ -2,8 +2,10 @@
 # find-in-path dialog, palette, popups and status bar.
 # Keys: <area>-<thing>, lowercase kebab-case.
 
-welcome-hint = Open a PHP project folder to start.
-welcome-open-folder = Open Folder
+welcome-hint = Open a PHP or Laravel project to start. Indexing, completion and inspections run in-process, nothing to configure.
+welcome-open-folder = Open Folder…
+welcome-recent = RECENT PROJECTS
+welcome-no-recent = Projects you open will show up here.
 shortcuts-title = Open a file from the project tree
 sidebar-project = PROJECT
 

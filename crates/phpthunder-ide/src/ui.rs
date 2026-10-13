@@ -9,6 +9,7 @@ mod panel;
 mod popup;
 mod preview;
 mod theme;
+mod welcome;
 mod workbench;
 
 pub use console::*;

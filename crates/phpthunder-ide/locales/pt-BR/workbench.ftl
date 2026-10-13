@@ -1,7 +1,9 @@
 # Workbench — tradução pt-BR. Mesmas chaves de en-US.
 
-welcome-hint = Abra a pasta de um projeto PHP para começar.
-welcome-open-folder = Abrir pasta
+welcome-hint = Abra um projeto PHP ou Laravel para começar. Indexação, autocomplete e inspeções rodam no próprio IDE, sem configuração.
+welcome-open-folder = Abrir pasta…
+welcome-recent = PROJETOS RECENTES
+welcome-no-recent = Os projetos que você abrir aparecem aqui.
 shortcuts-title = Abra um arquivo pela árvore do projeto
 sidebar-project = PROJETO
 

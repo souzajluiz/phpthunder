@@ -31,9 +31,15 @@ pub struct SavedProject {
 pub struct SavedSession {
     /// Project opened last.
     pub last_project: Option<PathBuf>,
+    /// Projects opened, most recent first, for the welcome screen.
+    #[serde(default)]
+    pub recent: Vec<PathBuf>,
     /// Tabs per project root.
     pub projects: HashMap<PathBuf, SavedProject>,
 }
+
+/// Most projects remembered in [`SavedSession::recent`].
+const RECENT_LIMIT: usize = 12;
 
 /// Where the session is kept; `None` without a home folder. Disabled in
 /// development snapshots so they never change the user's session.
@@ -86,6 +92,9 @@ impl App {
             return;
         }
         self.session.last_project = Some(root.clone());
+        self.session.recent.retain(|p| p != &root);
+        self.session.recent.insert(0, root.clone());
+        self.session.recent.truncate(RECENT_LIMIT);
         self.session.projects.insert(root, project);
         let Some(path) = session_path() else {
             return;

@@ -133,20 +133,11 @@ impl App {
         }
     }
 
-    /// Welcome screen shown before a project folder is open: logo and an "Open
-    /// Folder" button. Keeps a draggable strip on top because the native title
-    /// bar is hidden.
+    /// Welcome screen shown before a project folder is open (see
+    /// `ui/welcome.rs`). Keeps a draggable strip on top because the native
+    /// title bar is hidden.
     fn welcome(&self) -> El<'_> {
-        let content = column![
-            logo(Logo::Lockup, 220.0),
-            label(tr!("welcome-hint"), 14.0, MUTED),
-            button(label(tr!("welcome-open-folder"), 14.0, rgb(0x14161C)).font(UI_MEDIUM))
-                .padding([10, 20])
-                .style(primary_button)
-                .on_press(Message::OpenFolderDialog),
-        ]
-        .spacing(16)
-        .align_x(Center);
+        let content = self.welcome_body();
         let drag = mouse_area(container(space()).height(TITLE_BAR_HEIGHT).width(Fill))
             .on_press(Message::DragWindow)
             .on_double_click(Message::ToggleMaximize);
