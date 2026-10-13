@@ -5,11 +5,13 @@
 //! Eloquent conventions live with the symbol builder; the forwarding of
 //! calls between models and their query builder lives here.
 
+mod blade;
 mod eloquent;
 mod key;
 mod model;
 mod project;
 
+pub use blade::*;
 pub use eloquent::*;
 pub use key::*;
 pub use model::*;

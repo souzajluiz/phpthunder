@@ -46,6 +46,23 @@ pub struct LaravelProject {
     pub translations: Vec<LaravelKey>,
     /// Environment variable names.
     pub env: Vec<LaravelKey>,
+    /// Blade components (`<x-alert>`), anonymous and class-based.
+    pub components: Vec<BladeComponent>,
+    /// Variables passed to each view by `view('name', [...])` calls, by
+    /// view name.
+    pub view_variables: std::collections::HashMap<String, Vec<String>>,
+}
+
+/// A Blade component usable as `<x-name>`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BladeComponent {
+    /// Tag name after `x-` (`forms.input`).
+    pub name: String,
+    /// File declaring it (the view, or the component class).
+    pub path: PathBuf,
+    /// Attributes it accepts: `@props` keys or constructor parameters,
+    /// kebab-cased.
+    pub props: Vec<String>,
 }
 
 impl LaravelProject {

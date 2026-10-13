@@ -57,6 +57,8 @@ pub fn scan_project(root: &Path) -> Option<LaravelProject> {
     for lang in [root.join("lang"), root.join("resources").join("lang")] {
         project.translations.extend(translation_keys(&lang));
     }
+    project.components = blade_components(root);
+    project.view_variables = view_variables(root);
     // `.env.example` first: its values are safe to show; `.env` may hold secrets.
     for (file, show_values) in [(".env.example", true), (".env", false)] {
         let path = root.join(file);
@@ -186,7 +188,7 @@ fn env_keys(src: &str, path: &Path, show_values: bool) -> Vec<LaravelKey> {
 }
 
 /// Files under `dir` (recursively) whose name ends with `suffix`.
-fn files_under(dir: &Path, suffix: &str) -> Vec<std::path::PathBuf> {
+pub(crate) fn files_under(dir: &Path, suffix: &str) -> Vec<std::path::PathBuf> {
     walkdir::WalkDir::new(dir)
         .into_iter()
         .filter_map(Result::ok)
