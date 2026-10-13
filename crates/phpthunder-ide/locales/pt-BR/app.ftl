@@ -1,5 +1,6 @@
 # App — tradução pt-BR. Mesmas chaves de en-US.
 
+notice-no-intentions = Nenhuma ação aqui
 notice-no-suggestions = Nenhuma sugestão
 notice-no-declaration = Nenhuma declaração encontrada
 notice-nothing-to-search = Nada para buscar: posicione o cursor em um símbolo

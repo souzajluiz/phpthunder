@@ -16,3 +16,25 @@ diagnostic-unused-variable = Variável '{ $name }' recebe valor mas nunca é usa
 diagnostic-missing-return = Falta return: '{ $ty }' esperado
 diagnostic-return-mismatch = Tipo de retorno incompatível: '{ $expected }' esperado, { $found } retornado
 fix-remove-assignment = Remover variável não usada (manter o valor)
+diagnostic-unknown-laravel-key = { $kind ->
+    [Route] Rota desconhecida
+    [View] View desconhecida
+    [Config] Chave de config desconhecida
+    [Translation] Chave de tradução desconhecida
+    [Guard] Guard desconhecido
+    [Disk] Disco desconhecido
+    [CacheStore] Store de cache desconhecido
+    [QueueConnection] Conexão de fila desconhecida
+    [LogChannel] Canal de log desconhecido
+    [DbConnection] Conexão de banco desconhecida
+    [Mailer] Mailer desconhecido
+    [InertiaPage] Página Inertia desconhecida
+    [Livewire] Componente Livewire desconhecido
+   *[other] Chave desconhecida
+} '{ $name }'
+diagnostic-simplify-order-by = orderBy(…, 'desc') pode ser orderByDesc(…)
+fix-use-order-by-desc = Usar orderByDesc()
+fix-blade-echo-raw = Saída sem escape ({"{"}!! !!{"}"})
+fix-blade-echo-escaped = Escapar saída ({"{"}{"{"} {"}"}{"}"})
+fix-rules-to-array = Converter regras para array
+fix-rules-to-string = Converter regras para string

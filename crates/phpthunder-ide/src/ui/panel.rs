@@ -105,6 +105,60 @@ impl App {
         .into()
     }
 
+    /// Laravel markers at the left edge of the gutter on visible lines:
+    /// a jump to a route's controller method or a model's migration, or a
+    /// run button for migrations, seeders and Artisan commands. Shown only
+    /// for the text they were computed on.
+    pub(crate) fn laravel_gutter_marks<'a>(
+        &'a self,
+        doc: &'a Document,
+    ) -> Vec<Element<'a, Message>> {
+        use phpthunder::laravel::GutterKind;
+        if doc.diagnostics_version != doc.version() {
+            return Vec::new();
+        }
+        let layout = self.wrap_layout(doc);
+        let (first, last) = self.visible_lines(doc, &layout);
+        doc.gutter_markers
+            .iter()
+            .filter(|m| (first..=last).contains(&(m.line as usize)))
+            .map(|m| {
+                let (glyph, tip) = match m.kind {
+                    GutterKind::RouteAction => (
+                        Icon::Symbols,
+                        tr!("gutter-route-action", target = m.detail.as_str()),
+                    ),
+                    GutterKind::ModelTable => (
+                        Icon::Database,
+                        tr!("gutter-model-table", table = m.detail.as_str()),
+                    ),
+                    GutterKind::RunMigration | GutterKind::RunSeeder | GutterKind::RunCommand => {
+                        (Icon::Resume, tr!("gutter-run", command = m.detail.as_str()))
+                    }
+                };
+                let color = match m.kind {
+                    GutterKind::RouteAction | GutterKind::ModelTable => ACCENT,
+                    _ => SYN_STRING,
+                };
+                let b = button(icon(glyph, 12.0, 2.0, color))
+                    .padding(1)
+                    .style(ghost_button)
+                    .on_press(Message::Gutter(m.action.clone()));
+                let tip = iced::widget::tooltip(
+                    b,
+                    container(label(tip, 12.0, TEXT))
+                        .padding([4, 8])
+                        .style(popup),
+                    iced::widget::tooltip::Position::Right,
+                );
+                pin(tip)
+                    .x(2.0)
+                    .y(crate::app::row_top(&layout, m.line as usize, 0) + (CODE_LINE - 14.0) / 2.0)
+                    .into()
+            })
+            .collect()
+    }
+
     /// Squiggles under diagnostics on visible lines, drawn beneath the text.
     pub(crate) fn diagnostic_marks<'a>(&'a self, doc: &'a Document) -> Vec<Element<'a, Message>> {
         // Built-in results are drawn only for the text they were computed on;

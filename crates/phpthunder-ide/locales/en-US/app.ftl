@@ -1,6 +1,7 @@
 # Notices, menu entries and tool messages raised by IDE actions.
 # Keys: <area>-<thing>, lowercase kebab-case.
 
+notice-no-intentions = No actions here
 notice-no-suggestions = No suggestions
 notice-no-declaration = No declaration found
 notice-nothing-to-search = Nothing to search: place the cursor on a symbol

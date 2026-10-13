@@ -69,6 +69,9 @@ pub struct Document {
     pub diagnostics_version: u64,
     /// Problems reported by external analysers (PHPStan) at the last save.
     pub external_diagnostics: Vec<phpthunder::inspection::Diagnostic>,
+    /// Laravel gutter markers (route actions, run migration, …) for the
+    /// text at [`Self::diagnostics_version`].
+    pub gutter_markers: Vec<phpthunder::laravel::GutterMarker>,
     /// Carets besides the main one, as `(anchor, head)` byte offsets
     /// (equal when nothing is selected); see `editor::carets`.
     pub extra_carets: Vec<(usize, usize)>,
@@ -102,6 +105,7 @@ impl Document {
             diagnostics: Vec::new(),
             diagnostics_version: 0,
             external_diagnostics: Vec::new(),
+            gutter_markers: Vec::new(),
             extra_carets: Vec::new(),
         };
         doc.refresh_highlights();

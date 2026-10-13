@@ -148,6 +148,37 @@ impl Language {
         analysis::complete(&self.index.read(), text, offset)
     }
 
+    /// Columns or relations for the Eloquent string at `offset`
+    /// (`where('…')`, `with('…')`), with where the replaced text starts.
+    pub fn eloquent_completions(
+        &self,
+        text: &str,
+        offset: usize,
+    ) -> Option<(usize, Vec<Candidate>)> {
+        phpthunder::laravel::eloquent_completions(&self.index.read(), text, offset)
+    }
+
+    /// Laravel gutter markers for a file at `rel` (path from the project
+    /// root): route actions, runnable migrations, seeders and commands.
+    pub fn gutter_markers(&self, text: &str, rel: &str) -> Vec<phpthunder::laravel::GutterMarker> {
+        phpthunder::laravel::gutter_markers(&self.index.read(), text, rel)
+    }
+
+    /// Whether `offset` is inside an Eloquent column or relation string.
+    pub fn in_eloquent_string(&self, text: &str, offset: usize) -> bool {
+        phpthunder::laravel::in_eloquent_string(&self.index.read(), text, offset)
+    }
+
+    /// Declaration of the column (migration) or relation (method) named by
+    /// the Eloquent string at `offset`.
+    pub fn eloquent_definition(
+        &self,
+        text: &str,
+        offset: usize,
+    ) -> Option<(std::path::PathBuf, phpthunder::syntax::Pos)> {
+        phpthunder::laravel::eloquent_definition(&self.index.read(), text, offset)
+    }
+
     /// Inspections for one buffer, run after edits settle.
     pub fn diagnostics(&self, text: &str) -> Vec<Diagnostic> {
         inspection::diagnostics(&self.index.read(), text)

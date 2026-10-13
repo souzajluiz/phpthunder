@@ -41,25 +41,9 @@ pub struct SavedSession {
     pub layout: Option<SavedLayout>,
 }
 
-/// Most projects remembered in [`SavedSession::recent`].
-const RECENT_LIMIT: usize = 12;
-
-/// Where the session is kept; `None` without a home folder. Disabled in
-/// development snapshots so they never change the user's session.
-fn session_path() -> Option<PathBuf> {
-    if std::env::var_os("PHPTHUNDER_SNAPSHOT").is_some() {
-        return None;
-    }
-    let home = std::env::var_os("HOME")?;
-    Some(PathBuf::from(home).join(".config/phpthunder/session.json"))
-}
-
 /// The saved session; empty when missing or unreadable.
 pub(crate) fn load_session() -> SavedSession {
-    session_path()
-        .and_then(|p| std::fs::read_to_string(p).ok())
-        .and_then(|t| serde_json::from_str(&t).ok())
-        .unwrap_or_default()
+    crate::settings::load_session().unwrap_or_default()
 }
 
 impl App {
@@ -104,22 +88,20 @@ impl App {
         self.session.last_project = Some(root.clone());
         self.session.recent.retain(|p| p != &root);
         self.session.recent.insert(0, root.clone());
-        self.session.recent.truncate(RECENT_LIMIT);
+        self.session
+            .recent
+            .truncate(crate::settings::settings().recent_projects);
         self.session.projects.insert(root, project);
-        let Some(path) = session_path() else {
-            return;
-        };
-        if let Some(dir) = path.parent() {
-            let _ = std::fs::create_dir_all(dir);
-        }
-        if let Ok(json) = serde_json::to_string_pretty(&self.session) {
-            let _ = std::fs::write(path, json);
-        }
+        crate::settings::save_session(&self.session);
     }
 
     /// Reads the saved tabs of `root` in the background (answered by
-    /// [`Message::SessionRestored`]); nothing when none were saved.
+    /// [`Message::SessionRestored`]); nothing when none were saved or the
+    /// user turned `restore_session` off.
     pub(crate) fn restore_tabs(&mut self, root: &Path) -> Task<Message> {
+        if !crate::settings::settings().restore_session {
+            return Task::none();
+        }
         let Some(saved) = self.session.projects.get(root).cloned() else {
             return Task::none();
         };

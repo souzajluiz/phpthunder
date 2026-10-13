@@ -44,22 +44,48 @@ fn has_parameters(signature: &str) -> bool {
         .is_some_and(|(_, rest)| !rest.trim_start().starts_with(')'))
 }
 
+/// Templates where Alpine completion applies (Blade, HTML, Vue).
+fn is_markup(file_type: crate::filetype::FileType) -> bool {
+    use crate::filetype::FileType;
+    matches!(file_type, FileType::Blade | FileType::Html | FileType::Vue)
+}
+
+/// Script files completed as JavaScript.
+fn is_script(file_type: crate::filetype::FileType) -> bool {
+    use crate::filetype::FileType;
+    matches!(file_type, FileType::JavaScript | FileType::TypeScript)
+}
+
 impl App {
     /// Whether typing `c` should open completion unprompted: after `->`,
     /// `::`, `$`, or the first character of a new identifier in PHP code,
     /// and never inside comments or strings (Laravel key strings aside,
-    /// handled by the caller).
+    /// handled by the caller); after `.` or a new word in JavaScript; in
+    /// Alpine and Blade contexts of templates.
     pub(crate) fn should_auto_complete(&self, c: char) -> bool {
         let Some(doc) = self.doc() else { return false };
-        if doc.file_type == crate::filetype::FileType::Blade {
-            return self
-                .blade_candidates(&doc.text, doc.offset(doc.cursor()))
-                .is_some();
+        let offset = doc.offset(doc.cursor());
+        if is_markup(doc.file_type) {
+            // Alpine contexts open on any name character, `@`, `:`, `.`
+            // and `$`; Blade ones as Blade completion decides.
+            let alpine = (is_ident(c) || matches!(c, '@' | ':' | '.' | '$' | '-'))
+                && phpthunder::web::alpine_completions(&doc.text, offset).is_some();
+            return alpine
+                || doc.file_type == crate::filetype::FileType::Blade
+                    && self.blade_candidates(&doc.text, offset).is_some();
+        }
+        if is_script(doc.file_type) {
+            let before = &doc.text[..offset];
+            let start = before.len().saturating_sub(c.len_utf8());
+            if matches!(doc.token_at(start), Some(Token::Comment | Token::String)) {
+                return false;
+            }
+            let word = phpthunder::analysis::ident_start(&doc.text, offset);
+            return c == '.' || (is_ident(c) && offset - word == c.len_utf8());
         }
         if !doc.is_php() {
             return false;
         }
-        let offset = doc.offset(doc.cursor());
         let before = &doc.text[..offset];
         let start = before.len().saturating_sub(c.len_utf8());
         if matches!(
@@ -92,10 +118,24 @@ impl App {
         let offset = doc.offset(doc.cursor());
         let keys = self
             .laravel_candidates(&doc.text, offset)
+            .or_else(|| {
+                doc.is_php()
+                    .then(|| self.lang.eloquent_completions(&doc.text, offset))
+                    .flatten()
+            })
+            .or_else(|| {
+                is_markup(doc.file_type)
+                    .then(|| phpthunder::web::alpine_completions(&doc.text, offset))
+                    .flatten()
+            })
+            .or_else(|| {
+                is_script(doc.file_type)
+                    .then(|| phpthunder::web::javascript_completions(&doc.text, offset, &[]))
+            })
             .or_else(|| self.blade_candidates(&doc.text, offset));
         let (start, items) = match keys {
             Some(keys) => keys,
-            None if doc.file_type == crate::filetype::FileType::Blade => (offset, Vec::new()),
+            None if !doc.is_php() => (offset, Vec::new()),
             None => {
                 let mut start = phpthunder::analysis::ident_start(&doc.text, offset);
                 if start > 0 && doc.text.as_bytes()[start - 1] == b'$' {

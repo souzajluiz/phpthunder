@@ -1,6 +1,7 @@
 //! Blade template highlighting: directives, echo tags, Blade and HTML
-//! comments, HTML tags and attributes, and the PHP expressions inside
-//! echoes, directive arguments and `@php` blocks. A hand-written scanner:
+//! comments, HTML tags and attributes, the PHP expressions inside echoes,
+//! directive arguments and `@php` blocks, and the JavaScript in `<script>`
+//! blocks and Alpine / Livewire attribute values. A hand-written scanner:
 //! Blade mixes HTML and PHP in ways a PHP grammar does not parse.
 
 use super::*;
@@ -97,7 +98,19 @@ fn scan_template(src: &str, out: &mut Vec<Span>) {
             && b.get(i + 1)
                 .is_some_and(|c| c.is_ascii_alphabetic() || *c == b'/')
         {
-            i = scan_tag(src, i, out);
+            let end = scan_tag(src, i, out);
+            // `<script>` contents are JavaScript, up to `</script>`.
+            let is_script = src
+                .get(i + 1..i + 7)
+                .is_some_and(|t| t.eq_ignore_ascii_case("script"))
+                && b.get(i + 7)
+                    .is_some_and(|c| !is_name_byte(*c) && *c != b'-');
+            i = end;
+            if is_script {
+                let close = src[i..].find("</script").map_or(src.len(), |n| i + n);
+                super::javascript::scan_javascript(src, i, close, out);
+                i = close;
+            }
         } else {
             i += 1;
         }
@@ -196,11 +209,27 @@ fn scan_tag(src: &str, at: usize, out: &mut Vec<Span>) -> usize {
         i += 1;
     }
     out.push((name_start, i, Token::Keyword));
+    // Name of the attribute whose value may follow.
+    let mut attribute: Option<(usize, usize)> = None;
     while i < b.len() && b[i] != b'>' {
         match b[i] {
             b'\'' | b'"' => {
                 let end = string_end(src, i);
-                out.push((i, end, Token::String));
+                let script = attribute
+                    .is_some_and(|(s, e)| super::javascript::is_script_attribute(&src[s..e]));
+                if script {
+                    // Alpine / Livewire values are JavaScript: color the
+                    // quotes as a string and the code inside as code.
+                    let inner_end = end.saturating_sub(1).max(i + 1);
+                    out.push((i, i + 1, Token::String));
+                    super::javascript::scan_javascript(src, i + 1, inner_end, out);
+                    if inner_end < end {
+                        out.push((inner_end, end, Token::String));
+                    }
+                } else {
+                    out.push((i, end, Token::String));
+                }
+                attribute = None;
                 i = end;
             }
             b'{' if src[i..].starts_with("{{") => {
@@ -212,15 +241,41 @@ fn scan_tag(src: &str, at: usize, out: &mut Vec<Span>) -> usize {
                 }
                 i = end;
             }
-            b'@' => i = scan_directive(src, i, out),
+            b'@' => {
+                // `@click="…"` is an Alpine event; `@if(…)`, `@class([…])`
+                // are Blade directives.
+                let start = i;
+                let mut j = i + 1;
+                while j < b.len() && (is_name_byte(b[j]) || matches!(b[j], b'-' | b':' | b'.')) {
+                    j += 1;
+                }
+                if j > i + 1 && b.get(j) == Some(&b'=') {
+                    out.push((start, j, Token::Function));
+                    attribute = Some((start, j));
+                    i = j;
+                } else {
+                    i = scan_directive(src, i, out);
+                }
+            }
             c if c.is_ascii_alphabetic() || c == b':' => {
                 let start = i;
                 while i < b.len() && (is_name_byte(b[i]) || matches!(b[i], b'-' | b':' | b'.')) {
                     i += 1;
                 }
-                out.push((start, i, Token::Type));
+                let name = &src[start..i];
+                let token = if super::javascript::is_script_attribute(name) {
+                    Token::Function
+                } else {
+                    Token::Type
+                };
+                out.push((start, i, token));
+                attribute = Some((start, i));
             }
-            _ => i += 1,
+            b'=' | b' ' | b'\n' | b'\t' | b'\r' => i += 1,
+            _ => {
+                attribute = None;
+                i += 1;
+            }
         }
     }
     (i + 1).min(b.len())

@@ -1,6 +1,7 @@
 //! Lucide stroke icons (ISC license, `assets/icons/LICENSE`), embedded in
-//! the binary and tinted at draw time, plus the PhpThunder brand artwork
-//! from `assets/brand`, drawn in its own colors.
+//! the binary and tinted at draw time, plus the brand artwork from
+//! `assets/brand` (PhpThunder's and the Claude symbol), drawn in its own
+//! colors.
 
 use iced::widget::{Svg, svg};
 use iced::{Color, Length};
@@ -20,8 +21,6 @@ pub enum Icon {
     Branch,
     /// Terminal tool in the rail (`square-terminal`).
     Terminal,
-    /// Claude assistant panel in the rail (own `sparkle`).
-    Sparkle,
     /// Collapsed directory in the tree; hidden replace row in the find bar.
     ChevronRight,
     /// Expanded directory in the tree; shown replace row in the find bar.
@@ -94,7 +93,6 @@ impl Icon {
             Icon::Symbols => include_str!("../../assets/icons/code.svg"),
             Icon::Branch => include_str!("../../assets/icons/git-branch.svg"),
             Icon::Terminal => include_str!("../../assets/icons/square-terminal.svg"),
-            Icon::Sparkle => include_str!("../../assets/icons/sparkle.svg"),
             Icon::ChevronRight => include_str!("../../assets/icons/chevron-right.svg"),
             Icon::ChevronDown => include_str!("../../assets/icons/chevron-down.svg"),
             Icon::Close => include_str!("../../assets/icons/x.svg"),
@@ -129,7 +127,7 @@ impl Icon {
     }
 }
 
-/// Which brand artwork to draw with `logo`; both live in `assets/brand`.
+/// Which brand artwork to draw with `logo`; all live in `assets/brand`.
 #[derive(Clone, Copy)]
 pub enum Logo {
     /// Spider mark alone (`logo-mark.svg`, 1:1): bottom of the tool rail.
@@ -137,6 +135,9 @@ pub enum Logo {
     /// The app tile, spider over the PhpThunder wordmark (`logo.svg`, 1:1):
     /// welcome screen.
     Lockup,
+    /// The Claude symbol (`claude.svg`, 1:1, Claude's orange): the Claude
+    /// panel button in the rail and its status in the status bar.
+    Claude,
 }
 
 impl Logo {
@@ -145,6 +146,7 @@ impl Logo {
         match self {
             Logo::Mark => include_bytes!("../../assets/brand/logo-mark.svg"),
             Logo::Lockup => include_bytes!("../../assets/brand/logo.svg"),
+            Logo::Claude => include_bytes!("../../assets/brand/claude.svg"),
         }
     }
 
@@ -153,13 +155,15 @@ impl Logo {
         match self {
             Logo::Mark => 1.0,
             Logo::Lockup => 1.0,
+            Logo::Claude => 1.0,
         }
     }
 }
 
 /// Builds an SVG widget for the brand artwork `which`, `width` px wide with
 /// the height following its aspect ratio. Unlike `icon` it keeps its own
-/// colors. Used by the title bar and the welcome screen.
+/// colors. Used by the title bar, the welcome screen, the rail and the
+/// status bar.
 pub fn logo<'a>(which: Logo, width: f32) -> Svg<'a> {
     svg(svg::Handle::from_memory(which.source()))
         .width(Length::Fixed(width))

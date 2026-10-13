@@ -264,7 +264,7 @@ impl App {
             panes: Panes::default(),
             viewport_height: 700.0,
             editor_width: 900.0,
-            soft_wrap: false,
+            soft_wrap: crate::settings::settings().soft_wrap,
             completion: None,
             hover: None,
             hover_generation: 0,
@@ -314,11 +314,17 @@ impl App {
         if let Some(layout) = app.session.layout {
             app.panes = Panes::new(layout.into());
         }
-        // The folder given on the command line, else the last project.
+        // The folder given on the command line, else the last project
+        // (unless the user turned `restore_session` off).
         let folder = std::env::args()
             .nth(1)
             .map(PathBuf::from)
-            .or_else(|| app.session.last_project.clone())
+            .or_else(|| {
+                crate::settings::settings()
+                    .restore_session
+                    .then(|| app.session.last_project.clone())
+                    .flatten()
+            })
             .filter(|p| p.is_dir());
         let snapshot = App::snapshot_tasks(folder.as_deref());
         let task = match folder {
@@ -762,8 +768,9 @@ impl App {
             }
             Message::Keyboard(event, captured) => self.keyboard(event, captured),
             Message::Inspect(generation) => self.run_inspection(generation),
-            Message::Inspected(path, version, diagnostics) => {
-                self.store_diagnostics(&path, version, diagnostics);
+            Message::Gutter(action) => self.gutter_action(action),
+            Message::Inspected(path, version, diagnostics, markers) => {
+                self.store_diagnostics(&path, version, diagnostics, markers);
                 Task::none()
             }
             Message::IntentionMove(delta) => {
@@ -1185,7 +1192,12 @@ impl App {
 
         if self.completion.is_some() {
             match (inserted, deleted) {
-                (Some(c), _) if is_ident(c) || c == '$' || self.in_laravel_key() => {
+                (Some(c), _)
+                    if is_ident(c)
+                        || c == '$'
+                        || self.in_laravel_key()
+                        || self.should_auto_complete(c) =>
+                {
                     self.refresh_completion(false)
                 }
                 (None, true) => self.refresh_completion(false),

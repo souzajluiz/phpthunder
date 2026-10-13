@@ -86,20 +86,25 @@ impl App {
         Some((key.start, items))
     }
 
-    /// Whether the caret is inside a key string of a Laravel project, where
-    /// typing (dots included) keeps key completion open.
+    /// Whether the caret is inside a key string of a Laravel project, or an
+    /// Eloquent column or relation string, where typing (dots included)
+    /// keeps completion open.
     pub(crate) fn in_laravel_key(&self) -> bool {
         self.laravel.is_some()
-            && self
-                .doc()
-                .is_some_and(|d| laravel::key_at(&d.text, d.offset(d.cursor())).is_some())
+            && self.doc().is_some_and(|d| {
+                let offset = d.offset(d.cursor());
+                laravel::key_at(&d.text, offset).is_some()
+                    || (d.is_php() && self.lang.in_eloquent_string(&d.text, offset))
+            })
     }
 
-    /// Declaration of the key named by the string at `offset`, if any.
+    /// Declaration of the key, column or relation named by the string at
+    /// `offset`, if any.
     pub(crate) fn laravel_definition(&self, text: &str, offset: usize) -> Option<(PathBuf, Pos)> {
         let project = self.laravel.as_ref()?;
-        let key = laravel::key_at(text, offset)?;
-        let found = project.find(key.kind, &key.value)?;
-        Some((found.path.clone(), found.pos))
+        let found = laravel::key_at(text, offset)
+            .and_then(|key| project.find(key.kind, &key.value))
+            .map(|found| (found.path.clone(), found.pos));
+        found.or_else(|| self.lang.eloquent_definition(text, offset))
     }
 }

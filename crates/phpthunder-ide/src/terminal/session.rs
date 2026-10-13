@@ -49,17 +49,27 @@ pub struct Session {
 }
 
 impl Session {
-    /// Starts the user's login shell in `cwd` with a `rows` x `cols` screen.
+    /// Starts the user's login shell in `cwd` with a `rows` x `cols` screen:
+    /// the `shell` setting as a login shell when set, else the system's.
     ///
     /// # Errors
     /// Returns a message when the PTY cannot be opened or the shell fails to
     /// start.
     pub fn spawn(cwd: &Path, rows: u16, cols: u16) -> Result<Self, String> {
-        Self::start(CommandBuilder::new_default_prog(), cwd, rows, cols)
+        let cmd = match &crate::settings::settings().shell {
+            Some(shell) => {
+                let mut cmd = CommandBuilder::new(shell);
+                cmd.arg("-l");
+                cmd
+            }
+            None => CommandBuilder::new_default_prog(),
+        };
+        Self::start(cmd, cwd, rows, cols)
     }
 
     /// Starts `program` (a command line, e.g. `claude`) in `cwd` through the
-    /// user's login shell (`$SHELL -lc 'exec …'`), so it is found on the
+    /// user's login shell (the `shell` setting, else `$SHELL`, run as
+    /// `-lc 'exec …'`), so it is found on the
     /// `PATH` the user's profile sets up even when the IDE was launched from
     /// the Finder. The session ends when the program exits.
     ///
@@ -68,7 +78,11 @@ impl Session {
     /// start. A program missing from `PATH` is reported by the shell, inside
     /// the session.
     pub fn spawn_program(cwd: &Path, rows: u16, cols: u16, program: &str) -> Result<Self, String> {
-        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into());
+        let shell = crate::settings::settings()
+            .shell
+            .clone()
+            .or_else(|| std::env::var("SHELL").ok())
+            .unwrap_or_else(|| "/bin/sh".into());
         let mut cmd = CommandBuilder::new(shell);
         cmd.args(["-lc", &format!("exec {program}")]);
         Self::start(cmd, cwd, rows, cols)

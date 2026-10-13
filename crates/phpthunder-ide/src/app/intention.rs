@@ -13,10 +13,23 @@ impl App {
     /// "Implement methods" inside a class that lacks implementations, and
     /// "Optimize imports". Shows a notice when nothing applies.
     pub(crate) fn open_intentions(&mut self) -> Task<Message> {
-        let Some(doc) = self.doc().filter(|d| d.is_php()) else {
+        let Some(doc) = self.doc() else {
             return Task::none();
         };
         let offset = doc.offset(doc.cursor());
+        let blade = doc.file_type == crate::filetype::FileType::Blade;
+        if blade {
+            // Templates get the Laravel actions only.
+            let items: Vec<Intention> =
+                phpthunder::laravel::laravel_actions(&doc.text, offset, true)
+                    .into_iter()
+                    .map(Intention::Fix)
+                    .collect();
+            return self.show_intentions(items);
+        }
+        if !doc.is_php() {
+            return Task::none();
+        }
         let open = self.open_texts();
         let mut items: Vec<Intention> = self
             .diagnostics_at(offset)
@@ -29,8 +42,26 @@ impl App {
         {
             items.push(Intention::ImplementMethods { class });
         }
+        items.extend(
+            phpthunder::laravel::laravel_actions(&doc.text, offset, false)
+                .into_iter()
+                .map(Intention::Fix),
+        );
         items.extend(self.refactor_intentions());
         items.push(Intention::OptimizeImports);
+        self.show_intentions(items)
+    }
+
+    /// Opens the `⌥↵` menu with `items` at the caret; a notice instead when
+    /// there are none.
+    fn show_intentions(&mut self, items: Vec<Intention>) -> Task<Message> {
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        if items.is_empty() {
+            self.notice = Some(tr!("notice-no-intentions"));
+            return Task::none();
+        }
         let pos = doc.cursor();
         let (line, col) = (pos.line, doc.visual_column(pos));
         self.completion = None;

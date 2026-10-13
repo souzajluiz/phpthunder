@@ -67,3 +67,6 @@ status-indexed = { $files ->
 } · { $elapsed }
 status-inspecting = Inspecting…
 status-position = Ln { $line }, Col { $column }
+gutter-route-action = Go to { $target }
+gutter-model-table = Go to the migration of { $table }
+gutter-run = Run: { $command }

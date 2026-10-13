@@ -13,9 +13,6 @@ use iced::{Size, Task};
 /// terminal is active (taking focus away from the code editor).
 pub const TERMINAL_SINK: &str = "terminal-sink";
 
-/// Command line the Claude panel runs.
-const CLAUDE_COMMAND: &str = "claude";
-
 /// Screen size used before the panel has been measured.
 const DEFAULT_GRID: (u16, u16) = (24, 100);
 
@@ -76,7 +73,12 @@ impl App {
     /// the panel above the exited banner, whose Start button retries.
     pub(crate) fn start_claude(&mut self) {
         let (rows, cols) = self.terminal_grid.unwrap_or(DEFAULT_GRID);
-        match Session::spawn_program(&self.console_cwd(), rows, cols, CLAUDE_COMMAND) {
+        match Session::spawn_program(
+            &self.console_cwd(),
+            rows,
+            cols,
+            &crate::settings::settings().claude_command,
+        ) {
             Ok(session) => {
                 self.claude = Some(session);
                 self.notice = None;

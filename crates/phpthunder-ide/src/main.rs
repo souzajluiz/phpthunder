@@ -16,6 +16,7 @@ mod palette;
 mod phpstan;
 mod project;
 mod search;
+mod settings;
 mod shell_env;
 mod template;
 mod terminal;

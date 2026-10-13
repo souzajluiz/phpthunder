@@ -14,7 +14,7 @@ use crate::ui::{Icon, Logo, icon, logo};
 use iced::alignment::{Horizontal, Vertical};
 use iced::widget::text::{LineHeight, Span, Wrapping};
 use iced::widget::{
-    Stack, button, column, container, mouse_area, pin, responsive, rich_text, row, scrollable,
+    Stack, Svg, button, column, container, mouse_area, pin, responsive, rich_text, row, scrollable,
     space, stack, text, text_editor, tooltip,
 };
 use iced::{Center, Color, Element, Fill, Font, Length, Padding, Shadow, Size, Theme, Vector};
@@ -286,69 +286,71 @@ impl App {
     /// Narrow tool rail on the far left. Only the project button is wired (it
     /// toggles the sidebar); the others are placeholders with tooltips.
     fn rail(&self) -> El<'_> {
-        let item = |which: Icon, active: bool, msg: Option<Message>, tip: String| -> El<'_> {
-            let b = button(
-                container(icon(which, 20.0, 1.8, if active { ACCENT } else { MUTED })).center(44),
-            )
-            .width(44)
-            .height(44)
-            .padding(0)
-            .style(rail_button(active))
-            .on_press_maybe(msg);
-            tooltip(
-                b,
-                container(label(tip, 12.0, TEXT))
-                    .padding([4, 8])
-                    .style(popup),
-                tooltip::Position::Right,
-            )
-            .into()
-        };
+        // A rail glyph: a Lucide icon tinted by whether its tool is active.
+        let tool =
+            |which: Icon, active: bool| icon(which, 20.0, 1.8, if active { ACCENT } else { MUTED });
+        let item =
+            |glyph: Svg<'static>, active: bool, msg: Option<Message>, tip: String| -> El<'_> {
+                let b = button(container(glyph).center(44))
+                    .width(44)
+                    .height(44)
+                    .padding(0)
+                    .style(rail_button(active))
+                    .on_press_maybe(msg);
+                tooltip(
+                    b,
+                    container(label(tip, 12.0, TEXT))
+                        .padding([4, 8])
+                        .style(popup),
+                    tooltip::Position::Right,
+                )
+                .into()
+            };
         let rail = column![
             item(
-                Icon::Folder,
+                tool(Icon::Folder, self.sidebar),
                 self.sidebar,
                 Some(Message::ToggleSidebar),
                 format!("{}  {}", tr!("rail-project"), hint(Cmd::ToggleSidebar))
             ),
             item(
-                Icon::Search,
+                tool(Icon::Search, false),
                 false,
                 Some(Message::Command(Cmd::FindInPath)),
                 format!("{}  {}", tr!("action-find-in-path"), hint(Cmd::FindInPath))
             ),
             item(
-                Icon::Symbols,
+                tool(Icon::Symbols, false),
                 false,
                 Some(Message::Command(Cmd::GotoSymbol)),
                 format!("{}  {}", tr!("action-go-to-symbol"), hint(Cmd::GotoSymbol))
             ),
             item(
-                Icon::Tests,
+                tool(Icon::Tests, self.bottom == Some(Bottom::Tests)),
                 self.bottom == Some(Bottom::Tests),
                 Some(Message::RunTests(TestTarget::Context)),
                 format!("{}  {}", tr!("rail-run-tests"), hint(Cmd::RunTests))
             ),
             item(
-                Icon::Terminal,
+                tool(Icon::Terminal, self.bottom == Some(Bottom::Terminal)),
                 self.bottom == Some(Bottom::Terminal),
                 Some(Message::Command(Cmd::ToggleTerminal)),
                 format!("{}  {}", tr!("panel-terminal"), hint(Cmd::ToggleTerminal))
             ),
             item(
-                Icon::Sparkle,
+                logo(Logo::Claude, 18.0),
                 self.bottom == Some(Bottom::Claude),
                 Some(Message::Command(Cmd::ToggleClaude)),
                 format!("{}  {}", tr!("panel-claude"), hint(Cmd::ToggleClaude))
             ),
             item(
-                Icon::Bug,
+                tool(Icon::Bug, self.bottom == Some(Bottom::Debug)),
                 self.bottom == Some(Bottom::Debug),
                 Some(Message::DebugTest),
                 format!("{}  {}", tr!("debug-test"), hint(Cmd::DebugTest))
             ),
             item(
-                Icon::Commit,
+                tool(Icon::Commit, self.bottom == Some(Bottom::Commit)),
                 self.bottom == Some(Bottom::Commit),
                 Some(Message::Command(Cmd::Commit)),
                 format!("{}  {}", tr!("panel-commit"), hint(Cmd::Commit))
@@ -746,6 +748,9 @@ impl App {
             content = content.push_under(mark);
         }
         for mark in self.git_gutter_marks(doc) {
+            content = content.push(mark);
+        }
+        for mark in self.laravel_gutter_marks(doc) {
             content = content.push(mark);
         }
         for mark in self.debug_marks(doc) {
@@ -1497,12 +1502,9 @@ impl App {
                 (tr!("status-claude-running", project = project), ACCENT)
             };
             bar = bar.push(
-                row![
-                    icon(Icon::Sparkle, 12.0, 2.2, color),
-                    label(text, 12.0, color)
-                ]
-                .spacing(6)
-                .align_y(Center),
+                row![logo(Logo::Claude, 12.0), label(text, 12.0, color)]
+                    .spacing(6)
+                    .align_y(Center),
             );
         }
         container(bar)

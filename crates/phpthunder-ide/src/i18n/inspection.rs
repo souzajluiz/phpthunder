@@ -41,6 +41,12 @@ pub fn diagnostic_message(diagnostic: &Diagnostic) -> String {
             expected = expected.as_str(),
             found = found.as_str()
         ),
+        Code::UnknownLaravelKey { kind, name } => tr!(
+            "diagnostic-unknown-laravel-key",
+            kind = format!("{kind:?}"),
+            name = name.as_str()
+        ),
+        Code::SimplifyOrderBy => tr!("diagnostic-simplify-order-by"),
         Code::External(_) => diagnostic.message.clone(),
     }
 }
@@ -51,6 +57,11 @@ pub fn fix_title(fix: &Fix) -> String {
         FixKind::ImportClass(fqn) => tr!("fix-import-class", name = fqn.as_str()),
         FixKind::RemoveImport => tr!("fix-remove-import"),
         FixKind::RemoveAssignment => tr!("fix-remove-assignment"),
+        FixKind::UseOrderByDesc => tr!("fix-use-order-by-desc"),
+        FixKind::ToggleBladeEcho { to_raw: true } => tr!("fix-blade-echo-raw"),
+        FixKind::ToggleBladeEcho { to_raw: false } => tr!("fix-blade-echo-escaped"),
+        FixKind::RulesToArray => tr!("fix-rules-to-array"),
+        FixKind::RulesToString => tr!("fix-rules-to-string"),
         FixKind::AddMethod { class, name } => {
             tr!("fix-add-method", name = name.as_str(), class = short(class))
         }

@@ -166,7 +166,14 @@ pub enum Message {
     /// Debounce timer for inspections fired; stale generations are ignored.
     Inspect(u64),
     /// Inspection results for a file at a document version.
-    Inspected(PathBuf, u64, Vec<Diagnostic>),
+    Inspected(
+        PathBuf,
+        u64,
+        Vec<Diagnostic>,
+        Vec<phpthunder::laravel::GutterMarker>,
+    ),
+    /// A Laravel gutter marker was clicked.
+    Gutter(phpthunder::laravel::GutterAction),
     /// Move the `⌥↵` menu selection by this many rows.
     IntentionMove(i32),
     /// Apply the selected `⌥↵` entry.

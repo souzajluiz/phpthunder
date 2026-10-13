@@ -4,6 +4,7 @@ mod blade;
 mod carets;
 mod document;
 mod highlight;
+mod javascript;
 mod lexer;
 mod wrap;
 

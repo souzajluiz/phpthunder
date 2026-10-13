@@ -41,12 +41,14 @@ pub const LOCALES: &[Locale] = &[
 ];
 
 /// Picks the UI language: `PHPTHUNDER_LANG` if set (e.g. `pt-BR`, `en`),
-/// else the operating system's language, else English. A language without
+/// else the `language` setting, else the operating system's language, else
+/// English. A language without
 /// an exact match falls back to the first locale with the same base
 /// language (`pt-PT` -> `pt-BR`).
 pub fn detect_locale() -> &'static Locale {
     let requested = std::env::var("PHPTHUNDER_LANG")
         .ok()
+        .or_else(|| crate::settings::settings().language.clone())
         .or_else(sys_locale::get_locale)
         .unwrap_or_default();
     match_locale(&requested)
