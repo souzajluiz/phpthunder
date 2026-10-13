@@ -146,6 +146,16 @@ pub enum Message {
     // Window
     /// Show or hide the project sidebar.
     ToggleSidebar,
+    /// Mouse pressed on a pane splitter: start resizing that pane.
+    ResizeStart(crate::app::Splitter),
+    /// Cursor moved while a splitter is dragged (window coordinates).
+    ResizeMove(Point),
+    /// Mouse released: stop resizing.
+    ResizeEnd,
+    /// Double-click on a splitter: give its pane the default size.
+    ResizeReset(crate::app::Splitter),
+    /// The mouse entered (`Some`) or left (`None`) a splitter handle.
+    SplitterHover(Option<crate::app::Splitter>),
     /// Start dragging the borderless window from the title bar.
     DragWindow,
     /// Maximize or restore the window (title bar double-click).

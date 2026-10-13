@@ -29,6 +29,9 @@ palette-line-item = Linha { $line }, coluna { $column }
 palette-symbol-detail = { $owner } · linha { $line }
 
 list-position = { $current } de { $total }
+completion-keys = ↵ inserir · ⇥ substituir
+status-claude-running = Claude rodando em { $project }
+status-claude-exited = Claude encerrado
 
 find-placeholder = Buscar
 find-match-case = Diferenciar maiúsculas

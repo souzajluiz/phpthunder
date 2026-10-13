@@ -3,7 +3,7 @@
 
 use crate::app::{
     App, Bottom, Completion, EDITOR_ID, EDITOR_SCROLL_ID, Hover, Indexing, Message, Search,
-    TestTarget, Usages, bindings,
+    Splitter, TestTarget, Usages, bindings,
 };
 use crate::editor::Document;
 use crate::keymap::{Cmd, hint};
@@ -100,10 +100,18 @@ impl App {
             right: ISLAND_GAP,
             ..Padding::ZERO
         });
-        if self.sidebar {
-            body = body.push(self.sidebar());
-        }
-        body = body.push(self.main_area());
+        // The sidebar and the editor share one row with no spacing: the
+        // splitter between them is the island gap.
+        body = body.push(if self.sidebar {
+            row![
+                self.sidebar(),
+                self.splitter(Splitter::Sidebar),
+                self.main_area()
+            ]
+            .into()
+        } else {
+            self.main_area()
+        });
         let base = container(
             column![self.title_bar(), body.height(Fill), self.status_bar()]
                 .width(Fill)
@@ -184,15 +192,26 @@ impl App {
         .padding([2, 6])
         .style(ghost_button)
         .on_press(Message::OpenFolderDialog);
-        let mut bar = row![space().width(TRAFFIC_LIGHTS_INSET), project]
-            .spacing(6)
-            .align_y(Center)
-            .padding(Padding {
-                left: 0.0,
-                right: 12.0,
-                top: 0.0,
-                bottom: 0.0,
-            });
+        let brand = row![
+            logo(Logo::Mark, 18.0),
+            label(crate::APP_NAME, 13.0, TEXT_BRIGHT).font(UI_BOLD),
+        ]
+        .spacing(8)
+        .align_y(Center);
+        let mut bar = row![
+            space().width(TRAFFIC_LIGHTS_INSET),
+            brand,
+            space().width(6),
+            project
+        ]
+        .spacing(6)
+        .align_y(Center)
+        .padding(Padding {
+            left: 0.0,
+            right: 12.0,
+            top: 0.0,
+            bottom: 0.0,
+        });
         if let Some(branch) = &self.branch {
             bar = bar.push(
                 button(
@@ -335,7 +354,6 @@ impl App {
                 format!("{}  {}", tr!("panel-commit"), hint(Cmd::Commit))
             ),
             space().height(Fill),
-            container(logo(Logo::Mark, 22.0)).padding(8),
         ]
         .spacing(4)
         .height(Fill)
@@ -452,10 +470,46 @@ impl App {
             .height(Fill)
             .style(scrollbars);
         container(column![header, list])
-            .width(280)
+            .width(self.panes.sizes.sidebar)
             .height(Fill)
             .style(island)
             .clip(true)
+            .into()
+    }
+
+    /// Drag handle filling the island gap beside a resizable pane: shows a
+    /// resize cursor, lights an accent line while hovered or dragged,
+    /// starts the drag on press (followed by `App::subscription`) and
+    /// resets the pane's size on double-click.
+    fn splitter(&self, which: Splitter) -> El<'_> {
+        let lit = self.panes.dragging() == Some(which) || self.panes.hovered == Some(which);
+        let color = if lit {
+            Color { a: 0.8, ..ACCENT }
+        } else {
+            Color::TRANSPARENT
+        };
+        // Always the same widgets, only the color changes: the handle keeps
+        // a stable hit box while it lights up.
+        let (handle, interaction) = match which {
+            Splitter::Sidebar => (
+                container(container(space()).width(2).height(Fill).style(fill(color)))
+                    .center_x(ISLAND_GAP)
+                    .height(Fill),
+                iced::mouse::Interaction::ResizingHorizontally,
+            ),
+            Splitter::Bottom => (
+                container(container(space()).width(Fill).height(2).style(fill(color)))
+                    .center_y(ISLAND_GAP)
+                    .width(Fill),
+                iced::mouse::Interaction::ResizingVertically,
+            ),
+        };
+        mouse_area(handle)
+            .interaction(interaction)
+            .on_press(Message::ResizeStart(which))
+            .on_double_click(Message::ResizeReset(which))
+            .on_enter(Message::SplitterHover(Some(which)))
+            .on_exit(Message::SplitterHover(None))
             .into()
     }
 
@@ -480,9 +534,9 @@ impl App {
                     .into()
             }
         };
-        let mut col = column![editor].spacing(ISLAND_GAP);
+        let mut col = column![editor];
         if let Some(panel) = self.bottom_panel() {
-            col = col.push(panel);
+            col = col.push(self.splitter(Splitter::Bottom)).push(panel);
         }
         col.width(Fill).height(Fill).into()
     }
@@ -535,38 +589,33 @@ impl App {
                     .spacing(2)
                     .align_y(Center)
                 )
-                .padding(0)
-                .style(|_, _| button::Style::default())
+                .padding([3, 4])
+                .style(|_: &Theme, status| button::Style {
+                    background: interaction_wash(status),
+                    border: iced::border::rounded(4),
+                    ..Default::default()
+                })
                 .on_press(Message::SelectTab(i)),
                 close,
             ]
             .spacing(4)
             .align_y(Center)
             .padding(Padding {
-                left: 6.0,
+                left: 2.0,
                 right: 4.0,
                 top: 0.0,
                 bottom: 0.0,
             });
-            container(content)
-                .height(28)
-                .center_y(28)
-                .style(move |_: &Theme| container::Style {
-                    background: active.then(|| rgb(0x2C2C3B).into()),
-                    border: if active {
-                        iced::Border {
-                            color: rgb(0x5C4A80),
-                            width: 1.0,
-                            radius: 6.0.into(),
-                        }
-                    } else {
-                        iced::border::rounded(6)
-                    },
-                    ..Default::default()
-                })
+            // The active tab is underlined in the accent color.
+            let underline = container(space())
+                .width(Fill)
+                .height(2)
+                .style(fill(if active { ACCENT } else { Color::TRANSPARENT }));
+            column![container(content).height(38).center_y(38), underline]
+                .width(Length::Shrink)
                 .into()
         });
-        let bar = row(tabs).spacing(4).align_y(Center);
+        let bar = row(tabs).spacing(8).align_y(Center);
         container(
             scrollable(bar.height(40)).direction(scrollable::Direction::Horizontal(
                 scrollable::Scrollbar::new().width(0).scroller_width(0),
@@ -847,8 +896,8 @@ impl App {
                 .on_press(Message::SelectBottom(b))
                 .padding([0, 10])
                 .height(33)
-                .style(move |_: &Theme, _| button::Style {
-                    background: Some(PANEL.into()),
+                .style(move |_: &Theme, status| button::Style {
+                    background: interaction_wash(status).or(Some(PANEL.into())),
                     shadow: if active {
                         Shadow {
                             color: ACCENT,
@@ -909,7 +958,7 @@ impl App {
         };
         Some(
             container(column![header, hsep(), body])
-                .height(260)
+                .height(self.panes.sizes.bottom)
                 .width(Fill)
                 .style(island)
                 .clip(true)
@@ -1432,6 +1481,30 @@ impl App {
                 .push(label("UTF-8", 12.0, MUTED));
             bar = bar.push(label(doc.file_type.name(), 12.0, MUTED));
         }
+        // While the Claude panel is open: whether the CLI is running, and where.
+        if self.bottom == Some(Bottom::Claude)
+            && let Some(session) = &self.claude
+        {
+            let project = self
+                .tree
+                .root
+                .as_deref()
+                .map(crate::app::file_name)
+                .unwrap_or_default();
+            let (text, color) = if session.has_exited() {
+                (tr!("status-claude-exited"), MUTED)
+            } else {
+                (tr!("status-claude-running", project = project), ACCENT)
+            };
+            bar = bar.push(
+                row![
+                    icon(Icon::Sparkle, 12.0, 2.2, color),
+                    label(text, 12.0, color)
+                ]
+                .spacing(6)
+                .align_y(Center),
+            );
+        }
         container(bar)
             .height(26)
             .center_y(26)
@@ -1452,10 +1525,18 @@ fn kind_badge<'a>(kind: Kind) -> El<'a> {
         Kind::Enum => ("E", BADGE_CLASS),
         Kind::Constant | Kind::ClassConstant | Kind::EnumCase => ("k", BADGE_OTHER),
     };
-    container(label(letter, 11.0, colors.1).font(MONO))
+    container(label(letter, 11.0, colors.1).font(UI_BOLD))
         .center(18)
         .style(badge(colors))
         .into()
+}
+
+/// Where a migration column comes from, from a property's detail
+/// (`Carbon $created_at (plans column)` gives `plans column`).
+fn column_origin(detail: &str) -> Option<&str> {
+    let inner = detail.strip_suffix(')')?;
+    let origin = &inner[inner.rfind('(')? + 1..];
+    origin.ends_with(" column").then_some(origin)
 }
 
 /// Parameter list and result type of a proposal, from its detail: a
@@ -1574,10 +1655,15 @@ fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
                     .map(|(ns, _)| ns)
                     .unwrap_or("")
                     .to_string(),
-                None => ret,
+                // A migration column says where it comes from: `Carbon · plans column`.
+                None => match column_origin(&candidate.detail) {
+                    Some(origin) if ret.is_empty() => origin.to_string(),
+                    Some(origin) => format!("{ret} · {origin}"),
+                    None => ret,
+                },
             };
             let badge: El<'_> = if candidate.detail == phpthunder::analysis::KEYWORD_DETAIL {
-                container(label("kw", 10.0, SYN_KEYWORD).font(MONO))
+                container(label("kw", 10.0, BADGE_OTHER.1).font(UI_BOLD))
                     .center(18)
                     .style(badge(BADGE_OTHER))
                     .into()
@@ -1624,6 +1710,7 @@ fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
     let details = column![
         label(item.detail.clone(), 12.0, SYN_VARIABLE).font(MONO),
         space().height(Fill),
+        label(tr!("completion-keys"), 11.0, MUTED),
         label(
             tr!(
                 "list-position",
@@ -1676,4 +1763,19 @@ fn hover_popup(h: &Hover) -> El<'_> {
         .width(HOVER_WIDTH)
         .style(popup)
         .into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn column_origin_should_read_the_table_of_a_migration_column() {
+        assert_eq!(
+            column_origin("Carbon $created_at (plans column)"),
+            Some("plans column")
+        );
+        assert_eq!(column_origin("public function save(): bool"), None);
+        assert_eq!(column_origin("$name"), None);
+    }
 }

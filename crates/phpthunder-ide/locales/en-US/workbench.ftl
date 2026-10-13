@@ -31,6 +31,9 @@ palette-line-item = Line { $line }, column { $column }
 palette-symbol-detail = { $owner } · line { $line }
 
 list-position = { $current } of { $total }
+completion-keys = ↵ insert · ⇥ replace
+status-claude-running = Claude running in { $project }
+status-claude-exited = Claude exited
 
 find-placeholder = Find
 find-match-case = Match case

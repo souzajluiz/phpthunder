@@ -255,8 +255,21 @@ impl App {
             )
             .padding([0, 8])
             .width(Fill)
-            .style(move |_: &Theme, _| button::Style {
-                background: Some(background.into()),
+            .style(move |_: &Theme, status| button::Style {
+                // A tinted line deepens its own tint under the mouse; a plain
+                // one takes the usual wash.
+                background: match status {
+                    button::Status::Hovered | button::Status::Pressed if background.a > 0.0 => {
+                        Some(
+                            Color {
+                                a: background.a * 2.0,
+                                ..background
+                            }
+                            .into(),
+                        )
+                    }
+                    _ => interaction_wash(status).or(Some(background.into())),
+                },
                 text_color: color,
                 ..Default::default()
             })

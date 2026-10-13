@@ -30,6 +30,22 @@ pub const BORDER_STRONG: Color = rgb(0x4E4C63);
 pub const SELECTED: Color = rgb(0x34334A);
 /// Selected row in the completion popup and the navigation palette.
 pub const SELECTED_STRONG: Color = rgb(0x5C3A7A);
+/// Wash laid over any surface under the mouse. Translucent, so the same
+/// token reads on the frame (`CHROME`), the islands (`BG`) and popups.
+pub const HOVER: Color = Color {
+    r: 1.0,
+    g: 1.0,
+    b: 1.0,
+    a: 0.06,
+};
+/// Wash while the mouse button is held down: a step above `HOVER`, so a
+/// press answers before the action runs on release.
+pub const PRESSED: Color = Color {
+    r: 1.0,
+    g: 1.0,
+    b: 1.0,
+    a: 0.11,
+};
 /// Band behind the caret's line in the editor.
 pub const CURRENT_LINE: Color = rgb(0x242433);
 
@@ -75,13 +91,13 @@ pub const SYN_SEPARATOR: Color = rgb(0xE0957B);
 
 // Completion kind badges (background, foreground)
 /// Completion badge for methods and functions (`kind_badge` in the workbench view).
-pub const BADGE_METHOD: (Color, Color) = (rgb(0x3D2E52), rgb(0xC7A65D));
+pub const BADGE_METHOD: (Color, Color) = (rgb(0xC7A65D), rgb(0x1D1D26));
 /// Completion badge for properties.
-pub const BADGE_PROPERTY: (Color, Color) = (rgb(0x2B3150), rgb(0x93A6F5));
+pub const BADGE_PROPERTY: (Color, Color) = (rgb(0x93A6F5), rgb(0x1D1D26));
 /// Completion badge for classes, traits, interfaces and enums.
-pub const BADGE_CLASS: (Color, Color) = (rgb(0x4A2E3A), rgb(0xE6967A));
+pub const BADGE_CLASS: (Color, Color) = (rgb(0xE6967A), rgb(0x1D1D26));
 /// Completion badge for constants and enum cases.
-pub const BADGE_OTHER: (Color, Color) = (rgb(0x34334A), rgb(0xC9C9D1));
+pub const BADGE_OTHER: (Color, Color) = (rgb(0x8785A6), rgb(0x1D1D26));
 
 /// Proportional UI font; installed as the app's default font in `main`.
 pub const UI: Font = Font::with_name("Geist");
@@ -212,16 +228,28 @@ pub fn pill(_: &Theme) -> container::Style {
     }
 }
 
-/// Flat list/tree row: transparent, highlighted when hovered or selected.
+/// Background for a plain clickable surface in `status`: nothing at rest,
+/// `HOVER` under the mouse, `PRESSED` while held. Shared by the button
+/// styles below and the inline ones in the views.
+pub fn interaction_wash(status: button::Status) -> Option<Background> {
+    match status {
+        button::Status::Hovered => Some(HOVER.into()),
+        button::Status::Pressed => Some(PRESSED.into()),
+        button::Status::Active | button::Status::Disabled => None,
+    }
+}
+
+/// Flat list/tree row: transparent, washed when hovered or pressed, filled
+/// when selected.
 pub fn row_button(selected: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
     move |_, status| {
         let bg = match (selected, status) {
-            (true, _) => Some(SELECTED),
-            (false, button::Status::Hovered | button::Status::Pressed) => Some(rgb(0x161A23)),
-            _ => None,
+            (true, button::Status::Pressed) => Some(SELECTED_STRONG.into()),
+            (true, _) => Some(SELECTED.into()),
+            (false, _) => interaction_wash(status),
         };
         button::Style {
-            background: bg.map(Background::Color),
+            background: bg,
             text_color: if selected { TEXT_BRIGHT } else { TEXT_SOFT },
             border: border::rounded(4),
             ..Default::default()
@@ -234,9 +262,9 @@ pub fn row_button(selected: bool) -> impl Fn(&Theme, button::Status) -> button::
 pub fn rail_button(active: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
     move |_, status| button::Style {
         background: match (active, status) {
+            (true, button::Status::Pressed) => Some(SELECTED_STRONG.into()),
             (true, _) => Some(SELECTED.into()),
-            (false, button::Status::Hovered) => Some(rgb(0x161A23).into()),
-            _ => None,
+            (false, _) => interaction_wash(status),
         },
         text_color: if active { ACCENT } else { MUTED },
         border: border::rounded(8),
@@ -244,13 +272,17 @@ pub fn rail_button(active: bool) -> impl Fn(&Theme, button::Status) -> button::S
     }
 }
 
-/// Borderless button that only shows a background on hover. Used for close
-/// buttons, find navigation arrows and replace actions.
+/// Borderless button that only shows a background on hover and press. Used
+/// for close buttons, find navigation arrows and replace actions; its text
+/// brightens under the mouse and dims when disabled.
 pub fn ghost_button(_: &Theme, status: button::Status) -> button::Style {
     button::Style {
-        background: matches!(status, button::Status::Hovered | button::Status::Pressed)
-            .then(|| rgb(0x1C2130).into()),
-        text_color: MUTED,
+        background: interaction_wash(status),
+        text_color: match status {
+            button::Status::Hovered | button::Status::Pressed => TEXT_BRIGHT,
+            button::Status::Active => MUTED,
+            button::Status::Disabled => GUTTER,
+        },
         border: border::rounded(4),
         ..Default::default()
     }
@@ -261,14 +293,22 @@ pub fn ghost_button(_: &Theme, status: button::Status) -> button::Style {
 pub fn primary_button(_: &Theme, status: button::Status) -> button::Style {
     button::Style {
         background: Some(
-            if matches!(status, button::Status::Hovered) {
-                rgb(0xFFD873)
-            } else {
-                ACCENT
+            match status {
+                button::Status::Active => ACCENT,
+                button::Status::Hovered => rgb(0xCBA5F0),
+                button::Status::Pressed => rgb(0xA373D6),
+                button::Status::Disabled => Color { a: 0.4, ..ACCENT },
             }
             .into(),
         ),
-        text_color: rgb(0x14161C),
+        text_color: if matches!(status, button::Status::Disabled) {
+            Color {
+                a: 0.6,
+                ..rgb(0x14161C)
+            }
+        } else {
+            rgb(0x14161C)
+        },
         border: border::rounded(6),
         ..Default::default()
     }
@@ -348,20 +388,15 @@ pub fn boxed_input(_: &Theme, status: text_input::Status) -> text_input::Style {
 /// Small toggle button (regex / case / whole word).
 pub fn toggle_button(on: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
     move |_, status| button::Style {
-        background: Some(
-            if on {
-                rgb(0x3D3320)
-            } else if matches!(status, button::Status::Hovered) {
-                rgb(0x1C2130)
-            } else {
-                Color::TRANSPARENT
-            }
-            .into(),
-        ),
+        background: if on {
+            Some(Color { a: 0.16, ..ACCENT }.into())
+        } else {
+            interaction_wash(status)
+        },
         text_color: if on { ACCENT } else { MUTED },
         border: Border {
             color: if on {
-                rgb(0x6B5420)
+                Color { a: 0.45, ..ACCENT }
             } else {
                 Color::TRANSPARENT
             },

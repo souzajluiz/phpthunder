@@ -57,6 +57,8 @@ pub struct App {
     pub indexing: Indexing,
     /// Whether the project sidebar is visible.
     pub sidebar: bool,
+    /// Sidebar width and bottom panel height, resized by dragging.
+    pub panes: Panes,
     /// Last known editor viewport height, for scroll math.
     pub viewport_height: f32,
     /// Width of the editor area, for soft wrap.
@@ -226,12 +228,29 @@ fn keyboard_events(
     }
 }
 
+/// Maps mouse events to pane resizing while a splitter is dragged
+/// (subscribed only then, see [`App::subscription`]).
+fn resize_events(
+    event: Event,
+    _status: event::Status,
+    _window: iced::window::Id,
+) -> Option<Message> {
+    match event {
+        Event::Mouse(iced::mouse::Event::CursorMoved { position }) => {
+            Some(Message::ResizeMove(position))
+        }
+        Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left))
+        | Event::Mouse(iced::mouse::Event::CursorLeft) => Some(Message::ResizeEnd),
+        _ => None,
+    }
+}
+
 impl App {
     /// Builds the initial empty state; iced calls it once at startup. If the
     /// first CLI argument is a directory, returns a task that opens it as the
     /// project via [`Message::FolderPicked`].
     pub fn boot() -> (Self, Task<Message>) {
-        let app = Self {
+        let mut app = Self {
             lang: Language::default(),
             tree: FileTree::default(),
             branch: None,
@@ -242,6 +261,7 @@ impl App {
             recent: Vec::new(),
             indexing: Indexing::Idle,
             sidebar: true,
+            panes: Panes::default(),
             viewport_height: 700.0,
             editor_width: 900.0,
             soft_wrap: false,
@@ -291,6 +311,9 @@ impl App {
             gutter_y: 0.0,
             completion_stats: completion::load_completion_stats(),
         };
+        if let Some(layout) = app.session.layout {
+            app.panes = Panes::new(layout.into());
+        }
         // The folder given on the command line, else the last project.
         let folder = std::env::args()
             .nth(1)
@@ -341,6 +364,11 @@ impl App {
                 Subscription::run_with(session.id, crate::terminal::output_events)
                     .map(Message::TerminalOutput),
             );
+        }
+        // The mouse is followed window-wide only while a pane is resized,
+        // so the drag keeps going when the cursor outruns the thin handle.
+        if self.panes.dragging().is_some() {
+            subscriptions.push(event::listen_with(resize_events));
         }
         if let Some(root) = &self.tree.root {
             subscriptions.push(
@@ -679,6 +707,7 @@ impl App {
             Message::ReplaceInPath => self.replace_in_path(),
             Message::EditorResized(size) => {
                 self.editor_width = size.width;
+                self.viewport_height = size.height;
                 Task::none()
             }
             Message::SearchDone(result) => {
@@ -701,6 +730,30 @@ impl App {
             }
             Message::ToggleSidebar => {
                 self.sidebar = !self.sidebar;
+                Task::none()
+            }
+            Message::ResizeStart(splitter) => {
+                let room = match splitter {
+                    Splitter::Sidebar => self.editor_width,
+                    Splitter::Bottom => self.viewport_height,
+                };
+                self.panes.begin(splitter, room);
+                Task::none()
+            }
+            Message::ResizeMove(cursor) => {
+                self.panes.moved(cursor);
+                Task::none()
+            }
+            Message::ResizeEnd => {
+                self.panes.end();
+                Task::none()
+            }
+            Message::ResizeReset(splitter) => {
+                self.panes.reset(splitter);
+                Task::none()
+            }
+            Message::SplitterHover(splitter) => {
+                self.panes.hovered = splitter;
                 Task::none()
             }
             Message::DragWindow => iced::window::latest().and_then(iced::window::drag),
