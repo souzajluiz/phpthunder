@@ -25,6 +25,12 @@ impl App {
                 continue;
             }
             git_changed = true;
+            if crate::packages::Installs::is_lock_file(&path)
+                && let Some(root) = self.tree.root.as_deref()
+                && path.parent() == Some(root)
+            {
+                self.packages = crate::packages::Installs::load(root);
+            }
             if let Some(dir) = path.parent() {
                 self.tree.refresh(dir);
             }

@@ -70,3 +70,6 @@ gutter-model-table = Ir para a migration de { $table }
 gutter-run = Executar: { $command }
 panel-move-right = Mover para a direita
 panel-move-bottom = Mover para baixo
+
+# Beside dependencies in composer.json and package.json, when the lock file lacks one.
+package-not-installed = não instalado

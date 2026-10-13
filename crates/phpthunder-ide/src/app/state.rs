@@ -149,6 +149,9 @@ pub struct App {
     pub phpstan_running: bool,
     /// Route names, views and config keys of a Laravel project.
     pub laravel: LaravelScan,
+    /// Installed Composer and npm packages, from the project's lock files;
+    /// shown beside dependencies in `composer.json` and `package.json`.
+    pub packages: crate::packages::Installs,
     /// Git status of the project; `None` outside a repository.
     pub git: Option<crate::git::RepoStatus>,
     /// `HEAD` version of open files (`None`: not in `HEAD`), for the gutter.
@@ -312,6 +315,7 @@ impl App {
             last_test_scope: None,
             phpstan_running: false,
             laravel: None,
+            packages: crate::packages::Installs::default(),
             git: None,
             git_base: Default::default(),
             git_marks: Default::default(),
@@ -966,6 +970,7 @@ impl App {
         self.right = None;
         self.indexing = Indexing::Running;
         self.laravel = None;
+        self.packages = crate::packages::Installs::load(&root);
         self.git = None;
         self.git_base.clear();
         self.git_marks.clear();
@@ -1402,6 +1407,10 @@ impl App {
             return Task::none();
         };
         let offset = doc.offset(doc.cursor());
+        if let Some(url) = package_page_at(doc) {
+            crate::packages::open_in_browser(&url);
+            return Task::none();
+        }
         if let Some((path, pos)) = self.laravel_definition(&doc.text, offset) {
             self.close_overlays();
             self.record_nav();
@@ -1567,6 +1576,18 @@ pub fn scroll_to(y: f32) -> Task<Message> {
             y: Some(y),
         },
     )
+}
+
+/// Registry page of the dependency declared on the caret's line when `doc`
+/// is a `composer.json` or `package.json`; `None` elsewhere. Lets
+/// [`App::goto_definition`] (Cmd/Ctrl+click, `F12`) open a package's page.
+fn package_page_at(doc: &Document) -> Option<String> {
+    let manager = crate::packages::Manager::of_manifest(&doc.path)?;
+    let line = doc.cursor().line;
+    crate::packages::dependencies(&doc.text, manager)
+        .into_iter()
+        .find(|d| d.line == line)
+        .and_then(|d| manager.page_url(&d.name))
 }
 
 /// Last path component as a display string (empty for roots); used in

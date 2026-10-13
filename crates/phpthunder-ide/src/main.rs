@@ -12,6 +12,7 @@ mod git;
 mod i18n;
 mod keymap;
 mod language;
+mod packages;
 mod palette;
 mod phpstan;
 mod project;

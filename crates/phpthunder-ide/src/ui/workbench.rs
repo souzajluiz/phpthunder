@@ -774,6 +774,9 @@ impl App {
         for mark in self.extra_caret_marks(doc, &layout) {
             content = content.push(mark);
         }
+        for hint in self.package_hints(doc, &layout) {
+            content = content.push(hint);
+        }
 
         let scroller = scrollable(content)
             .id(EDITOR_SCROLL_ID)
@@ -839,6 +842,55 @@ impl App {
             );
         }
         out
+    }
+
+    /// Installed version and summary of each dependency in a `composer.json`
+    /// or `package.json`, drawn two columns past the end of its line; "not
+    /// installed" when the lock file lacks it. Composer platform
+    /// requirements (`php`, `ext-*`) get no hint. Only visible lines.
+    fn package_hints<'a>(
+        &'a self,
+        doc: &'a Document,
+        layout: &crate::editor::WrapLayout,
+    ) -> Vec<El<'a>> {
+        /// Longest summary shown; longer ones end in an ellipsis.
+        const MAX_SUMMARY: usize = 80;
+        let Some(manager) = crate::packages::Manager::of_manifest(&doc.path) else {
+            return Vec::new();
+        };
+        let (first, last) = self.visible_lines(doc, layout);
+        crate::packages::dependencies(&doc.text, manager)
+            .into_iter()
+            .filter(|d| (first..=last).contains(&d.line))
+            .filter_map(|d| {
+                let text = match self.packages.get(manager, &d.name) {
+                    Some(p) if p.description.is_empty() => p.version.clone(),
+                    Some(p) => {
+                        let summary: String = p.description.chars().take(MAX_SUMMARY).collect();
+                        let more = if summary.len() < p.description.len() {
+                            "…"
+                        } else {
+                            ""
+                        };
+                        format!("{}  ·  {summary}{more}", p.version)
+                    }
+                    None => {
+                        manager.page_url(&d.name)?;
+                        tr!("package-not-installed")
+                    }
+                };
+                let end = doc.position_of(doc.line_end(d.line));
+                let col = doc.visual_column(end) + 2;
+                Some(
+                    pin(container(label(text, 12.0, MUTED))
+                        .height(CODE_LINE)
+                        .center_y(CODE_LINE))
+                    .x(crate::app::col_left(layout, col))
+                    .y(crate::app::row_top(layout, d.line, col))
+                    .into(),
+                )
+            })
+            .collect()
     }
 
     /// Floating layers over the editor: the completion popup (or else the hover
