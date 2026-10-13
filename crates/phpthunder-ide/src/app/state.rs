@@ -465,6 +465,13 @@ impl App {
         if self.panes.dragging().is_some() {
             subscriptions.push(event::listen_with(resize_events));
         }
+        // Indexing reports through atomics; a steady tick redraws the bar.
+        if matches!(self.indexing, Indexing::Running(_)) {
+            subscriptions.push(
+                iced::time::every(std::time::Duration::from_millis(120))
+                    .map(|_| Message::IndexTick),
+            );
+        }
         // The Claude CLI rewrites its status snapshot as it answers; a slow
         // poll is enough for limits that move by the minute.
         if self.claude.as_ref().is_some_and(|s| !s.has_exited()) {
@@ -900,6 +907,7 @@ impl App {
                 SavedLayout::from(self.panes.sizes).save();
                 Task::none()
             }
+            Message::IndexTick => Task::none(),
             Message::WindowFocus(focused) => {
                 self.focused = focused;
                 Task::none()
@@ -1094,7 +1102,8 @@ impl App {
         self.search = None;
         self.bottom = None;
         self.right = None;
-        self.indexing = Indexing::Running;
+        let progress = std::sync::Arc::new(crate::language::IndexProgress::default());
+        self.indexing = Indexing::Running(progress.clone());
         self.laravel = None;
         self.packages = crate::packages::Installs::load(&root);
         self.git = None;
@@ -1107,7 +1116,10 @@ impl App {
             restore,
             self.scan_laravel(),
             self.refresh_git(),
-            Task::perform(self.lang.clone().index_project(root), Message::Indexed),
+            Task::perform(
+                self.lang.clone().index_project(root, progress),
+                Message::Indexed,
+            ),
             Task::perform(
                 async move {
                     tokio::task::spawn_blocking(move || crate::project::list_files(&list_root))

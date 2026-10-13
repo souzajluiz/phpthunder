@@ -7,6 +7,7 @@ use crate::app::{
 };
 use crate::editor::Document;
 use crate::keymap::{Cmd, hint};
+use crate::language::IndexPhase;
 use crate::search::{self, Toggle};
 use crate::tr;
 use crate::ui::*;
@@ -1548,9 +1549,20 @@ impl App {
     /// Bottom status bar: indexing progress or result on the left, and caret
     /// position, encoding and language of the active document on the right.
     fn status_bar(&self) -> El<'_> {
+        let mut fraction = None;
         let indexing = match &self.indexing {
             Indexing::Idle => String::new(),
-            Indexing::Running => tr!("status-indexing"),
+            Indexing::Running(progress) => {
+                let (phase, done, total) = progress.snapshot();
+                if total > 0 {
+                    fraction = Some(done as f32 / total as f32);
+                }
+                match phase {
+                    IndexPhase::Starting => tr!("status-indexing"),
+                    IndexPhase::Cache => tr!("status-indexing-cache", done = done, total = total),
+                    IndexPhase::Scan => tr!("status-indexing-files", done = done, total = total),
+                }
+            }
             Indexing::Done(r) => {
                 tr!(
                     "status-indexed",
@@ -1566,6 +1578,11 @@ impl App {
                 icon(Icon::Bolt, 12.0, 2.4, MUTED),
                 label(indexing, 12.0, MUTED)
             ]
+            .push(fraction.map(|f| {
+                iced::widget::progress_bar(0.0..=1.0, f)
+                    .length(120)
+                    .girth(4)
+            }))
             .spacing(6)
             .align_y(Center),
         ]

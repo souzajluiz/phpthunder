@@ -164,6 +164,8 @@ pub enum Message {
     JumpToLine(usize),
     /// Re-read the Claude plan limits the panel's CLI last reported.
     ClaudeUsageTick,
+    /// Redraw tick while indexing runs, so the progress bar moves.
+    IndexTick,
     /// The window gained (`true`) or lost focus; desktop notifications are
     /// only sent while it is in the background.
     WindowFocus(bool),
@@ -467,8 +469,8 @@ pub enum Dock {
 pub enum Indexing {
     /// No project opened yet.
     Idle,
-    /// Indexing task in flight.
-    Running,
+    /// Indexing task in flight, with its live progress.
+    Running(std::sync::Arc<crate::language::IndexProgress>),
     /// Indexing finished with these stats.
     Done(IndexReport),
 }

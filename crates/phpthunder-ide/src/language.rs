@@ -11,7 +11,12 @@ use phpthunder::symbol::Symbol;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
+
+/// Cache entries applied per write lock: small enough that queries from
+/// the UI thread wait milliseconds, not the whole cache load.
+const CACHE_BATCH: usize = 512;
 
 /// Handle to the shared symbol index; cheap to clone into background tasks.
 ///
@@ -32,6 +37,58 @@ pub struct IndexReport {
     pub elapsed: Duration,
 }
 
+/// Stage of a running project index, shown with its count in the status bar.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IndexPhase {
+    /// Walking the project and reading the cache file.
+    Starting,
+    /// Applying cached entries from the last run.
+    Cache,
+    /// Parsing files that changed since the cache was written.
+    Scan,
+}
+
+/// Live progress of [`Language::index_project`], written by the indexing
+/// thread and read by the status bar on every redraw; atomics, so neither
+/// side ever waits for the other.
+#[derive(Debug, Default)]
+pub struct IndexProgress {
+    /// [`IndexPhase`] as a number (0 starting, 1 cache, 2 scan).
+    phase: AtomicU8,
+    /// Items done in the current phase.
+    done: AtomicUsize,
+    /// Items in the current phase.
+    total: AtomicUsize,
+}
+
+impl IndexProgress {
+    /// Enters `phase` with `total` items, none done yet.
+    fn begin(&self, phase: IndexPhase, total: usize) {
+        self.done.store(0, Ordering::Relaxed);
+        self.total.store(total, Ordering::Relaxed);
+        self.phase.store(phase as u8, Ordering::Relaxed);
+    }
+
+    /// Records `done` items finished in the current phase.
+    fn advance(&self, done: usize) {
+        self.done.store(done, Ordering::Relaxed);
+    }
+
+    /// Current phase, items done and total, for the status bar.
+    pub fn snapshot(&self) -> (IndexPhase, usize, usize) {
+        let phase = match self.phase.load(Ordering::Relaxed) {
+            1 => IndexPhase::Cache,
+            2 => IndexPhase::Scan,
+            _ => IndexPhase::Starting,
+        };
+        (
+            phase,
+            self.done.load(Ordering::Relaxed),
+            self.total.load(Ordering::Relaxed),
+        )
+    }
+}
+
 /// Reads a file for analysis, preferring the unsaved editor buffer in `open`.
 fn load_with(open: &HashMap<PathBuf, String>, path: &Path) -> Option<String> {
     open.get(path)
@@ -41,11 +98,17 @@ fn load_with(open: &HashMap<PathBuf, String>, path: &Path) -> Option<String> {
 
 impl Language {
     /// Scans and indexes a project folder plus the PHP built-in stubs, on a
-    /// blocking thread. Called when a folder is opened.
+    /// blocking thread, reporting into `progress` as it goes. Called when a
+    /// folder is opened. The index lock is only held for short batches, so
+    /// the UI keeps answering while a large project loads.
     ///
     /// # Errors
     /// Returns a message if the indexing thread panicked.
-    pub async fn index_project(self, root: PathBuf) -> Result<IndexReport, String> {
+    pub async fn index_project(
+        self,
+        root: PathBuf,
+        progress: Arc<IndexProgress>,
+    ) -> Result<IndexReport, String> {
         tokio::task::spawn_blocking(move || {
             let started = Instant::now();
             *self.index.write() = Index::default();
@@ -63,12 +126,24 @@ impl Language {
             let files = std::thread::scope(|scope| {
                 let walk = scope.spawn(|| index::php_files(&root));
                 if let Some(entries) = cache.as_deref().and_then(index::load_cache) {
-                    let mut idx = self.index.write();
-                    for (path, stamp, entry) in entries {
-                        if stamp.is_some() && stamp == index::file_stamp(&path) {
-                            unchanged.insert(path.clone());
+                    progress.begin(IndexPhase::Cache, entries.len());
+                    let mut entries = entries.into_iter();
+                    let mut done = 0;
+                    loop {
+                        let batch: Vec<_> = entries.by_ref().take(CACHE_BATCH).collect();
+                        if batch.is_empty() {
+                            break;
                         }
-                        idx.update(path, entry);
+                        done += batch.len();
+                        let mut idx = self.index.write();
+                        for (path, stamp, entry) in batch {
+                            if stamp.is_some() && stamp == index::file_stamp(&path) {
+                                unchanged.insert(path.clone());
+                            }
+                            idx.update(path, entry);
+                        }
+                        drop(idx);
+                        progress.advance(done);
                     }
                 }
                 walk.join().unwrap_or_default()
@@ -78,7 +153,8 @@ impl Language {
                 .filter(|p| !unchanged.contains(*p))
                 .cloned()
                 .collect();
-            index::index_files(&self.index, &changed, |_, _| {});
+            progress.begin(IndexPhase::Scan, changed.len());
+            index::index_files(&self.index, &changed, |done, _| progress.advance(done));
             let mut removed = 0;
             {
                 // Files deleted since the cache was written.

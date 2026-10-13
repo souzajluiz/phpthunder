@@ -61,6 +61,8 @@ rename-hints = ↵ rename   esc cancel
 rename-help = Updates every usage in the project; a class file named after the class is renamed too.
 
 status-indexing = Indexing…
+status-indexing-cache = Loading index { $done }/{ $total }
+status-indexing-files = Indexing { $done }/{ $total } files
 status-indexed = { $files ->
     [one] 1 file indexed
    *[other] { $files } files indexed
