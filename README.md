@@ -70,6 +70,11 @@ using phpthunder as a library in the same process (no server, no JSON-RPC).
 cargo run --release -p phpthunder-ide -- /path/to/php/project
 ```
 
+While developing, `scripts/dev.sh [project]` rebuilds and restarts the IDE on
+every source change ([cargo-watch](https://crates.io/crates/cargo-watch),
+installed on first run); `scripts/dev.sh --check` runs clippy and the tests
+instead.
+
 - Project tree, tabs, PHP syntax highlighting (tree-sitter), save
 - Completion popup (auto on `->`, `::`, `$` and new words; `⌃Space` to force),
   with automatic `use` imports
