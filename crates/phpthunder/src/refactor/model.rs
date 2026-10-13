@@ -24,3 +24,41 @@ pub struct RenamePlan {
     /// `(old, new)` path when the class file should be renamed too.
     pub file_rename: Option<(PathBuf, PathBuf)>,
 }
+
+/// A property declared in the class at the caret (declared or promoted).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassProperty {
+    /// Name without `$`.
+    pub name: String,
+    /// Declared type as written (`?string`, `array`), if any.
+    pub ty: Option<String>,
+    /// Declared `static`.
+    pub is_static: bool,
+    /// Declared `readonly` (no setter is generated).
+    pub is_readonly: bool,
+    /// Has a default value or is constructor-promoted, so a constructor
+    /// need not set it.
+    pub is_initialized: bool,
+}
+
+/// What code generation needs to know about the class around the caret.
+/// Built from the buffer's syntax tree, so unsaved edits count.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassOutline {
+    /// FQN of the class.
+    pub fqn: String,
+    /// Byte offset of the closing `}` of the class body; members are
+    /// inserted there.
+    pub body_end: usize,
+    /// Properties in declaration order.
+    pub properties: Vec<ClassProperty>,
+    /// Names of the methods the class declares itself, lowercased.
+    pub methods: Vec<String>,
+}
+
+impl ClassOutline {
+    /// Whether the class declares method `name` (case-insensitive, as PHP).
+    pub fn declares(&self, name: &str) -> bool {
+        self.methods.iter().any(|m| m.eq_ignore_ascii_case(name))
+    }
+}

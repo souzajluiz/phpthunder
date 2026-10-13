@@ -158,6 +158,11 @@ impl Language {
         refactor::missing_implementations(&self.index.read(), class)
     }
 
+    /// Parent methods the class in `outline` can override (`⌘N`).
+    pub fn overridable_methods(&self, outline: &refactor::ClassOutline) -> Vec<Symbol> {
+        refactor::overridable_methods(&self.index.read(), outline)
+    }
+
     /// Classes extending or implementing `class`, for go to implementation
     /// and the type hierarchy.
     pub fn subtypes(&self, class: &str) -> Vec<(PathBuf, Symbol)> {

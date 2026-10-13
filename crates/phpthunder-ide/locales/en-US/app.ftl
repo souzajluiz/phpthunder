@@ -68,3 +68,14 @@ error-terminal-shell = cannot start the shell: { $error }
 error-indexing = indexing failed: { $error }
 error-rename = rename failed: { $error }
 error-invalid-pattern = invalid pattern
+
+generate-title = Generate
+generate-constructor = Constructor
+generate-getters = Getters
+generate-setters = Setters
+generate-getters-setters = Getters and setters
+generate-override = Override methods…
+generate-override-title = Override method
+notice-generate-outside-class = Place the caret inside a class to generate code
+notice-nothing-to-generate = Nothing to generate here
+templates-title = Insert live template

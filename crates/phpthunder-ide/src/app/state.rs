@@ -245,15 +245,20 @@ impl App {
         (app, task)
     }
 
-    /// Window title: `file — project — phpthunder`, dropping parts that do
+    /// Window title: `file — project — PhpThunder`, dropping parts that do
     /// not exist yet. Polled by iced after every update.
     pub fn title(&self) -> String {
         match (&self.tree.root, self.doc()) {
             (Some(root), Some(doc)) => {
-                format!("{} — {} — phpthunder", doc.title(), file_name(root))
+                format!(
+                    "{} — {} — {}",
+                    doc.title(),
+                    file_name(root),
+                    crate::APP_NAME
+                )
             }
-            (Some(root), None) => format!("{} — phpthunder", file_name(root)),
-            _ => "phpthunder".into(),
+            (Some(root), None) => format!("{} — {}", file_name(root), crate::APP_NAME),
+            _ => crate::APP_NAME.into(),
         }
     }
 
@@ -368,6 +373,7 @@ impl App {
                 }
                 task
             }
+            Message::Indent(false) if self.expand_template() => self.reveal_cursor(),
             Message::Indent(outdent) => self.edit_with(|d| d.indent(outdent), None),
             Message::Scrolled(viewport) => {
                 self.viewport_height = viewport.bounds().height;

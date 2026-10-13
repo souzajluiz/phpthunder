@@ -91,6 +91,10 @@ pub enum Cmd {
     Reformat,
     /// Pick a Composer script or command to run (`⌃⌥C`).
     Composer,
+    /// Generate code in the class at the caret (`⌘N`).
+    Generate,
+    /// Pick a live template to insert at the caret (`⌘J`).
+    InsertTemplate,
 }
 
 /// Maps a key press and its modifiers to the bound `Cmd`, or `None` if
@@ -120,6 +124,8 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("o", false, false) => GotoClass,
             ("o", false, true) => GotoSymbol,
             ("e", false, false) => RecentFiles,
+            ("n", false, false) => Generate,
+            ("j", false, false) => InsertTemplate,
             ("f", false, false) => Find,
             ("r", false, false) => Replace,
             ("g", false, false) => FindNext,
@@ -202,5 +208,7 @@ pub fn hint(cmd: Cmd) -> &'static str {
         RunTests => "⌃⇧R",
         Reformat => "⌥⌘L",
         Composer => "⌃⌥C",
+        Generate => "⌘N",
+        InsertTemplate => "⌘J",
     }
 }

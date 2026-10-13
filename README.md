@@ -74,6 +74,10 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
 - Reformat (`⌥⌘L`) with the project's Pint, PHP-CS-Fixer or PHPCBF
 - PHPStan on save, findings in Problems; Composer scripts (`⌃⌥C`) run in
   the terminal
+- Generate (`⌘N`) in a class: constructor, getters, setters, implement
+  abstract/interface methods, override parent methods
+- Live templates: type an abbreviation and press Tab (`fore`, `forek`,
+  `pubf`, `__c`, `try`, `it`, `dd`, …) or pick one with `⌘J`
 
 Shortcuts: `⌘O` open folder, `⌘S` save, `⌘W` close tab, `⌘1` toggle project
 tree, `Esc` close popups/panel.

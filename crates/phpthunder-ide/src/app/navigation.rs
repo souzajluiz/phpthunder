@@ -1,10 +1,9 @@
 //! Type-aware navigation: go to implementation and the type hierarchy.
 
 use super::*;
-use crate::palette::{Item, Mode, Palette, Target};
+use crate::palette::{Item, Target};
 use crate::tr;
 use iced::Task;
-use iced::widget::{Id, operation};
 use phpthunder::symbol::{Kind, Symbol};
 use std::path::PathBuf;
 
@@ -72,16 +71,7 @@ impl App {
                         }
                     })
                     .collect();
-                self.close_overlays();
-                let title = tr!("implementations-title", name = symbol_title(s));
-                self.palette = Some(Palette {
-                    mode: Mode::Choose,
-                    query: String::new(),
-                    items: items.clone(),
-                    selected: 0,
-                    fixed: Some((title, items)),
-                });
-                operation::focus(Id::new(crate::palette::INPUT_ID))
+                self.open_choice(tr!("implementations-title", name = symbol_title(s)), items)
             }
         }
     }

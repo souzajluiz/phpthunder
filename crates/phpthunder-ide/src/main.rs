@@ -1,4 +1,4 @@
-//! phpthunder IDE: a native PHP editor built on the phpthunder analysis engine.
+//! PhpThunder IDE: a native PHP editor built on the phpthunder analysis engine.
 //!
 //! Usage: `phpthunder-ide [project-folder]`
 
@@ -13,12 +13,17 @@ mod palette;
 mod phpstan;
 mod project;
 mod search;
+mod template;
 mod terminal;
 mod testing;
 mod ui;
 
 use app::App;
 use iced::window;
+
+/// Product name shown in the window title, the custom title bar and the
+/// welcome screen.
+pub const APP_NAME: &str = "PhpThunder";
 
 /// Side length in pixels of the embedded window icon.
 const APP_ICON_SIZE: u32 = 128;

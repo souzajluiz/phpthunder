@@ -91,6 +91,8 @@ impl App {
             Cmd::RunTests => self.run_tests(TestTarget::Context),
             Cmd::Reformat => self.reformat(),
             Cmd::Composer => self.open_composer(),
+            Cmd::Generate => self.open_generate(),
+            Cmd::InsertTemplate => self.open_templates(),
             Cmd::Problems => {
                 self.bottom = Some(Bottom::Problems);
                 Task::none()
@@ -99,6 +101,24 @@ impl App {
     }
 
     // ----- palette ------------------------------------------------------------
+
+    /// Opens the palette on a fixed list (implementations, Composer
+    /// commands, the Generate menu) under `title`, and focuses its input.
+    pub(crate) fn open_choice(
+        &mut self,
+        title: String,
+        items: Vec<palette::Item>,
+    ) -> Task<Message> {
+        self.close_overlays();
+        self.palette = Some(Palette {
+            mode: Mode::Choose,
+            query: String::new(),
+            items: items.clone(),
+            selected: 0,
+            fixed: Some((title, items)),
+        });
+        operation::focus(Id::new(palette::INPUT_ID))
+    }
 
     /// Opens the navigation palette in `mode` with an empty query and focuses its input.
     ///
@@ -175,6 +195,8 @@ impl App {
             Target::File(path) => self.open(path, None),
             Target::Symbol(path, pos) => self.open(path, Some(pos)),
             Target::Command(command) => self.run_in_terminal(&command),
+            Target::Generate(generation) => self.generate(generation),
+            Target::Template(abbreviation) => self.insert_template(abbreviation),
             Target::Line(line, col) => {
                 let Some(doc) = self.doc() else {
                     return Task::none();

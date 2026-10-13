@@ -299,6 +299,40 @@ pub struct Location {
     pub pos: Pos,
 }
 
+/// An entry of the `⌘N` Generate menu.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Generation {
+    /// A constructor assigning the uninitialized properties.
+    Constructor,
+    /// Getters for properties that lack one.
+    Getters,
+    /// Setters for properties that lack one.
+    Setters,
+    /// Both getters and setters.
+    GettersAndSetters,
+    /// Stubs for abstract and interface methods.
+    ImplementMethods,
+    /// Opens the list of parent methods to override.
+    OverrideMethods,
+    /// Overrides the named parent method.
+    Override(String),
+}
+
+impl Generation {
+    /// Menu label.
+    pub fn title(&self) -> String {
+        match self {
+            Generation::Constructor => tr!("generate-constructor"),
+            Generation::Getters => tr!("generate-getters"),
+            Generation::Setters => tr!("generate-setters"),
+            Generation::GettersAndSetters => tr!("generate-getters-setters"),
+            Generation::ImplementMethods => tr!("intention-implement-methods"),
+            Generation::OverrideMethods => tr!("generate-override"),
+            Generation::Override(name) => name.clone(),
+        }
+    }
+}
+
 /// One entry of the `⌥↵` menu.
 #[derive(Debug, Clone)]
 pub enum Intention {

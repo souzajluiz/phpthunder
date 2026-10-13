@@ -67,3 +67,14 @@ error-terminal-shell = não foi possível iniciar o shell: { $error }
 error-indexing = falha na indexação: { $error }
 error-rename = falha ao renomear: { $error }
 error-invalid-pattern = padrão inválido
+
+generate-title = Gerar
+generate-constructor = Construtor
+generate-getters = Getters
+generate-setters = Setters
+generate-getters-setters = Getters e setters
+generate-override = Sobrescrever métodos…
+generate-override-title = Sobrescrever método
+notice-generate-outside-class = Posicione o cursor dentro de uma classe para gerar código
+notice-nothing-to-generate = Nada para gerar aqui
+templates-title = Inserir live template

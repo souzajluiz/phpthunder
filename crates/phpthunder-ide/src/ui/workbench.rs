@@ -10,7 +10,7 @@ use crate::keymap::{Cmd, hint};
 use crate::search::{self, Toggle};
 use crate::tr;
 use crate::ui::*;
-use crate::ui::{Icon, icon};
+use crate::ui::{Icon, Logo, icon, logo};
 use iced::alignment::{Horizontal, Vertical};
 use iced::widget::text::{LineHeight, Span, Wrapping};
 use iced::widget::{
@@ -145,8 +145,7 @@ impl App {
     /// bar is hidden.
     fn welcome(&self) -> El<'_> {
         let content = column![
-            icon(Icon::Bolt, 44.0, 1.8, ACCENT),
-            label("phpthunder", 24.0, TEXT_BRIGHT).font(UI_BOLD),
+            logo(Logo::Lockup, 220.0),
             label(tr!("welcome-hint"), 14.0, MUTED),
             button(label(tr!("welcome-open-folder"), 14.0, rgb(0x14161C)).font(UI_MEDIUM))
                 .padding([10, 20])
@@ -176,8 +175,8 @@ impl App {
             .unwrap_or_default();
         let mut bar = row![
             space().width(TRAFFIC_LIGHTS_INSET),
-            icon(Icon::Bolt, 16.0, 2.0, ACCENT),
-            label("phpthunder", 13.0, TEXT).font(UI_BOLD),
+            logo(Logo::Mark, 20.0),
+            label(crate::APP_NAME, 13.0, TEXT).font(UI_BOLD),
             label(root, 13.0, MUTED),
             space().width(Fill),
         ]

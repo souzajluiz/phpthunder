@@ -74,6 +74,10 @@ pub enum Target {
     Line(usize, usize),
     /// Run this command line in the integrated terminal.
     Command(String),
+    /// Insert generated code into the class at the caret.
+    Generate(crate::app::Generation),
+    /// Insert the live template with this abbreviation at the caret.
+    Template(&'static str),
 }
 
 /// One ranked palette result.

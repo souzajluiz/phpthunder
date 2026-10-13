@@ -20,6 +20,7 @@ macro_rules! catalogs {
             include_str!(concat!("../../locales/", $dir, "/panels.ftl")),
             include_str!(concat!("../../locales/", $dir, "/app.ftl")),
             include_str!(concat!("../../locales/", $dir, "/inspections.ftl")),
+            include_str!(concat!("../../locales/", $dir, "/templates.ftl")),
         ]
     };
 }

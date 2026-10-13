@@ -3,11 +3,10 @@
 
 use super::*;
 use crate::composer::composer_commands;
-use crate::palette::{Item, Mode, Palette, Target};
+use crate::palette::{Item, Target};
 use crate::testing::{Scope, TestRun, run_tests, test_at};
 use crate::tr;
 use iced::Task;
-use iced::widget::{Id, operation};
 use phpthunder::inspection::{Code, Diagnostic, Severity};
 use std::path::PathBuf;
 
@@ -237,14 +236,6 @@ impl App {
             self.notice = Some(tr!("notice-no-composer"));
             return Task::none();
         }
-        self.close_overlays();
-        self.palette = Some(Palette {
-            mode: Mode::Choose,
-            query: String::new(),
-            items: items.clone(),
-            selected: 0,
-            fixed: Some((tr!("composer-title"), items)),
-        });
-        operation::focus(Id::new(crate::palette::INPUT_ID))
+        self.open_choice(tr!("composer-title"), items)
     }
 }

@@ -108,7 +108,7 @@ impl App {
 
     /// Inserts stubs for every method `class` must implement, before the
     /// closing brace of the class body in the active document.
-    fn implement_methods(&mut self, class: &str) -> Task<Message> {
+    pub(crate) fn implement_methods(&mut self, class: &str) -> Task<Message> {
         let missing = self.lang.missing_implementations(class);
         let Some(doc) = self.doc() else {
             return Task::none();

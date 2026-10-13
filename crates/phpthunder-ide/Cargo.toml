@@ -28,3 +28,11 @@ fluent-syntax = "0.12.0"
 
 [lints]
 workspace = true
+
+# macOS/Windows/Linux app bundle (`cargo bundle -p phpthunder-ide --release`).
+[package.metadata.bundle]
+name = "PhpThunder"
+identifier = "dev.phpthunder.ide"
+icon = ["assets/brand/app-icon.icns", "assets/brand/app-icon-512.png", "assets/brand/app-icon-256.png", "assets/brand/app-icon-128.png", "assets/brand/app-icon-32.png"]
+category = "public.app-category.developer-tools"
+short_description = "Native PHP IDE"

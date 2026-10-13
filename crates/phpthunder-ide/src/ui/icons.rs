@@ -1,5 +1,6 @@
 //! Lucide stroke icons (ISC license, `assets/icons/LICENSE`), embedded in
-//! the binary and tinted at draw time.
+//! the binary and tinted at draw time, plus the PhpThunder brand artwork
+//! from `assets/brand`, drawn in its own colors.
 
 use iced::widget::{Svg, svg};
 use iced::{Color, Length};
@@ -7,7 +8,7 @@ use iced::{Color, Length};
 /// Which icon to draw; each variant maps to one Lucide SVG in `assets/icons`.
 #[derive(Clone, Copy)]
 pub enum Icon {
-    /// Logo bolt (`zap`): title bar, welcome screen and status bar.
+    /// Bolt (`zap`): indexing status in the status bar.
     Bolt,
     /// Project tool in the rail.
     Folder,
@@ -54,6 +55,42 @@ impl Icon {
             Icon::Tests => include_str!("../../assets/icons/flask-conical.svg"),
         }
     }
+}
+
+/// Which brand artwork to draw with `logo`; both live in `assets/brand`.
+#[derive(Clone, Copy)]
+pub enum Logo {
+    /// Spider mark alone (`logo-mark.svg`, 1:1): title bar.
+    Mark,
+    /// Spider over the PhpThunder wordmark (`logo.svg`, 100:116): welcome screen.
+    Lockup,
+}
+
+impl Logo {
+    /// The SVG source for this artwork.
+    fn source(self) -> &'static [u8] {
+        match self {
+            Logo::Mark => include_bytes!("../../assets/brand/logo-mark.svg"),
+            Logo::Lockup => include_bytes!("../../assets/brand/logo.svg"),
+        }
+    }
+
+    /// Height divided by width of the artwork's viewBox.
+    fn aspect(self) -> f32 {
+        match self {
+            Logo::Mark => 1.0,
+            Logo::Lockup => 1.16,
+        }
+    }
+}
+
+/// Builds an SVG widget for the brand artwork `which`, `width` px wide with
+/// the height following its aspect ratio. Unlike `icon` it keeps its own
+/// colors. Used by the title bar and the welcome screen.
+pub fn logo<'a>(which: Logo, width: f32) -> Svg<'a> {
+    svg(svg::Handle::from_memory(which.source()))
+        .width(Length::Fixed(width))
+        .height(Length::Fixed(width * which.aspect()))
 }
 
 /// Builds an SVG widget for `which`, `size` px square with the given stroke
