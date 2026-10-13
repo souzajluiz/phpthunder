@@ -25,6 +25,10 @@ const SHOT_DELAY: Duration = Duration::from_secs(8);
 /// Delay before the snapshot when text is typed first.
 const SHOT_AFTER_TYPING: Duration = Duration::from_secs(16);
 
+/// Wait between handling [`Message::TakeSnapshot`] and capturing, so the
+/// window redraws after the rebuild that message caused.
+const SETTLE_DELAY: Duration = Duration::from_millis(300);
+
 impl App {
     /// Tasks that open the snapshot file and take the snapshot, when
     /// `PHPTHUNDER_SNAPSHOT` is set; nothing otherwise. Called from `boot`.
@@ -106,8 +110,16 @@ impl App {
     }
 
     /// Captures the window (answered by [`Message::Snapshot`]).
+    ///
+    /// The capture replays the layers of the last drawn frame, and those hold
+    /// only weak references to `text_editor` buffers. Every layout replaces
+    /// the editor's buffer, so capturing right after the rebuild this message
+    /// causes, before the next redraw, drops the editor text from the image.
+    /// Waiting [`SETTLE_DELAY`] inside the task, without sending another
+    /// message (which would rebuild again), lets that redraw happen first.
     pub(crate) fn take_snapshot(&self) -> Task<Message> {
-        window::latest()
+        Task::future(tokio::time::sleep(SETTLE_DELAY))
+            .then(|()| window::latest())
             .and_then(window::screenshot)
             .map(Message::Snapshot)
     }
