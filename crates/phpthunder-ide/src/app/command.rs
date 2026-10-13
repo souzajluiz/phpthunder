@@ -100,6 +100,9 @@ impl App {
             Cmd::Pull => self.git_pull(),
             Cmd::DebugTest => self.debug_test(),
             Cmd::ExtractVariable => self.extract_from_selection(false),
+            Cmd::AddCaretAbove => self.add_caret_vertical(true),
+            Cmd::AddCaretBelow => self.add_caret_vertical(false),
+            Cmd::SelectNextOccurrence => self.select_next_occurrence(),
             Cmd::ToggleSoftWrap => {
                 self.soft_wrap = !self.soft_wrap;
                 self.reveal_cursor()

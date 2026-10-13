@@ -3,7 +3,8 @@
 //! indexing to settle, saves a PNG of its window and quits. With
 //! `PHPTHUNDER_SNAPSHOT_TYPE=text` (and `PHPTHUNDER_SNAPSHOT_LINE=n`, 1-based)
 //! it first types `text` on a new line after line `n` and opens completion;
-//! `PHPTHUNDER_SNAPSHOT_WRAP=1` turns soft wrap on.
+//! `PHPTHUNDER_SNAPSHOT_WRAP=1` turns soft wrap on, and
+//! `PHPTHUNDER_SNAPSHOT_CARETS=n` types with `n` carets on consecutive lines.
 //! Used to check the look without a screen recorder.
 
 use super::*;
@@ -81,6 +82,22 @@ impl App {
         let Some(doc) = self.doc_mut() else {
             return Task::none();
         };
+        // `PHPTHUNDER_SNAPSHOT_CARETS=n`: type at the end of `n` lines at
+        // once, with multiple carets, instead of on a new line.
+        let carets = std::env::var("PHPTHUNDER_SNAPSHOT_CARETS")
+            .ok()
+            .and_then(|n| n.parse::<usize>().ok());
+        if let Some(n) = carets {
+            let at = doc.line_end(line - 1);
+            let position = doc.position_of(at);
+            doc.move_to(position);
+            for _ in 1..n {
+                doc.add_caret_vertical(false);
+            }
+            doc.multi_edit(crate::editor::MultiEdit::Insert(text.to_string()));
+            self.after_change(true);
+            return self.reveal_cursor();
+        }
         let at = doc.line_end(line - 1);
         doc.replace(at, at, &format!("\n{text}"));
         self.after_change(true);

@@ -69,6 +69,9 @@ pub struct Document {
     pub diagnostics_version: u64,
     /// Problems reported by external analysers (PHPStan) at the last save.
     pub external_diagnostics: Vec<phpthunder::inspection::Diagnostic>,
+    /// Carets besides the main one, as `(anchor, head)` byte offsets
+    /// (equal when nothing is selected); see `editor::carets`.
+    pub extra_carets: Vec<(usize, usize)>,
 }
 
 /// Leading whitespace (indentation) of `line`, used to carry indentation onto new lines.
@@ -99,6 +102,7 @@ impl Document {
             diagnostics: Vec::new(),
             diagnostics_version: 0,
             external_diagnostics: Vec::new(),
+            extra_carets: Vec::new(),
         };
         doc.refresh_highlights();
         doc

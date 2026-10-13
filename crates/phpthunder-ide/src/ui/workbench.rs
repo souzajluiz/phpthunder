@@ -702,6 +702,9 @@ impl App {
         for mark in self.debug_marks(doc) {
             content = content.push_under(mark);
         }
+        for mark in self.extra_caret_marks(doc, &layout) {
+            content = content.push(mark);
+        }
 
         let scroller = scrollable(content)
             .id(EDITOR_SCROLL_ID)
@@ -715,6 +718,58 @@ impl App {
             .on_show(Message::EditorResized)
             .on_resize(Message::EditorResized)
             .into()
+    }
+
+    /// Extra carets (bars) and their selections (tinted per line), drawn
+    /// over the text; the main caret is the text editor's own.
+    fn extra_caret_marks<'a>(
+        &'a self,
+        doc: &'a Document,
+        layout: &crate::editor::WrapLayout,
+    ) -> Vec<El<'a>> {
+        let mut out: Vec<El<'a>> = Vec::new();
+        for &(anchor, head) in &doc.extra_carets {
+            let (start, end) = (anchor.min(head), anchor.max(head));
+            if start < end {
+                let (a, b) = (doc.position_of(start), doc.position_of(end));
+                for line in a.line..=b.line {
+                    let from = if line == a.line {
+                        doc.visual_column(a)
+                    } else {
+                        0
+                    };
+                    let to = if line == b.line {
+                        doc.visual_column(b)
+                    } else {
+                        doc.line_text(line).chars().count() + 1
+                    };
+                    out.push(
+                        pin(container(space())
+                            .width(((to.saturating_sub(from)).max(1)) as f32 * CHAR_WIDTH)
+                            .height(CODE_LINE)
+                            .style(fill(Color {
+                                a: 0.35,
+                                ..SELECTED_STRONG
+                            })))
+                        .x(crate::app::col_left(layout, from))
+                        .y(crate::app::row_top(layout, line, from))
+                        .into(),
+                    );
+                }
+            }
+            let pos = doc.position_of(head);
+            let col = doc.visual_column(pos);
+            out.push(
+                pin(container(space())
+                    .width(2)
+                    .height(CODE_LINE)
+                    .style(fill(TEXT_BRIGHT)))
+                .x(crate::app::col_left(layout, col))
+                .y(crate::app::row_top(layout, pos.line, col))
+                .into(),
+            );
+        }
+        out
     }
 
     /// Floating layers over the editor: the completion popup (or else the hover

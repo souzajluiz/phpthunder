@@ -364,6 +364,14 @@ impl App {
     /// Dispatches one message; [`App::update`] wraps it to schedule
     /// inspections after any change.
     fn handle(&mut self, message: Message) -> Task<Message> {
+        if let Some(task) = self.multi_caret_message(&message) {
+            return task;
+        }
+        if let Message::Edit(action) = &message
+            && self.alt_click_caret(action)
+        {
+            return Task::none();
+        }
         match message {
             Message::OpenFolderDialog => Task::perform(
                 async {
@@ -538,6 +546,9 @@ impl App {
             Message::CompletionReplace => self.accept_completion(true),
             Message::CloseOverlays => {
                 self.close_overlays();
+                if let Some(doc) = self.doc_mut() {
+                    doc.clear_extra_carets();
+                }
                 if self.find.is_some() {
                     self.find = None;
                 }

@@ -103,6 +103,12 @@ pub enum Cmd {
     Push,
     /// Pull the current branch (`⌘T`).
     Pull,
+    /// Add a caret on the line above (`⌥⌘↑`).
+    AddCaretAbove,
+    /// Add a caret on the line below (`⌥⌘↓`).
+    AddCaretBelow,
+    /// Select the next occurrence of the selection as another caret (`⌃G`).
+    SelectNextOccurrence,
     /// Wrap long lines at the editor width, or stop wrapping (`⌥⌘W`).
     ToggleSoftWrap,
     /// Extract the selected expression into a variable (`⌥⌘V`).
@@ -188,6 +194,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             DebugTest
         }
         Key::Character(c) if m.control() && !cmd && c.eq_ignore_ascii_case("h") => TypeHierarchy,
+        Key::Character(c) if m.control() && !cmd && !shift && c.eq_ignore_ascii_case("g") => {
+            SelectNextOccurrence
+        }
         Key::Named(Named::Enter) if alt && !cmd => QuickFix,
         Key::Named(Named::F6) if shift => Rename,
         Key::Named(Named::F6) if cmd => ChangeSignature,
@@ -208,6 +217,8 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Named(Named::Backspace) if cmd => DeleteLine,
         Key::Named(Named::ArrowUp) if alt && shift => MoveLineUp,
         Key::Named(Named::ArrowDown) if alt && shift => MoveLineDown,
+        Key::Named(Named::ArrowUp) if cmd && alt => AddCaretAbove,
+        Key::Named(Named::ArrowDown) if cmd && alt => AddCaretBelow,
         Key::Named(Named::ArrowLeft) if cmd && alt => Back,
         Key::Named(Named::ArrowRight) if cmd && alt => Forward,
         Key::Named(Named::Space) if m.control() => Complete,
@@ -270,6 +281,9 @@ pub fn hint(cmd: Cmd) -> &'static str {
         DebugTest => "⌃⇧D",
         ExtractVariable => "⌥⌘V",
         ToggleSoftWrap => "⌥⌘W",
+        AddCaretAbove => "⌥⌘↑",
+        AddCaretBelow => "⌥⌘↓",
+        SelectNextOccurrence => "⌃G",
         ExtractMethod => "⌥⌘M",
         InlineVariable => "⌥⌘N",
         ChangeSignature => "⌘F6",
