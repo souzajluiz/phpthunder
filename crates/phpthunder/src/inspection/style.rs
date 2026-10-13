@@ -75,13 +75,36 @@ pub(crate) fn style_checks(
             "if_statement" | "while_statement" | "else_if_clause" => {
                 assignment_in_condition(node, push);
             }
-            "binary_expression" => loose_null_comparison(node, src, push),
+            "binary_expression" => {
+                loose_null_comparison(node, src, push);
+                same_operands(node, src, push);
+            }
             "catch_clause" => empty_catch(node, push),
             "assignment_expression" => self_assignment(node, src, push),
             "class_declaration" | "trait_declaration" | "enum_declaration" => {
                 unused_private_members(node, src, push);
+                duplicate_members(node, src, push);
+                abstract_in_concrete(node, src, push);
             }
+            "switch_block" => duplicate_cases(node, src, push),
+            "conditional_expression" => identical_branches(node, src, push),
+            "anonymous_function" => unused_closure_uses(node, src, push),
+            "method_declaration" => this_in_static(node, src, push),
             _ => {}
+        }
+        if matches!(
+            node.kind(),
+            "if_statement"
+                | "while_statement"
+                | "for_statement"
+                | "foreach_statement"
+                | "else_if_clause"
+        ) {
+            empty_body(node, push);
+        }
+        if node.kind() == "if_statement" {
+            duplicate_conditions(node, src, push);
+            redundant_else(node, push);
         }
     }
 }
@@ -321,6 +344,314 @@ fn unused_private_members(
     }
 }
 
+/// `if (…);`: a control statement whose body is just `;`, so the code
+/// that looks like its body always runs.
+fn empty_body(statement: Node, push: &mut impl FnMut(Node, Severity, String, Code)) {
+    if let Some(body) = statement
+        .child_by_field_name("body")
+        .filter(|b| b.kind() == "empty_statement")
+    {
+        push(
+            body,
+            Severity::Warning,
+            "Empty statement body".into(),
+            Code::EmptyBody,
+        );
+    }
+}
+
+/// The same `case` value twice in one `switch`; the second never matches.
+fn duplicate_cases(block: Node, src: &str, push: &mut impl FnMut(Node, Severity, String, Code)) {
+    let mut seen = std::collections::HashSet::new();
+    let mut c = block.walk();
+    for case in block.named_children(&mut c) {
+        if let Some(value) = case.child_by_field_name("value")
+            && !seen.insert(text(value, src).to_string())
+        {
+            push(
+                value,
+                Severity::Warning,
+                format!("Duplicate case {}", text(value, src)),
+                Code::DuplicateCase(text(value, src).to_string()),
+            );
+        }
+    }
+}
+
+/// An `elseif` repeating the condition of an earlier branch; it never runs.
+fn duplicate_conditions(
+    statement: Node,
+    src: &str,
+    push: &mut impl FnMut(Node, Severity, String, Code),
+) {
+    let mut seen = std::collections::HashSet::new();
+    let mut c = statement.walk();
+    let branches = std::iter::once(statement).chain(
+        statement
+            .children_by_field_name("alternative", &mut c)
+            .filter(|n| n.kind() == "else_if_clause"),
+    );
+    for branch in branches {
+        if let Some(condition) = branch.child_by_field_name("condition")
+            && !seen.insert(text(condition, src).to_string())
+        {
+            push(
+                condition,
+                Severity::Warning,
+                "Condition repeats an earlier branch".into(),
+                Code::DuplicateCondition,
+            );
+        }
+    }
+}
+
+/// `$a ? $b : $b`: both branches are the same.
+fn identical_branches(expr: Node, src: &str, push: &mut impl FnMut(Node, Severity, String, Code)) {
+    if let (Some(a), Some(b)) = (
+        expr.child_by_field_name("body"),
+        expr.child_by_field_name("alternative"),
+    ) && text(a, src) == text(b, src)
+    {
+        push(
+            expr,
+            Severity::Warning,
+            "Both branches are the same".into(),
+            Code::IdenticalBranches,
+        );
+    }
+}
+
+/// `$a == $a`, `$a - $a`, `$a && $a`: an operation on one value twice.
+fn same_operands(binary: Node, src: &str, push: &mut impl FnMut(Node, Severity, String, Code)) {
+    let Some(operator) = binary.child_by_field_name("operator") else {
+        return;
+    };
+    let op = text(operator, src);
+    let pointless = matches!(
+        op,
+        "==" | "==="
+            | "!="
+            | "!=="
+            | "<>"
+            | "<"
+            | ">"
+            | "<="
+            | ">="
+            | "-"
+            | "/"
+            | "%"
+            | "&&"
+            | "||"
+            | "and"
+            | "or"
+            | "xor"
+            | "^"
+            | "??"
+    );
+    let (Some(left), Some(right)) = (
+        binary.child_by_field_name("left"),
+        binary.child_by_field_name("right"),
+    ) else {
+        return;
+    };
+    // Calls may return different values each time.
+    let pure = |n: Node| {
+        matches!(
+            n.kind(),
+            "variable_name" | "member_access_expression" | "name"
+        )
+    };
+    if pointless && pure(left) && text(left, src) == text(right, src) {
+        push(
+            binary,
+            Severity::Warning,
+            format!("Both sides of {op} are the same"),
+            Code::SameOperands,
+        );
+    }
+}
+
+/// A variable imported with `use (…)` that the closure never reads.
+fn unused_closure_uses(
+    closure: Node,
+    src: &str,
+    push: &mut impl FnMut(Node, Severity, String, Code),
+) {
+    let Some(body) = closure.child_by_field_name("body") else {
+        return;
+    };
+    let body_text = text(body, src);
+    let mut c = closure.walk();
+    let Some(clause) = closure
+        .named_children(&mut c)
+        .find(|n| n.kind() == "anonymous_function_use_clause")
+    else {
+        return;
+    };
+    let mut cc = clause.walk();
+    for var in clause
+        .named_children(&mut cc)
+        .filter(|n| n.kind() == "variable_name")
+    {
+        let name = text(var, src);
+        let used = body_text.match_indices(name).any(|(i, m)| {
+            !body_text[i + m.len()..].starts_with(|ch: char| ch.is_alphanumeric() || ch == '_')
+        });
+        if !used {
+            push(
+                var,
+                Severity::Warning,
+                format!("{name} is imported but not used"),
+                Code::UnusedClosureUse(name.to_string()),
+            );
+        }
+    }
+}
+
+/// Methods, properties or constants declared twice in one class: a fatal
+/// error when the class loads.
+fn duplicate_members(class: Node, src: &str, push: &mut impl FnMut(Node, Severity, String, Code)) {
+    let Some(body) = class.child_by_field_name("body") else {
+        return;
+    };
+    let mut seen = std::collections::HashSet::new();
+    let mut c = body.walk();
+    for member in body.named_children(&mut c) {
+        let names: Vec<(Node, String)> = match member.kind() {
+            "method_declaration" => member
+                .child_by_field_name("name")
+                .map(|n| (n, format!("{}()", text(n, src).to_ascii_lowercase())))
+                .into_iter()
+                .collect(),
+            "property_declaration" | "const_declaration" => {
+                let mut mc = member.walk();
+                member
+                    .named_children(&mut mc)
+                    .filter(|e| matches!(e.kind(), "property_element" | "const_element"))
+                    .filter_map(|e| e.named_child(0))
+                    .map(|n| (n, text(n, src).to_string()))
+                    .collect()
+            }
+            _ => Vec::new(),
+        };
+        for (node, name) in names {
+            if !seen.insert(name.clone()) {
+                push(
+                    node,
+                    Severity::Error,
+                    format!("{name} is declared twice"),
+                    Code::DuplicateMember(name),
+                );
+            }
+        }
+    }
+}
+
+/// Whether `node` carries a modifier child of `kind`.
+fn has_modifier(node: Node, kind: &str) -> bool {
+    let mut c = node.walk();
+    node.children(&mut c).any(|ch| ch.kind() == kind)
+}
+
+/// An abstract method in a class that is not abstract: a fatal error.
+fn abstract_in_concrete(
+    class: Node,
+    src: &str,
+    push: &mut impl FnMut(Node, Severity, String, Code),
+) {
+    if class.kind() != "class_declaration" || has_modifier(class, "abstract_modifier") {
+        return;
+    }
+    let Some(body) = class.child_by_field_name("body") else {
+        return;
+    };
+    let mut c = body.walk();
+    for method in body
+        .named_children(&mut c)
+        .filter(|m| m.kind() == "method_declaration" && has_modifier(*m, "abstract_modifier"))
+    {
+        if let Some(name) = method.child_by_field_name("name") {
+            push(
+                name,
+                Severity::Error,
+                format!(
+                    "Abstract method {}() in a class that is not abstract",
+                    text(name, src)
+                ),
+                Code::AbstractInConcreteClass,
+            );
+        }
+    }
+}
+
+/// `$this` inside a static method, where there is no instance.
+fn this_in_static(method: Node, src: &str, push: &mut impl FnMut(Node, Severity, String, Code)) {
+    if !has_modifier(method, "static_modifier") {
+        return;
+    }
+    let Some(body) = method.child_by_field_name("body") else {
+        return;
+    };
+    let mut stack = vec![body];
+    while let Some(n) = stack.pop() {
+        // Closures inside may be bound to an object later.
+        if matches!(
+            n.kind(),
+            "anonymous_function" | "arrow_function" | "class_declaration"
+        ) {
+            continue;
+        }
+        if n.kind() == "variable_name" && text(n, src) == "$this" {
+            push(
+                n,
+                Severity::Error,
+                "$this in a static method".into(),
+                Code::ThisInStatic,
+            );
+            return;
+        }
+        let mut c = n.walk();
+        stack.extend(n.named_children(&mut c));
+    }
+}
+
+/// `if (…) { return …; } else { … }`: the `else` adds nesting for nothing,
+/// since the `if` branch always leaves.
+fn redundant_else(statement: Node, push: &mut impl FnMut(Node, Severity, String, Code)) {
+    let Some(body) = statement.child_by_field_name("body") else {
+        return;
+    };
+    let mut c = statement.walk();
+    let Some(else_clause) = statement
+        .children_by_field_name("alternative", &mut c)
+        .find(|n| n.kind() == "else_clause")
+    else {
+        return;
+    };
+    let mut bc = body.walk();
+    let last = body
+        .named_children(&mut bc)
+        .filter(|n| n.kind() != "comment")
+        .last();
+    if last.is_some_and(leaves_block) && !has_elseif(statement) {
+        push(
+            else_clause,
+            Severity::Warning,
+            "Redundant else: the if branch always leaves".into(),
+            Code::RedundantElse,
+        );
+    }
+}
+
+/// Whether the `if` has `elseif` branches (the else is then not simply
+/// redundant).
+fn has_elseif(statement: Node) -> bool {
+    let mut c = statement.walk();
+    statement
+        .children_by_field_name("alternative", &mut c)
+        .any(|n| n.kind() == "else_if_clause")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -397,6 +728,76 @@ mod tests {
                 "<?php class A { private $x; private function h() {} public function f() { return $this->h() + $this->x; } }"
             ),
             []
+        );
+    }
+    #[test]
+    fn style_checks_should_find_empty_if_body() {
+        assert_eq!(codes("<?php if ($a); f();"), [Code::EmptyBody]);
+    }
+
+    #[test]
+    fn style_checks_should_find_duplicate_case() {
+        assert_eq!(
+            codes("<?php switch ($x) { case 1: f(); break; case 1: g(); }"),
+            [Code::DuplicateCase("1".into())]
+        );
+    }
+
+    #[test]
+    fn style_checks_should_find_duplicate_condition() {
+        assert_eq!(
+            codes("<?php if ($a) {} elseif ($a) {}"),
+            [Code::DuplicateCondition]
+        );
+    }
+
+    #[test]
+    fn style_checks_should_find_identical_branches() {
+        assert_eq!(codes("<?php $c = $a ? $b : $b;"), [Code::IdenticalBranches]);
+    }
+
+    #[test]
+    fn style_checks_should_find_same_operands() {
+        assert_eq!(codes("<?php $d = $a == $a;"), [Code::SameOperands]);
+    }
+
+    #[test]
+    fn style_checks_should_find_unused_closure_use() {
+        assert_eq!(
+            codes("<?php $f = function () use ($x, $y) { return $x; };"),
+            [Code::UnusedClosureUse("$y".into())]
+        );
+    }
+
+    #[test]
+    fn style_checks_should_find_duplicate_constant() {
+        assert_eq!(
+            codes("<?php class B { const C = 1; const C = 2; }"),
+            [Code::DuplicateMember("C".into())]
+        );
+    }
+
+    #[test]
+    fn style_checks_should_find_abstract_method_in_concrete_class() {
+        assert_eq!(
+            codes("<?php class B { abstract function h(); }"),
+            [Code::AbstractInConcreteClass]
+        );
+    }
+
+    #[test]
+    fn style_checks_should_find_this_in_static_method() {
+        assert_eq!(
+            codes("<?php class A { public static function g() { return $this; } }"),
+            [Code::ThisInStatic]
+        );
+    }
+
+    #[test]
+    fn style_checks_should_find_redundant_else() {
+        assert_eq!(
+            codes("<?php if ($a) { return 1; } else { g(); }"),
+            [Code::RedundantElse]
         );
     }
 }

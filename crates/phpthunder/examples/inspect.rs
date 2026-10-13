@@ -31,6 +31,16 @@ fn kind(code: &Code) -> &'static str {
         Code::EmptyCatch => "empty catch",
         Code::SelfAssignment => "self assignment",
         Code::UnusedPrivateMember(_) => "unused private member",
+        Code::EmptyBody => "empty body",
+        Code::DuplicateCase(_) => "duplicate case",
+        Code::DuplicateCondition => "duplicate condition",
+        Code::IdenticalBranches => "identical branches",
+        Code::SameOperands => "same operands",
+        Code::UnusedClosureUse(_) => "unused closure use",
+        Code::DuplicateMember(_) => "duplicate member",
+        Code::AbstractInConcreteClass => "abstract in concrete class",
+        Code::ThisInStatic => "this in static",
+        Code::RedundantElse => "redundant else",
         Code::External(_) => "external",
     }
 }

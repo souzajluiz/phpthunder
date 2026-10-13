@@ -75,6 +75,26 @@ pub enum Code {
     SelfAssignment,
     /// A private method or property (`$name`) nothing in its class uses.
     UnusedPrivateMember(String),
+    /// A control statement whose body is only `;`.
+    EmptyBody,
+    /// A `case` value repeated in one `switch`; carries the value.
+    DuplicateCase(String),
+    /// An `elseif` condition repeating an earlier branch.
+    DuplicateCondition,
+    /// A ternary whose two branches are the same.
+    IdenticalBranches,
+    /// A comparison or operation with the same operand on both sides.
+    SameOperands,
+    /// A closure `use` variable the closure never reads; carries `$name`.
+    UnusedClosureUse(String),
+    /// A method, property or constant declared twice; carries its name.
+    DuplicateMember(String),
+    /// An abstract method in a class not declared abstract.
+    AbstractInConcreteClass,
+    /// `$this` in a static method.
+    ThisInStatic,
+    /// An `else` after an `if` branch that always leaves.
+    RedundantElse,
     /// Reported by an external analyser; carries its name (e.g. `PHPStan`).
     External(String),
 }
@@ -154,6 +174,8 @@ pub enum FixKind {
     UseStrictComparison,
     /// Deletes the statement or declaration the diagnostic is on.
     RemoveStatement,
+    /// Drops an `else` after an `if` that always leaves, keeping its body.
+    RemoveRedundantElse,
     /// Adds a property to a class.
     AddProperty {
         /// Class FQN.

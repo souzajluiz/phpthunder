@@ -84,7 +84,21 @@ pub fn quick_fixes(
             edits: vec![remove_lines_edit(src, diagnostic.start, diagnostic.end)],
             kind: FixKind::RemoveStatement,
         }],
+        Code::RedundantElse => vec![Fix {
+            title: "Remove redundant else".into(),
+            edits: vec![unwrap_else_edit(src, diagnostic.start, diagnostic.end)],
+            kind: FixKind::RemoveRedundantElse,
+        }],
         Code::UndefinedFunction(_)
+        | Code::EmptyBody
+        | Code::DuplicateCase(_)
+        | Code::DuplicateCondition
+        | Code::IdenticalBranches
+        | Code::SameOperands
+        | Code::UnusedClosureUse(_)
+        | Code::DuplicateMember(_)
+        | Code::AbstractInConcreteClass
+        | Code::ThisInStatic
         | Code::DuplicateArrayKey(_)
         | Code::AssignmentInCondition
         | Code::EmptyCatch
@@ -122,6 +136,33 @@ fn remove_lines_edit(src: &str, start: usize, end: usize) -> Edit {
             end,
             text: String::new(),
         }
+    }
+}
+
+/// An edit replacing `else { body }` (at `start..end`) with the body's
+/// statements, one level less indented, after the `if`.
+fn unwrap_else_edit(src: &str, start: usize, end: usize) -> Edit {
+    let clause = &src[start..end];
+    let inner = match (clause.find('{'), clause.rfind('}')) {
+        (Some(a), Some(b)) if a < b => &clause[a + 1..b],
+        _ => "",
+    };
+    let body: Vec<&str> = inner
+        .lines()
+        .map(|l| {
+            l.strip_prefix("    ")
+                .or_else(|| l.strip_prefix('\t'))
+                .unwrap_or(l)
+        })
+        .collect();
+    let body = body.join("\n");
+    let before = &src[..start];
+    let ws = before.len() - before.trim_end().len();
+    Edit {
+        path: None,
+        start: start - ws,
+        end,
+        text: body.trim_end().to_string(),
     }
 }
 

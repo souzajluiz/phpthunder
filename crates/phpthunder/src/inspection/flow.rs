@@ -526,7 +526,15 @@ mod tests {
     #[test]
     fn unused_variables_should_be_reported_once_and_respect_exemptions() {
         let src = "<?php\nfunction f($p) {\n    $a = 1;\n    $b = 2;\n    $c = 3;\n    foreach ([1] as $k => $v) {}\n    $fn = fn () => $c;\n    $g = function () use ($b) {};\n    return $fn . $g . $p;\n}\n";
-        assert_eq!(codes(src), vec![Code::UnusedVariable("$a".into())]);
+        // `$b` is read by nothing in the closure, which the closure-use
+        // check reports; the variable itself counts as used.
+        assert_eq!(
+            codes(src),
+            vec![
+                Code::UnusedVariable("$a".into()),
+                Code::UnusedClosureUse("$b".into())
+            ]
+        );
         let dynamic = "<?php\nfunction f() {\n    $a = 1;\n    return compact('a');\n}\n";
         assert!(codes(dynamic).is_empty());
     }

@@ -53,6 +53,16 @@ pub fn diagnostic_message(diagnostic: &Diagnostic) -> String {
         Code::LooseNullComparison => tr!("diagnostic-loose-null-comparison"),
         Code::EmptyCatch => tr!("diagnostic-empty-catch"),
         Code::SelfAssignment => tr!("diagnostic-self-assignment"),
+        Code::EmptyBody => tr!("diagnostic-empty-body"),
+        Code::DuplicateCase(value) => tr!("diagnostic-duplicate-case", value = value.as_str()),
+        Code::DuplicateCondition => tr!("diagnostic-duplicate-condition"),
+        Code::IdenticalBranches => tr!("diagnostic-identical-branches"),
+        Code::SameOperands => tr!("diagnostic-same-operands"),
+        Code::UnusedClosureUse(name) => tr!("diagnostic-unused-closure-use", name = name.as_str()),
+        Code::DuplicateMember(name) => tr!("diagnostic-duplicate-member", name = name.as_str()),
+        Code::AbstractInConcreteClass => tr!("diagnostic-abstract-in-concrete-class"),
+        Code::ThisInStatic => tr!("diagnostic-this-in-static"),
+        Code::RedundantElse => tr!("diagnostic-redundant-else"),
         Code::UnusedPrivateMember(name) => {
             tr!("diagnostic-unused-private-member", name = name.as_str())
         }
@@ -73,6 +83,7 @@ pub fn fix_title(fix: &Fix) -> String {
         FixKind::RulesToString => tr!("fix-rules-to-string"),
         FixKind::UseStrictComparison => tr!("fix-use-strict-comparison"),
         FixKind::RemoveStatement => tr!("fix-remove-statement"),
+        FixKind::RemoveRedundantElse => tr!("fix-remove-redundant-else"),
         FixKind::AddMethod { class, name } => {
             tr!("fix-add-method", name = name.as_str(), class = short(class))
         }
