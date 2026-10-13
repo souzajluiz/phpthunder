@@ -80,6 +80,45 @@ pub(crate) fn signature_popup(view: &SignatureView) -> Element<'_, Message> {
 }
 
 impl App {
+    /// The name prompt of a tree file operation, drawn as a modal.
+    pub(crate) fn name_prompt_view(&self) -> Element<'_, Message> {
+        let Some(p) = &self.name_prompt else {
+            return space().into();
+        };
+        let input = text_input("", &p.value)
+            .id(Id::new(crate::app::PROMPT_INPUT))
+            .on_input(Message::PromptInput)
+            .on_submit(Message::PromptSubmit)
+            .size(14)
+            .font(MONO)
+            .padding([8, 10])
+            .style(boxed_input);
+        let mut content = column![
+            row![
+                label(p.title.clone(), 14.0, TEXT_BRIGHT).font(UI_BOLD),
+                space().width(Fill),
+                label(tr!("file-prompt-hints"), 11.0, MUTED),
+            ]
+            .align_y(Center),
+            input,
+        ]
+        .spacing(12)
+        .padding(16)
+        .width(Length::Fixed(560.0));
+        if let Some(error) = &p.error {
+            content = content.push(label(error.clone(), 12.0, rgb(0xF7768E)));
+        }
+        container(container(content).style(popup))
+            .width(Fill)
+            .height(Fill)
+            .align_x(iced::alignment::Horizontal::Center)
+            .padding(Padding {
+                top: 110.0,
+                ..Padding::ZERO
+            })
+            .into()
+    }
+
     /// The rename dialog (`⇧F6`), drawn as a modal by the workbench.
     pub(crate) fn rename_dialog_view(&self) -> Element<'_, Message> {
         let Some(d) = &self.rename else {

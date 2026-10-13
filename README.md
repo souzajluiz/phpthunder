@@ -8,9 +8,18 @@ A fast PHP language server written in Rust.
   properties, class constants, and enum cases
 - **Find usages** across the project
 - **Completion** for members after `->` and `::`, class and function names (with
-  automatic `use` import), and local variables
+  automatic `use` import), local variables and keywords; camel-hump and
+  middle-of-word matching (`gUN` and `Name` find `getUserName`), ranked by
+  match quality, how often you pick each proposal, and proximity
 - **Hover** with the declaration signature and fully qualified name
+- **Inspections and quick fixes**: undefined classes, functions, methods,
+  properties and variables, unused imports; import class, add method or
+  property, remove import
+- **Refactorings**: rename (symbol and class file), optimize imports, code
+  generation (constructor, accessors, implement and override methods)
 - **Document and workspace symbols**
+- **Laravel**: Eloquent forwarding and conventions, migration columns as
+  attributes, route/view/config/translation/env keys
 
 Name resolution follows PHP rules: namespaces, `use` imports and aliases, group
 imports, `use function`, global function fallback, `self`/`static`/`parent`.
@@ -96,6 +105,14 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
   Needs the Xdebug extension: loaded by PHP, Herd Pro's bundled build, or
   `PHPTHUNDER_XDEBUG=/path/to/xdebug.so`
 
+Project files: the index is cached on disk (`~/Library/Caches/phpthunder`),
+so reopening a project only reparses files that changed; changes made outside
+the editor (Git, Composer, generators) reload unmodified tabs and refresh the
+tree, index and Git status; right-click a tree entry (or the `+` in its
+header) for new file, folder or PHP class (namespaced from Composer's PSR-4
+map), rename or move, move to Trash, reveal in Finder and copy path. The last
+project, its open tabs and carets are restored on start.
+
 Shortcuts: `⌘O` open folder, `⌘S` save, `⌘W` close tab, `⌘1` toggle project
 tree, `Esc` close popups/panel.
 
@@ -179,5 +196,7 @@ the sample project in `crates/phpthunder/tests/fixtures/app`.
 
 ## Limitations
 
-- No diagnostics, rename, or formatting yet.
-- The index lives in memory and is rebuilt on each start.
+- The language server offers definitions, usages, completion, hover and
+  symbols; inspections, refactorings, Laravel keys and the IDE tools (Git,
+  debugger, tests) are IDE-only for now.
+- The debugger needs the Xdebug extension, which phpthunder does not ship.

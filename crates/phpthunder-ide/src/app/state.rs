@@ -99,6 +99,13 @@ pub struct App {
     pub signature: Option<SignatureView>,
     /// Open rename dialog.
     pub rename: Option<RenameDialog>,
+    /// The remembered session (last project, tabs per project).
+    pub session: SavedSession,
+    /// Whether saved tabs are being read back (the session is not saved
+    /// meanwhile, so the half-restored state never overwrites it).
+    pub restoring: bool,
+    /// Name prompt for a tree file operation, while open.
+    pub name_prompt: Option<NamePrompt>,
     /// Content of the type hierarchy panel.
     pub hierarchy: Option<Hierarchy>,
     /// Set by edits and tab switches; [`App::update`] turns it into a
@@ -243,6 +250,9 @@ impl App {
             intentions: None,
             signature: None,
             rename: None,
+            name_prompt: None,
+            session: session::load_session(),
+            restoring: false,
             hierarchy: None,
             inspect_pending: false,
             inspect_generation: 0,
@@ -262,9 +272,11 @@ impl App {
             gutter_y: 0.0,
             completion_stats: completion::load_completion_stats(),
         };
+        // The folder given on the command line, else the last project.
         let folder = std::env::args()
             .nth(1)
             .map(PathBuf::from)
+            .or_else(|| app.session.last_project.clone())
             .filter(|p| p.is_dir());
         let snapshot = App::snapshot_tasks(folder.as_deref());
         let task = match folder {
@@ -304,15 +316,20 @@ impl App {
     /// Listens to every keyboard event so shortcuts, double-Shift, and modal
     /// keys work even when the editor does not have focus.
     pub fn subscription(&self) -> Subscription<Message> {
-        let keys = event::listen_with(keyboard_events);
-        match &self.terminal {
-            Some(session) => Subscription::batch([
-                keys,
+        let mut subscriptions = vec![event::listen_with(keyboard_events)];
+        if let Some(session) = &self.terminal {
+            subscriptions.push(
                 Subscription::run_with(session.id, crate::terminal::output_events)
                     .map(Message::TerminalOutput),
-            ]),
-            None => keys,
+            );
         }
+        if let Some(root) = &self.tree.root {
+            subscriptions.push(
+                Subscription::run_with(root.clone(), crate::watch::file_changes)
+                    .map(Message::FilesChanged),
+            );
+        }
+        Subscription::batch(subscriptions)
     }
 
     /// iced update entry point: applies one [`Message`] to the state and
@@ -320,6 +337,7 @@ impl App {
     /// Most arms delegate to the methods below or in the `app` command handlers.
     pub fn update(&mut self, message: Message) -> Task<Message> {
         let task = self.handle(message);
+        self.save_session_if_changed();
         let inspection = self.schedule_inspection();
         Task::batch([task, inspection])
     }
@@ -339,6 +357,17 @@ impl App {
             ),
             Message::FolderPicked(None) => Task::none(),
             Message::FolderPicked(Some(root)) => self.open_folder(root),
+            Message::FilesChanged(paths) => self.files_changed(paths),
+            Message::ShowFileActions(path) => self.show_file_actions(path),
+            Message::SessionRestored(tabs, active) => self.session_restored(tabs, active),
+            Message::PromptInput(value) => {
+                if let Some(p) = &mut self.name_prompt {
+                    p.value = value;
+                    p.error = None;
+                }
+                Task::none()
+            }
+            Message::PromptSubmit => self.submit_name_prompt(),
             Message::FilesListed(files) => {
                 let (vendor, project): (Vec<PathBuf>, Vec<PathBuf>) = files
                     .into_iter()
@@ -605,6 +634,7 @@ impl App {
             Message::CloseModal => {
                 self.palette = None;
                 self.search_dialog = None;
+                self.name_prompt = None;
                 operation::focus(Id::new(EDITOR_ID))
             }
             Message::ToggleSidebar => {
@@ -792,7 +822,9 @@ impl App {
         self.git_marks.clear();
         self.commit = CommitPanel::default();
         let list_root = root.clone();
+        let restore = self.restore_tabs(&root);
         Task::batch([
+            restore,
             self.scan_laravel(),
             self.refresh_git(),
             Task::perform(self.lang.clone().index_project(root), Message::Indexed),
@@ -880,7 +912,7 @@ impl App {
 
     /// Closes tab `i` without a save prompt, then activates the neighbour
     /// that keeps the same visual position (or nothing if no tabs remain).
-    fn close_tab(&mut self, i: usize) -> Task<Message> {
+    pub(crate) fn close_tab(&mut self, i: usize) -> Task<Message> {
         if i >= self.docs.len() {
             return Task::none();
         }

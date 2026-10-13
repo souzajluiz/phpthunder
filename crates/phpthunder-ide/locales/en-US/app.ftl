@@ -134,3 +134,22 @@ debug-no-xdebug = Xdebug is not installed for this PHP (install it, or set PHPTH
 debug-no-connection = Xdebug did not connect (is xdebug.mode allowed and the port free?)
 debug-connection-closed = Xdebug closed the connection
 debug-no-value = no value
+
+notice-changed-on-disk = Changed on disk while you have unsaved edits: { $files }
+
+file-new-file = New file…
+file-new-folder = New folder…
+file-new-class = New PHP class…
+file-rename = Rename or move…
+file-delete = Move to Trash
+file-reveal = Reveal in Finder
+file-copy-path = Copy relative path
+file-new-file-in = New file in { $dir }
+file-new-folder-in = New folder in { $dir }
+file-new-class-in = New PHP class in { $dir }
+file-rename-title = Rename or move { $path }
+file-prompt-hints = ↵ confirm   esc cancel
+file-deleted = Moved to Trash: { $path }
+file-op-failed = File operation failed: { $error }
+file-bad-name = Type a name inside the project
+file-exists = { $path } already exists

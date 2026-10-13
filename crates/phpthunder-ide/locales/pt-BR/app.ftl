@@ -133,3 +133,22 @@ debug-no-xdebug = O Xdebug não está instalado neste PHP (instale-o ou defina P
 debug-no-connection = O Xdebug não se conectou (o xdebug.mode permite e a porta está livre?)
 debug-connection-closed = O Xdebug fechou a conexão
 debug-no-value = sem valor
+
+notice-changed-on-disk = Alterado no disco enquanto há edições não salvas: { $files }
+
+file-new-file = Novo arquivo…
+file-new-folder = Nova pasta…
+file-new-class = Nova classe PHP…
+file-rename = Renomear ou mover…
+file-delete = Mover para a Lixeira
+file-reveal = Mostrar no Finder
+file-copy-path = Copiar caminho relativo
+file-new-file-in = Novo arquivo em { $dir }
+file-new-folder-in = Nova pasta em { $dir }
+file-new-class-in = Nova classe PHP em { $dir }
+file-rename-title = Renomear ou mover { $path }
+file-prompt-hints = ↵ confirmar   esc cancelar
+file-deleted = Movido para a Lixeira: { $path }
+file-op-failed = Falha na operação de arquivo: { $error }
+file-bad-name = Digite um nome dentro do projeto
+file-exists = { $path } já existe

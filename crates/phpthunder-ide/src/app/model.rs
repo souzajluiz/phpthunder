@@ -28,6 +28,16 @@ pub enum Message {
     FolderPicked(Option<PathBuf>),
     /// Background file listing of the project finished.
     FilesListed(Vec<PathBuf>),
+    /// Files changed on disk outside the editor (from the file watcher).
+    FilesChanged(Vec<PathBuf>),
+    /// Saved tabs were read back: tabs with their text, active index.
+    SessionRestored(Vec<(crate::app::SavedTab, String)>, Option<usize>),
+    /// Show the action list for a tree entry (right click).
+    ShowFileActions(PathBuf),
+    /// Name typed in the file name prompt.
+    PromptInput(String),
+    /// Confirm the file name prompt.
+    PromptSubmit,
     /// Background project indexing finished.
     Indexed(Result<IndexReport, String>),
     /// Laravel key scan finished (`None` when not a Laravel project).
@@ -561,6 +571,38 @@ pub struct RenameDialog {
     /// Byte offset of the symbol in the active document.
     pub offset: usize,
     /// Last error from planning the rename.
+    pub error: Option<String>,
+}
+
+/// A file operation from the project tree's action list.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FileAction {
+    /// Create a file in this folder (asks for the name).
+    NewFile(PathBuf),
+    /// Create a folder in this folder (asks for the name).
+    NewFolder(PathBuf),
+    /// Create a PHP class in this folder, namespaced from Composer's PSR-4
+    /// autoload (asks for the class name).
+    NewClass(PathBuf),
+    /// Rename or move this file or folder (asks for the new relative path).
+    Rename(PathBuf),
+    /// Move this file or folder to the Trash.
+    Delete(PathBuf),
+    /// Show this file or folder in Finder.
+    Reveal(PathBuf),
+    /// Copy the path relative to the project to the clipboard.
+    CopyPath(PathBuf),
+}
+
+/// The modal asking for a name for a [`FileAction`].
+pub struct NamePrompt {
+    /// What the name is for.
+    pub action: FileAction,
+    /// Dialog title.
+    pub title: String,
+    /// Name or relative path being typed.
+    pub value: String,
+    /// Why the last submit failed.
     pub error: Option<String>,
 }
 

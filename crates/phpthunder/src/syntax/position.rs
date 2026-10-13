@@ -3,7 +3,9 @@
 //! LSP positions are (line, UTF-16 code unit column); tree-sitter works in bytes.
 
 /// A position in LSP coordinates.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct Pos {
     /// Zero-based line.
     pub line: u32,
@@ -12,7 +14,9 @@ pub struct Pos {
 }
 
 /// A range between two positions, end exclusive.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct Span {
     /// First position covered.
     pub start: Pos,

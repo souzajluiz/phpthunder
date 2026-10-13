@@ -10,6 +10,7 @@ repository.workspace = true
 base64 = "0.23.1"
 fluent-bundle = "0.16.0"
 iced = { version = "0.14.0", features = ["svg", "tokio", "advanced"] }
+notify = "8.2.0"
 parking_lot.workspace = true
 phpthunder.workspace = true
 png = "0.17.16"
@@ -17,7 +18,7 @@ portable-pty = "0.9.0"
 quick-xml = "0.42.0"
 regex = "1.13.1"
 rfd = "0.17.2"
-serde = { version = "1.0.229", features = ["derive"] }
+serde.workspace = true
 serde_json = "1.0.154"
 similar = "3.2.0"
 sys-locale = "0.3.2"

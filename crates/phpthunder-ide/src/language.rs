@@ -55,8 +55,41 @@ impl Language {
             if let Ok(path) = index::write_builtins() {
                 self.update_file(&path, index::BUILTINS_SOURCE);
             }
+            // The cache fills the index first; the scan then reparses only
+            // files whose content changed since it was written.
+            let cache = crate::project::index_cache_path(&root);
+            let mut unchanged = std::collections::HashSet::new();
+            if let Some(entries) = cache.as_deref().and_then(index::load_cache) {
+                let mut idx = self.index.write();
+                for (path, stamp, entry) in entries {
+                    if stamp.is_some() && stamp == index::file_stamp(&path) {
+                        unchanged.insert(path.clone());
+                    }
+                    idx.update(path, entry);
+                }
+            }
             let files = index::php_files(&root);
-            index::index_files(&self.index, &files, |_, _| {});
+            let changed: Vec<PathBuf> = files
+                .iter()
+                .filter(|p| !unchanged.contains(*p))
+                .cloned()
+                .collect();
+            index::index_files(&self.index, &changed, |_, _| {});
+            {
+                // Files deleted since the cache was written.
+                let keep: std::collections::HashSet<&PathBuf> = files.iter().collect();
+                let builtins = index::write_builtins().ok();
+                let mut idx = self.index.write();
+                for path in idx.paths() {
+                    if !keep.contains(&path) && Some(&path) != builtins.as_ref() {
+                        idx.remove(&path);
+                    }
+                }
+            }
+            if let Some(cache) = cache {
+                // A write failure only costs the next start its head start.
+                let _ = index::save_cache(&self.index.read(), &cache);
+            }
             IndexReport {
                 files: files.len(),
                 elapsed: started.elapsed(),

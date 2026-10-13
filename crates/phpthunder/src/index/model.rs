@@ -7,7 +7,8 @@ use std::path::PathBuf;
 /// Everything the index stores for one file.
 ///
 /// Built off-lock by [`index_source`] (in parallel during the initial scan) and
-/// installed with [`Index::update`].
+/// installed with [`Index::update`]. Serializable for the on-disk cache.
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct FileEntry {
     /// [`content_hash`] of the source; lets rescans skip unchanged files.
     pub hash: u64,

@@ -114,6 +114,7 @@ impl App {
             (Some(p), _, _) => Some(self.palette_view(p)),
             (None, Some(_), _) => Some(self.search_dialog_view()),
             (None, None, Some(_)) => Some(self.rename_dialog_view()),
+            _ if self.name_prompt.is_some() => Some(self.name_prompt_view()),
             _ => None,
         };
         match modal {
@@ -402,7 +403,7 @@ impl App {
                 None if r.entry.is_dir => TEXT,
                 None => TEXT_SOFT,
             };
-            button(
+            let row_button_el = button(
                 row![
                     indent,
                     chevron,
@@ -421,20 +422,34 @@ impl App {
                 top: 0.0,
                 bottom: 0.0,
             })
-            .style(row_button(selected))
-            .into()
+            .style(row_button(selected));
+            mouse_area(row_button_el)
+                .on_right_press(Message::ShowFileActions(r.entry.path.clone()))
+                .into()
         });
-        let header = container(
-            row![
-                label(tr!("rail-project"), 13.0, TEXT).font(UI_BOLD),
-                icon(Icon::ChevronDown, 12.0, 2.0, MUTED)
-            ]
-            .spacing(6)
-            .align_y(Center),
-        )
-        .padding([0, 16])
-        .height(40)
-        .center_y(40);
+        let new_file = self.tree.root.clone().map(|root| {
+            tooltip(
+                button(label("+", 16.0, MUTED))
+                    .padding([0, 6])
+                    .style(ghost_button)
+                    .on_press(Message::ShowFileActions(root)),
+                container(label(tr!("file-new-file"), 12.0, TEXT))
+                    .padding([4, 8])
+                    .style(popup),
+                tooltip::Position::Bottom,
+            )
+        });
+        let mut title = row![
+            label(tr!("rail-project"), 13.0, TEXT).font(UI_BOLD),
+            icon(Icon::ChevronDown, 12.0, 2.0, MUTED),
+            space().width(Fill),
+        ]
+        .spacing(6)
+        .align_y(Center);
+        if let Some(button) = new_file {
+            title = title.push(button);
+        }
+        let header = container(title).padding([0, 16]).height(40).center_y(40);
         let list = scrollable(column(rows).spacing(1).padding([0, 8]))
             .height(Fill)
             .style(scrollbars);

@@ -20,6 +20,7 @@ mod template;
 mod terminal;
 mod testing;
 mod ui;
+mod watch;
 
 use app::App;
 use iced::window;

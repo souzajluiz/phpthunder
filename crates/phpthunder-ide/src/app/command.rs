@@ -218,6 +218,7 @@ impl App {
             Target::Template(abbreviation) => self.insert_template(abbreviation),
             Target::Checkout(branch) => self.git_checkout(branch),
             Target::CreateBranch(name) => self.git_create_branch(name),
+            Target::FileAction(action) => self.run_file_action(action),
             Target::Line(line, col) => {
                 let Some(doc) = self.doc() else {
                     return Task::none();

@@ -82,6 +82,8 @@ pub enum Target {
     Checkout(crate::git::Branch),
     /// Create and check out a Git branch with this name.
     CreateBranch(String),
+    /// Run a file operation from the project tree.
+    FileAction(crate::app::FileAction),
 }
 
 /// One ranked palette result.

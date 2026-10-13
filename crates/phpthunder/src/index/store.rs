@@ -272,6 +272,16 @@ impl Index {
         }
     }
 
+    /// Every indexed file with its whole entry (for the on-disk cache).
+    pub fn entries(&self) -> impl Iterator<Item = (&Path, &FileEntry)> {
+        self.files.iter().map(|(p, e)| (p.as_path(), e))
+    }
+
+    /// Paths of every indexed file.
+    pub fn paths(&self) -> Vec<PathBuf> {
+        self.files.keys().cloned().collect()
+    }
+
     /// Every indexed file with its symbols.
     pub fn files(&self) -> impl Iterator<Item = (&Path, &[Symbol])> {
         self.files

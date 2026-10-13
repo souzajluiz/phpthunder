@@ -3,6 +3,7 @@
 mod command;
 mod completion;
 mod debug;
+mod files;
 mod generate;
 mod git;
 mod inspection;
@@ -11,13 +12,16 @@ mod laravel;
 mod model;
 mod navigation;
 mod refactor;
+mod session;
 mod snapshot;
 mod state;
 mod template;
 mod terminal;
 mod tooling;
 
+pub use files::*;
 pub use model::*;
 pub use refactor::*;
+pub use session::*;
 pub use state::*;
 pub use terminal::*;

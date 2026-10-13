@@ -166,6 +166,25 @@ impl FileTree {
     }
 }
 
+/// Where the index cache of the project at `root` lives: the user cache
+/// folder (`~/Library/Caches/phpthunder` on macOS, `$XDG_CACHE_HOME` or
+/// `~/.cache/phpthunder` elsewhere), one file per project path.
+pub fn index_cache_path(root: &Path) -> Option<PathBuf> {
+    use std::hash::{Hash, Hasher};
+    let home = PathBuf::from(std::env::var_os("HOME")?);
+    let base = if cfg!(target_os = "macos") {
+        home.join("Library/Caches")
+    } else {
+        std::env::var_os("XDG_CACHE_HOME").map_or_else(|| home.join(".cache"), PathBuf::from)
+    };
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    root.hash(&mut hasher);
+    Some(
+        base.join("phpthunder")
+            .join(format!("index-{:016x}.bin", hasher.finish())),
+    )
+}
+
 /// Current git branch, read from `.git/HEAD`.
 pub fn git_branch(root: &Path) -> Option<String> {
     let head = std::fs::read_to_string(root.join(".git/HEAD")).ok()?;

@@ -3,7 +3,7 @@
 use crate::syntax::Span;
 
 /// What a declaration is; stored on every [`Symbol`].
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Kind {
     /// `class`.
     Class,
@@ -70,7 +70,9 @@ impl MemberTag {
 }
 
 /// Declared visibility of a class member; top-level symbols are `Public`.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum Visibility {
     /// `public`, or no modifier.
     #[default]
@@ -82,7 +84,7 @@ pub enum Visibility {
 }
 
 /// Index entry for one declaration, built by [`build`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Symbol {
     /// What was declared.
     pub kind: Kind,
@@ -143,7 +145,7 @@ pub fn template_name(ty: &str) -> Option<&str> {
 /// A PHPDoc conditional return type, `($param is Test ? Then : Else)`,
 /// picked per call site by [`Ty::select`] from the argument passed for
 /// `param` (Laravel's `request()`, `app()`, `Builder::find()`).
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Conditional {
     /// Parameter the condition tests, without `$`.
     pub param: String,
@@ -162,7 +164,7 @@ pub struct Conditional {
 
 /// A resolved type: the class an expression evaluates to and, for arrays and
 /// generic collections, the class of its elements.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Ty {
     /// Class the value is an instance of; may be [`STATIC_TYPE`] until bound.
     pub class: Option<String>,
