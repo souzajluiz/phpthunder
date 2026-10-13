@@ -1,0 +1,33 @@
+{
+  "name": "phpthunder",
+  "displayName": "phpthunder",
+  "description": "PHP language server client for phpthunder",
+  "version": "0.1.0",
+  "publisher": "souzajluiz",
+  "license": "MIT",
+  "engines": { "vscode": "^1.82.0" },
+  "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:php"],
+  "main": "./extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "phpthunder",
+      "properties": {
+        "phpthunder.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the phpthunder binary. Empty: use the repository's target/release build, then PATH."
+        },
+        "phpthunder.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Log LSP traffic to the phpthunder output channel."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "vscode-languageclient": "9.0.1"
+  }
+}

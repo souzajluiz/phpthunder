@@ -48,6 +48,18 @@ cargo build --release
 
 ## Editor setup
 
+**VS Code**: a minimal client extension lives in `editors/vscode`.
+
+```sh
+cargo build --release
+cd editors/vscode && npm install && cd ../..
+code --extensionDevelopmentPath="$PWD/editors/vscode" tests/fixtures/app
+```
+
+The extension uses `target/release/phpthunder` from this repository unless
+`phpthunder.path` is set. Disable other PHP language servers (for example
+Intelephense) in the test window to avoid duplicate results.
+
 **Neovim** (0.11+):
 
 ```lua
