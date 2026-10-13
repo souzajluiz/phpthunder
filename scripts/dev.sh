@@ -22,6 +22,6 @@ if [[ "${1:-}" == "--check" ]]; then
     -x "test --workspace -q"
 fi
 
-# -r restarts the running IDE instead of waiting for it to exit.
-exec cargo watch "${watch[@]}" -c -r \
+# cargo-watch 8 restarts the running IDE on change by default.
+exec cargo watch "${watch[@]}" -c \
   -x "run -p phpthunder-ide -- ${1:-}"
