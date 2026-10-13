@@ -13,7 +13,13 @@ fn main() {
         eprintln!("{} is not a Laravel project", root.display());
         return;
     };
-    for kind in [KeyKind::Route, KeyKind::View, KeyKind::Config] {
+    for kind in [
+        KeyKind::Route,
+        KeyKind::View,
+        KeyKind::Config,
+        KeyKind::Translation,
+        KeyKind::Env,
+    ] {
         let keys = project.keys(kind);
         println!("{kind:?}: {}", keys.len());
         for key in keys.iter().take(5) {

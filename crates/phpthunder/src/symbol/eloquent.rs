@@ -116,6 +116,7 @@ fn relation_type(relation: &str, model: Option<String>) -> Ty {
             class: Some(ELOQUENT_COLLECTION.to_string()),
             elem: Some(model.clone()),
             args: vec![String::new(), model],
+            conditional: None,
         },
         Some(model) => Ty::class(model),
         None => Ty::default(),
@@ -211,7 +212,12 @@ pub fn eloquent_members_of_method(
         .strip_prefix("scope")
         .filter(|s| s.starts_with(|c: char| c.is_ascii_uppercase()))
     {
-        let builder = Ty::class("Illuminate\\Database\\Eloquent\\Builder");
+        // `Builder<static>`: bound to the model the scope is called on.
+        let builder = Ty {
+            class: Some("Illuminate\\Database\\Eloquent\\Builder".to_string()),
+            args: vec![STATIC_TYPE.to_string()],
+            ..Ty::default()
+        };
         return vec![member(Kind::Method, lower_first(scope), builder, true)];
     }
     if let Some(attr) = name
@@ -287,4 +293,259 @@ pub fn eloquent_members_of_property(
             .collect(),
         _ => Vec::new(),
     }
+}
+
+/// Prefix of the pseudo class that owns a database table's columns
+/// (`<table>users`). Migrations declare columns as its properties and a
+/// model lists it among its supertypes, so member lookups on the model
+/// find the columns. Never a valid PHP name, so it cannot clash.
+pub const TABLE_PREFIX: &str = "<table>";
+
+/// The pseudo class owning the columns of `table`.
+pub fn table_owner(table: &str) -> String {
+    format!("{TABLE_PREFIX}{}", table.to_ascii_lowercase())
+}
+
+/// Parent classes (short names) that make a class an Eloquent model.
+const MODEL_BASES: &[&str] = &["model", "authenticatable", "pivot", "morphpivot", "user"];
+
+/// Properties and methods only a model declares.
+const MODEL_MARKERS: &[&str] = &["$fillable", "$guarded", "$casts", "$table", "$connection"];
+
+/// English plural of the last word of a snake_case name, as Laravel's
+/// pluralizer does for regular nouns (`user` -> `users`, `category` ->
+/// `categories`); a word already ending in `s` is taken as plural.
+fn plural(snake: &str) -> String {
+    let (head, word) = snake.rsplit_once('_').map_or(("", snake), |(h, w)| (h, w));
+    let consonant_y = word.len() > 1
+        && word.ends_with('y')
+        && !word[..word.len() - 1].ends_with(['a', 'e', 'i', 'o', 'u']);
+    let word = if consonant_y {
+        format!("{}ies", &word[..word.len() - 1])
+    } else if word.ends_with("ss")
+        || word.ends_with(['x', 'z'])
+        || word.ends_with("ch")
+        || word.ends_with("sh")
+    {
+        format!("{word}es")
+    } else if word.ends_with('s') {
+        word.to_string()
+    } else {
+        format!("{word}s")
+    };
+    if head.is_empty() {
+        word
+    } else {
+        format!("{head}_{word}")
+    }
+}
+
+/// Database table of the class declared by `class` when it looks like an
+/// Eloquent model (extends `Model`, `Authenticatable`, `Pivot`…, or
+/// declares `$fillable`/`$table`/`$casts`…): its `$table` value, else the
+/// plural snake_case of its name (`BlogPost` -> `blog_posts`). `None` for
+/// other classes.
+pub fn model_table(class: Node, src: &str) -> Option<String> {
+    let name = text(class.child_by_field_name("name")?, src);
+    let body = class.child_by_field_name("body")?;
+    let base = class
+        .named_children(&mut class.walk())
+        .find(|n| n.kind() == "base_clause")
+        .map(|b| {
+            text(b, src)
+                .rsplit(['\\', ' '])
+                .next()
+                .unwrap_or("")
+                .to_ascii_lowercase()
+        });
+    let mut table = None;
+    let mut marked = false;
+    for member in body.named_children(&mut body.walk()) {
+        if member.kind() != "property_declaration" {
+            continue;
+        }
+        for el in member.named_children(&mut member.walk()) {
+            let Some(var) = el.child_by_field_name("name") else {
+                continue;
+            };
+            let var = text(var, src);
+            marked |= MODEL_MARKERS.contains(&var);
+            if var == "$table" {
+                table = el
+                    .child_by_field_name("default_value")
+                    .and_then(|v| string_value(v, src));
+            }
+        }
+    }
+    let is_model = marked || base.is_some_and(|b| MODEL_BASES.contains(&b.as_str()));
+    is_model.then(|| table.unwrap_or_else(|| plural(&snake_case(name))))
+}
+
+/// A table column declared by a migration.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Column {
+    /// Table the column belongs to.
+    pub table: String,
+    /// Column name.
+    pub name: String,
+    /// PHP type of the attribute, for display (`int`, `string`, `Carbon`).
+    pub php_type: &'static str,
+    /// Attribute type (Carbon for timestamps), empty for scalars.
+    pub ty: Ty,
+    /// Byte range of the declaring call, for navigation.
+    pub start: usize,
+    /// End of that range.
+    pub end: usize,
+}
+
+/// Carbon, the type Eloquent gives timestamp attributes.
+const CARBON: &str = "Carbon\\Carbon";
+
+/// Columns a `$table->method(...)` Blueprint call adds, as (name, PHP
+/// type, is a timestamp); `first` is the first string argument and
+/// `class_arg` the class of a `Foo::class` first argument.
+fn blueprint_columns(
+    method: &str,
+    first: Option<String>,
+    class_arg: Option<&str>,
+) -> Vec<(String, &'static str, bool)> {
+    let named = |default: &str| first.clone().unwrap_or_else(|| default.to_string());
+    let one = |ty: &'static str| {
+        first
+            .clone()
+            .map(|n| vec![(n, ty, false)])
+            .unwrap_or_default()
+    };
+    match method.to_ascii_lowercase().as_str() {
+        "id" => vec![(named("id"), "int", false)],
+        "timestamps" | "nullabletimestamps" | "timestampstz" => vec![
+            ("created_at".into(), "Carbon", true),
+            ("updated_at".into(), "Carbon", true),
+        ],
+        "softdeletes" | "softdeletestz" => vec![(named("deleted_at"), "Carbon", true)],
+        "remembertoken" => vec![("remember_token".into(), "string", false)],
+        "morphs" | "nullablemorphs" | "uuidmorphs" | "nullableuuidmorphs" | "ulidmorphs"
+        | "nullableulidmorphs" => first
+            .map(|n| {
+                vec![
+                    (format!("{n}_id"), "int|string", false),
+                    (format!("{n}_type"), "string", false),
+                ]
+            })
+            .unwrap_or_default(),
+        "foreignidfor" => class_arg
+            .map(|c| {
+                let short = c.rsplit('\\').next().unwrap_or(c);
+                vec![(format!("{}_id", snake_case(short)), "int", false)]
+            })
+            .unwrap_or_default(),
+        "increments"
+        | "bigincrements"
+        | "smallincrements"
+        | "tinyincrements"
+        | "mediumincrements"
+        | "integer"
+        | "biginteger"
+        | "smallinteger"
+        | "tinyinteger"
+        | "mediuminteger"
+        | "unsignedinteger"
+        | "unsignedbiginteger"
+        | "unsignedsmallinteger"
+        | "unsignedtinyinteger"
+        | "unsignedmediuminteger"
+        | "foreignid"
+        | "year" => one("int"),
+        "decimal" | "double" | "float" | "unsigneddecimal" => one("float"),
+        "boolean" => one("bool"),
+        "json" | "jsonb" => one("array"),
+        "timestamp" | "timestamptz" | "datetime" | "datetimetz" => first
+            .map(|n| vec![(n, "string", false)])
+            .unwrap_or_default(),
+        "string" | "char" | "text" | "tinytext" | "mediumtext" | "longtext" | "uuid" | "ulid"
+        | "foreignuuid" | "foreignulid" | "enum" | "set" | "date" | "time" | "timetz"
+        | "binary" | "ipaddress" | "macaddress" | "geometry" | "geography" | "vector" => {
+            one("string")
+        }
+        _ => Vec::new(),
+    }
+}
+
+/// Columns declared by `Schema::create` / `Schema::table` calls anywhere in
+/// a file (migrations): each `$table->type('name')` call on the closure's
+/// Blueprint parameter. Dropped and renamed columns are not tracked.
+pub fn migration_columns(root: Node, src: &str) -> Vec<Column> {
+    let mut out = Vec::new();
+    let mut stack = vec![root];
+    while let Some(node) = stack.pop() {
+        stack.extend(node.named_children(&mut node.walk()));
+        if node.kind() != "scoped_call_expression" {
+            continue;
+        }
+        let scope = node.child_by_field_name("scope").map(|s| text(s, src));
+        let method = node.child_by_field_name("name").map(|n| text(n, src));
+        if !scope.is_some_and(|s| s.rsplit('\\').next() == Some("Schema"))
+            || !method.is_some_and(|m| {
+                m.eq_ignore_ascii_case("create") || m.eq_ignore_ascii_case("table")
+            })
+        {
+            continue;
+        }
+        let Some(args) = node.child_by_field_name("arguments") else {
+            continue;
+        };
+        let values: Vec<Node> = args
+            .named_children(&mut args.walk())
+            .filter_map(|a| a.named_child(0))
+            .collect();
+        let (Some(table), Some(closure)) = (
+            values.first().and_then(|v| string_value(*v, src)),
+            values
+                .get(1)
+                .filter(|v| matches!(v.kind(), "anonymous_function" | "arrow_function")),
+        ) else {
+            continue;
+        };
+        let Some(param) = closure
+            .child_by_field_name("parameters")
+            .and_then(|p| p.named_child(0))
+            .and_then(|p| p.child_by_field_name("name"))
+            .map(|n| text(n, src))
+        else {
+            continue;
+        };
+        let mut inner = vec![*closure];
+        while let Some(n) = inner.pop() {
+            inner.extend(n.named_children(&mut n.walk()));
+            if n.kind() != "member_call_expression"
+                || !n
+                    .child_by_field_name("object")
+                    .is_some_and(|o| text(o, src) == param)
+            {
+                continue;
+            }
+            let Some(name) = n.child_by_field_name("name") else {
+                continue;
+            };
+            let first_arg = first_argument(n);
+            let first = first_arg.and_then(|a| string_value(a, src));
+            let class_arg = first_arg.and_then(|a| text(a, src).strip_suffix("::class"));
+            for (column, php_type, is_time) in blueprint_columns(text(name, src), first, class_arg)
+            {
+                out.push(Column {
+                    table: table.clone(),
+                    name: column,
+                    php_type,
+                    ty: if is_time {
+                        Ty::class(CARBON)
+                    } else {
+                        Ty::default()
+                    },
+                    start: n.start_byte(),
+                    end: n.end_byte(),
+                });
+            }
+        }
+    }
+    out
 }

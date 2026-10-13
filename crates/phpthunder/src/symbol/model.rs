@@ -69,6 +69,18 @@ impl MemberTag {
     }
 }
 
+/// Declared visibility of a class member; top-level symbols are `Public`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Visibility {
+    /// `public`, or no modifier.
+    #[default]
+    Public,
+    /// `protected`: the declaring class and its subclasses.
+    Protected,
+    /// `private`: the declaring class only.
+    Private,
+}
+
 /// Index entry for one declaration, built by [`build`].
 #[derive(Clone, Debug)]
 pub struct Symbol {
@@ -86,6 +98,9 @@ pub struct Symbol {
     pub name_start: usize,
     /// Declared `static`; class constants and enum cases count as static.
     pub is_static: bool,
+    /// `public`, `protected` or `private`; completion hides members the
+    /// caret cannot reach.
+    pub visibility: Visibility,
     /// Declaration header, e.g. `public static function create(string $name): self`.
     pub signature: String,
     /// First paragraph of the PHPDoc comment.
@@ -125,6 +140,26 @@ pub fn template_name(ty: &str) -> Option<&str> {
     ty.strip_prefix(TEMPLATE_PREFIX)
 }
 
+/// A PHPDoc conditional return type, `($param is Test ? Then : Else)`,
+/// picked per call site by [`Ty::select`] from the argument passed for
+/// `param` (Laravel's `request()`, `app()`, `Builder::find()`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Conditional {
+    /// Parameter the condition tests, without `$`.
+    pub param: String,
+    /// Position of `param` in the declaration's parameter list, filled in by
+    /// the stub builder; `None` when no parameter has that name.
+    pub index: Option<usize>,
+    /// Type expression after `is` (or `is not`), as written.
+    pub test: String,
+    /// Written as `is not`: the branches swap.
+    pub negated: bool,
+    /// Type when the argument matches `test`.
+    pub then: Ty,
+    /// Type otherwise.
+    pub otherwise: Ty,
+}
+
 /// A resolved type: the class an expression evaluates to and, for arrays and
 /// generic collections, the class of its elements.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -136,6 +171,9 @@ pub struct Ty {
     /// Generic arguments (`Collection<int, User>` -> `["", "App\\User"]`);
     /// an empty string stands for a non-class argument.
     pub args: Vec<String>,
+    /// Set for a conditional return type; the other fields are then empty
+    /// until [`Ty::select`] picks a branch.
+    pub conditional: Option<Box<Conditional>>,
 }
 
 impl Ty {
@@ -149,7 +187,42 @@ impl Ty {
 
     /// True when nothing is known about the type.
     pub fn is_empty(&self) -> bool {
-        self.class.is_none() && self.elem.is_none()
+        self.class.is_none() && self.elem.is_none() && self.conditional.is_none()
+    }
+
+    /// Resolves a conditional type to one branch. `decide` answers whether
+    /// the call's argument matches a condition's test (`None` when it cannot
+    /// tell, e.g. a variable argument); undecided conditions take the
+    /// `otherwise` branch when it names a type, else `then`. Nested
+    /// conditionals are resolved the same way. Non-conditional types are
+    /// returned unchanged.
+    pub fn select(self, decide: &impl Fn(&Conditional) -> Option<bool>) -> Ty {
+        let Some(cond) = self.conditional else {
+            return self;
+        };
+        let cond = *cond;
+        match decide(&cond).map(|m| m != cond.negated) {
+            Some(true) => cond.then.select(decide),
+            Some(false) => cond.otherwise.select(decide),
+            None => {
+                let otherwise = cond.otherwise.select(decide);
+                if otherwise.is_empty() {
+                    cond.then.select(decide)
+                } else {
+                    otherwise
+                }
+            }
+        }
+    }
+
+    /// Records the parameter position of every condition in this type,
+    /// given the declaration's parameter names (without `$`), in order.
+    pub fn index_params(&mut self, params: &[String]) {
+        if let Some(cond) = self.conditional.as_mut() {
+            cond.index = params.iter().position(|p| *p == cond.param);
+            cond.then.index_params(params);
+            cond.otherwise.index_params(params);
+        }
     }
 
     /// Fills whatever `self` lacks from `other` (native types win over docs).
@@ -163,6 +236,7 @@ impl Ty {
             class: self.class.or(other.class),
             elem: self.elem.or(other.elem),
             args,
+            conditional: self.conditional.or(other.conditional),
         }
     }
 
@@ -185,10 +259,18 @@ impl Ty {
                 None => a,
             })
             .collect();
+        let conditional = self.conditional.map(|c| {
+            Box::new(Conditional {
+                then: c.then.substitute(bindings),
+                otherwise: c.otherwise.substitute(bindings),
+                ..*c
+            })
+        });
         Ty {
             class: bind(self.class),
             elem: bind(self.elem),
             args,
+            conditional,
         }
     }
 
@@ -226,10 +308,18 @@ impl Ty {
                 }
             })
             .collect();
+        let conditional = self.conditional.map(|c| {
+            Box::new(Conditional {
+                then: c.then.bind_static(receiver),
+                otherwise: c.otherwise.bind_static(receiver),
+                ..*c
+            })
+        });
         Ty {
             class: bind(self.class),
             elem: bind(self.elem),
             args,
+            conditional,
         }
     }
 }

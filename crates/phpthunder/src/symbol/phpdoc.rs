@@ -117,8 +117,13 @@ impl DocBlock {
     /// `class-string<T>`.
     pub fn class_string_param(&self, name: &str) -> Option<String> {
         let ty = self.param_type(name)?;
-        let inner = ty.trim().strip_prefix("class-string<")?.strip_suffix('>')?;
-        Some(inner.trim().to_string())
+        union_parts(ty.trim()).into_iter().find_map(|part| {
+            let inner = part
+                .trim()
+                .strip_prefix("class-string<")?
+                .strip_suffix('>')?;
+            Some(inner.trim().to_string())
+        })
     }
 
     pub fn param_type(&self, name: &str) -> Option<&str> {
@@ -352,6 +357,58 @@ pub fn resolve_doc_type(ty: &str, ctx: &NameContext, owner: Option<&str>) -> Ty 
     resolve_doc_type_in(ty, ctx, owner, &[])
 }
 
+/// Byte offset of the first top-level occurrence of `needle` in `s`
+/// (outside `<>`, `()` and `{}`).
+fn find_top_level(s: &str, needle: &str) -> Option<usize> {
+    let mut depth = 0i32;
+    for (i, ch) in s.char_indices() {
+        if depth == 0 && s[i..].starts_with(needle) {
+            return Some(i);
+        }
+        match ch {
+            '<' | '(' | '{' => depth += 1,
+            '>' | ')' | '}' => depth -= 1,
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Parses `($param is Test ? Then : Else)` (outer parentheses optional,
+/// `is not` accepted); `None` for any other type expression.
+fn conditional_type(
+    ty: &str,
+    ctx: &NameContext,
+    owner: Option<&str>,
+    templates: &[String],
+) -> Option<Conditional> {
+    let mut ty = ty.trim();
+    while ty.starts_with('(')
+        && ty.ends_with(')')
+        && find_top_level(&ty[1..], ")") == Some(ty.len() - 2)
+    {
+        ty = ty[1..ty.len() - 1].trim();
+    }
+    let param = ty.strip_prefix('$')?;
+    let (param, rest) = param.split_once(char::is_whitespace)?;
+    let rest = rest.trim_start().strip_prefix("is ")?.trim_start();
+    let (negated, rest) = match rest.strip_prefix("not ") {
+        Some(r) => (true, r.trim_start()),
+        None => (false, rest),
+    };
+    let q = find_top_level(rest, " ? ")?;
+    let branches = &rest[q + 3..];
+    let colon = find_top_level(branches, " : ")?;
+    Some(Conditional {
+        param: param.to_string(),
+        index: None,
+        test: rest[..q].trim().to_string(),
+        negated,
+        then: resolve_doc_type_in(&branches[..colon], ctx, owner, templates),
+        otherwise: resolve_doc_type_in(&branches[colon + 3..], ctx, owner, templates),
+    })
+}
+
 /// Splits generic arguments `int, array<K, V>, User` at top-level commas.
 fn split_args(args: &str) -> Vec<&str> {
     let mut parts = Vec::new();
@@ -380,6 +437,12 @@ pub fn resolve_doc_type_in(
     owner: Option<&str>,
     templates: &[String],
 ) -> Ty {
+    if let Some(cond) = conditional_type(ty, ctx, owner, templates) {
+        return Ty {
+            conditional: Some(Box::new(cond)),
+            ..Ty::default()
+        };
+    }
     let mut out = Ty::default();
     for part in union_parts(ty.trim().trim_start_matches('?')) {
         let part = part
@@ -405,6 +468,7 @@ pub fn resolve_doc_type_in(
                 class: resolve_name(base, ctx, owner, templates),
                 elem: args.last().filter(|a| !a.is_empty()).cloned(),
                 args,
+                conditional: None,
             }
         } else {
             Ty {
@@ -484,6 +548,7 @@ mod tests {
                 class: Some("Illuminate\\Support\\Collection".into()),
                 elem: Some("App\\User".into()),
                 args: vec![String::new(), "App\\User".into()],
+                conditional: None,
             }
         );
         assert_eq!(

@@ -347,6 +347,7 @@ mod tests {
             name_span: Default::default(),
             name_start: 0,
             is_static: false,
+            visibility: Default::default(),
             signature: "public function save(array $options = []): bool".into(),
             doc: String::new(),
             ty: Default::default(),

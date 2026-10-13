@@ -129,6 +129,10 @@ pub struct Index {
     /// Lazily built set of every namespace declaring a class (lowercased,
     /// with all parent namespaces); cleared whenever a file changes.
     namespaces: parking_lot::Mutex<Option<std::sync::Arc<HashSet<String>>>>,
+    /// Lowercased owner -> files declaring members of a class they do not
+    /// declare themselves (migration columns of a table, see
+    /// [`crate::symbol::TABLE_PREFIX`]); [`Index::members`] reads them too.
+    augments: HashMap<String, HashSet<PathBuf>>,
     /// Lazily built set of lowercased FQNs that some indexed class extends
     /// or implements; cleared whenever a file changes.
     extended: parking_lot::Mutex<Option<std::sync::Arc<HashSet<String>>>>,
@@ -154,6 +158,21 @@ impl Index {
         self.remove(&path);
         *self.namespaces.get_mut() = None;
         *self.extended.get_mut() = None;
+        let declared: HashSet<String> = entry
+            .symbols
+            .iter()
+            .filter(|s| s.kind.is_class_like())
+            .map(|s| s.fqn.to_ascii_lowercase())
+            .collect();
+        for owner in entry
+            .symbols
+            .iter()
+            .filter(|s| s.kind.is_member())
+            .map(|s| s.fqn.to_ascii_lowercase())
+            .filter(|o| !declared.contains(o))
+        {
+            self.augments.entry(owner).or_default().insert(path.clone());
+        }
         for (i, sym) in entry.symbols.iter().enumerate() {
             let r = (path.clone(), i);
             self.keys
@@ -227,6 +246,10 @@ impl Index {
         let Some(old) = self.files.remove(path) else {
             return;
         };
+        self.augments.retain(|_, files| {
+            files.remove(path);
+            !files.is_empty()
+        });
         for sym in &old.symbols {
             prune(&mut self.keys, &symbol_key(sym), path);
             if !sym.kind.is_member() {
@@ -331,6 +354,11 @@ impl Index {
         let mut out = Vec::new();
         for cls in self.hierarchy(class) {
             let mut files: Vec<&Path> = self.classes(&cls).into_iter().map(|(p, _)| p).collect();
+            if let Some(extra) = self.augments.get(&cls.to_ascii_lowercase()) {
+                let mut extra: Vec<&Path> = extra.iter().map(PathBuf::as_path).collect();
+                extra.sort();
+                files.extend(extra);
+            }
             files.dedup();
             for path in files {
                 for sym in self.file_symbols(path) {
@@ -360,6 +388,16 @@ impl Index {
             .filter_map(|r| Some((r.0.as_path(), self.get(r)?)))
             .take(limit)
             .collect()
+    }
+
+    /// Every top-level symbol (classes, functions, constants), in short-name
+    /// order. Completion matches them with camel humps and middle words,
+    /// which a prefix range cannot answer.
+    pub fn top_level(&self) -> impl Iterator<Item = (&Path, &Symbol)> {
+        self.names
+            .values()
+            .flatten()
+            .filter_map(|r| Some((r.0.as_path(), self.get(r)?)))
     }
 
     /// Top-level symbols whose short name contains `query` (workspace symbols).

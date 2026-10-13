@@ -193,16 +193,9 @@ fn completes_instance_members_with_inheritance() {
     let all = complete(&idx, &src, byte);
     assert_eq!(
         labels(&all),
-        [
-            "__construct",
-            "address",
-            "address",
-            "create",
-            "getName",
-            "greet",
-            "name",
-            "save"
-        ]
+        // The private promoted `$address` and the static `create` are not
+        // offered through `->` from outside the class.
+        ["__construct", "address", "getName", "greet", "name", "save"]
     );
     let method = all.iter().find(|c| c.label == "getName").unwrap();
     assert_eq!(method.insert_text, "getName(");
@@ -215,7 +208,8 @@ fn completes_static_members_and_enum_cases() {
     let src = read(CONTROLLER);
     let statics = complete(&idx, &src, at(&src, "User::create", 6));
     // `User::cr(...)` is a call, so `::class` is not offered there.
-    assert_eq!(labels(&statics), ["$table", "ROLE", "create"]);
+    // `protected static $table` is out of reach from the controller.
+    assert_eq!(labels(&statics), ["ROLE", "create"]);
     let cases = complete(&idx, &src, at(&src, "Status::Active", 8));
     assert_eq!(labels(&cases), ["Active", "Banned", "class"]);
 }
@@ -306,17 +300,11 @@ fn completes_phpdoc_virtual_members() {
     let got = complete(&idx, &src, at(&src, "$post->author", 7));
     assert_eq!(
         labels(&got),
-        [
-            "approved",
-            "author",
-            "comments",
-            "create",
-            "published",
-            "save"
-        ]
+        // Static `create` and `@method static published` belong to `::`.
+        ["approved", "author", "comments", "save"]
     );
     let statics = complete(&idx, &src, at(&src, "Post::published", 6));
-    assert_eq!(labels(&statics), ["$table", "create", "published"]);
+    assert_eq!(labels(&statics), ["create", "published"]);
 }
 
 #[test]

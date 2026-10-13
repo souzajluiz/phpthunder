@@ -24,6 +24,9 @@ pub fn build(root: Node, src: &str, lines: &LineIndex) -> Vec<Symbol> {
         templates: Vec::new(),
     };
     for_each_statement(root, src, |stmt, ctx| b.statement(stmt, ctx));
+    if src.contains("Schema::") {
+        b.columns(migration_columns(root, src));
+    }
     b.out
 }
 
@@ -72,6 +75,36 @@ pub fn doc_of(node: Node, src: &str) -> Option<DocBlock> {
     let comment = doc_comment(node)?;
     let raw = text(comment, src);
     is_doc_comment(raw).then(|| parse_docblock(raw))
+}
+
+/// Visibility from a member declaration's `visibility_modifier`; members
+/// without one are public.
+fn visibility_of(node: Node, src: &str) -> Visibility {
+    let mut c = node.walk();
+    let modifier = node
+        .children(&mut c)
+        .find(|n| n.kind() == "visibility_modifier");
+    match modifier
+        .map(|m| text(m, src).to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("protected") => Visibility::Protected,
+        Some("private") => Visibility::Private,
+        _ => Visibility::Public,
+    }
+}
+
+/// Parameter names of a function-like declaration, without `$`, in order.
+fn param_names(decl: Node, src: &str) -> Vec<String> {
+    let Some(params) = decl.child_by_field_name("parameters") else {
+        return Vec::new();
+    };
+    let mut c = params.walk();
+    params
+        .named_children(&mut c)
+        .filter_map(|p| p.child_by_field_name("name"))
+        .map(|n| text(n, src).trim_start_matches('$').to_string())
+        .collect()
 }
 
 /// True when `node` has a direct child (named or not) of `kind`, e.g. `static_modifier`.
@@ -135,6 +168,7 @@ impl Builder<'_> {
                 .span(self.src, name.start_byte(), name.end_byte()),
             name_start: name.start_byte(),
             is_static: false,
+            visibility: Visibility::Public,
             signature: self.header(decl),
             doc,
             ty: Ty::default(),
@@ -178,7 +212,8 @@ impl Builder<'_> {
         let own = doc.as_ref().map(|d| d.templates()).unwrap_or_default();
         let outer = self.templates.len();
         self.templates.extend(own.iter().cloned());
-        let ty = self.return_type(decl, ctx, owner);
+        let mut ty = self.return_type(decl, ctx, owner);
+        ty.index_params(&param_names(decl, self.src));
         self.templates.truncate(outer);
         let mut class_strings = Vec::new();
         if let (Some(doc), Some(params)) = (&doc, decl.child_by_field_name("parameters")) {
@@ -267,6 +302,10 @@ impl Builder<'_> {
                 }
             }
         }
+        // A model also "extends" its table, whose columns migrations declare.
+        if kind == Kind::Class {
+            supers.extend(model_table(node, self.src).map(|t| table_owner(&t)));
+        }
         let doc = doc_of(node, self.src);
         let templates = doc.as_ref().map(|d| d.templates()).unwrap_or_default();
         let super_args: Vec<(String, Vec<String>)> = doc
@@ -318,7 +357,15 @@ impl Builder<'_> {
                     name,
                 } => (Kind::Method, name, ty, *is_static),
                 Tag::Mixin { class } => {
-                    self.out[class_index].supers.push(ctx.resolve_class(class));
+                    // `@mixin Builder<TRelatedModel>`: generic arguments bind
+                    // like `@extends` ones.
+                    let mixin = resolve_doc_type_in(class, ctx, Some(owner), &self.templates);
+                    let Some(fqn) = mixin.class else { continue };
+                    let sym = &mut self.out[class_index];
+                    if !mixin.args.is_empty() {
+                        sym.super_args.push((fqn.clone(), mixin.args));
+                    }
+                    sym.supers.push(fqn);
                     continue;
                 }
                 _ => continue,
@@ -333,6 +380,7 @@ impl Builder<'_> {
                 name_span: self.lines.span(self.src, start, end),
                 name_start: start,
                 is_static,
+                visibility: Visibility::Public,
                 signature: t.line.clone(),
                 doc: String::new(),
                 ty: ty
@@ -366,9 +414,43 @@ impl Builder<'_> {
                 name_span: span,
                 name_start: m.start,
                 is_static: m.is_static,
+                visibility: Visibility::Public,
                 signature,
                 doc: String::new(),
                 ty: m.ty,
+                extends: None,
+                supers: Vec::new(),
+                is_virtual: true,
+                templates: Vec::new(),
+                super_args: Vec::new(),
+                class_string_params: Vec::new(),
+            });
+        }
+    }
+
+    /// Records migration columns as virtual properties of their table's
+    /// pseudo class (see [`TABLE_PREFIX`]); a column declared twice keeps
+    /// its first declaration.
+    fn columns(&mut self, columns: Vec<Column>) {
+        let mut seen = std::collections::HashSet::new();
+        for col in columns {
+            let owner = table_owner(&col.table);
+            if !seen.insert((owner.clone(), col.name.clone())) {
+                continue;
+            }
+            let span = self.lines.span(self.src, col.start, col.end);
+            self.out.push(Symbol {
+                kind: Kind::Property,
+                signature: format!("{} ${} ({} column)", col.php_type, col.name, col.table),
+                name: col.name,
+                fqn: owner,
+                span,
+                name_span: span,
+                name_start: col.start,
+                is_static: false,
+                visibility: Visibility::Public,
+                doc: String::new(),
+                ty: col.ty,
                 extends: None,
                 supers: Vec::new(),
                 is_virtual: true,
@@ -394,6 +476,7 @@ impl Builder<'_> {
                 let conventions = eloquent_members_of_method(node, src, ctx, &ty);
                 let sym = self.push(Kind::Method, node, name, owner.to_string());
                 sym.is_static = is_static;
+                sym.visibility = visibility_of(node, src);
                 sym.ty = ty;
                 sym.templates = templates;
                 sym.class_string_params = class_strings;
@@ -421,8 +504,9 @@ impl Builder<'_> {
                             .and_then(|d| d.param_type(text(var, src).trim_start_matches('$')))
                             .map(|t| resolve_doc_type_in(t, ctx, Some(owner), &self.templates))
                             .unwrap_or_default();
-                        self.push(Kind::Property, p, var, owner.to_string()).ty =
-                            native.or(documented);
+                        let sym = self.push(Kind::Property, p, var, owner.to_string());
+                        sym.ty = native.or(documented);
+                        sym.visibility = visibility_of(p, src);
                     }
                 }
             }
@@ -448,6 +532,7 @@ impl Builder<'_> {
                         .unwrap_or_default();
                     let sym = self.push(Kind::Property, node, var, owner.to_string());
                     sym.is_static = is_static;
+                    sym.visibility = visibility_of(node, src);
                     sym.ty = native.clone().or(documented);
                 }
                 let conventions = eloquent_members_of_property(node, src, ctx);
@@ -460,8 +545,9 @@ impl Builder<'_> {
                     .filter(|n| n.kind() == "const_element")
                 {
                     if let Some(name) = el.named_child(0).filter(|n| n.kind() == "name") {
-                        self.push(Kind::ClassConstant, node, name, owner.to_string())
-                            .is_static = true;
+                        let sym = self.push(Kind::ClassConstant, node, name, owner.to_string());
+                        sym.is_static = true;
+                        sym.visibility = visibility_of(node, src);
                     }
                 }
             }
@@ -480,7 +566,21 @@ impl Builder<'_> {
                     .filter(|n| matches!(n.kind(), "name" | "qualified_name" | "relative_name"))
                     .map(|n| ctx.resolve_class(text(n, src)))
                     .collect();
-                self.out[class_index].supers.extend(traits);
+                // `/** @use BuildsQueries<TModel> */` binds the trait's templates.
+                let generic_uses: Vec<(String, Vec<String>)> = doc_of(node, src)
+                    .iter()
+                    .flat_map(|d| d.tags.iter())
+                    .filter_map(|t| match &t.tag {
+                        Tag::Extends { ty } => {
+                            let r = resolve_doc_type_in(ty, ctx, Some(owner), &self.templates);
+                            Some((r.class?, r.args))
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                let class = &mut self.out[class_index];
+                class.supers.extend(traits);
+                class.super_args.extend(generic_uses);
             }
             _ => {}
         }
@@ -524,6 +624,7 @@ if (!function_exists('helper')) { function helper(): User {} }
             [
                 "App\\Models\\Model",
                 "App\\Contracts\\HasName",
+                "<table>users",
                 "App\\Models\\Greets"
             ]
         );
@@ -598,6 +699,7 @@ class Post {
                 class: Some("Illuminate\\Support\\Collection".into()),
                 elem: Some("App\\Tag".into()),
                 args: vec![String::new(), "App\\Tag".into()],
+                conditional: None,
             }
         );
         let latest = find(Kind::Method, "latest");

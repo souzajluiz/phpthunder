@@ -5,10 +5,12 @@
 
 use super::*;
 use crate::index::Index;
-use crate::symbol::{MemberTag, doc_of, resolve_type};
+use crate::laravel;
 use crate::symbol::{
-    STATIC_TYPE, Symbol, Tag, Ty, is_doc_comment, parse_docblock, resolve_doc_type, template_name,
+    Conditional, STATIC_TYPE, Symbol, Tag, Ty, is_doc_comment, parse_docblock, resolve_doc_type,
+    template_name,
 };
+use crate::symbol::{MemberTag, doc_of, resolve_type};
 use crate::syntax::{NameContext, UseKind, context_at, is_class_like, parse, text, use_clauses};
 use std::collections::{HashMap, HashSet, VecDeque};
 use tree_sitter::{Node, Tree};
@@ -23,7 +25,17 @@ pub fn resolve(index: &Index, target: &Target) -> Vec<Definition> {
     let hits = match target {
         Target::Class(fqn) => index.classes(fqn),
         Target::Function(candidates) => index.functions(candidates),
-        Target::Member { class, tag, name } => index.find_member(class, *tag, name),
+        Target::Member { class, tag, name } => {
+            let hits = index.find_member(class, *tag, name);
+            // `User::where(...)`: Eloquent forwards to the query builder.
+            match laravel::forward(index, &Ty::class(class.clone()), *tag) {
+                Some(next) if hits.is_empty() => next
+                    .class
+                    .map(|c| index.find_member(&c, *tag, name))
+                    .unwrap_or_default(),
+                _ => hits,
+            }
+        }
     };
     hits.into_iter()
         .map(|(p, s)| Definition {
@@ -349,8 +361,13 @@ impl<'a> Analyzer<'a> {
                     return Ty::default();
                 };
                 let mut bindings = HashMap::new();
-                self.bind_class_strings(s, child("arguments"), &mut bindings);
-                s.ty.clone().substitute(&bindings)
+                let arguments = child("arguments");
+                self.bind_class_strings(s, arguments, &mut bindings);
+                let ty =
+                    s.ty.clone()
+                        .select(&|c| self.decide(c, arguments))
+                        .substitute(&bindings);
+                laravel::refine(self.index, ty)
             }
             "subscript_expression" => {
                 let elem = expr.named_child(0).and_then(|a| self.ty_of(a, d).elem);
@@ -378,25 +395,100 @@ impl<'a> Analyzer<'a> {
         name: Option<Node>,
         arguments: Option<Node>,
     ) -> Ty {
-        let (Some(class), Some(name)) = (receiver.class.clone(), name) else {
+        self.member_ty_via(receiver, tag, name, arguments, true)
+    }
+
+    /// [`Self::member_ty`]; when the member is missing and `forward` is set,
+    /// retries once on the receiver Eloquent forwards the call to.
+    fn member_ty_via(
+        &self,
+        receiver: Ty,
+        tag: MemberTag,
+        name: Option<Node>,
+        arguments: Option<Node>,
+        forward: bool,
+    ) -> Ty {
+        let (Some(class), Some(name_node)) = (receiver.class.clone(), name) else {
             return Ty::default();
         };
-        let found = self.index.find_member(&class, tag, self.text(name));
+        let found = self.index.find_member(&class, tag, self.text(name_node));
         let Some((_, s)) = found.first() else {
-            return Ty::default();
+            return match laravel::forward(self.index, &receiver, tag) {
+                Some(next) if forward => self.member_ty_via(next, tag, name, arguments, false),
+                _ => Ty::default(),
+            };
         };
         let mut bindings = generic_bindings(self.index, &class, &receiver.args, &s.fqn);
         self.bind_class_strings(s, arguments, &mut bindings);
-        let ty = s.ty.clone().substitute(&bindings);
+        let ty =
+            s.ty.clone()
+                .select(&|c| self.decide(c, arguments))
+                .substitute(&bindings);
+        let ty = laravel::refine(self.index, ty);
+        let ty = match laravel::untyped_return(self.index, &class, self.text(name_node)) {
+            Some(known) if ty.is_empty() && tag == MemberTag::Method => known,
+            _ => ty,
+        };
         // `static` keeps the receiver's generic arguments (`filter(): static`).
         if ty.class.as_deref() == Some(STATIC_TYPE) {
             return Ty {
                 class: Some(class),
                 elem: receiver.elem,
                 args: receiver.args,
+                conditional: None,
             };
         }
         ty.bind_static(&class)
+    }
+
+    /// Whether the argument a call passes for a conditional type's parameter
+    /// matches the condition's test, judged from literals only: a missing
+    /// argument counts as `null`, `Foo::class` as a class string, and
+    /// strings, numbers, booleans and array literals as their types.
+    /// `None` for anything else (variables, calls).
+    fn decide(&self, cond: &Conditional, arguments: Option<Node>) -> Option<bool> {
+        let index = cond.index?;
+        let arg = arguments.and_then(|a| {
+            let mut c = a.walk();
+            let args: Vec<Node> = a.named_children(&mut c).collect();
+            args.get(index).and_then(|n| {
+                if n.kind() == "argument" {
+                    n.named_children(&mut n.walk()).last()
+                } else {
+                    Some(*n)
+                }
+            })
+        });
+        let test = cond.test.to_ascii_lowercase();
+        let parts: Vec<&str> = test
+            .trim_matches(|c| c == '(' || c == ')')
+            .split('|')
+            .map(|p| p.trim().trim_matches(|c| c == '(' || c == ')'))
+            .collect();
+        let any = |f: &dyn Fn(&str) -> bool| Some(parts.iter().any(|p| f(p)));
+        let Some(arg) = arg else {
+            return any(&|p| p == "null");
+        };
+        match arg.kind() {
+            "null" => any(&|p| p == "null"),
+            "string" | "encapsed_string" | "heredoc" | "nowdoc" => {
+                any(&|p| p.ends_with("string") && !p.starts_with("class-string"))
+            }
+            "integer" => any(&|p| p.ends_with("int") || p == "integer" || p == "numeric"),
+            "float" => any(&|p| p == "float" || p == "numeric"),
+            "boolean" => any(&|p| p == "bool" || p == "true" || p == "false"),
+            "array_creation_expression" => any(&|p| {
+                p.starts_with("array") || p.starts_with("list") || p.starts_with("iterable")
+            }),
+            "class_constant_access_expression"
+                if arg
+                    .named_child(1)
+                    .is_some_and(|n| self.text(n).eq_ignore_ascii_case("class")) =>
+            {
+                any(&|p| p.starts_with("class-string") || p == "string")
+            }
+            _ => None,
+        }
     }
 
     /// Binds templates of `callee` declared as `class-string<T>` parameters
@@ -622,22 +714,34 @@ fn generic_bindings(
         if !seen.insert(cls.to_ascii_lowercase()) {
             continue;
         }
-        let Some((_, decl)) = index.classes(&cls).into_iter().next() else {
+        // A class may be declared more than once (vendor stubs): take the
+        // templates from the first declaration that has them and the
+        // supertypes of all.
+        let decls = index.classes(&cls);
+        if decls.is_empty() {
             continue;
-        };
-        let own: HashMap<String, String> = decl
-            .templates
+        }
+        let templates = decls
             .iter()
+            .map(|(_, d)| &d.templates)
+            .find(|t| !t.is_empty())
             .cloned()
+            .unwrap_or_default();
+        let own: HashMap<String, String> = templates
+            .into_iter()
             .zip(cls_args.iter().cloned())
             .collect();
         if cls.eq_ignore_ascii_case(owner) {
             return own;
         }
-        for sup in &decl.supers {
+        let super_args: Vec<&(String, Vec<String>)> = decls
+            .iter()
+            .flat_map(|(_, d)| d.super_args.iter())
+            .collect();
+        let supers: Vec<&String> = decls.iter().flat_map(|(_, d)| d.supers.iter()).collect();
+        for sup in supers {
             // Arguments given to this supertype, expressed in our own templates.
-            let given = decl
-                .super_args
+            let given = super_args
                 .iter()
                 .find(|(name, _)| name.eq_ignore_ascii_case(sup))
                 .map(|(_, a)| {

@@ -1,4 +1,5 @@
-//! Scanning a Laravel project for its route names, views and config keys.
+//! Scanning a Laravel project for its route names, views, config keys,
+//! translation keys and environment variables.
 
 use super::*;
 use crate::syntax::{LineIndex, Pos, parse, text};
@@ -53,11 +54,135 @@ pub fn scan_project(root: &Path) -> Option<LaravelProject> {
             project.config.extend(config_keys(&src, &path));
         }
     }
-    for keys in [&mut project.routes, &mut project.views, &mut project.config] {
+    for lang in [root.join("lang"), root.join("resources").join("lang")] {
+        project.translations.extend(translation_keys(&lang));
+    }
+    // `.env.example` first: its values are safe to show; `.env` may hold secrets.
+    for (file, show_values) in [(".env.example", true), (".env", false)] {
+        let path = root.join(file);
+        if let Ok(src) = std::fs::read_to_string(&path) {
+            project.env.extend(env_keys(&src, &path, show_values));
+        }
+    }
+    for keys in [
+        &mut project.routes,
+        &mut project.views,
+        &mut project.config,
+        &mut project.translations,
+        &mut project.env,
+    ] {
         keys.sort_by(|a, b| a.name.cmp(&b.name));
         keys.dedup_by(|a, b| a.name == b.name);
     }
     Some(project)
+}
+
+/// Translation keys under a `lang` folder: `<locale>/<group>.php` arrays
+/// give `group.key` (`admin/users.php` gives `admin/users.key`), and
+/// `<locale>.json` files give their keys verbatim. Locales are merged;
+/// published package translations (`lang/vendor`) are skipped.
+fn translation_keys(lang: &Path) -> Vec<LaravelKey> {
+    let mut out = Vec::new();
+    let Ok(entries) = std::fs::read_dir(lang) else {
+        return out;
+    };
+    for entry in entries.filter_map(Result::ok) {
+        let path = entry.path();
+        if path.is_dir() && entry.file_name() != "vendor" {
+            for file in files_under(&path, ".php") {
+                let Ok(src) = std::fs::read_to_string(&file) else {
+                    continue;
+                };
+                let Ok(rel) = file.strip_prefix(&path) else {
+                    continue;
+                };
+                let group = rel.to_string_lossy().replace('\\', "/");
+                let group = group.trim_end_matches(".php");
+                out.extend(array_keys(&src, &file, group));
+            }
+        } else if path.extension().is_some_and(|e| e == "json")
+            && let Ok(src) = std::fs::read_to_string(&path)
+        {
+            out.extend(json_keys(&src, &path));
+        }
+    }
+    out
+}
+
+/// Top-level keys of a flat JSON object (`lang/en.json`), with their values
+/// as detail. A minimal scanner: strings alternate key, value.
+fn json_keys(src: &str, path: &Path) -> Vec<LaravelKey> {
+    let lines = LineIndex::new(src);
+    let mut strings = Vec::new();
+    let mut chars = src.char_indices();
+    while let Some((i, c)) = chars.next() {
+        if c != '"' {
+            continue;
+        }
+        let mut value = String::new();
+        while let Some((_, c)) = chars.next() {
+            match c {
+                '\\' => {
+                    if let Some((_, e)) = chars.next() {
+                        value.push(e);
+                    }
+                }
+                '"' => break,
+                _ => value.push(c),
+            }
+        }
+        strings.push((i, value));
+    }
+    strings
+        .chunks(2)
+        .filter_map(|pair| match pair {
+            [(at, key), (_, value)] => Some(LaravelKey {
+                name: key.clone(),
+                path: path.to_path_buf(),
+                pos: lines.pos(src, *at),
+                detail: value.clone(),
+            }),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Variable names of a dotenv file (`KEY=value` lines, `export` allowed,
+/// comments skipped); the value is the detail only when `show_values`.
+fn env_keys(src: &str, path: &Path, show_values: bool) -> Vec<LaravelKey> {
+    let mut out = Vec::new();
+    for (line_no, line) in src.lines().enumerate() {
+        let line = line.trim();
+        let line = line.strip_prefix("export ").unwrap_or(line);
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        if key.is_empty()
+            || key.starts_with('#')
+            || !key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+        {
+            continue;
+        }
+        let file = path
+            .file_name()
+            .map(|f| f.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        out.push(LaravelKey {
+            name: key.to_string(),
+            path: path.to_path_buf(),
+            pos: Pos {
+                line: u32::try_from(line_no).unwrap_or(u32::MAX),
+                ..Pos::default()
+            },
+            detail: if show_values {
+                value.trim().to_string()
+            } else {
+                file
+            },
+        });
+    }
+    out
 }
 
 /// Files under `dir` (recursively) whose name ends with `suffix`.
@@ -198,6 +323,13 @@ pub fn config_keys(src: &str, path: &Path) -> Vec<LaravelKey> {
     let Some(file) = path.file_stem().map(|s| s.to_string_lossy().into_owned()) else {
         return Vec::new();
     };
+    array_keys(src, path, &file)
+}
+
+/// Dotted keys, under `prefix`, of the array a PHP file returns; shared by
+/// config files and translation files.
+fn array_keys(src: &str, path: &Path, prefix: &str) -> Vec<LaravelKey> {
+    let file = prefix;
     let tree = parse(src);
     let lines = LineIndex::new(src);
     let mut out = Vec::new();
@@ -209,7 +341,7 @@ pub fn config_keys(src: &str, path: &Path) -> Vec<LaravelKey> {
         .find_map(|r| r.named_child(0))
         .filter(|n| n.kind() == "array_creation_expression");
     if let Some(array) = returned {
-        collect_config(array, src, &lines, path, &file, 1, &mut out);
+        collect_config(array, src, &lines, path, file, 1, &mut out);
     }
     out
 }

@@ -3,7 +3,8 @@
 
 use super::*;
 use crate::index::Index;
-use crate::symbol::Kind;
+use crate::laravel;
+use crate::symbol::{Kind, Symbol, Ty, Visibility};
 use crate::syntax::{import_insertion_point, is_class_like, parse, text};
 use std::collections::HashSet;
 use tree_sitter::Node;
@@ -15,8 +16,9 @@ pub const CARET_PLACEHOLDER: &str = "PhpThunderCaret";
 /// Completion proposals for the caret at `byte` in `src`.
 ///
 /// After `$`: variables of the enclosing function. After `->`, `?->`, or `::`:
-/// members of the inferred class. Elsewhere: top-level classes and functions
-/// matching the typed prefix, with an auto-import edit when needed. Returns an
+/// members of the inferred class. Elsewhere: top-level classes and functions,
+/// with an auto-import edit when needed. Names match the typed text as a
+/// prefix, by camel humps or by a word in the middle ([`Matcher`]). Returns an
 /// empty vec where nothing should be offered (declaration names, namespaced
 /// names). Called by the server for every completion request; it parses `src`
 /// with [`CARET_PLACEHOLDER`] inserted, so `src` is not modified.
@@ -37,6 +39,7 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
         return Vec::new();
     }
     let prefix = &patched[node.start_byte()..byte];
+    let matcher = Matcher::new(prefix);
     let Some(mut parent) = node.parent() else {
         return Vec::new();
     };
@@ -49,22 +52,60 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
         parent = node.parent().unwrap_or(parent);
     }
 
-    let members = |class: Option<String>, statics: bool| -> Vec<Candidate> {
-        let Some(class) = class else {
+    // Classes whose protected members the caret can reach: the enclosing
+    // class and its supertypes.
+    let scope_class = analyzer.enclosing_class(node, &analyzer.ctx(byte));
+    let reach: HashSet<String> = scope_class
+        .iter()
+        .flat_map(|c| index.hierarchy(c))
+        .map(|c| c.to_ascii_lowercase())
+        .collect();
+    let visible = |s: &Symbol| match s.visibility {
+        Visibility::Public => true,
+        Visibility::Protected => reach.contains(&s.fqn.to_ascii_lowercase()),
+        Visibility::Private => scope_class
+            .as_deref()
+            .is_some_and(|c| c.eq_ignore_ascii_case(&s.fqn)),
+    };
+    let members = |receiver: Ty, statics: bool| -> Vec<Candidate> {
+        let Some(class) = receiver.class.clone() else {
             return Vec::new();
         };
-        index
+        let mut found: Vec<&Symbol> = index
             .members(&class)
             .into_iter()
-            .filter(|(_, s)| s.name.to_lowercase().starts_with(&prefix.to_lowercase()))
-            .filter(|(_, s)| {
-                if statics {
-                    s.is_static
-                } else {
-                    s.kind == Kind::Method || !s.is_static
-                }
+            .map(|(_, s)| s)
+            .filter(|s| visible(s))
+            .filter(|s| {
+                // Static members are reachable through `->` in PHP, but are
+                // noise there; `::` lists only them.
+                statics == s.is_static
             })
-            .map(|(_, s)| {
+            .collect();
+        // Eloquent forwarding: `User::where()` reaches the query builder,
+        // and a `Builder<User>` reaches the model's scopes.
+        if let Some(next) = laravel::forward(index, &receiver, crate::symbol::MemberTag::Method)
+            .and_then(|t| t.class)
+        {
+            let model_to_builder = laravel::is_model(index, &class);
+            if statics || !model_to_builder {
+                found.extend(
+                    index
+                        .members(&next)
+                        .into_iter()
+                        .map(|(_, s)| s)
+                        .filter(|s| s.kind == Kind::Method && visible(s))
+                        .filter(|s| !s.name.starts_with("__"))
+                        .filter(|s| model_to_builder || (s.is_virtual && s.is_static)),
+                );
+            }
+        }
+        let mut seen = HashSet::new();
+        found
+            .into_iter()
+            .filter(|s| matcher.matches(&s.name).is_some())
+            .filter(|s| seen.insert((s.kind == Kind::Method, s.name.to_ascii_lowercase())))
+            .map(|s| {
                 let name = if statics && s.kind == Kind::Property {
                     format!("${}", s.name)
                 } else {
@@ -97,17 +138,34 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
         | "nullsafe_member_call_expression"
         | "nullsafe_member_access_expression" => {
             let object = parent.child_by_field_name("object");
-            members(object.and_then(|o| analyzer.type_of(o, 0)), false)
+            members(
+                object.map(|o| analyzer.ty_of(o, 0)).unwrap_or_default(),
+                false,
+            )
         }
         "scoped_call_expression" | "scoped_property_access_expression" => {
             let scope = parent.child_by_field_name("scope");
-            members(scope.and_then(|s| analyzer.class_of_scope(s, 0)), true)
+            let class = scope.and_then(|s| analyzer.class_of_scope(s, 0));
+            members(
+                Ty {
+                    class,
+                    ..Ty::default()
+                },
+                true,
+            )
         }
         "class_constant_access_expression" if constant_scope.is_some() => {
             let Some(scope) = constant_scope else {
                 return Vec::new();
             };
-            let mut out = members(analyzer.class_of_scope(scope, 0), true);
+            let class = analyzer.class_of_scope(scope, 0);
+            let mut out = members(
+                Ty {
+                    class,
+                    ..Ty::default()
+                },
+                true,
+            );
             if "class".starts_with(&prefix.to_lowercase()) {
                 out.push(Candidate {
                     label: "class".into(),
@@ -134,6 +192,9 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
     }
 }
 
+/// Most class and function names offered for a bare identifier.
+const MAX_NAME_CANDIDATES: usize = 200;
+
 /// Start of the identifier that ends at `byte` (without a leading `$`).
 ///
 /// Used by [`complete`] to detect variables and by the server to compute the
@@ -152,6 +213,7 @@ pub fn ident_start(src: &str, byte: usize) -> usize {
 /// Variables visible in the function around `start` (the `$` being typed).
 fn complete_variables(src: &str, start: usize, byte: usize) -> Vec<Candidate> {
     let prefix = &src[start..byte];
+    let matcher = Matcher::new(prefix);
     let tree = parse(src);
     let here = tree.root_node().descendant_for_byte_range(start, start);
     let function = here.and_then(enclosing_function);
@@ -175,7 +237,7 @@ fn complete_variables(src: &str, start: usize, byte: usize) -> Vec<Candidate> {
     }
     names
         .into_iter()
-        .filter(|name| name.starts_with(prefix) && *name != prefix && seen.insert(*name))
+        .filter(|name| *name != prefix && matcher.matches(name).is_some() && seen.insert(*name))
         .map(|name| Candidate {
             label: name.to_string(),
             kind: Kind::Property,
@@ -186,14 +248,14 @@ fn complete_variables(src: &str, start: usize, byte: usize) -> Vec<Candidate> {
         .collect()
 }
 
-/// Top-level classes and functions whose short name starts with `prefix`, for
-/// a bare name at `node` inside the placeholder-patched tree.
+/// Top-level classes and functions whose short name matches `prefix` (see
+/// [`Matcher`]), for a bare name at `node` inside the placeholder-patched tree.
 ///
 /// In type positions (`new`, `extends`, type hints, ...) only class-likes are
 /// offered. A class from another namespace gets a `use` import edit, placed
 /// relative to `original` (the unpatched source) at `byte`; if the alias
 /// clashes, or for functions in another namespace, the FQN is inserted instead.
-/// Capped at 200 index hits.
+/// The best [`MAX_NAME_CANDIDATES`] matches are kept.
 fn complete_names(
     analyzer: &Analyzer,
     node: Node,
@@ -219,11 +281,21 @@ fn complete_names(
     );
     let original_tree = parse(original);
     let import_at = import_insertion_point(original_tree.root_node(), byte);
-    analyzer
+    // Prefix, camel-hump and middle-word matches, best first, capped at
+    // `MAX_NAME_CANDIDATES` so a short prefix in a large project stays fast.
+    let matcher = Matcher::new(prefix);
+    let mut hits: Vec<(MatchTier, &Symbol)> = analyzer
         .index
-        .top_level_with_prefix(prefix, 200)
-        .into_iter()
+        .top_level()
         .filter(|(_, s)| s.kind.is_class_like() || !type_position)
+        .filter_map(|(_, s)| {
+            let short = s.fqn.rsplit('\\').next().unwrap_or(&s.fqn);
+            Some((matcher.matches(short)?.tier, s))
+        })
+        .collect();
+    hits.sort_by_key(|h| std::cmp::Reverse(h.0));
+    hits.truncate(MAX_NAME_CANDIDATES);
+    hits.into_iter()
         .map(|(_, s)| {
             let short = s.fqn.rsplit('\\').next().unwrap_or(&s.fqn).to_string();
             let namespace = s.fqn.rsplit_once('\\').map(|(ns, _)| ns).unwrap_or("");

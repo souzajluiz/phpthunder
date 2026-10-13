@@ -12,6 +12,11 @@ pub enum KeyKind {
     View,
     /// A configuration key (`config/app.php` `'name'` -> `app.name`).
     Config,
+    /// A translation key (`lang/en/auth.php` `'failed'` -> `auth.failed`,
+    /// or a whole string from `lang/en.json`).
+    Translation,
+    /// An environment variable from `.env` / `.env.example`.
+    Env,
 }
 
 /// A key declared in the project.
@@ -37,6 +42,10 @@ pub struct LaravelProject {
     pub views: Vec<LaravelKey>,
     /// Configuration keys, nested ones dotted.
     pub config: Vec<LaravelKey>,
+    /// Translation keys of every locale, merged.
+    pub translations: Vec<LaravelKey>,
+    /// Environment variable names.
+    pub env: Vec<LaravelKey>,
 }
 
 impl LaravelProject {
@@ -46,6 +55,8 @@ impl LaravelProject {
             KeyKind::Route => &self.routes,
             KeyKind::View => &self.views,
             KeyKind::Config => &self.config,
+            KeyKind::Translation => &self.translations,
+            KeyKind::Env => &self.env,
         }
     }
 

@@ -1,4 +1,5 @@
-//! Recognising a string argument that names a route, view or config key.
+//! Recognising a string argument that names a route, view, config key,
+//! translation key or environment variable.
 //! Works on plain text, so it serves PHP and Blade files alike.
 
 use super::*;
@@ -24,6 +25,15 @@ const CALLS: &[(&str, KeyKind)] = &[
     ("Config::integer", KeyKind::Config),
     ("Config::boolean", KeyKind::Config),
     ("Config::array", KeyKind::Config),
+    ("__", KeyKind::Translation),
+    ("trans", KeyKind::Translation),
+    ("trans_choice", KeyKind::Translation),
+    ("Lang::get", KeyKind::Translation),
+    ("Lang::has", KeyKind::Translation),
+    ("Lang::choice", KeyKind::Translation),
+    ("@lang", KeyKind::Translation),
+    ("@choice", KeyKind::Translation),
+    ("env", KeyKind::Env),
 ];
 
 /// The key reference whose string contains `offset`, when the string is
@@ -101,6 +111,9 @@ mod tests {
             KeyKind::Config
         );
         assert_eq!(at("Config::get('app|').").unwrap().kind, KeyKind::Config);
+        assert_eq!(at("__('auth.fa|')").unwrap().kind, KeyKind::Translation);
+        assert_eq!(at("@lang('auth.fa|')").unwrap().kind, KeyKind::Translation);
+        assert_eq!(at("env('APP_|')").unwrap().kind, KeyKind::Env);
     }
 
     #[test]
