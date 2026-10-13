@@ -2,6 +2,7 @@
 //!
 //! `--version` prints the version and exits; any other invocation speaks LSP.
 
+mod convert;
 mod server;
 
 use tower_lsp::{LspService, Server};

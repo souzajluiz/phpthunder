@@ -196,7 +196,8 @@ the sample project in `crates/phpthunder/tests/fixtures/app`.
 
 ## Limitations
 
-- The language server offers definitions, usages, completion, hover and
-  symbols; inspections, refactorings, Laravel keys and the IDE tools (Git,
-  debugger, tests) are IDE-only for now.
+- The language server offers definitions, usages, completion (ranked, with
+  keywords and Laravel keys), hover, symbols, diagnostics, quick fixes,
+  organize imports, rename and signature help; code generation, the
+  debugger, Git and test tools are IDE-only.
 - The debugger needs the Xdebug extension, which phpthunder does not ship.

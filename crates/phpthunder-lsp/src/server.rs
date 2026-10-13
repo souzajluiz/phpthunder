@@ -3,11 +3,17 @@
 //! Indexing runs in the background after `initialized`. Until it finishes the
 //! index is partial: definition, hover, and completion answer from what is
 //! indexed so far, while find usages, which needs a complete index to be
-//! correct, waits until indexing is done.
+//! correct, waits until indexing is done. Diagnostics are published for open
+//! files once indexing is done (a partial index would report missing
+//! classes that are merely not indexed yet), then after every change.
 
+use crate::convert;
 use parking_lot::{Mutex, RwLock};
-use phpthunder::analysis::{self, Candidate, Definition};
+use phpthunder::analysis::{self, Candidate, Definition, KEYWORD_DETAIL};
 use phpthunder::index::{self, Index, index_source};
+use phpthunder::inspection;
+use phpthunder::laravel::{self, LaravelProject};
+use phpthunder::refactor;
 use phpthunder::symbol::{Kind, Symbol};
 use phpthunder::syntax::{LineIndex, Pos, Span};
 use std::collections::HashMap;
@@ -26,6 +32,9 @@ struct Shared {
     index: RwLock<Index>,
     /// Open editor buffers; they take precedence over disk content.
     docs: Mutex<HashMap<PathBuf, String>>,
+    /// Route names, views, config, translation and env keys of each
+    /// Laravel workspace root, for completion inside key strings.
+    laravel: RwLock<Vec<(PathBuf, LaravelProject)>>,
 }
 
 impl Shared {
@@ -61,6 +70,7 @@ impl Backend {
             shared: Arc::new(Shared {
                 index: RwLock::new(Index::default()),
                 docs: Mutex::new(HashMap::new()),
+                laravel: RwLock::new(Vec::new()),
             }),
             roots: Mutex::new(Vec::new()),
             ready: watch::channel(false).0,
@@ -95,6 +105,33 @@ impl Backend {
             None => s.index.write().remove(&path),
         })
         .await;
+    }
+
+    /// Inspects `path` (its open buffer) and publishes the diagnostics; an
+    /// empty set clears them. Skipped until the initial scan is done.
+    async fn publish_diagnostics(&self, path: PathBuf) {
+        if !*self.ready.borrow() {
+            return;
+        }
+        let Ok(uri) = Url::from_file_path(&path) else {
+            return;
+        };
+        let diagnostics = self
+            .blocking(move |s| {
+                let open = s.docs.lock().get(&path).cloned();
+                let Some(text) = open.filter(|_| path.extension().is_some_and(|e| e == "php"))
+                else {
+                    return Vec::new();
+                };
+                inspection::diagnostics(&s.index.read(), &text)
+                    .iter()
+                    .map(convert::diagnostic)
+                    .collect()
+            })
+            .await;
+        self.client
+            .publish_diagnostics(uri, diagnostics, None)
+            .await;
     }
 
     /// Resolves once the initial workspace scan has finished; immediately afterwards.
@@ -140,6 +177,16 @@ impl Backend {
         let (tx, mut rx) = mpsc::unbounded_channel::<(usize, usize)>();
         let started = std::time::Instant::now();
         let job = self.blocking(move |s| {
+            // Built-ins let inspections tell a missing function from `strlen`.
+            if let Ok(path) = index::write_builtins() {
+                s.index
+                    .write()
+                    .update(path, index_source(index::BUILTINS_SOURCE));
+            }
+            *s.laravel.write() = roots
+                .iter()
+                .filter_map(|r| Some((r.clone(), laravel::scan_project(r)?)))
+                .collect();
             let files: Vec<PathBuf> = roots.iter().flat_map(|r| index::php_files(r)).collect();
             let total = files.len();
             index::index_files(&s.index, &files, |done, total| {
@@ -166,6 +213,10 @@ impl Backend {
         }))
         .await;
         self.ready.send_replace(true);
+        let open: Vec<PathBuf> = self.shared.docs.lock().keys().cloned().collect();
+        for path in open {
+            self.publish_diagnostics(path).await;
+        }
         self.client
             .log_message(
                 MessageType::INFO,
@@ -177,6 +228,9 @@ impl Backend {
             .await;
     }
 }
+
+/// Most completion proposals returned at once.
+const MAX_COMPLETIONS: usize = 200;
 
 /// Converts a [`Span`] (already in LSP line/UTF-16 coordinates) to an LSP range.
 fn to_range(span: Span) -> Range {
@@ -281,7 +335,28 @@ impl LanguageServer for Backend {
                 document_symbol_provider: Some(OneOf::Left(true)),
                 workspace_symbol_provider: Some(OneOf::Left(true)),
                 completion_provider: Some(CompletionOptions {
-                    trigger_characters: Some(vec![">".into(), ":".into(), "$".into()]),
+                    trigger_characters: Some(vec![
+                        ">".into(),
+                        ":".into(),
+                        "$".into(),
+                        "'".into(),
+                        "\"".into(),
+                        ".".into(),
+                    ]),
+                    ..Default::default()
+                }),
+                code_action_provider: Some(CodeActionProviderCapability::Options(
+                    CodeActionOptions {
+                        code_action_kinds: Some(vec![
+                            CodeActionKind::QUICKFIX,
+                            CodeActionKind::SOURCE_ORGANIZE_IMPORTS,
+                        ]),
+                        ..Default::default()
+                    },
+                )),
+                rename_provider: Some(OneOf::Left(true)),
+                signature_help_provider: Some(SignatureHelpOptions {
+                    trigger_characters: Some(vec!["(".into(), ",".into()]),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -316,7 +391,8 @@ impl LanguageServer for Backend {
             .docs
             .lock()
             .insert(path.clone(), params.text_document.text);
-        self.reindex(path).await;
+        self.reindex(path.clone()).await;
+        self.publish_diagnostics(path).await;
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
@@ -327,7 +403,8 @@ impl LanguageServer for Backend {
             return;
         };
         self.shared.docs.lock().insert(path.clone(), change.text);
-        self.reindex(path).await;
+        self.reindex(path.clone()).await;
+        self.publish_diagnostics(path).await;
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
@@ -335,7 +412,11 @@ impl LanguageServer for Backend {
             return;
         };
         self.shared.docs.lock().remove(&path);
-        self.reindex(path).await;
+        self.reindex(path.clone()).await;
+        // Closed files keep no diagnostics.
+        if let Ok(uri) = Url::from_file_path(&path) {
+            self.client.publish_diagnostics(uri, Vec::new(), None).await;
+        }
     }
 
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
@@ -451,14 +532,66 @@ impl LanguageServer for Backend {
                         col: pos.position.character,
                     },
                 );
-                let candidates = analysis::complete(&s.index.read(), &src, byte);
+                // Inside a Laravel key string (`route('…')`): the keys.
+                if let Some(key) = laravel::key_at(&src, byte) {
+                    let projects = s.laravel.read();
+                    let project = projects.iter().find(|(root, _)| path.starts_with(root));
+                    if let Some((_, project)) = project {
+                        let range = to_range(lines.span(&src, key.start, byte));
+                        let keys: Vec<Candidate> = project
+                            .keys(key.kind)
+                            .iter()
+                            .map(|k| Candidate {
+                                label: k.name.clone(),
+                                kind: Kind::Constant,
+                                detail: k.detail.clone(),
+                                insert_text: k.name.clone(),
+                                import: None,
+                            })
+                            .collect();
+                        let ranked =
+                            analysis::rank_candidates(&key.prefix, keys, |_| 0, MAX_COMPLETIONS);
+                        return Some(
+                            ranked
+                                .into_iter()
+                                .enumerate()
+                                .map(|(i, r)| CompletionItem {
+                                    label: r.candidate.label.clone(),
+                                    kind: Some(CompletionItemKind::VALUE),
+                                    detail: Some(r.candidate.detail),
+                                    sort_text: Some(format!("{i:04}")),
+                                    filter_text: Some(r.candidate.label.clone()),
+                                    text_edit: Some(CompletionTextEdit::Edit(TextEdit::new(
+                                        range,
+                                        r.candidate.insert_text,
+                                    ))),
+                                    ..Default::default()
+                                })
+                                .collect(),
+                        );
+                    }
+                }
+                let mut candidates = analysis::complete(&s.index.read(), &src, byte);
                 let mut start = analysis::ident_start(&src, byte);
                 if start > 0 && src.as_bytes()[start - 1] == b'$' {
                     start -= 1;
                 }
-                let items = candidates
+                if byte > start && !src[start..byte].starts_with('$') {
+                    candidates.extend(analysis::keyword_candidates(&src, byte));
+                }
+                // Ranked like the IDE (match quality, proximity, length);
+                // `sort_text` keeps that order in the client.
+                let ranked = analysis::rank_candidates(
+                    &src[start..byte],
+                    candidates,
+                    |_| 0,
+                    MAX_COMPLETIONS,
+                );
+                let items = ranked
                     .into_iter()
-                    .map(|c| {
+                    .enumerate()
+                    .map(|(i, r)| {
+                        let c = r.candidate;
                         // Replace the typed prefix; keep `$` only when the candidate has it.
                         let from =
                             if src[start..].starts_with('$') && !c.insert_text.starts_with('$') {
@@ -467,9 +600,15 @@ impl LanguageServer for Backend {
                                 start
                             };
                         let edit_range = to_range(lines.span(&src, from, byte));
+                        let kind = if c.detail == KEYWORD_DETAIL {
+                            CompletionItemKind::KEYWORD
+                        } else {
+                            completion_kind(&c)
+                        };
                         CompletionItem {
-                            kind: Some(completion_kind(&c)),
+                            kind: Some(kind),
                             detail: Some(c.detail.clone()),
+                            sort_text: Some(format!("{i:04}")),
                             filter_text: Some(c.label.clone()),
                             text_edit: Some(CompletionTextEdit::Edit(TextEdit::new(
                                 edit_range,
@@ -489,10 +628,137 @@ impl LanguageServer for Backend {
             })
             .await
             .unwrap_or_default();
+        // Incomplete: the engine caps and fuzzy-matches names, so a longer
+        // prefix can bring proposals this list does not have.
         Ok(Some(CompletionResponse::List(CompletionList {
-            is_incomplete: !*self.ready.borrow(),
+            is_incomplete: true,
             items,
         })))
+    }
+
+    async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
+        let Some(path) = path_of(&params.text_document.uri) else {
+            return Ok(None);
+        };
+        let range = params.range;
+        let only = params.context.only.clone();
+        let actions = self
+            .blocking(move |s| {
+                let src = s.load(&path)?;
+                let index = s.index.read();
+                let (start, end) = convert::byte_range(&src, range);
+                let wants = |kind: &CodeActionKind| {
+                    only.as_ref()
+                        .is_none_or(|o| o.iter().any(|k| kind.as_str().starts_with(k.as_str())))
+                };
+                let mut actions = Vec::new();
+                if wants(&CodeActionKind::QUICKFIX) {
+                    for d in inspection::diagnostics(&index, &src)
+                        .into_iter()
+                        .filter(|d| d.start <= end && start <= d.end)
+                    {
+                        for fix in inspection::quick_fixes(&index, &src, &d, |p| s.load(p)) {
+                            actions.push(CodeActionOrCommand::CodeAction(CodeAction {
+                                title: fix.title.clone(),
+                                kind: Some(CodeActionKind::QUICKFIX),
+                                diagnostics: Some(vec![convert::diagnostic(&d)]),
+                                edit: Some(convert::workspace_edit(&path, &fix.edits, |p| {
+                                    s.load(p)
+                                })),
+                                ..Default::default()
+                            }));
+                        }
+                    }
+                }
+                if wants(&CodeActionKind::SOURCE_ORGANIZE_IMPORTS) {
+                    let organized = refactor::optimize_imports(&index, &src);
+                    if organized != src {
+                        let edit = inspection::Edit {
+                            path: None,
+                            start: 0,
+                            end: src.len(),
+                            text: organized,
+                        };
+                        actions.push(CodeActionOrCommand::CodeAction(CodeAction {
+                            title: "Optimize imports".into(),
+                            kind: Some(CodeActionKind::SOURCE_ORGANIZE_IMPORTS),
+                            edit: Some(convert::workspace_edit(&path, &[edit], |p| s.load(p))),
+                            ..Default::default()
+                        }));
+                    }
+                }
+                Some(actions)
+            })
+            .await;
+        Ok(actions.filter(|a| !a.is_empty()))
+    }
+
+    async fn rename(&self, params: RenameParams) -> Result<Option<WorkspaceEdit>> {
+        self.wait_until_indexed().await;
+        let pos = params.text_document_position;
+        let Some(path) = path_of(&pos.text_document.uri) else {
+            return Ok(None);
+        };
+        let new_name = params.new_name;
+        let result = self
+            .blocking(move |s| {
+                let src = s.load(&path).ok_or_else(|| "file not found".to_string())?;
+                let lines = LineIndex::new(&src);
+                let byte = lines.offset(
+                    &src,
+                    Pos {
+                        line: pos.position.line,
+                        col: pos.position.character,
+                    },
+                );
+                let plan =
+                    refactor::rename(&s.index.read(), &path, &src, byte, &new_name, |p| s.load(p))?;
+                Ok::<_, String>(convert::rename_edit(&plan, |p| s.load(p)))
+            })
+            .await;
+        match result {
+            Ok(edit) => Ok(Some(edit)),
+            Err(message) => Err(tower_lsp::jsonrpc::Error::invalid_params(message)),
+        }
+    }
+
+    async fn signature_help(&self, params: SignatureHelpParams) -> Result<Option<SignatureHelp>> {
+        let pos = params.text_document_position_params;
+        let Some(path) = path_of(&pos.text_document.uri) else {
+            return Ok(None);
+        };
+        let help = self
+            .blocking(move |s| {
+                let src = s.load(&path)?;
+                let lines = LineIndex::new(&src);
+                let byte = lines.offset(
+                    &src,
+                    Pos {
+                        line: pos.position.line,
+                        col: pos.position.character,
+                    },
+                );
+                refactor::signature_help(&s.index.read(), &src, byte)
+            })
+            .await;
+        Ok(help.map(|h| SignatureHelp {
+            signatures: vec![SignatureInformation {
+                label: h.label,
+                documentation: None,
+                parameters: Some(
+                    h.params
+                        .into_iter()
+                        .map(|p| ParameterInformation {
+                            label: ParameterLabel::Simple(p),
+                            documentation: None,
+                        })
+                        .collect(),
+                ),
+                active_parameter: u32::try_from(h.active).ok(),
+            }],
+            active_signature: Some(0),
+            active_parameter: None,
+        }))
     }
 
     async fn document_symbol(
