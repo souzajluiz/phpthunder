@@ -41,6 +41,9 @@ fn code_name(code: &Code) -> &'static str {
         Code::UndefinedProperty { .. } => "undefined-property",
         Code::UnusedImport(_) => "unused-import",
         Code::UndefinedVariable(_) => "undefined-variable",
+        Code::UnusedVariable(_) => "unused-variable",
+        Code::MissingReturn(_) => "missing-return",
+        Code::ReturnTypeMismatch { .. } => "return-type-mismatch",
         Code::External(_) => "external",
     }
 }
@@ -61,7 +64,8 @@ pub fn diagnostic(d: &EngineDiagnostic) -> Diagnostic {
         code: Some(NumberOrString::String(code_name(&d.code).into())),
         source: Some("phpthunder".into()),
         message: d.message.clone(),
-        tags: matches!(d.code, Code::UnusedImport(_)).then(|| vec![DiagnosticTag::UNNECESSARY]),
+        tags: matches!(d.code, Code::UnusedImport(_) | Code::UnusedVariable(_))
+            .then(|| vec![DiagnosticTag::UNNECESSARY]),
         ..Default::default()
     }
 }

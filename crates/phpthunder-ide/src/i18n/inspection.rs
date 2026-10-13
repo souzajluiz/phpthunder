@@ -34,6 +34,13 @@ pub fn diagnostic_message(diagnostic: &Diagnostic) -> String {
         }
         Code::UnusedImport(fqn) => tr!("diagnostic-unused-import", name = fqn.as_str()),
         Code::UndefinedVariable(name) => tr!("diagnostic-undefined-variable", name = name.as_str()),
+        Code::UnusedVariable(name) => tr!("diagnostic-unused-variable", name = name.as_str()),
+        Code::MissingReturn(ty) => tr!("diagnostic-missing-return", ty = ty.as_str()),
+        Code::ReturnTypeMismatch { expected, found } => tr!(
+            "diagnostic-return-mismatch",
+            expected = expected.as_str(),
+            found = found.as_str()
+        ),
         Code::External(_) => diagnostic.message.clone(),
     }
 }
@@ -43,6 +50,7 @@ pub fn fix_title(fix: &Fix) -> String {
     match &fix.kind {
         FixKind::ImportClass(fqn) => tr!("fix-import-class", name = fqn.as_str()),
         FixKind::RemoveImport => tr!("fix-remove-import"),
+        FixKind::RemoveAssignment => tr!("fix-remove-assignment"),
         FixKind::AddMethod { class, name } => {
             tr!("fix-add-method", name = name.as_str(), class = short(class))
         }

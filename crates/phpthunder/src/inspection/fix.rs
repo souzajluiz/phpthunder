@@ -53,7 +53,12 @@ pub fn quick_fixes(
         )
         .into_iter()
         .collect(),
-        Code::UndefinedFunction(_) | Code::UndefinedVariable(_) | Code::External(_) => Vec::new(),
+        Code::UnusedVariable(_) => remove_assignment_fix(src, diagnostic).into_iter().collect(),
+        Code::UndefinedFunction(_)
+        | Code::UndefinedVariable(_)
+        | Code::MissingReturn(_)
+        | Code::ReturnTypeMismatch { .. }
+        | Code::External(_) => Vec::new(),
     }
 }
 
@@ -152,5 +157,34 @@ fn add_member_fix(
             text: member.to_string(),
         }],
         kind,
+    })
+}
+
+/// Turns `$x = expr;` (the diagnostic is on `$x`) into `expr;`, keeping any
+/// side effect of the expression; `None` when the assignment has another
+/// shape.
+fn remove_assignment_fix(src: &str, diagnostic: &Diagnostic) -> Option<Fix> {
+    let tree = parse(src);
+    let var = tree
+        .root_node()
+        .descendant_for_byte_range(diagnostic.start, diagnostic.end)?;
+    let var = if var.kind() == "variable_name" {
+        var
+    } else {
+        var.parent()?
+    };
+    let assignment = var
+        .parent()
+        .filter(|p| p.kind() == "assignment_expression")?;
+    let right = assignment.child_by_field_name("right")?;
+    Some(Fix {
+        title: "Remove unused variable (keep the value)".into(),
+        edits: vec![Edit {
+            path: None,
+            start: assignment.start_byte(),
+            end: right.start_byte(),
+            text: String::new(),
+        }],
+        kind: FixKind::RemoveAssignment,
     })
 }

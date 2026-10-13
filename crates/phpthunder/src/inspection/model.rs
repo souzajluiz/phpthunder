@@ -39,6 +39,18 @@ pub enum Code {
     UnusedImport(String),
     /// A variable read in a function but never assigned there.
     UndefinedVariable(String),
+    /// A variable assigned in a function but never read there.
+    UnusedVariable(String),
+    /// A function with a declared return type whose end can be reached
+    /// without returning; carries the declared type.
+    MissingReturn(String),
+    /// A returned value that cannot match the declared return type.
+    ReturnTypeMismatch {
+        /// Declared return type.
+        expected: String,
+        /// What is returned (`null`, `string`, `array`, a class, `nothing`).
+        found: String,
+    },
     /// Reported by an external analyser; carries its name (e.g. `PHPStan`).
     External(String),
 }
@@ -100,6 +112,9 @@ pub enum FixKind {
         /// Method name.
         name: String,
     },
+    /// Keeps the assigned expression but drops the unused variable
+    /// (`$x = f();` becomes `f();`).
+    RemoveAssignment,
     /// Adds a property to a class.
     AddProperty {
         /// Class FQN.

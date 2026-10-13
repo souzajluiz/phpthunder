@@ -12,3 +12,8 @@ fix-import-class = Import class { $name }
 fix-remove-import = Remove unused import
 fix-add-method = Add method '{ $name }()' to { $class }
 fix-add-property = Add property '${ $name }' to { $class }
+
+diagnostic-unused-variable = Variable '{ $name }' is assigned but never used
+diagnostic-missing-return = Missing return statement: '{ $ty }' expected
+diagnostic-return-mismatch = Return type mismatch: '{ $expected }' expected, { $found } returned
+fix-remove-assignment = Remove unused variable (keep the value)

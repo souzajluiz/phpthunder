@@ -16,7 +16,7 @@ use std::collections::HashSet;
 use tree_sitter::Node;
 
 /// Variables PHP defines in every scope.
-const SUPERGLOBALS: &[&str] = &[
+pub(crate) const SUPERGLOBALS: &[&str] = &[
     "$this",
     "$GLOBALS",
     "$_SERVER",
@@ -34,7 +34,7 @@ const SUPERGLOBALS: &[&str] = &[
 
 /// Calls that create variables PHP cannot see statically; a function that
 /// uses them is skipped by the undefined-variable inspection.
-const DYNAMIC_SCOPE_CALLS: &[&str] = &[
+pub(crate) const DYNAMIC_SCOPE_CALLS: &[&str] = &[
     "extract",
     "compact",
     "get_defined_vars",
@@ -230,6 +230,9 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
 
     unused_imports(&tree, src, &mut push);
     undefined_variables(tree.root_node(), src, &mut push);
+    unused_variables(tree.root_node(), src, &mut push);
+    missing_returns(index, &analyzer, tree.root_node(), src, &mut push);
+    return_mismatches(index, &analyzer, tree.root_node(), src, &mut push);
     out.sort_by_key(|d| (d.start, d.severity));
     out
 }

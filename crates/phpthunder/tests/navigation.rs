@@ -329,10 +329,15 @@ fn inspections_should_only_flag_real_problems_in_the_fixture() {
         }
     }
     found.sort();
-    // `cache()` is a framework helper that the fixture does not define.
+    // `cache()` is a framework helper that the fixture does not define;
+    // `$city` and `$status` only exercise resolution and are never read.
     assert_eq!(
         found,
-        ["Http/PostController.php:21 Undefined function 'cache'"]
+        [
+            "Http/PostController.php:21 Undefined function 'cache'",
+            "Http/UserController.php:17 Variable '$city' is assigned but never used",
+            "Http/UserController.php:18 Variable '$status' is assigned but never used",
+        ]
     );
 }
 
