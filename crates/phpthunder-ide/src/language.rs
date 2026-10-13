@@ -56,25 +56,30 @@ impl Language {
                 self.update_file(&path, index::BUILTINS_SOURCE);
             }
             // The cache fills the index first; the scan then reparses only
-            // files whose content changed since it was written.
+            // files whose content changed since it was written. The project
+            // walk is independent of the cache, so it runs alongside.
             let cache = crate::project::index_cache_path(&root);
             let mut unchanged = std::collections::HashSet::new();
-            if let Some(entries) = cache.as_deref().and_then(index::load_cache) {
-                let mut idx = self.index.write();
-                for (path, stamp, entry) in entries {
-                    if stamp.is_some() && stamp == index::file_stamp(&path) {
-                        unchanged.insert(path.clone());
+            let files = std::thread::scope(|scope| {
+                let walk = scope.spawn(|| index::php_files(&root));
+                if let Some(entries) = cache.as_deref().and_then(index::load_cache) {
+                    let mut idx = self.index.write();
+                    for (path, stamp, entry) in entries {
+                        if stamp.is_some() && stamp == index::file_stamp(&path) {
+                            unchanged.insert(path.clone());
+                        }
+                        idx.update(path, entry);
                     }
-                    idx.update(path, entry);
                 }
-            }
-            let files = index::php_files(&root);
+                walk.join().unwrap_or_default()
+            });
             let changed: Vec<PathBuf> = files
                 .iter()
                 .filter(|p| !unchanged.contains(*p))
                 .cloned()
                 .collect();
             index::index_files(&self.index, &changed, |_, _| {});
+            let mut removed = 0;
             {
                 // Files deleted since the cache was written.
                 let keep: std::collections::HashSet<&PathBuf> = files.iter().collect();
@@ -83,10 +88,15 @@ impl Language {
                 for path in idx.paths() {
                     if !keep.contains(&path) && Some(&path) != builtins.as_ref() {
                         idx.remove(&path);
+                        removed += 1;
                     }
                 }
             }
-            if let Some(cache) = cache {
+            // An untouched project keeps its cache: rewriting it costs about
+            // as much as loading it.
+            if let Some(cache) = cache
+                && (!changed.is_empty() || removed > 0)
+            {
                 // A write failure only costs the next start its head start.
                 let _ = index::save_cache(&self.index.read(), &cache);
             }

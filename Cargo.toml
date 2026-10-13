@@ -29,3 +29,10 @@ missing_docs_in_private_items = { level = "warn", priority = 9 }
 # without debug info keeps `target/debug` a fraction of the size.
 [profile.dev.package."*"]
 debug = false
+
+# Shipped builds: cross-crate inlining and one codegen unit make the engine
+# faster, and stripping symbols keeps the bundle small.
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

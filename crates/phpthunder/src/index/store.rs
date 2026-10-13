@@ -10,9 +10,11 @@ use super::*;
 use crate::symbol::{Kind, MemberTag, Symbol};
 use crate::syntax::LineIndex;
 use crate::syntax::parse;
-use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 /// Hash of a file's content, compared by [`Index::is_current`] so the initial
 /// scan does not reparse unchanged files. Only stable within one process; never
@@ -36,10 +38,10 @@ pub fn index_source(src: &str) -> FileEntry {
 }
 
 /// Lowercased identifiers in `src` (the word index entries for one file).
-pub fn words(src: &str) -> HashSet<String> {
+pub fn words(src: &str) -> FxHashSet<String> {
     let bytes = src.as_bytes();
     let is_ident = |b: u8| b == b'_' || b.is_ascii_alphanumeric() || b >= 0x80;
-    let mut out = HashSet::new();
+    let mut out = FxHashSet::default();
     let mut i = 0;
     while i < bytes.len() {
         if is_ident(bytes[i]) {
@@ -119,20 +121,20 @@ fn short_name(sym: &Symbol) -> String {
 #[derive(Default)]
 pub struct Index {
     /// Indexed files and their entries.
-    files: HashMap<PathBuf, FileEntry>,
+    files: FxHashMap<PathBuf, FileEntry>,
     /// Declaration index: [`symbol_key`] -> declarations stored under it.
-    keys: HashMap<String, Vec<SymRef>>,
+    keys: FxHashMap<String, Vec<SymRef>>,
     /// Lowercase short name of top-level symbols, ordered for prefix queries.
     names: BTreeMap<String, Vec<SymRef>>,
     /// Word index: lowercased identifier -> files that contain it.
-    words: HashMap<String, HashSet<PathBuf>>,
+    words: FxHashMap<String, FxHashSet<FileKey>>,
     /// Lazily built set of every namespace declaring a class (lowercased,
     /// with all parent namespaces); cleared whenever a file changes.
     namespaces: parking_lot::Mutex<Option<std::sync::Arc<HashSet<String>>>>,
     /// Lowercased owner -> files declaring members of a class they do not
     /// declare themselves (migration columns of a table, see
     /// [`crate::symbol::TABLE_PREFIX`]); [`Index::members`] reads them too.
-    augments: HashMap<String, HashSet<PathBuf>>,
+    augments: FxHashMap<String, FxHashSet<FileKey>>,
     /// Lazily built set of lowercased FQNs that some indexed class extends
     /// or implements; cleared whenever a file changes.
     extended: parking_lot::Mutex<Option<std::sync::Arc<HashSet<String>>>>,
@@ -156,6 +158,9 @@ impl Index {
     /// by the initial scan.
     pub fn update(&mut self, path: PathBuf, entry: FileEntry) {
         self.remove(&path);
+        // One shared path for every reference into this file.
+        let shared: Arc<Path> = Arc::from(path.as_path());
+        let key = FileKey(shared.clone());
         *self.namespaces.get_mut() = None;
         *self.extended.get_mut() = None;
         let declared: HashSet<String> = entry
@@ -171,10 +176,10 @@ impl Index {
             .map(|s| s.fqn.to_ascii_lowercase())
             .filter(|o| !declared.contains(o))
         {
-            self.augments.entry(owner).or_default().insert(path.clone());
+            self.augments.entry(owner).or_default().insert(key.clone());
         }
         for (i, sym) in entry.symbols.iter().enumerate() {
-            let r = (path.clone(), i);
+            let r = (shared.clone(), i);
             self.keys
                 .entry(symbol_key(sym))
                 .or_default()
@@ -184,10 +189,16 @@ impl Index {
             }
         }
         for w in &entry.words {
-            self.words
-                .entry(w.clone())
-                .or_default()
-                .insert(path.clone());
+            // Most words already have a set: avoid allocating the key then.
+            match self.words.get_mut(w) {
+                Some(files) => {
+                    files.insert(key.clone());
+                }
+                None => {
+                    self.words
+                        .insert(w.clone(), FxHashSet::from_iter([key.clone()]));
+                }
+            }
         }
         self.files.insert(path, entry);
     }
@@ -246,8 +257,9 @@ impl Index {
         let Some(old) = self.files.remove(path) else {
             return;
         };
+        let key = FileKey(Arc::from(path));
         self.augments.retain(|_, files| {
-            files.remove(path);
+            files.remove(&key);
             !files.is_empty()
         });
         for sym in &old.symbols {
@@ -255,7 +267,7 @@ impl Index {
             if !sym.kind.is_member() {
                 let key = short_name(sym);
                 if let Some(v) = self.names.get_mut(&key) {
-                    v.retain(|(p, _)| p != path);
+                    v.retain(|(p, _)| &**p != path);
                     if v.is_empty() {
                         self.names.remove(&key);
                     }
@@ -264,7 +276,7 @@ impl Index {
         }
         for w in &old.words {
             if let Some(set) = self.words.get_mut(w) {
-                set.remove(path);
+                set.remove(&key);
                 if set.is_empty() {
                     self.words.remove(w);
                 }
@@ -291,7 +303,7 @@ impl Index {
 
     /// Resolves a [`SymRef`]; `None` if its file was removed or re-indexed with fewer symbols.
     pub fn get(&self, r: &SymRef) -> Option<&Symbol> {
-        self.files.get(&r.0)?.symbols.get(r.1)
+        self.files.get(&*r.0)?.symbols.get(r.1)
     }
 
     /// Symbols declared in `path`, in source order; empty if the file is not indexed. Backs document symbols.
@@ -308,7 +320,7 @@ impl Index {
             .get(key)
             .into_iter()
             .flatten()
-            .filter_map(|r| Some((r.0.as_path(), self.get(r)?)))
+            .filter_map(|r| Some((&*r.0, self.get(r)?)))
             .collect()
     }
 
@@ -365,7 +377,7 @@ impl Index {
         for cls in self.hierarchy(class) {
             let mut files: Vec<&Path> = self.classes(&cls).into_iter().map(|(p, _)| p).collect();
             if let Some(extra) = self.augments.get(&cls.to_ascii_lowercase()) {
-                let mut extra: Vec<&Path> = extra.iter().map(PathBuf::as_path).collect();
+                let mut extra: Vec<&Path> = extra.iter().map(|p| &*p.0).collect();
                 extra.sort();
                 files.extend(extra);
             }
@@ -395,7 +407,7 @@ impl Index {
             .range(lower.clone()..)
             .take_while(|(k, _)| k.starts_with(&lower))
             .flat_map(|(_, refs)| refs.iter())
-            .filter_map(|r| Some((r.0.as_path(), self.get(r)?)))
+            .filter_map(|r| Some((&*r.0, self.get(r)?)))
             .take(limit)
             .collect()
     }
@@ -407,7 +419,7 @@ impl Index {
         self.names
             .values()
             .flatten()
-            .filter_map(|r| Some((r.0.as_path(), self.get(r)?)))
+            .filter_map(|r| Some((&*r.0, self.get(r)?)))
     }
 
     /// Top-level symbols whose short name contains `query` (workspace symbols).
@@ -417,7 +429,7 @@ impl Index {
             .iter()
             .filter(|(k, _)| k.contains(&lower))
             .flat_map(|(_, refs)| refs.iter())
-            .filter_map(|r| Some((r.0.as_path(), self.get(r)?)))
+            .filter_map(|r| Some((&*r.0, self.get(r)?)))
             .take(limit)
             .collect()
     }
@@ -427,7 +439,7 @@ impl Index {
         let mut v: Vec<PathBuf> = self
             .words
             .get(&word.to_lowercase())
-            .map(|s| s.iter().cloned().collect())
+            .map(|s| s.iter().map(|p| p.0.to_path_buf()).collect())
             .unwrap_or_default();
         v.sort();
         v
@@ -435,9 +447,9 @@ impl Index {
 }
 
 /// Removes `path`'s references under `key`, dropping the key once empty so removed files leave no stale entries.
-fn prune(map: &mut HashMap<String, Vec<SymRef>>, key: &str, path: &Path) {
+fn prune(map: &mut FxHashMap<String, Vec<SymRef>>, key: &str, path: &Path) {
     if let Some(v) = map.get_mut(key) {
-        v.retain(|(p, _)| p != path);
+        v.retain(|(p, _)| &**p != path);
         if v.is_empty() {
             map.remove(key);
         }
