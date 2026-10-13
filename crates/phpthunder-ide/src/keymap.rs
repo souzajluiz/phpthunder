@@ -230,11 +230,17 @@ pub enum Cmd {
     LocalHistory,
     /// Show who last changed each line (git blame).
     Annotate,
+    /// Turn the selected expression into a class constant (`⌥⌘C`).
+    IntroduceConstant,
+    /// Turn the selected expression into a property (`⌥⌘F`).
+    IntroduceField,
+    /// Turn the selected expression into a parameter (`⌥⌘P`).
+    IntroduceParameter,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 109] = {
+    pub const ALL: [Cmd; 112] = {
         use Cmd::*;
         [
             Save,
@@ -346,6 +352,9 @@ impl Cmd {
             CompareWithClipboard,
             LocalHistory,
             Annotate,
+            IntroduceConstant,
+            IntroduceField,
+            IntroduceParameter,
         ]
     };
 
@@ -414,6 +423,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("u", true, false) => ToggleCase,
             ("t", false, true) => SurroundWith,
             ("a", true, false) => FindAction,
+            ("c", false, true) => IntroduceConstant,
+            ("f", false, true) => IntroduceField,
+            ("p", false, true) => IntroduceParameter,
             ("=", false, false) | ("+", _, false) => ZoomIn,
             ("-", false, false) => ZoomOut,
             ("0", false, false) => ZoomReset,
@@ -620,6 +632,9 @@ pub fn hint(cmd: Cmd) -> &'static str {
         ZoomOut => "⌘−",
         ZoomReset => "⌘0",
         CompareWithClipboard | LocalHistory | Annotate => "",
+        IntroduceConstant => "⌥⌘C",
+        IntroduceField => "⌥⌘F",
+        IntroduceParameter => "⌥⌘P",
     }
 }
 

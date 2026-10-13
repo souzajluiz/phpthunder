@@ -137,6 +137,25 @@ pub(crate) fn folder_for_namespace(root: &Path, namespace: &str) -> Option<PathB
     best.map(|(_, d)| d)
 }
 
+/// A name for a value from its expression: the last called or accessed
+/// name (`$order->getTotal()` → `total`), else `value`.
+fn suggested_identifier(expression: &str) -> String {
+    expression
+        .rsplit(['>', ':'])
+        .next()
+        .and_then(|c| c.split('(').next())
+        .map(|c| c.trim().trim_start_matches("get").trim_start_matches('$'))
+        .filter(|c| !c.is_empty() && c.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
+        .map(|c| {
+            let mut chars = c.chars();
+            chars
+                .next()
+                .map(|f| f.to_lowercase().chain(chars).collect())
+                .unwrap_or_default()
+        })
+        .unwrap_or_else(|| "value".to_string())
+}
+
 impl App {
     /// Refactorings that apply at the caret or selection, for the `⌥↵`
     /// menu.
@@ -150,6 +169,15 @@ impl App {
                 start, end,
             )));
             out.push(Intention::Refactor(RefactorAction::ExtractMethod(
+                start, end,
+            )));
+            out.push(Intention::Refactor(RefactorAction::IntroduceConstant(
+                start, end,
+            )));
+            out.push(Intention::Refactor(RefactorAction::IntroduceField(
+                start, end,
+            )));
+            out.push(Intention::Refactor(RefactorAction::IntroduceParameter(
                 start, end,
             )));
         }
@@ -179,6 +207,23 @@ impl App {
             out.push(Intention::Refactor(RefactorAction::MoveClass));
         }
         out
+    }
+
+    /// Introduce constant (`⌥⌘C`), field (`⌥⌘F`) or parameter (`⌥⌘P`)
+    /// from the selection.
+    pub(crate) fn introduce_from_selection(
+        &mut self,
+        make: fn(usize, usize) -> RefactorAction,
+    ) -> Task<Message> {
+        let Some((start, end)) = self
+            .doc()
+            .and_then(|d| d.selection())
+            .filter(|(s, e)| s < e)
+        else {
+            self.notice = Some(tr!("refactor-select-first"));
+            return Task::none();
+        };
+        self.start_refactor(make(start, end))
     }
 
     /// Extract variable (`⌥⌘V`) or method (`⌥⌘M`) from the selection.
@@ -242,6 +287,21 @@ impl App {
                 tr!("refactor-extract-method-help"),
                 String::new(),
             ),
+            RefactorAction::IntroduceConstant(start, end) => (
+                tr!("refactor-introduce-constant"),
+                tr!("refactor-introduce-constant-help"),
+                suggested_identifier(&doc.text[*start..*end]).to_uppercase(),
+            ),
+            RefactorAction::IntroduceField(start, end) => (
+                tr!("refactor-introduce-field"),
+                tr!("refactor-introduce-field-help"),
+                suggested_identifier(&doc.text[*start..*end]),
+            ),
+            RefactorAction::IntroduceParameter(start, end) => (
+                tr!("refactor-introduce-parameter"),
+                tr!("refactor-introduce-parameter-help"),
+                format!("${}", suggested_identifier(&doc.text[*start..*end])),
+            ),
             RefactorAction::ChangeSignature(offset) => {
                 match parameters_text(&self.lang, &doc.text, *offset) {
                     Some(params) => (
@@ -288,6 +348,15 @@ impl App {
             }
             RefactorAction::ExtractMethod(start, end) => {
                 refactor::extract_method(&text, start, end, &value)
+            }
+            RefactorAction::IntroduceConstant(start, end) => {
+                refactor::introduce_constant(&text, start, end, Some(&value))
+            }
+            RefactorAction::IntroduceField(start, end) => {
+                refactor::introduce_field(&text, start, end, Some(&value))
+            }
+            RefactorAction::IntroduceParameter(start, end) => {
+                refactor::introduce_parameter(&text, start, end, Some(&value))
             }
             RefactorAction::ChangeSignature(offset) => {
                 let old = parameters_text(&self.lang, &text, offset).unwrap_or_default();

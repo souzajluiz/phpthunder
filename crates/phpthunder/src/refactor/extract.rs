@@ -214,6 +214,244 @@ pub fn extract_variable(
     Ok(LocalRefactoring { edits, caret })
 }
 
+/// The whole expression node selected by `start..end` (whitespace
+/// trimmed), as Extract Variable and the Introduce refactorings need.
+///
+/// # Errors
+/// Returns a message when the selection is not one whole expression.
+fn selected_expression<'t>(
+    tree: &'t Tree,
+    src: &str,
+    start: usize,
+    end: usize,
+) -> Result<Node<'t>, String> {
+    let (start, end) = trimmed(src, start, end);
+    let node = tree
+        .root_node()
+        .descendant_for_byte_range(start, end)
+        .filter(|n| n.start_byte() == start && n.end_byte() == end && n.is_named())
+        .ok_or("Select a whole expression")?;
+    if STATEMENTS.contains(&node.kind()) || node.kind() == "name" {
+        return Err("Select a whole expression".into());
+    }
+    Ok(node)
+}
+
+/// The nearest ancestor of `node` whose kind is one of `kinds`.
+fn ancestor<'t>(node: Node<'t>, kinds: &[&str]) -> Option<Node<'t>> {
+    let mut cur = node.parent();
+    while let Some(n) = cur {
+        if kinds.contains(&n.kind()) {
+            return Some(n);
+        }
+        cur = n.parent();
+    }
+    None
+}
+
+/// Edits replacing every occurrence of `expression` inside `within` with
+/// `with`.
+fn replace_occurrences(src: &str, within: Node, expression: &str, with: &str) -> Vec<Edit> {
+    let body = &src[within.start_byte()..within.end_byte()];
+    let mut edits = Vec::new();
+    let mut search = 0;
+    while let Some(found) = body[search..].find(expression) {
+        let s = within.start_byte() + search + found;
+        edits.push(Edit {
+            path: None,
+            start: s,
+            end: s + expression.len(),
+            text: with.to_string(),
+        });
+        search += found + expression.len();
+    }
+    edits
+}
+
+/// Where a new member goes at the top of the class body `body` (the line
+/// after its `{`), and the indentation members use.
+fn member_slot(src: &str, body: Node) -> (usize, String) {
+    let open = body.start_byte() + 1;
+    let at = if src[open..].starts_with('\n') {
+        open + 1
+    } else {
+        open
+    };
+    let mut c = body.walk();
+    let indent = body
+        .named_children(&mut c)
+        .next()
+        .map(|m| indent_at(src, m.start_byte()).to_string())
+        .unwrap_or_else(|| format!("{}    ", indent_at(src, body.start_byte())));
+    (at, indent)
+}
+
+/// `name` in `UPPER_SNAKE_CASE`, splitting camel-case humps.
+fn constant_name(name: &str) -> String {
+    let mut out = String::new();
+    for (i, c) in name.chars().enumerate() {
+        if c.is_uppercase() && i > 0 && !out.ends_with('_') {
+            out.push('_');
+        }
+        out.extend(c.to_uppercase());
+    }
+    out
+}
+
+/// Introduce Constant: declares `private const NAME = expression;` at the
+/// top of the enclosing class and replaces every occurrence of the selected
+/// expression in the class with `self::NAME`.
+///
+/// # Errors
+/// Returns a message when the selection is not one whole expression inside
+/// a class.
+pub fn introduce_constant(
+    src: &str,
+    start: usize,
+    end: usize,
+    name: Option<&str>,
+) -> Result<LocalRefactoring, String> {
+    let tree = parse(src);
+    let node = selected_expression(&tree, src, start, end)?;
+    let class = ancestor(
+        node,
+        &["class_declaration", "trait_declaration", "enum_declaration"],
+    )
+    .ok_or("Select an expression inside a class")?;
+    let body = class
+        .child_by_field_name("body")
+        .ok_or("Select an expression inside a class")?;
+    let expression = text(node, src);
+    let name = name.map_or_else(
+        || constant_name(&suggested_name(expression)),
+        |n| n.trim().to_string(),
+    );
+    let (at, indent) = member_slot(src, body);
+    let mut edits = vec![Edit {
+        path: None,
+        start: at,
+        end: at,
+        text: format!("{indent}private const {name} = {expression};\n\n"),
+    }];
+    edits.extend(replace_occurrences(
+        src,
+        body,
+        expression,
+        &format!("self::{name}"),
+    ));
+    let caret = at + indent.len() + "private const ".len();
+    Ok(LocalRefactoring { edits, caret })
+}
+
+/// Introduce Field: declares `private $name;` at the top of the enclosing
+/// class, assigns the selected expression to `$this->name` before the
+/// statement holding it, and replaces its occurrences in the method.
+///
+/// # Errors
+/// Returns a message when the selection is not one whole expression
+/// inside a method.
+pub fn introduce_field(
+    src: &str,
+    start: usize,
+    end: usize,
+    name: Option<&str>,
+) -> Result<LocalRefactoring, String> {
+    let tree = parse(src);
+    let node = selected_expression(&tree, src, start, end)?;
+    let method =
+        ancestor(node, &["method_declaration"]).ok_or("Select an expression inside a method")?;
+    let class = ancestor(
+        method,
+        &["class_declaration", "trait_declaration", "enum_declaration"],
+    )
+    .ok_or("Select an expression inside a class")?;
+    let body = class
+        .child_by_field_name("body")
+        .ok_or("Select an expression inside a class")?;
+    let statement = enclosing_statement(node).ok_or("Select an expression inside a statement")?;
+    let expression = text(node, src);
+    let name = name.map_or_else(
+        || suggested_name(expression),
+        |n| n.trim().trim_start_matches('$').to_string(),
+    );
+    let (at, indent) = member_slot(src, body);
+    let line = line_start(src, statement.start_byte());
+    let statement_indent = indent_at(src, statement.start_byte());
+    let mut edits = vec![
+        Edit {
+            path: None,
+            start: at,
+            end: at,
+            text: format!("{indent}private ${name};\n\n"),
+        },
+        Edit {
+            path: None,
+            start: line,
+            end: line,
+            text: format!("{statement_indent}$this->{name} = {expression};\n"),
+        },
+    ];
+    edits.extend(replace_occurrences(
+        src,
+        statement,
+        expression,
+        &format!("$this->{name}"),
+    ));
+    let caret = at + indent.len() + "private $".len();
+    Ok(LocalRefactoring { edits, caret })
+}
+
+/// Introduce Parameter: adds `$name = expression` as the last parameter of
+/// the enclosing function or method and uses it in place of the selected
+/// expression throughout the body; existing calls keep working through the
+/// default value.
+///
+/// # Errors
+/// Returns a message when the selection is not one whole expression inside
+/// a function or method.
+pub fn introduce_parameter(
+    src: &str,
+    start: usize,
+    end: usize,
+    name: Option<&str>,
+) -> Result<LocalRefactoring, String> {
+    let tree = parse(src);
+    let node = selected_expression(&tree, src, start, end)?;
+    let function = ancestor(node, &["function_definition", "method_declaration"])
+        .ok_or("Select an expression inside a function")?;
+    let params = function
+        .child_by_field_name("parameters")
+        .ok_or("Select an expression inside a function")?;
+    let body = function
+        .child_by_field_name("body")
+        .ok_or("Select an expression inside a function")?;
+    let expression = text(node, src);
+    let name = name.map_or_else(
+        || suggested_name(expression),
+        |n| n.trim().trim_start_matches('$').to_string(),
+    );
+    let close = params.end_byte() - 1;
+    let separator = if params.named_child_count() > 0 {
+        ", "
+    } else {
+        ""
+    };
+    let mut edits = vec![Edit {
+        path: None,
+        start: close,
+        end: close,
+        text: format!("{separator}${name} = {expression}"),
+    }];
+    edits.extend(replace_occurrences(
+        src,
+        body,
+        expression,
+        &format!("${name}"),
+    ));
+    let caret = close + separator.len() + 1;
+    Ok(LocalRefactoring { edits, caret })
+}
+
 /// Inlines the variable at `byte`: its single assignment `$x = expr;` is
 /// removed and every later read of `$x` becomes `expr` (parenthesized when
 /// it is an operation).
@@ -524,5 +762,38 @@ mod tests {
             "<?php\nclass A {\n    public function run()\n    {\n        return 1;\n    }\n}\n";
         let start = src.find("return 1;").unwrap();
         assert!(extract_method(src, start, start + "return 1;".len(), "x").is_err());
+    }
+
+    #[test]
+    fn introduce_constant_should_declare_and_replace() {
+        let src = "<?php\nclass A\n{\n    public function f()\n    {\n        return 60 * 60;\n    }\n}\n";
+        let at = src.find("60 * 60").unwrap();
+        let plan = introduce_constant(src, at, at + 7, Some("HOUR")).unwrap();
+        let out = apply_edits(src, &plan.edits);
+        assert!(
+            out.contains("private const HOUR = 60 * 60;") && out.contains("return self::HOUR;")
+        );
+    }
+
+    #[test]
+    fn introduce_parameter_should_add_a_default() {
+        let src = "<?php\nfunction f($a)\n{\n    return $a * 1.2;\n}\n";
+        let at = src.find("1.2").unwrap();
+        let plan = introduce_parameter(src, at, at + 3, Some("rate")).unwrap();
+        let out = apply_edits(src, &plan.edits);
+        assert!(out.contains("function f($a, $rate = 1.2)") && out.contains("return $a * $rate;"));
+    }
+
+    #[test]
+    fn introduce_field_should_assign_before_the_statement() {
+        let src =
+            "<?php\nclass A\n{\n    public function f()\n    {\n        g(new B());\n    }\n}\n";
+        let at = src.find("new B()").unwrap();
+        let plan = introduce_field(src, at, at + 7, Some("b")).unwrap();
+        let out = apply_edits(src, &plan.edits);
+        assert!(
+            out.contains("private $b;")
+                && out.contains("$this->b = new B();\n        g($this->b);")
+        );
     }
 }

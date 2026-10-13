@@ -610,6 +610,12 @@ pub enum RefactorAction {
     ExtractMethod(usize, usize),
     /// Change the parameters of the function or method at this offset.
     ChangeSignature(usize),
+    /// Turn the expression in this byte range into a class constant.
+    IntroduceConstant(usize, usize),
+    /// Turn the expression in this byte range into a property.
+    IntroduceField(usize, usize),
+    /// Turn the expression in this byte range into a parameter.
+    IntroduceParameter(usize, usize),
     /// Move the class of the active file to another namespace.
     MoveClass,
 }
@@ -645,6 +651,15 @@ impl Intention {
                 tr!("refactor-change-signature")
             }
             Intention::Refactor(RefactorAction::MoveClass) => tr!("refactor-move-class"),
+            Intention::Refactor(RefactorAction::IntroduceConstant(..)) => {
+                tr!("refactor-introduce-constant")
+            }
+            Intention::Refactor(RefactorAction::IntroduceField(..)) => {
+                tr!("refactor-introduce-field")
+            }
+            Intention::Refactor(RefactorAction::IntroduceParameter(..)) => {
+                tr!("refactor-introduce-parameter")
+            }
             Intention::InlineVariable => tr!("refactor-inline-variable"),
         }
     }

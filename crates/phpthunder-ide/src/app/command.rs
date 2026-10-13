@@ -176,6 +176,15 @@ impl App {
             Cmd::CompareWithClipboard => self.compare_with_clipboard(),
             Cmd::LocalHistory => self.open_local_history(),
             Cmd::Annotate => self.toggle_annotate(),
+            Cmd::IntroduceConstant => {
+                self.introduce_from_selection(crate::app::RefactorAction::IntroduceConstant)
+            }
+            Cmd::IntroduceField => {
+                self.introduce_from_selection(crate::app::RefactorAction::IntroduceField)
+            }
+            Cmd::IntroduceParameter => {
+                self.introduce_from_selection(crate::app::RefactorAction::IntroduceParameter)
+            }
         }
     }
 
