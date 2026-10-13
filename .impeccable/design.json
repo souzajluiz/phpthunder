@@ -1,0 +1,614 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T18:37:37.056835+00:00",
+  "title": "Design System: phpthunder",
+  "extensions": {
+    "colorMeta": {
+      "thunder-lilac": {
+        "role": "primary",
+        "displayName": "Thunder Lilac",
+        "canonical": "#B98BE8",
+        "tonalRamp": [
+          "#260D40",
+          "#431670",
+          "#6020A1",
+          "#7D2AD2",
+          "#9A58DE",
+          "#B788E7",
+          "#D5B9F1",
+          "#F2EAFB"
+        ]
+      },
+      "thunder-lilac-bright": {
+        "role": "primary",
+        "displayName": "Thunder Lilac Bright",
+        "canonical": "#CBA5F0",
+        "tonalRamp": [
+          "#270B42",
+          "#441374",
+          "#611CA5",
+          "#7F24D7",
+          "#9C53E2",
+          "#B985EB",
+          "#D6B7F3",
+          "#F2E9FB"
+        ]
+      },
+      "thunder-lilac-deep": {
+        "role": "primary",
+        "displayName": "Thunder Lilac Deep",
+        "canonical": "#A373D6",
+        "tonalRamp": [
+          "#26113B",
+          "#421F68",
+          "#5F2C95",
+          "#7C39C2",
+          "#9964D2",
+          "#B791DF",
+          "#D4BEEC",
+          "#F2EBF9"
+        ]
+      },
+      "island": {
+        "role": "neutral",
+        "displayName": "Island Night",
+        "canonical": "#1D1D26",
+        "tonalRamp": [
+          "#21212B",
+          "#3A3A4C",
+          "#54546E",
+          "#6D6D8F",
+          "#8D8DA8",
+          "#AEAEC2",
+          "#CFCFDB",
+          "#F1F1F4"
+        ]
+      },
+      "frame": {
+        "role": "neutral",
+        "displayName": "Storm Frame",
+        "canonical": "#2F2F40",
+        "tonalRamp": [
+          "#20202C",
+          "#39394E",
+          "#52526F",
+          "#6A6A91",
+          "#8B8BAA",
+          "#ADADC3",
+          "#CFCFDC",
+          "#F0F0F4"
+        ]
+      },
+      "popup": {
+        "role": "neutral",
+        "displayName": "Cloud Popup",
+        "canonical": "#2C2C3B",
+        "tonalRamp": [
+          "#21212C",
+          "#3A3A4D",
+          "#52526F",
+          "#6B6B90",
+          "#8C8CA9",
+          "#AEAEC2",
+          "#CFCFDB",
+          "#F0F0F4"
+        ]
+      },
+      "caret-line": {
+        "role": "neutral",
+        "displayName": "Caret Band",
+        "canonical": "#242433",
+        "tonalRamp": [
+          "#20202D",
+          "#38384F",
+          "#505071",
+          "#686893",
+          "#8A8AAC",
+          "#ACACC4",
+          "#CECEDC",
+          "#F0F0F4"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Seam",
+        "canonical": "#2E2D3D",
+        "tonalRamp": [
+          "#21202C",
+          "#3A394E",
+          "#54526F",
+          "#6D6B91",
+          "#8E8CAA",
+          "#AFADC3",
+          "#D0CFDB",
+          "#F1F0F4"
+        ]
+      },
+      "border-strong": {
+        "role": "neutral",
+        "displayName": "Popup Outline",
+        "canonical": "#4E4C63",
+        "tonalRamp": [
+          "#22212B",
+          "#3C3B4C",
+          "#56546D",
+          "#706D8E",
+          "#908EA8",
+          "#B0AFC1",
+          "#D1D0DB",
+          "#F1F1F4"
+        ]
+      },
+      "selected": {
+        "role": "neutral",
+        "displayName": "Dusk Selection",
+        "canonical": "#34334A",
+        "tonalRamp": [
+          "#201F2D",
+          "#383750",
+          "#504F72",
+          "#696795",
+          "#8A88AD",
+          "#ACABC5",
+          "#CECDDD",
+          "#F0F0F5"
+        ]
+      },
+      "selected-strong": {
+        "role": "neutral",
+        "displayName": "Plum Selection",
+        "canonical": "#5C3A7A",
+        "tonalRamp": [
+          "#271934",
+          "#452B5B",
+          "#633E83",
+          "#8051AA",
+          "#9D77BE",
+          "#BA9FD1",
+          "#D6C6E4",
+          "#F3EEF7"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Text",
+        "canonical": "#D0D0D9",
+        "tonalRamp": [
+          "#22222A",
+          "#3C3C4B",
+          "#56566B",
+          "#70708B",
+          "#9090A5",
+          "#B0B0BF",
+          "#D1D1DA",
+          "#F1F1F4"
+        ]
+      },
+      "text-bright": {
+        "role": "neutral",
+        "displayName": "Text Bright",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#262626",
+          "#434343",
+          "#616161",
+          "#7E7E7E",
+          "#9B9B9B",
+          "#B8B8B8",
+          "#D5D5D5",
+          "#F2F2F2"
+        ]
+      },
+      "text-soft": {
+        "role": "neutral",
+        "displayName": "Text Soft",
+        "canonical": "#C9C9D1",
+        "tonalRamp": [
+          "#232329",
+          "#3E3E49",
+          "#595968",
+          "#747488",
+          "#9393A3",
+          "#B2B2BE",
+          "#D2D2D8",
+          "#F1F1F3"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#8785A6",
+        "tonalRamp": [
+          "#21202C",
+          "#3A394E",
+          "#535170",
+          "#6C6A91",
+          "#8D8BAA",
+          "#AEADC3",
+          "#CFCFDC",
+          "#F0F0F4"
+        ]
+      },
+      "gutter": {
+        "role": "neutral",
+        "displayName": "Gutter",
+        "canonical": "#575566",
+        "tonalRamp": [
+          "#24232A",
+          "#3F3D4A",
+          "#5A5869",
+          "#757289",
+          "#9492A4",
+          "#B3B2BE",
+          "#D2D1D9",
+          "#F1F1F3"
+        ]
+      },
+      "ink-on-accent": {
+        "role": "neutral",
+        "displayName": "Ink On Accent",
+        "canonical": "#14161C",
+        "tonalRamp": [
+          "#20232D",
+          "#383E4F",
+          "#505871",
+          "#697393",
+          "#8A92AC",
+          "#ACB2C4",
+          "#CED2DC",
+          "#F0F1F4"
+        ]
+      },
+      "input-well": {
+        "role": "neutral",
+        "displayName": "Input Well",
+        "canonical": "#151821",
+        "tonalRamp": [
+          "#1E222F",
+          "#343C52",
+          "#4B5676",
+          "#62709A",
+          "#8590B1",
+          "#A8B0C8",
+          "#CCD0DE",
+          "#EFF1F5"
+        ]
+      },
+      "input-stroke": {
+        "role": "neutral",
+        "displayName": "Input Stroke",
+        "canonical": "#262B36",
+        "tonalRamp": [
+          "#20242D",
+          "#383F4F",
+          "#505A71",
+          "#687594",
+          "#8994AC",
+          "#ACB3C4",
+          "#CED2DC",
+          "#F0F1F4"
+        ]
+      },
+      "placeholder": {
+        "role": "neutral",
+        "displayName": "Placeholder",
+        "canonical": "#5C6475",
+        "tonalRamp": [
+          "#22252B",
+          "#3B404B",
+          "#555C6C",
+          "#6F788D",
+          "#8F97A7",
+          "#AFB5C0",
+          "#D0D3DA",
+          "#F1F2F4"
+        ]
+      },
+      "selection": {
+        "role": "neutral",
+        "displayName": "Selection Blue",
+        "canonical": "#2B3A5C",
+        "tonalRamp": [
+          "#182134",
+          "#2B3A5C",
+          "#3D5384",
+          "#506CAB",
+          "#768DBF",
+          "#9EAED2",
+          "#C6CFE4",
+          "#EEF0F7"
+        ]
+      },
+      "success": {
+        "role": "semantic",
+        "displayName": "Success",
+        "canonical": "#76B366",
+        "tonalRamp": [
+          "#1F3319",
+          "#365A2D",
+          "#4E8140",
+          "#65A853",
+          "#87BD79",
+          "#AAD0A0",
+          "#CDE3C7",
+          "#F0F7EE"
+        ]
+      },
+      "warning": {
+        "role": "semantic",
+        "displayName": "Warning",
+        "canonical": "#E0AF68",
+        "tonalRamp": [
+          "#3F2B0D",
+          "#704C17",
+          "#A06C21",
+          "#D18D2B",
+          "#DDA759",
+          "#E7C189",
+          "#F1DAB9",
+          "#FBF4EA"
+        ]
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "Danger",
+        "canonical": "#DD3962",
+        "tonalRamp": [
+          "#410B19",
+          "#73142C",
+          "#A51C3E",
+          "#D72551",
+          "#E25477",
+          "#EA869F",
+          "#F3B7C6",
+          "#FBE9EE"
+        ]
+      },
+      "syn-keyword": {
+        "role": "syntax",
+        "displayName": "Syn Keyword",
+        "canonical": "#E6967A",
+        "tonalRamp": [
+          "#401A0C",
+          "#712D15",
+          "#A3411F",
+          "#D45428",
+          "#DF7A56",
+          "#E9A187",
+          "#F2C7B8",
+          "#FBEEEA"
+        ]
+      },
+      "syn-function": {
+        "role": "syntax",
+        "displayName": "Syn Function",
+        "canonical": "#C7A65D",
+        "tonalRamp": [
+          "#392D14",
+          "#645023",
+          "#8F7232",
+          "#BB9541",
+          "#CCAD6A",
+          "#DBC595",
+          "#E9DDC1",
+          "#F8F5EC"
+        ]
+      },
+      "syn-field": {
+        "role": "syntax",
+        "displayName": "Syn Field",
+        "canonical": "#93A6F5",
+        "tonalRamp": [
+          "#061346",
+          "#0B217B",
+          "#102FB1",
+          "#153EE6",
+          "#4868EE",
+          "#7D94F3",
+          "#B2C0F8",
+          "#E8ECFD"
+        ]
+      },
+      "syn-string": {
+        "role": "syntax",
+        "displayName": "Syn String",
+        "canonical": "#62A362",
+        "tonalRamp": [
+          "#1C301C",
+          "#325532",
+          "#477A47",
+          "#5D9E5D",
+          "#81B581",
+          "#A5CBA5",
+          "#CAE0CA",
+          "#EFF6EF"
+        ]
+      },
+      "syn-number": {
+        "role": "syntax",
+        "displayName": "Syn Number",
+        "canonical": "#37AEF3",
+        "tonalRamp": [
+          "#042F48",
+          "#08537F",
+          "#0B77B6",
+          "#0E9BED",
+          "#42B2F4",
+          "#79C9F7",
+          "#B0DFFA",
+          "#E7F5FE"
+        ]
+      },
+      "syn-comment": {
+        "role": "syntax",
+        "displayName": "Syn Comment",
+        "canonical": "#676773",
+        "tonalRamp": [
+          "#242428",
+          "#404047",
+          "#5B5B66",
+          "#777785",
+          "#9595A0",
+          "#B4B4BC",
+          "#D3D3D7",
+          "#F2F2F3"
+        ]
+      },
+      "syn-doc-tag": {
+        "role": "syntax",
+        "displayName": "Syn Doc Tag",
+        "canonical": "#8C6154",
+        "tonalRamp": [
+          "#30211D",
+          "#543A33",
+          "#795448",
+          "#9D6D5E",
+          "#B48D82",
+          "#CAAEA6",
+          "#E0CFCB",
+          "#F5F1EF"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Title",
+        "purpose": "Dialog titles, section headers, wordmark."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default UI text and rows."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Button labels, file names in results, metadata."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Editor, gutter, code previews, shortcut labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "float",
+        "value": "0 12px 32px rgba(0,0,0,0.45)",
+        "purpose": "Only on floating surfaces: popups, palette, dialogs, tooltips, toasts."
+      }
+    ],
+    "motion": [],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one call to action on a surface (Open Folder, Find).",
+      "html": "<button class=\"ds-btn-primary\">Open Folder</button>",
+      "css": ".ds-btn-primary{font-family:Geist,system-ui,sans-serif;font-size:13px;font-weight:500;background:#B98BE8;color:#14161C;padding:4px 10px;border:none;border-radius:6px;cursor:pointer}.ds-btn-primary:hover{background:#CBA5F0}.ds-btn-primary:active{background:#A373D6}.ds-btn-primary:focus-visible{outline:1px solid #CBA5F0;outline-offset:2px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Close buttons, find arrows, replace actions; quiet until touched.",
+      "html": "<button class=\"ds-btn-ghost\">Replace</button>",
+      "css": ".ds-btn-ghost{font-family:Geist,system-ui,sans-serif;font-size:13px;background:transparent;color:#8785A6;padding:2px 6px;border:none;border-radius:4px;cursor:pointer}.ds-btn-ghost:hover{background:rgba(255,255,255,.06);color:#FFFFFF}.ds-btn-ghost:active{background:rgba(255,255,255,.11);color:#FFFFFF}.ds-btn-ghost:focus-visible{outline:1px solid #B98BE8}"
+    },
+    {
+      "name": "Toggle",
+      "kind": "chip",
+      "refersTo": "button-ghost",
+      "description": "Regex / case / whole-word find toggles.",
+      "html": "<span class=\"ds-wrap\"><button class=\"ds-toggle ds-on\">.*</button><button class=\"ds-toggle\">Aa</button></span>",
+      "css": ".ds-wrap{display:inline-flex;gap:4px;background:#1D1D26;padding:6px;border-radius:8px}.ds-toggle{font-family:'Geist Mono',monospace;font-size:12px;background:transparent;color:#8785A6;border:1px solid transparent;border-radius:4px;padding:2px 6px;cursor:pointer}.ds-toggle:hover{background:rgba(255,255,255,.06)}.ds-toggle.ds-on{background:rgba(185,139,232,.16);color:#B98BE8;border-color:rgba(185,139,232,.45)}"
+    },
+    {
+      "name": "Boxed Input",
+      "kind": "input",
+      "refersTo": "input-boxed",
+      "description": "Find bar and dialog fields; stroke turns lilac on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Find in path\">",
+      "css": ".ds-input{font-family:Geist,system-ui,sans-serif;font-size:13px;background:#151821;color:#FFFFFF;border:1px solid #262B36;border-radius:5px;padding:4px 8px;outline:none;width:220px}.ds-input::placeholder{color:#5C6475}.ds-input:focus,.ds-input:focus-visible{border-color:#B98BE8}"
+    },
+    {
+      "name": "Tree Rows",
+      "kind": "nav",
+      "refersTo": "row",
+      "description": "Project tree and list rows, 26px, selected fill.",
+      "html": "<div class=\"ds-tree\"><div class=\"ds-row\">app</div><div class=\"ds-row ds-sel\">User.php</div><div class=\"ds-row\">routes</div></div>",
+      "css": ".ds-tree{background:#1D1D26;padding:6px;border-radius:10px;width:200px}.ds-row{font-family:Geist,system-ui,sans-serif;font-size:13px;color:#C9C9D1;height:26px;line-height:26px;padding:0 8px;border-radius:4px;cursor:pointer}.ds-row:hover{background:rgba(255,255,255,.06)}.ds-row.ds-sel{background:#34334A;color:#FFFFFF}.ds-row.ds-sel:active{background:#5C3A7A}"
+    },
+    {
+      "name": "Tool Rail",
+      "kind": "nav",
+      "refersTo": "rail-button",
+      "description": "Vertical tool rail on the frame; active tool lilac.",
+      "html": "<div class=\"ds-rail\"><button class=\"ds-rail-btn ds-act\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\"><path d=\"M2 4h4l1 1.5h7V13H2z\"/></svg></button><button class=\"ds-rail-btn\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\"><circle cx=\"7\" cy=\"7\" r=\"4\"/><path d=\"M10 10l3.5 3.5\"/></svg></button></div>",
+      "css": ".ds-rail{display:inline-flex;flex-direction:column;gap:4px;background:#2F2F40;padding:5px;border-radius:0}.ds-rail-btn{width:30px;height:30px;display:grid;place-items:center;background:transparent;color:#8785A6;border:none;border-radius:8px;cursor:pointer}.ds-rail-btn:hover{background:rgba(255,255,255,.06)}.ds-rail-btn.ds-act{background:#34334A;color:#B98BE8}"
+    },
+    {
+      "name": "Popup",
+      "kind": "card",
+      "refersTo": "popup",
+      "description": "Floating surface: completion, hover, palette, dialogs. Only element with a shadow.",
+      "html": "<div class=\"ds-popup\"><div class=\"ds-crow ds-csel\"><span class=\"ds-badge\" style=\"background:#C7A65D\">m</span><code>getUserName()</code></div><div class=\"ds-crow\"><span class=\"ds-badge\" style=\"background:#93A6F5\">p</span><code>email</code></div></div>",
+      "css": ".ds-popup{background:#2C2C3B;border:1px solid #4E4C63;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.45);padding:4px;width:260px;color:#D0D0D9}.ds-crow{display:flex;gap:8px;align-items:center;height:28px;padding:0 8px;border-radius:4px;font-family:'Geist Mono',monospace;font-size:13px}.ds-crow:hover{background:rgba(255,255,255,.06)}.ds-csel{background:#5C3A7A;color:#FFFFFF}.ds-badge{width:16px;height:16px;border-radius:4px;color:#1D1D26;font-size:11px;display:grid;place-items:center;font-family:'Geist Mono',monospace}.ds-crow code{font-family:inherit}"
+    },
+    {
+      "name": "Pill",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Declaration marker in the usages panel.",
+      "html": "<span class=\"ds-pill\">declaration</span>",
+      "css": ".ds-pill{font-family:Geist,system-ui,sans-serif;font-size:12px;background:#262B36;color:#8785A6;padding:2px 6px;border-radius:4px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Storm Glass",
+    "overview": "The workbench is a calm purple-gray sky seen through glass. Rounded dark islands (project tree, editor, bottom panel) float on a slightly lighter violet frame that holds the title bar, tool rail and status bar. Nothing glows at rest. The single lilac accent is the lightning: it strikes only where attention must land right now (the active tool, a fuzzy-match letter, a focused field, the one primary action) and is gone everywhere else.\n\nThe mood is calm, dense, precise. This is a tool used for whole days, so chrome contrast stays low and information density stays high: 26px rows, 13px UI text, 22px code lines. Color carries meaning, not decoration; the warm syntax hues (coral keywords, ochre functions, periwinkle fields) are the brightest things on screen because the code is the work.\n\nEverything is native and drawn by iced in Rust: no web chrome, no gradients, no blur. Interactive surfaces are quiet until touched, answering hover with a faint white wash and press with a deeper one.",
+    "keyCharacteristics": [
+      "Dark tonal islands (10px corners) separated by a 5px gap of violet frame.",
+      "One accent, Thunder Lilac, used surgically.",
+      "Geist for interface, Geist Mono for code, both bundled.",
+      "Flat panes; only floating surfaces cast shadows.",
+      "Translucent interaction washes that work on every surface."
+    ],
+    "rules": [
+      {
+        "name": "The Lightning Rule",
+        "body": "Thunder Lilac appears only where attention must land now. If two lilac things compete on one screen, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Wash Rule",
+        "body": "Hover and press are translucent white washes (`hover-wash`, `pressed-wash`), never new solid colors, so one token reads on frame, island and popup alike.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Family Rule",
+        "body": "Only Geist and Geist Mono. Hierarchy comes from weight (400/500/600) and the text-color ladder, not from size jumps; nothing in the workbench exceeds 14px.",
+        "section": "typography"
+      },
+      {
+        "name": "The Float-Only Shadow Rule",
+        "body": "If it does not float over other content, it does not cast a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** take every color from the theme palette in `ui/theme.rs`; add a named constant before using a new shade twice.",
+      "**Do** use `hover-wash` / `pressed-wash` for interaction feedback on any surface.",
+      "**Do** keep UI text at 12\u201314px and let weight and the text ladder carry hierarchy.",
+      "**Do** separate panes with tone and the 5px frame gap, not lines.",
+      "**Do** use the in-house inline SVG icons, drawn in `muted` and lilac only when active."
+    ],
+    "donts": [
+      "**Don't** use Thunder Lilac for decoration, large fills or more than one competing element per screen.",
+      "**Don't** put shadows on panes, rows or anything that does not float.",
+      "**Don't** introduce fonts beyond Geist and Geist Mono.",
+      "**Don't** use web-style effects (gradients, blur, glow); the GUI is native iced.",
+      "**Don't** make selection lilac; selection stays Selection Blue."
+    ]
+  }
+}
