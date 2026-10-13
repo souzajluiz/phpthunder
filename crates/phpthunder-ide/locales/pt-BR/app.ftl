@@ -267,3 +267,6 @@ cmd-previous-error = Problema anterior
 action-find-action = Localizar ação
 action-surround-with = Envolver com
 notice-no-problems = Nenhum problema neste arquivo
+cmd-quick-doc = Documentação rápida
+cmd-toggle-whitespace = Mostrar espaços em branco
+notice-no-documentation = Sem documentação aqui

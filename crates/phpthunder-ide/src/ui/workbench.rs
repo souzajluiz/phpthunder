@@ -759,6 +759,15 @@ impl App {
         for mark in self.find_marks(doc) {
             content = content.push_under(mark);
         }
+        for mark in self.caret_marks(doc) {
+            content = content.push_under(mark);
+        }
+        for mark in self.indent_guides(doc) {
+            content = content.push_under(mark);
+        }
+        for mark in self.whitespace_marks(doc) {
+            content = content.push(mark);
+        }
         for mark in self.diagnostic_marks(doc) {
             content = content.push_under(mark);
         }
@@ -905,6 +914,9 @@ impl App {
     /// `notice`. Built inside `responsive` so the editor's size is known.
     fn overlays<'a>(&'a self, doc: &'a Document, size: Size) -> El<'a> {
         let mut layers = Stack::new().width(Fill).height(Fill);
+        if let Some(sticky) = self.sticky_lines(doc) {
+            layers = layers.push(sticky);
+        }
         let scroll = doc.scroll_y;
         let layout = self.wrap_layout(doc);
         let top = |line: usize, col: usize| crate::app::row_top(&layout, line, col);

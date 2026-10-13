@@ -162,7 +162,7 @@ impl Document {
 
     /// The bracket pair touching the caret: the bracket right after it,
     /// else the one right before it, with its match. Used to highlight the
-    /// pair and by `⌃⇧M`.
+    /// pair and by `⌃M`.
     pub fn bracket_pair_at_caret(&self) -> Option<(usize, usize)> {
         let caret = self.offset(self.cursor());
         let is_bracket = |c: char| PAIRS.iter().any(|(o, cl)| *o == c || *cl == c);
@@ -177,7 +177,12 @@ impl Document {
 
     /// The innermost bracket pair strictly enclosing the range `lo..hi`,
     /// as the offsets of its opening and closing brackets.
-    fn enclosing_pair(&self, lo: usize, hi: usize, only: Option<char>) -> Option<(usize, usize)> {
+    pub fn enclosing_pair(
+        &self,
+        lo: usize,
+        hi: usize,
+        only: Option<char>,
+    ) -> Option<(usize, usize)> {
         let mut depth: Vec<char> = Vec::new();
         for (i, ch) in self.text[..lo].char_indices().rev() {
             if self.in_literal(i) {
@@ -199,7 +204,66 @@ impl Document {
         None
     }
 
-    /// `⌃⇧M`: moves the caret to the bracket matching the one at the caret.
+    /// The identifier at the caret (a `$variable` with its `$`), unless it
+    /// is inside a string or comment; used to highlight its occurrences.
+    pub fn identifier_at_caret(&self) -> Option<(usize, usize)> {
+        let caret = self.offset(self.cursor());
+        let (mut start, end) = self.word_at(caret);
+        if start == end || self.in_literal(start) {
+            return None;
+        }
+        if self.char_before(start) == Some('$') {
+            start -= 1;
+        }
+        let first = self.text[start..].chars().next()?;
+        (first == '$' || first.is_alphabetic() || first == '_').then_some((start, end))
+    }
+
+    /// Start offsets of whole-word occurrences of `word` in `from..to`,
+    /// outside strings and comments.
+    pub fn occurrences_in(&self, word: &str, from: usize, to: usize) -> Vec<usize> {
+        let to = to.min(self.text.len());
+        let mut out = Vec::new();
+        let mut at = from;
+        while let Some(i) = self.text[at..to].find(word) {
+            let start = at + i;
+            let end = start + word.len();
+            let bounded = self
+                .char_before(start)
+                .is_none_or(|c| !is_word(c) && c != '$')
+                && self.char_after(end).is_none_or(|c| !is_word(c));
+            if bounded && !self.in_literal(start) {
+                out.push(start);
+            }
+            at = end;
+        }
+        out
+    }
+
+    /// Lines heading the `{` blocks that enclose the start of `line` and
+    /// begin above it, outermost first, at most `limit`: what sticky lines
+    /// pin to the top of the editor. A brace alone on its line is headed by
+    /// the line before it.
+    pub fn enclosing_headers(&self, line: usize, limit: usize) -> Vec<usize> {
+        let offset = self.line_start(line);
+        let mut headers = Vec::new();
+        let (mut lo, mut hi) = (offset, offset);
+        while let Some((open, close)) = self.enclosing_pair(lo, hi, Some('{')) {
+            let mut header = self.position_of(open).line;
+            if self.line_text(header).trim() == "{" && header > 0 {
+                header -= 1;
+            }
+            if header < line {
+                headers.push(header);
+            }
+            (lo, hi) = (open, close + 1);
+        }
+        headers.reverse();
+        headers.truncate(limit);
+        headers
+    }
+
+    /// `⌃M`: moves the caret to the bracket matching the one at the caret.
     pub fn jump_to_matching_bracket(&mut self) {
         let caret = self.offset(self.cursor());
         if let Some((a, b)) = self.bracket_pair_at_caret() {
@@ -658,7 +722,7 @@ impl Document {
         self.replace(start, caret, &first);
     }
 
-    /// `⇧⌘⌫`: removes the block construct around the caret (`if`,
+    /// `⇧⌘⌦`: removes the block construct around the caret (`if`,
     /// `foreach`, `try`, a bare `{ }`, …), keeping its body one level less
     /// indented; `else`/`catch`/`finally` branches go with it.
     pub fn unwrap_block(&mut self) {
@@ -926,6 +990,18 @@ mod tests {
         at(&mut d, 4);
         d.jump_to_block_edge(true);
         assert_eq!(d.offset(d.cursor()), 9);
+    }
+
+    #[test]
+    fn occurrences_in_should_match_whole_words_only() {
+        let d = doc("<?php $a = $ab + $a; // $a");
+        assert_eq!(d.occurrences_in("$a", 0, d.text.len()), [6, 17]);
+    }
+
+    #[test]
+    fn enclosing_headers_should_list_outer_blocks_first() {
+        let d = doc("class A\n{\n    function f() {\n        x();\n    }\n}");
+        assert_eq!(d.enclosing_headers(3, 3), [0, 2]);
     }
 
     #[test]

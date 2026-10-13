@@ -2,6 +2,7 @@
 
 mod console;
 mod debug;
+mod editor_marks;
 mod file_icon;
 mod git;
 mod icons;

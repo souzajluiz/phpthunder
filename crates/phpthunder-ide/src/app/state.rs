@@ -149,6 +149,8 @@ pub struct App {
     pub phpstan_running: bool,
     /// Route names, views and config keys of a Laravel project.
     pub laravel: LaravelScan,
+    /// Whether spaces and tabs are drawn as dots and arrows.
+    pub show_whitespace: bool,
     /// Claude plan limits last reported by the Claude panel's CLI.
     pub claude_usage: crate::claude_usage::Usage,
     /// Installed Composer and npm packages, from the project's lock files;
@@ -319,6 +321,7 @@ impl App {
             laravel: None,
             packages: crate::packages::Installs::default(),
             claude_usage: crate::claude_usage::Usage::default(),
+            show_whitespace: false,
             git: None,
             git_base: Default::default(),
             git_marks: Default::default(),
@@ -767,6 +770,13 @@ impl App {
             Message::ToggleSidebar => {
                 self.sidebar = !self.sidebar;
                 Task::none()
+            }
+            Message::JumpToLine(line) => {
+                let Some(doc) = self.doc() else {
+                    return Task::none();
+                };
+                let column = doc.line_text(line).len() - doc.line_text(line).trim_start().len();
+                self.place_cursor(iced::widget::text_editor::Position { line, column })
             }
             Message::ClaudeUsageTick => {
                 self.claude_usage = crate::claude_usage::read(&crate::claude_usage::status_file());
@@ -1388,6 +1398,22 @@ impl App {
         Task::perform(tokio::time::sleep(HOVER_DELAY), move |_| {
             Message::HoverFire(generation)
         })
+    }
+
+    /// `F1` / `⌃J`: shows the hover popup (signature, docs, problems) for
+    /// the symbol at the caret instead of the mouse.
+    pub(crate) fn quick_doc(&mut self) -> Task<Message> {
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        let pos = doc.cursor();
+        let col = doc.visual_column(pos);
+        self.hover_at = Some((pos.line, col));
+        self.show_hover();
+        if self.hover.is_none() {
+            self.notice = Some(tr!("notice-no-documentation"));
+        }
+        Task::none()
     }
 
     /// Resolves the declaration of the PHP symbol under the mouse and fills

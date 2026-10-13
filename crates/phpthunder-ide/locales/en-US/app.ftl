@@ -268,3 +268,6 @@ cmd-previous-error = Previous problem
 action-find-action = Find Action
 action-surround-with = Surround With
 notice-no-problems = No problems in this file
+cmd-quick-doc = Quick documentation
+cmd-toggle-whitespace = Show whitespace
+notice-no-documentation = No documentation here

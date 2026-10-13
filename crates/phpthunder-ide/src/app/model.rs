@@ -148,6 +148,8 @@ pub enum Message {
     // Window
     /// Show or hide the project sidebar.
     ToggleSidebar,
+    /// Move the caret to the start of a line (sticky line clicked).
+    JumpToLine(usize),
     /// Re-read the Claude plan limits the panel's CLI last reported.
     ClaudeUsageTick,
     /// Switch the active Markdown tab between source, split and preview.

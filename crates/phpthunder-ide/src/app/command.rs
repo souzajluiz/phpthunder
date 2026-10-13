@@ -148,6 +148,11 @@ impl App {
             Cmd::FindAction => self.open_find_action(),
             Cmd::NextError => self.goto_problem(true),
             Cmd::PreviousError => self.goto_problem(false),
+            Cmd::QuickDoc => self.quick_doc(),
+            Cmd::ToggleWhitespace => {
+                self.show_whitespace = !self.show_whitespace;
+                Task::none()
+            }
         }
     }
 

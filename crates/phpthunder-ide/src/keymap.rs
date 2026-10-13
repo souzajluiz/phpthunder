@@ -156,7 +156,7 @@ pub enum Cmd {
     Transpose,
     /// Comment or uncomment with `/* */` (`⌥⌘/`).
     BlockComment,
-    /// Jump to the matching bracket (`⌃⇧M`).
+    /// Jump to the matching bracket (`⌃M`).
     MatchBrace,
     /// Jump to the start of the enclosing block (`⌥⌘[`).
     BlockStart,
@@ -164,7 +164,7 @@ pub enum Cmd {
     BlockEnd,
     /// Complete the word from words in the file, cycling (`⌥/`).
     WordCompletion,
-    /// Remove the block around the caret, keeping its body (`⇧⌘⌫`).
+    /// Remove the block around the caret, keeping its body (`⇧⌘⌦`).
     Unwrap,
     /// Surround the selection with a block construct (`⌥⌘T`).
     SurroundWith,
@@ -182,11 +182,15 @@ pub enum Cmd {
     NextError,
     /// Go to the previous problem in the file (`⇧F2`).
     PreviousError,
+    /// Documentation and problems of the symbol at the caret (`F1`, `⌃J`).
+    QuickDoc,
+    /// Show spaces and tabs as dots and arrows.
+    ToggleWhitespace,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 85] = {
+    pub const ALL: [Cmd; 87] = {
         use Cmd::*;
         [
             Save,
@@ -274,6 +278,8 @@ impl Cmd {
             FindAction,
             NextError,
             PreviousError,
+            QuickDoc,
+            ToggleWhitespace,
         ]
     };
 
@@ -358,7 +364,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("j") => {
             JoinLines
         }
-        Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("m") => {
+        Key::Character(c)
+            if m.control() && !shift && !cmd && !alt && c.eq_ignore_ascii_case("m") =>
+        {
             MatchBrace
         }
         Key::Character(c) if m.control() && !shift && !cmd && c.eq_ignore_ascii_case("t") => {
@@ -375,9 +383,15 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Named(Named::Enter) if cmd && alt => StartNewLineBefore,
         Key::Named(Named::Enter) if cmd => SplitLine,
         Key::Named(Named::Enter) if shift && !m.control() => StartNewLine,
+        Key::Named(Named::F1) if !alt && !shift => QuickDoc,
+        Key::Character(c)
+            if m.control() && !shift && !cmd && !alt && c.eq_ignore_ascii_case("j") =>
+        {
+            QuickDoc
+        }
         Key::Named(Named::F2) if shift && !cmd => PreviousError,
         Key::Named(Named::F2) if !cmd && !alt => NextError,
-        Key::Named(Named::Backspace) if cmd && shift => Unwrap,
+        Key::Named(Named::Delete) if cmd && shift => Unwrap,
         Key::Named(Named::F6) if shift => Rename,
         Key::Named(Named::F6) if cmd => ChangeSignature,
         Key::Named(Named::F6) => MoveClass,
@@ -486,17 +500,19 @@ pub fn hint(cmd: Cmd) -> &'static str {
         ToggleCase => "⇧⌘U",
         Transpose => "⌃T",
         BlockComment => "⌥⌘/",
-        MatchBrace => "⌃⇧M",
+        MatchBrace => "⌃M",
         BlockStart => "⌥⌘[",
         BlockEnd => "⌥⌘]",
         WordCompletion => "⌥/",
-        Unwrap => "⇧⌘⌫",
+        Unwrap => "⇧⌘⌦",
         SurroundWith => "⌥⌘T",
         SortLines | ReverseLines | UniqueLines => "",
         SelectAllOccurrences => "⌃⌘G",
         FindAction => "⇧⌘A",
         NextError => "F2",
         PreviousError => "⇧F2",
+        QuickDoc => "F1",
+        ToggleWhitespace => "",
     }
 }
 

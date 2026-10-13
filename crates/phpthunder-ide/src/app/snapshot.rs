@@ -5,8 +5,9 @@
 //! it first types `text` on a new line after line `n` and opens completion;
 //! `PHPTHUNDER_SNAPSHOT_WRAP=1` turns soft wrap on,
 //! `PHPTHUNDER_SNAPSHOT_CARETS=n` types with `n` carets on consecutive lines,
-//! and `PHPTHUNDER_SNAPSHOT_RIGHT=1` shows the terminal docked right and the
-//! Problems panel below.
+//! `PHPTHUNDER_SNAPSHOT_RIGHT=1` shows the terminal docked right and the
+//! Problems panel below, and `PHPTHUNDER_SNAPSHOT_GOTO=line[:column]`
+//! places the caret.
 //! Used to check the look without a screen recorder.
 
 use super::*;
@@ -78,7 +79,33 @@ impl App {
         } else {
             Task::none()
         };
-        Task::batch([open, typed, wrap, panels, shot])
+        // `PHPTHUNDER_SNAPSHOT_GOTO=line[:column]` (1-based line, 0-based
+        // column): place the caret there after opening.
+        let goto = match std::env::var("PHPTHUNDER_SNAPSHOT_GOTO").ok() {
+            Some(spec) => {
+                let mut parts = spec.split(':').map(|p| p.parse::<usize>().unwrap_or(0));
+                let line = parts.next().unwrap_or(1).saturating_sub(1);
+                let column = parts.next().unwrap_or(0);
+                let mut task = Task::perform(tokio::time::sleep(OPEN_DELAY * 2), move |()| {
+                    Message::JumpToLine(line)
+                })
+                .chain(Task::done(Message::Edit(
+                    iced::widget::text_editor::Action::Move(
+                        iced::widget::text_editor::Motion::Home,
+                    ),
+                )));
+                for _ in 0..column {
+                    task = task.chain(Task::done(Message::Edit(
+                        iced::widget::text_editor::Action::Move(
+                            iced::widget::text_editor::Motion::Right,
+                        ),
+                    )));
+                }
+                task
+            }
+            None => Task::none(),
+        };
+        Task::batch([open, typed, wrap, panels, goto, shot])
     }
 
     /// Types `text` on a new line after `PHPTHUNDER_SNAPSHOT_LINE` (default
