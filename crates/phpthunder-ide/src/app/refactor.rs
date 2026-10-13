@@ -137,7 +137,7 @@ impl App {
             let _ = std::fs::create_dir_all(dir);
         }
         if let Err(e) = std::fs::rename(from, to) {
-            self.notice = Some(tr!(
+            self.fail(tr!(
                 "notice-rename-failed",
                 path = from.display().to_string(),
                 error = e.to_string()

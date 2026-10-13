@@ -61,7 +61,7 @@ impl App {
             Ok(run) => self.tests = Some(Tests::Done(run)),
             Err(error) => {
                 self.tests = None;
-                self.notice = Some(error);
+                self.fail(error);
             }
         }
     }
@@ -92,7 +92,7 @@ impl App {
             }
         }
         if !failures.is_empty() {
-            self.notice = Some(tr!("notice-save-failed-many", files = failures.join(", ")));
+            self.fail(tr!("notice-save-failed-many", files = failures.join(", ")));
         }
     }
 
@@ -144,7 +144,7 @@ impl App {
                 (trimmed, tr!("notice-whitespace-trimmed"))
             }
             Err(error) => {
-                self.notice = Some(error);
+                self.fail(error);
                 return;
             }
         };
@@ -185,7 +185,7 @@ impl App {
         let findings = match result {
             Ok(f) => f,
             Err(error) => {
-                self.notice = Some(format!("PHPStan: {error}"));
+                self.fail(format!("PHPStan: {error}"));
                 return;
             }
         };

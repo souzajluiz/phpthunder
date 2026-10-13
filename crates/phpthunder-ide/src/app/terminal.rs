@@ -41,7 +41,7 @@ impl App {
         let (rows, cols) = self.terminal_grid.unwrap_or(DEFAULT_GRID);
         match Session::spawn(&self.console_cwd(), rows, cols) {
             Ok(session) => self.terminal = Some(session),
-            Err(error) => self.notice = Some(error),
+            Err(error) => self.fail(error),
         }
     }
 
@@ -92,7 +92,7 @@ impl App {
                 self.claude = Some(session);
                 self.notice = None;
             }
-            Err(error) => self.notice = Some(error),
+            Err(error) => self.fail(error),
         }
     }
 

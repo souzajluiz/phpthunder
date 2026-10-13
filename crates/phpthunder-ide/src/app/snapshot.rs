@@ -169,7 +169,7 @@ impl App {
             return Task::none();
         };
         if let Err(error) = write_png(&path, &shot) {
-            eprintln!("snapshot failed: {error}");
+            crate::log::error(format_args!("snapshot failed: {error}"));
         }
         iced::exit()
     }

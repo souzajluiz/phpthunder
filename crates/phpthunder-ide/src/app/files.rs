@@ -258,7 +258,7 @@ impl App {
                         Task::none()
                     }
                     Err(e) => {
-                        self.notice = Some(tr!("file-op-failed", error = e.to_string()));
+                        self.fail(tr!("file-op-failed", error = e.to_string()));
                         Task::none()
                     }
                 };

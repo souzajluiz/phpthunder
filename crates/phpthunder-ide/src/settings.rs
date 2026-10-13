@@ -101,6 +101,13 @@ fn config_dir() -> Option<String> {
     Some(dir.to_string_lossy().into_owned())
 }
 
+/// `~/.config/phpthunder` as a path, or `None` in snapshots and tests
+/// (which must not touch the user's files) or without a home folder. Used
+/// by `log` for the error log.
+pub fn user_config_dir() -> Option<PathBuf> {
+    config_dir().filter(|_| !is_snapshot()).map(PathBuf::from)
+}
+
 /// The user's settings, loaded on first use: `settings.toml` (or `.json`)
 /// when present and valid, else the defaults. A missing file is created
 /// from [`SETTINGS_TEMPLATE`] so the user finds every key; an invalid one
@@ -130,12 +137,12 @@ fn load_settings() -> Settings {
         let written =
             std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&path, SETTINGS_TEMPLATE));
         if let Err(error) = written {
-            eprintln!("could not write settings: {error}");
+            crate::log::error(format_args!("could not write settings: {error}"));
         }
         return Settings::default();
     }
     loader.find_and_load().unwrap_or_else(|error| {
-        eprintln!("ignoring invalid settings file: {error}");
+        crate::log::warn(format_args!("ignoring invalid settings file: {error}"));
         Settings::default()
     })
 }
@@ -176,7 +183,7 @@ pub fn save_panel_sizes(sidebar: u32, bottom: u32, right: u32) {
         std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&toml, text))
     };
     if let Err(error) = written {
-        eprintln!("could not save panel sizes: {error}");
+        crate::log::error(format_args!("could not save panel sizes: {error}"));
     }
 }
 
@@ -229,7 +236,7 @@ pub fn save_session<T: Serialize>(session: &T) {
         .with_file_name(SESSION_FILE)
         .with_formats(&formats);
     if let Err(error) = loader.save(session, &Format::Json) {
-        eprintln!("could not save session: {error}");
+        crate::log::error(format_args!("could not save session: {error}"));
     }
 }
 

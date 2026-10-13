@@ -349,7 +349,7 @@ impl App {
         match refactor::inline_variable(&doc.text, doc.offset(doc.cursor())) {
             Ok(plan) => self.apply_local(plan),
             Err(error) => {
-                self.notice = Some(error);
+                self.fail(error);
                 Task::none()
             }
         }

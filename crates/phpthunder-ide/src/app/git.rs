@@ -94,7 +94,7 @@ impl App {
                 }
             }
             Err(error) => {
-                self.notice = Some(tr!("git-failed", error = shorten(&error)));
+                self.fail(tr!("git-failed", error = shorten(&error)));
                 Task::none()
             }
         }
@@ -322,7 +322,7 @@ impl App {
         let branches = match result {
             Ok(b) => b,
             Err(error) => {
-                self.notice = Some(tr!("git-failed", error = shorten(&error)));
+                self.fail(tr!("git-failed", error = shorten(&error)));
                 return Task::none();
             }
         };
@@ -375,7 +375,7 @@ impl App {
         self.commit.busy = None;
         self.commit.confirm_discard = None;
         if let Err(error) = result {
-            self.notice = Some(tr!("git-failed", error = shorten(&error)));
+            self.fail(tr!("git-failed", error = shorten(&error)));
             return self.refresh_git();
         }
         let summary = result.unwrap_or_default();

@@ -403,6 +403,15 @@ impl App {
         }
     }
 
+    /// Shows `message` as the notice and writes it to the error log with
+    /// the caller's location. Used where an operation fails (save, git,
+    /// file ops, terminal, tools), not for informational notices.
+    #[track_caller]
+    pub(crate) fn fail(&mut self, message: String) {
+        crate::log::error(&message);
+        self.notice = Some(message);
+    }
+
     /// Active editor tab, if any; the target of most editor commands.
     pub fn doc(&self) -> Option<&Document> {
         self.active.and_then(|i| self.docs.get(i))
@@ -557,7 +566,7 @@ impl App {
             }
             Message::Indexed(Err(error)) => {
                 self.indexing = Indexing::Idle;
-                self.notice = Some(error);
+                self.fail(error);
                 Task::none()
             }
             Message::Indexed(Ok(report)) => {
@@ -592,7 +601,7 @@ impl App {
                     Task::batch([open, self.apply_pending_select(), base])
                 }
                 Err(e) => {
-                    self.notice = Some(tr!(
+                    self.fail(tr!(
                         "notice-open-failed",
                         path = path.display().to_string(),
                         error = e
@@ -1215,7 +1224,7 @@ impl App {
                 file = doc.title(),
                 error = e.to_string()
             );
-            self.notice = Some(msg);
+            self.fail(msg);
             return Task::none();
         }
         doc.mark_saved();

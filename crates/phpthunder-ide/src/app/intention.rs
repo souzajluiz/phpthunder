@@ -130,13 +130,11 @@ impl App {
         let updated = phpthunder::refactor::apply_edits(&text, edits);
         match std::fs::write(path, &updated) {
             Ok(()) => self.lang.update_file(path, &updated),
-            Err(e) => {
-                self.notice = Some(tr!(
-                    "notice-write-failed",
-                    path = path.display().to_string(),
-                    error = e.to_string()
-                ))
-            }
+            Err(e) => self.fail(tr!(
+                "notice-write-failed",
+                path = path.display().to_string(),
+                error = e.to_string()
+            )),
         }
     }
 

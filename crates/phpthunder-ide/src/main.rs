@@ -13,6 +13,7 @@ mod git;
 mod i18n;
 mod keymap;
 mod language;
+mod log;
 mod packages;
 mod palette;
 mod phpstan;
@@ -78,6 +79,7 @@ fn window_settings() -> window::Settings {
 ///
 /// Returns iced's error if the window or graphics backend cannot be created.
 fn main() -> iced::Result {
+    log::install_panic_hook();
     shell_env::import_login_path();
     i18n::init_locale(i18n::detect_locale());
     let mut application = iced::application(App::boot, App::update, App::view)
