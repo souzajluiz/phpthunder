@@ -69,6 +69,25 @@ pub struct SavedLayout {
     pub right: u32,
 }
 
+impl SavedLayout {
+    /// The sizes from the settings file; `None` until every key is set
+    /// (first start, or a settings file older than these keys).
+    pub fn from_settings() -> Option<Self> {
+        let settings = crate::settings::settings();
+        Some(Self {
+            sidebar: settings.sidebar_width?,
+            bottom: settings.bottom_height?,
+            right: settings.right_width?,
+        })
+    }
+
+    /// Writes the sizes to the settings file (`App::update`, after a drag
+    /// ends or a handle is reset).
+    pub fn save(self) {
+        crate::settings::save_panel_sizes(self.sidebar, self.bottom, self.right);
+    }
+}
+
 impl From<PaneSizes> for SavedLayout {
     fn from(sizes: PaneSizes) -> Self {
         Self {
@@ -187,9 +206,10 @@ impl Panes {
         changed
     }
 
-    /// Ends the drag (mouse released anywhere in the window).
-    pub fn end(&mut self) {
-        self.drag = None;
+    /// Ends the drag (mouse released anywhere in the window). Returns
+    /// whether a drag was in progress, so the caller saves the sizes once.
+    pub fn end(&mut self) -> bool {
+        self.drag.take().is_some()
     }
 
     /// Puts `splitter`'s pane back to its default size (double-click on the

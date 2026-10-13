@@ -321,7 +321,9 @@ impl App {
             gutter_y: 0.0,
             completion_stats: completion::load_completion_stats(),
         };
-        if let Some(layout) = app.session.layout {
+        // Sizes live in the settings file; older versions kept them in the
+        // session, still read until the first resize writes the settings.
+        if let Some(layout) = SavedLayout::from_settings().or(app.session.layout) {
             app.panes = Panes::new(layout.into());
         }
         // The folder given on the command line, else the last project
@@ -762,11 +764,14 @@ impl App {
                 Task::none()
             }
             Message::ResizeEnd => {
-                self.panes.end();
+                if self.panes.end() {
+                    SavedLayout::from(self.panes.sizes).save();
+                }
                 Task::none()
             }
             Message::ResizeReset(splitter) => {
                 self.panes.reset(splitter);
+                SavedLayout::from(self.panes.sizes).save();
                 Task::none()
             }
             Message::SplitterHover(splitter) => {

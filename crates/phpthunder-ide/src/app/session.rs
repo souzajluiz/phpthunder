@@ -36,8 +36,9 @@ pub struct SavedSession {
     pub recent: Vec<PathBuf>,
     /// Tabs per project root.
     pub projects: HashMap<PathBuf, SavedProject>,
-    /// Sidebar width and bottom panel height, shared by every project.
-    #[serde(default)]
+    /// Pane sizes as older versions saved them; read once for migration,
+    /// now kept in the settings file.
+    #[serde(default, skip_serializing)]
     pub layout: Option<SavedLayout>,
     /// Tool panels the user moved to the right side.
     #[serde(default)]
@@ -76,18 +77,11 @@ impl App {
             return;
         };
         let project = self.current_project();
-        // Pane sizes are saved once a drag ends, not on every cursor move.
-        let layout = match self.panes.dragging() {
-            Some(_) => self.session.layout,
-            None => Some(SavedLayout::from(self.panes.sizes)),
-        };
         let unchanged = self.session.last_project.as_ref() == Some(&root)
-            && self.session.projects.get(&root) == Some(&project)
-            && self.session.layout == layout;
+            && self.session.projects.get(&root) == Some(&project);
         if unchanged || self.restoring {
             return;
         }
-        self.session.layout = layout;
         self.session.last_project = Some(root.clone());
         self.session.recent.retain(|p| p != &root);
         self.session.recent.insert(0, root.clone());
