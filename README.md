@@ -149,6 +149,14 @@ cargo build --release
 # binary: target/release/phpthunder (speaks LSP over stdio)
 ```
 
+
+Packages for the current platform (macOS `.app` and `.dmg`, Linux `.tar.gz`,
+Windows `.zip`), each with the IDE and the `phpthunder` language server:
+
+```sh
+scripts/package.sh            # results in dist/
+CODESIGN_IDENTITY="Developer ID Application: …" scripts/package.sh   # signed .app
+```
 ## Editor setup
 
 **VS Code**: a minimal client extension lives in `editors/vscode`.

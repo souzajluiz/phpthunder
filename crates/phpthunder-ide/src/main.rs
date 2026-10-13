@@ -16,6 +16,7 @@ mod palette;
 mod phpstan;
 mod project;
 mod search;
+mod shell_env;
 mod template;
 mod terminal;
 mod testing;
@@ -74,6 +75,7 @@ fn window_settings() -> window::Settings {
 ///
 /// Returns iced's error if the window or graphics backend cannot be created.
 fn main() -> iced::Result {
+    shell_env::import_login_path();
     i18n::init_locale(i18n::detect_locale());
     let mut application = iced::application(App::boot, App::update, App::view)
         .title(App::title)
