@@ -165,3 +165,14 @@ refactor-change-signature-help = Edite a lista de parâmetros: reordene, mude ti
 refactor-move-class-help = Novo namespace; o arquivo vai para a pasta PSR-4 e os imports em outros arquivos acompanham.
 refactor-select-first = Selecione uma expressão ou instruções primeiro
 refactor-no-callable = Posicione o cursor em uma função ou método
+
+replace-in-path = Substituir tudo
+replace-in-path-confirm = Substituir { $count } ocorrências? Clique de novo
+replace-in-path-done = { $count ->
+    [one] 1 ocorrência substituída
+   *[other] { $count } ocorrências substituídas
+} em { $files ->
+    [one] 1 arquivo
+   *[other] { $files } arquivos
+}
+replace-in-path-failed = Não foi possível gravar: { $files }

@@ -53,6 +53,26 @@ impl Options {
         }
     }
 
+    /// `text` with every match of `query` replaced by `replacement` (with
+    /// `$1`-style groups expanded in regex mode), and how many matches were
+    /// replaced; `None` when the pattern does not compile.
+    pub fn replace_all(
+        &self,
+        query: &str,
+        replacement: &str,
+        text: &str,
+    ) -> Option<(String, usize)> {
+        let re = self.build(query).ok()?;
+        let count = re.find_iter(text).filter(|m| !m.is_empty()).count();
+        let replaced = if self.regex {
+            re.replace_all(text, replacement).into_owned()
+        } else {
+            re.replace_all(text, regex::NoExpand(replacement))
+                .into_owned()
+        };
+        Some((replaced, count))
+    }
+
     /// Compiles `query` into a multi-line regex honoring these options.
     ///
     /// Literal queries are escaped; whole-word wraps the pattern in `\b` boundaries.
@@ -162,15 +182,8 @@ impl FindBar {
 
     /// The whole text with every match replaced.
     pub fn replace_all(&self, text: &str) -> Option<(String, usize)> {
-        let re = self.options.build(&self.query).ok()?;
-        let count = re.find_iter(text).filter(|m| !m.is_empty()).count();
-        let replaced = if self.options.regex {
-            re.replace_all(text, self.replacement.as_str()).into_owned()
-        } else {
-            re.replace_all(text, regex::NoExpand(&self.replacement))
-                .into_owned()
-        };
-        Some((replaced, count))
+        self.options
+            .replace_all(&self.query, &self.replacement, text)
     }
 }
 
@@ -189,6 +202,8 @@ pub struct SearchDialog {
     pub include_vendor: bool,
     /// Pattern compile error from the last submit, shown in the dialog.
     pub error: Option<String>,
+    /// Replacement for "Replace in path" (`$1` expands in regex mode).
+    pub replacement: String,
 }
 
 /// One find-in-path match, shown as a row in the bottom panel.

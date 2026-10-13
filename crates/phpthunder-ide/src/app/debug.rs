@@ -211,12 +211,16 @@ impl App {
         let Some(doc) = self.doc().filter(|d| d.is_php()) else {
             return Task::none();
         };
-        let line = ((self.gutter_y - crate::ui::EDITOR_PAD_TOP) / crate::ui::CODE_LINE).floor();
-        if line < 0.0 || line as usize >= doc.line_count() {
+        let row = ((self.gutter_y - crate::ui::EDITOR_PAD_TOP) / crate::ui::CODE_LINE).floor();
+        if row < 0.0 {
+            return Task::none();
+        }
+        let (line, _) = self.wrap_layout(doc).line_at_row(row as usize);
+        if line >= doc.line_count() {
             return Task::none();
         }
         let path = doc.path.clone();
-        self.toggle_breakpoint(path, line as usize);
+        self.toggle_breakpoint(path, line);
         Task::none()
     }
 }

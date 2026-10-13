@@ -277,23 +277,34 @@ impl App {
             return Vec::new();
         };
         let x = GUTTER_WIDTH - 8.0;
+        let layout = self.wrap_layout(doc);
+        // Rows covered by lines `line..line + count` (several per wrapped line).
+        let span = |line: usize, count: usize| {
+            let top = crate::app::row_top(&layout, line, 0);
+            let bottom = if count == 0 {
+                top
+            } else {
+                crate::app::row_top(&layout, line + count - 1, usize::MAX / 2) + CODE_LINE
+            };
+            (top - EDITOR_PAD_TOP, bottom - top)
+        };
         marks
             .iter()
             .map(|m| {
                 let (color, height, y, width) = match m.mark {
                     LineMark::Added => (
                         ADDED,
-                        m.count as f32 * CODE_LINE,
-                        m.line as f32 * CODE_LINE,
+                        span(m.line, m.count).1,
+                        span(m.line, m.count).0,
                         MARK_WIDTH,
                     ),
                     LineMark::Modified => (
                         MODIFIED,
-                        m.count as f32 * CODE_LINE,
-                        m.line as f32 * CODE_LINE,
+                        span(m.line, m.count).1,
+                        span(m.line, m.count).0,
                         MARK_WIDTH,
                     ),
-                    LineMark::Deleted => (DELETED, 2.0, m.line as f32 * CODE_LINE - 1.0, 8.0),
+                    LineMark::Deleted => (DELETED, 2.0, span(m.line, 0).0 - 1.0, 8.0),
                 };
                 pin(container(space())
                     .width(width)

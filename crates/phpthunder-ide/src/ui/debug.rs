@@ -262,6 +262,7 @@ impl App {
     /// Breakpoint dots in the gutter, plus the execution line band and
     /// arrow while paused in this file.
     pub(crate) fn debug_marks<'a>(&'a self, doc: &'a Document) -> Vec<Element<'a, Message>> {
+        let layout = self.wrap_layout(doc);
         let mut marks: Vec<Element<'a, Message>> =
             self.breakpoints
                 .get(&doc.path)
@@ -276,14 +277,14 @@ impl App {
                         }
                     }))
                     .x(6.0)
-                    .y(EDITOR_PAD_TOP + *line as f32 * CODE_LINE + (CODE_LINE - 10.0) / 2.0)
+                    .y(crate::app::row_top(&layout, *line, 0) + (CODE_LINE - 10.0) / 2.0)
                     .into()
                 })
                 .collect();
         if let Some((path, line)) = self.debug.as_ref().and_then(|d| d.execution_point())
             && path == doc.path
         {
-            let y = EDITOR_PAD_TOP + line as f32 * CODE_LINE;
+            let y = crate::app::row_top(&layout, line, 0);
             marks.push(
                 pin(container(space())
                     .width(Fill)

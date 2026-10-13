@@ -166,3 +166,14 @@ refactor-change-signature-help = Edit the parameter list: reorder, rename types 
 refactor-move-class-help = New namespace; the file moves to its PSR-4 folder and imports elsewhere follow.
 refactor-select-first = Select an expression or statements first
 refactor-no-callable = Place the caret on a function or method
+
+replace-in-path = Replace all
+replace-in-path-confirm = Replace { $count } matches? Press again
+replace-in-path-done = Replaced { $count ->
+    [one] 1 match
+   *[other] { $count } matches
+} in { $files ->
+    [one] 1 file
+   *[other] { $files } files
+}
+replace-in-path-failed = Could not write: { $files }

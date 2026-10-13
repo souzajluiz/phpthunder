@@ -625,9 +625,13 @@ impl App {
         let intentions_open = self.intentions.is_some();
         let cursor_line = doc.cursor().line;
 
+        let layout = self.wrap_layout(doc);
+        let cursor_col = doc.visual_column(doc.cursor());
         let numbers: Vec<Span<'static, (), Font>> = (0..doc.line_count())
             .map(|i| {
-                Span::new(format!("{}\n", i + 1)).color(if i == cursor_line {
+                // Continuation rows of a wrapped line get no number.
+                let breaks = "\n".repeat(layout.rows_of(i));
+                Span::new(format!("{}{breaks}", i + 1)).color(if i == cursor_line {
                     TEXT
                 } else {
                     GUTTER
@@ -663,7 +667,11 @@ impl App {
                 left: EDITOR_PAD_LEFT,
             })
             .height(Length::Shrink)
-            .wrapping(Wrapping::None)
+            .wrapping(if self.soft_wrap {
+                Wrapping::Glyph
+            } else {
+                Wrapping::None
+            })
             .highlight_with::<crate::editor::PhpHighlighter>(
                 doc.highlight_settings(),
                 crate::editor::format_token,
@@ -675,7 +683,7 @@ impl App {
             .width(Fill)
             .height(CODE_LINE)
             .style(fill(CURRENT_LINE)))
-        .y(EDITOR_PAD_TOP + cursor_line as f32 * CODE_LINE)
+        .y(crate::app::row_top(&layout, cursor_line, cursor_col))
         .width(Fill)
         .height(Fill);
 
@@ -712,7 +720,10 @@ impl App {
             .style(scrollbars);
 
         let overlays = responsive(move |size| self.overlays(doc, size));
-        stack![scroller, overlays].width(Fill).height(Fill).into()
+        iced::widget::sensor(stack![scroller, overlays].width(Fill).height(Fill))
+            .on_show(Message::EditorResized)
+            .on_resize(Message::EditorResized)
+            .into()
     }
 
     /// Floating layers over the editor: the completion popup (or else the hover
@@ -722,42 +733,41 @@ impl App {
     fn overlays<'a>(&'a self, doc: &'a Document, size: Size) -> El<'a> {
         let mut layers = Stack::new().width(Fill).height(Fill);
         let scroll = doc.scroll_y;
+        let layout = self.wrap_layout(doc);
+        let top = |line: usize, col: usize| crate::app::row_top(&layout, line, col);
+        let left = |col: usize| crate::app::col_left(&layout, col);
         if let Some(view) = &self.signature {
             // Above the caret line, so it never covers what is being typed.
-            let y = (EDITOR_PAD_TOP + view.line as f32 * CODE_LINE - scroll - 34.0).max(0.0);
-            let x = (GUTTER_WIDTH + EDITOR_PAD_LEFT + view.col as f32 * CHAR_WIDTH - 40.0)
-                .clamp(0.0, (size.width - 300.0).max(0.0));
+            let y = (top(view.line, view.col) - scroll - 34.0).max(0.0);
+            let x = (left(view.col) - 40.0).clamp(0.0, (size.width - 300.0).max(0.0));
             layers = layers.push(pin(signature_popup(view)).x(x).y(y));
         }
         if let Some(menu) = &self.intentions {
             let (popup, h) = intentions_popup(menu);
-            let below = EDITOR_PAD_TOP + (menu.line + 1) as f32 * CODE_LINE - scroll + 2.0;
-            let above = EDITOR_PAD_TOP + menu.line as f32 * CODE_LINE - scroll - h - 2.0;
+            let below = top(menu.line, menu.col) + CODE_LINE - scroll + 2.0;
+            let above = top(menu.line, menu.col) - scroll - h - 2.0;
             let y = if below + h > size.height && above >= 0.0 {
                 above
             } else {
                 below
             };
-            let x = (GUTTER_WIDTH + EDITOR_PAD_LEFT + menu.col as f32 * CHAR_WIDTH)
-                .clamp(0.0, (size.width - INTENTIONS_WIDTH - 8.0).max(0.0));
+            let x = (left(menu.col)).clamp(0.0, (size.width - INTENTIONS_WIDTH - 8.0).max(0.0));
             layers = layers.push(pin(popup).x(x).y(y));
         } else if let Some(c) = &self.completion {
             let (popup, w, h) = completion_popup(c);
-            let below = EDITOR_PAD_TOP + (c.line + 1) as f32 * CODE_LINE - scroll + 2.0;
-            let above = EDITOR_PAD_TOP + c.line as f32 * CODE_LINE - scroll - h - 2.0;
+            let below = top(c.line, c.col) + CODE_LINE - scroll + 2.0;
+            let above = top(c.line, c.col) - scroll - h - 2.0;
             let y = if below + h > size.height && above >= 0.0 {
                 above
             } else {
                 below
             };
-            let x = (GUTTER_WIDTH + EDITOR_PAD_LEFT + c.col as f32 * CHAR_WIDTH - 36.0)
-                .clamp(0.0, (size.width - w - 8.0).max(0.0));
+            let x = (left(c.col) - 36.0).clamp(0.0, (size.width - w - 8.0).max(0.0));
             layers = layers.push(pin(popup).x(x).y(y));
         } else if let Some(h) = &self.hover {
             let popup = hover_popup(h);
-            let below = EDITOR_PAD_TOP + (h.line + 1) as f32 * CODE_LINE - scroll + 4.0;
-            let x = (GUTTER_WIDTH + EDITOR_PAD_LEFT + h.col as f32 * CHAR_WIDTH - 12.0)
-                .clamp(0.0, (size.width - HOVER_WIDTH - 8.0).max(0.0));
+            let below = top(h.line, h.col) + CODE_LINE - scroll + 4.0;
+            let x = (left(h.col) - 12.0).clamp(0.0, (size.width - HOVER_WIDTH - 8.0).max(0.0));
             let y = if below + 120.0 > size.height {
                 (below - CODE_LINE - 130.0).max(0.0)
             } else {
@@ -1005,11 +1015,42 @@ impl App {
                         );
                     }
                 }
+                let replacement = self
+                    .last_search
+                    .as_ref()
+                    .map(|s| s.replacement.as_str())
+                    .unwrap_or_default();
+                let replace_label = if self.confirm_replace_in_path {
+                    label(
+                        tr!("replace-in-path-confirm", count = results.total),
+                        12.0,
+                        rgb(0xF7768E),
+                    )
+                } else {
+                    label(tr!("replace-in-path"), 12.0, TEXT_SOFT)
+                };
+                let header = row![
+                    label(title, 12.0, MUTED),
+                    space().width(Fill),
+                    iced::widget::text_input(&tr!("replace-placeholder"), replacement)
+                        .on_input(Message::SearchReplaceText)
+                        .size(12)
+                        .font(MONO)
+                        .padding([3, 8])
+                        .width(260)
+                        .style(boxed_input),
+                    button(replace_label)
+                        .padding([3, 10])
+                        .style(ghost_button)
+                        .on_press_maybe((results.total > 0).then_some(Message::ReplaceInPath)),
+                ]
+                .spacing(8)
+                .align_y(Center);
                 column![
-                    container(label(title, 12.0, MUTED)).padding(Padding {
-                        top: 10.0,
+                    container(header).padding(Padding {
+                        top: 6.0,
                         left: 16.0,
-                        right: 16.0,
+                        right: 12.0,
                         bottom: 4.0
                     }),
                     scrollable(list).height(Fill).style(scrollbars),
@@ -1152,10 +1193,8 @@ impl App {
         if f.matches.is_empty() {
             return Vec::new();
         }
-        let first_line = ((doc.scroll_y - EDITOR_PAD_TOP) / CODE_LINE)
-            .floor()
-            .max(0.0) as usize;
-        let last_line = first_line + (self.viewport_height / CODE_LINE).ceil() as usize + 1;
+        let layout = self.wrap_layout(doc);
+        let (first_line, last_line) = self.visible_lines(doc, &layout);
         let from = doc.line_start(first_line);
         let to = doc.line_start(last_line + 1);
         let start = f.matches.partition_point(|&(s, _)| s < from);
@@ -1169,9 +1208,14 @@ impl App {
                 let a = doc.position_of(s);
                 let line_end = doc.line_end(a.line);
                 let b = doc.position_of(e.min(line_end));
-                let x = GUTTER_WIDTH + EDITOR_PAD_LEFT + doc.visual_column(a) as f32 * CHAR_WIDTH;
-                let w = ((doc.visual_column(b).saturating_sub(doc.visual_column(a))).max(1)) as f32
-                    * CHAR_WIDTH;
+                let col = doc.visual_column(a);
+                let x = crate::app::col_left(&layout, col);
+                let w = ((doc.visual_column(b).saturating_sub(col)).max(1)) as f32 * CHAR_WIDTH;
+                let w = if layout.wraps() {
+                    w.min((self.wrap_columns() - layout.column_in_row(col)) as f32 * CHAR_WIDTH)
+                } else {
+                    w
+                };
                 let color = if is_current {
                     Color { a: 0.55, ..ACCENT }
                 } else {
@@ -1186,7 +1230,7 @@ impl App {
                         ..Default::default()
                     }))
                 .x(x)
-                .y(EDITOR_PAD_TOP + a.line as f32 * CODE_LINE + 1.0)
+                .y(crate::app::row_top(&layout, a.line, col) + 1.0)
                 .into()
             })
             .collect()

@@ -110,10 +110,9 @@ impl App {
         // Built-in results are drawn only for the text they were computed on;
         // external ones (line-based) are kept until the next save.
         let current = doc.diagnostics_version == doc.version();
-        let first_line = ((doc.scroll_y - EDITOR_PAD_TOP) / CODE_LINE)
-            .floor()
-            .max(0.0) as u32;
-        let last_line = first_line + (self.viewport_height / CODE_LINE).ceil() as u32 + 1;
+        let layout = self.wrap_layout(doc);
+        let (first_line, last_line) = self.visible_lines(doc, &layout);
+        let (first_line, last_line) = (first_line as u32, last_line as u32);
         let shown: Vec<_> = if current {
             doc.diagnostics
                 .iter()
@@ -131,9 +130,14 @@ impl App {
                 let a = doc.position_of(d.start);
                 let line_end = doc.line_end(a.line);
                 let b = doc.position_of(d.end.min(line_end));
-                let x = GUTTER_WIDTH + EDITOR_PAD_LEFT + doc.visual_column(a) as f32 * CHAR_WIDTH;
-                let w = (doc.visual_column(b).saturating_sub(doc.visual_column(a))).max(1) as f32
-                    * CHAR_WIDTH;
+                let col = doc.visual_column(a);
+                let x = crate::app::col_left(&layout, col);
+                let w = (doc.visual_column(b).saturating_sub(col)).max(1) as f32 * CHAR_WIDTH;
+                let w = if layout.wraps() {
+                    w.min((self.wrap_columns() - layout.column_in_row(col)) as f32 * CHAR_WIDTH)
+                } else {
+                    w
+                };
                 let color = severity_color(d.severity);
                 pin(container(space())
                     .width(w)
@@ -144,7 +148,7 @@ impl App {
                         ..Default::default()
                     }))
                 .x(x)
-                .y(EDITOR_PAD_TOP + (a.line + 1) as f32 * CODE_LINE - 3.0)
+                .y(crate::app::row_top(&layout, a.line, col) + CODE_LINE - 3.0)
                 .into()
             })
             .collect()

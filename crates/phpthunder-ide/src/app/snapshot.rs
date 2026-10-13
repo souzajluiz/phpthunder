@@ -2,7 +2,8 @@
 //! `PHPTHUNDER_SNAPSHOT_FILE` (relative to the project) if given, waits for
 //! indexing to settle, saves a PNG of its window and quits. With
 //! `PHPTHUNDER_SNAPSHOT_TYPE=text` (and `PHPTHUNDER_SNAPSHOT_LINE=n`, 1-based)
-//! it first types `text` on a new line after line `n` and opens completion.
+//! it first types `text` on a new line after line `n` and opens completion;
+//! `PHPTHUNDER_SNAPSHOT_WRAP=1` turns soft wrap on.
 //! Used to check the look without a screen recorder.
 
 use super::*;
@@ -52,7 +53,15 @@ impl App {
             None => Task::none(),
         };
         let shot = Task::perform(tokio::time::sleep(delay), |()| Message::TakeSnapshot);
-        Task::batch([open, typed, shot])
+        // `PHPTHUNDER_SNAPSHOT_WRAP=1`: turn soft wrap on after opening.
+        let wrap = if std::env::var_os("PHPTHUNDER_SNAPSHOT_WRAP").is_some() {
+            Task::perform(tokio::time::sleep(OPEN_DELAY * 2), |()| {
+                Message::Command(crate::keymap::Cmd::ToggleSoftWrap)
+            })
+        } else {
+            Task::none()
+        };
+        Task::batch([open, typed, wrap, shot])
     }
 
     /// Types `text` on a new line after `PHPTHUNDER_SNAPSHOT_LINE` (default

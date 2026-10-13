@@ -34,6 +34,12 @@ pub enum Message {
     SessionRestored(Vec<(crate::app::SavedTab, String)>, Option<usize>),
     /// Show the action list for a tree entry (right click).
     ShowFileActions(PathBuf),
+    /// The editor area was laid out at this size (for soft wrap).
+    EditorResized(iced::Size),
+    /// Replacement typed in the Find panel for "Replace in path".
+    SearchReplaceText(String),
+    /// Replace every hit of the last find in path (asks once to confirm).
+    ReplaceInPath,
     /// Text typed in the refactoring prompt.
     RefactorInput(String),
     /// Confirm the refactoring prompt.

@@ -100,6 +100,10 @@ impl App {
             Cmd::Pull => self.git_pull(),
             Cmd::DebugTest => self.debug_test(),
             Cmd::ExtractVariable => self.extract_from_selection(false),
+            Cmd::ToggleSoftWrap => {
+                self.soft_wrap = !self.soft_wrap;
+                self.reveal_cursor()
+            }
             Cmd::ExtractMethod => self.extract_from_selection(true),
             Cmd::InlineVariable => self.inline_variable(),
             Cmd::ChangeSignature => self.change_signature_at_caret(),
@@ -435,6 +439,75 @@ impl App {
         ])
     }
 
+    /// Replaces every match of the last find in path in the files it found:
+    /// open tabs are edited (undoable, left unsaved), other files are
+    /// written. The first press only asks for confirmation; afterwards the
+    /// search runs again so the panel shows what is left.
+    pub fn replace_in_path(&mut self) -> Task<Message> {
+        let (Some(Search::Done(results, _)), Some(dialog)) =
+            (&self.search, self.last_search.clone())
+        else {
+            return Task::none();
+        };
+        if !self.confirm_replace_in_path {
+            self.confirm_replace_in_path = true;
+            return Task::none();
+        }
+        self.confirm_replace_in_path = false;
+        let paths: Vec<std::path::PathBuf> = results.files.iter().map(|f| f.path.clone()).collect();
+        let (mut replaced, mut files, mut failed) = (0usize, 0usize, Vec::new());
+        for path in paths {
+            if let Some(doc) = self.docs.iter_mut().find(|d| d.path == path) {
+                let Some((text, n)) =
+                    dialog
+                        .options
+                        .replace_all(&dialog.query, &dialog.replacement, &doc.text)
+                else {
+                    continue;
+                };
+                if n > 0 {
+                    let cursor = doc.cursor();
+                    doc.set_text(text.clone(), cursor);
+                    if doc.is_php() {
+                        self.lang.update_file(&path, &text);
+                    }
+                    replaced += n;
+                    files += 1;
+                }
+                continue;
+            }
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                failed.push(path.display().to_string());
+                continue;
+            };
+            let Some((new, n)) =
+                dialog
+                    .options
+                    .replace_all(&dialog.query, &dialog.replacement, &text)
+            else {
+                continue;
+            };
+            if n == 0 {
+                continue;
+            }
+            match std::fs::write(&path, &new) {
+                Ok(()) => {
+                    replaced += n;
+                    files += 1;
+                }
+                Err(_) => failed.push(path.display().to_string()),
+            }
+        }
+        self.inspect_pending = true;
+        self.notice = Some(if failed.is_empty() {
+            tr!("replace-in-path-done", count = replaced, files = files)
+        } else {
+            tr!("replace-in-path-failed", files = failed.join(", "))
+        });
+        self.search_dialog = Some(dialog);
+        self.run_search()
+    }
+
     /// Opens the file of hit `h` in result file `f` and selects the match.
     ///
     /// Marks the hit as selected in the panel and records navigation history. The
@@ -465,8 +538,11 @@ impl App {
     /// focuses the editor.
     fn place_selection_view(&mut self, line: usize) -> Task<Message> {
         let view = self.viewport_height;
-        let y =
-            (crate::ui::EDITOR_PAD_TOP + line as f32 * crate::ui::CODE_LINE - view / 3.0).max(0.0);
+        let row_top = self
+            .doc()
+            .map(|d| crate::app::row_top(&self.wrap_layout(d), line, 0))
+            .unwrap_or_default();
+        let y = (row_top - view / 3.0).max(0.0);
         if let Some(doc) = self.doc_mut() {
             doc.scroll_y = y;
         }

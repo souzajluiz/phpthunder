@@ -59,6 +59,10 @@ pub struct App {
     pub sidebar: bool,
     /// Last known editor viewport height, for scroll math.
     pub viewport_height: f32,
+    /// Width of the editor area, for soft wrap.
+    pub editor_width: f32,
+    /// Whether long lines wrap at the editor width.
+    pub soft_wrap: bool,
     /// Open completion popup.
     pub completion: Option<Completion>,
     /// Visible hover popup.
@@ -91,6 +95,9 @@ pub struct App {
     last_shift: Option<Instant>,
     /// Settings of the last find-in-path, restored when the dialog reopens.
     pub last_search: Option<SearchDialog>,
+    /// Whether "Replace all" in the Find panel waits for its confirming
+    /// second press.
+    pub confirm_replace_in_path: bool,
     /// A selection to apply once its file finishes loading.
     pub pending_select: Option<(PathBuf, usize, usize, usize)>,
     /// Open `⌥↵` menu.
@@ -236,6 +243,8 @@ impl App {
             indexing: Indexing::Idle,
             sidebar: true,
             viewport_height: 700.0,
+            editor_width: 900.0,
+            soft_wrap: false,
             completion: None,
             hover: None,
             hover_generation: 0,
@@ -252,6 +261,7 @@ impl App {
             modifiers: Modifiers::default(),
             last_shift: None,
             last_search: None,
+            confirm_replace_in_path: false,
             pending_select: None,
             intentions: None,
             signature: None,
@@ -648,6 +658,18 @@ impl App {
                 Task::none()
             }
             Message::SearchSubmit => self.run_search(),
+            Message::SearchReplaceText(text) => {
+                if let Some(s) = &mut self.last_search {
+                    s.replacement = text;
+                }
+                self.confirm_replace_in_path = false;
+                Task::none()
+            }
+            Message::ReplaceInPath => self.replace_in_path(),
+            Message::EditorResized(size) => {
+                self.editor_width = size.width;
+                Task::none()
+            }
             Message::SearchDone(result) => {
                 match result {
                     Ok(results) => self.search = Some(Search::Done(results, None)),
@@ -922,11 +944,15 @@ impl App {
     /// way down the viewport.
     pub fn place_cursor(&mut self, position: Position) -> Task<Message> {
         let view = self.viewport_height;
+        let Some(layout) = self.doc().map(|d| self.wrap_layout(d)) else {
+            return Task::none();
+        };
         let Some(doc) = self.doc_mut() else {
             return Task::none();
         };
         doc.move_to(position);
-        let y = (EDITOR_PAD_TOP + position.line as f32 * CODE_LINE - view / 3.0).max(0.0);
+        let col = doc.visual_column(position);
+        let y = (crate::app::row_top(&layout, position.line, col) - view / 3.0).max(0.0);
         doc.scroll_y = y;
         Task::batch([scroll_to(y), operation::focus(Id::new(EDITOR_ID))])
     }
@@ -1173,7 +1199,12 @@ impl App {
         let Some(doc) = self.doc() else {
             return Task::none();
         };
-        let top = EDITOR_PAD_TOP + doc.cursor().line as f32 * CODE_LINE;
+        let cursor = doc.cursor();
+        let top = crate::app::row_top(
+            &self.wrap_layout(doc),
+            cursor.line,
+            doc.visual_column(cursor),
+        );
         let view = self.viewport_height;
         if top < doc.scroll_y {
             scroll_to((top - CODE_LINE).max(0.0))
@@ -1190,9 +1221,16 @@ impl App {
     /// the hover popup and starts a [`HOVER_DELAY`] timer tagged with a new
     /// generation; only the latest [`Message::HoverFire`] shows a popup.
     fn mouse_moved(&mut self, p: Point) -> Task<Message> {
-        let line = ((p.y - EDITOR_PAD_TOP) / CODE_LINE).floor();
+        let row = ((p.y - EDITOR_PAD_TOP) / CODE_LINE).floor();
         let col = ((p.x - EDITOR_PAD_LEFT) / CHAR_WIDTH).floor();
-        let at = (line >= 0.0 && col >= 0.0).then_some((line as usize, col as usize));
+        let at = match self.doc() {
+            Some(doc) if row >= 0.0 && col >= 0.0 => {
+                // A wrapped row continues its line further right.
+                let (line, base) = self.wrap_layout(doc).line_at_row(row as usize);
+                Some((line, base + col as usize))
+            }
+            _ => None,
+        };
         if at == self.hover_at {
             return Task::none();
         }

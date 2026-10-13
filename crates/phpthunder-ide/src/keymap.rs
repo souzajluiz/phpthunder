@@ -103,6 +103,8 @@ pub enum Cmd {
     Push,
     /// Pull the current branch (`⌘T`).
     Pull,
+    /// Wrap long lines at the editor width, or stop wrapping (`⌥⌘W`).
+    ToggleSoftWrap,
     /// Extract the selected expression into a variable (`⌥⌘V`).
     ExtractVariable,
     /// Extract the selected statements into a method (`⌥⌘M`).
@@ -161,6 +163,7 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("j", false, false) => InsertTemplate,
             ("k", false, false) => Commit,
             ("v", false, true) => ExtractVariable,
+            ("w", false, true) => ToggleSoftWrap,
             ("m", false, true) => ExtractMethod,
             ("n", false, true) => InlineVariable,
             ("k", true, false) => Push,
@@ -266,6 +269,7 @@ pub fn hint(cmd: Cmd) -> &'static str {
         Pull => "⌘T",
         DebugTest => "⌃⇧D",
         ExtractVariable => "⌥⌘V",
+        ToggleSoftWrap => "⌥⌘W",
         ExtractMethod => "⌥⌘M",
         InlineVariable => "⌥⌘N",
         ChangeSignature => "⌘F6",

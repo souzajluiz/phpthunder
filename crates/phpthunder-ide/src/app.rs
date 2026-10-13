@@ -9,6 +9,7 @@ mod git;
 mod inspection;
 mod intention;
 mod laravel;
+mod layout;
 mod model;
 mod navigation;
 mod refactor;
@@ -21,6 +22,7 @@ mod terminal;
 mod tooling;
 
 pub use files::*;
+pub(crate) use layout::*;
 pub use model::*;
 pub use refactor::*;
 pub use refactorings::*;
