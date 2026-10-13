@@ -173,6 +173,9 @@ impl App {
             Cmd::ZoomIn => self.set_zoom(self.zoom + 0.1),
             Cmd::ZoomOut => self.set_zoom(self.zoom - 0.1),
             Cmd::ZoomReset => self.set_zoom(1.0),
+            Cmd::CompareWithClipboard => self.compare_with_clipboard(),
+            Cmd::LocalHistory => self.open_local_history(),
+            Cmd::Annotate => self.toggle_annotate(),
         }
     }
 
@@ -357,6 +360,7 @@ impl App {
             Target::CreateBranch(name) => self.git_create_branch(name),
             Target::FileAction(action) => self.run_file_action(action),
             Target::Action(cmd) => self.command(cmd),
+            Target::LocalVersion(version) => self.open_local_version(version),
             Target::Location(path, line) => self.open_at_line(path, line),
             Target::Paste(text) => self.edit_with(
                 |d| {

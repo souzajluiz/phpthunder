@@ -148,6 +148,12 @@ pub enum Message {
     // Window
     /// Show or hide the project sidebar.
     ToggleSidebar,
+    /// The clipboard text read for Compare with Clipboard.
+    ClipboardForCompare(Option<String>),
+    /// Git Annotate finished for a file.
+    BlameArrived(PathBuf, Result<Vec<crate::git::LineBlame>, String>),
+    /// Restore the local history version shown in the Compare panel.
+    RestoreCompared,
     /// Copy or cut is about to run: remember the selection for `⇧⌘V`.
     RememberSelection,
     /// Open a file with the caret at a position (gutter arrows).
@@ -444,6 +450,8 @@ pub enum Bottom {
     Commit,
     /// The debugger.
     Debug,
+    /// A diff against the clipboard or a local history version.
+    Compare,
 }
 
 /// Where a tool panel is docked.

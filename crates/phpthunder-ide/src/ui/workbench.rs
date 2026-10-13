@@ -777,6 +777,9 @@ impl App {
         for mark in self.color_swatches(doc) {
             content = content.push(mark);
         }
+        for mark in self.blame_hints(doc) {
+            content = content.push(mark);
+        }
         for mark in self.diagnostic_marks(doc) {
             content = content.push_under(mark);
         }
@@ -1030,6 +1033,11 @@ impl App {
             (Bottom::Claude, self.claude.is_some(), tr!("panel-claude")),
             (Bottom::Commit, self.git.is_some(), tr!("panel-commit")),
             (Bottom::Debug, self.debug.is_some(), tr!("panel-debug")),
+            (
+                Bottom::Compare,
+                self.compare.is_some(),
+                tr!("panel-compare"),
+            ),
         ];
         for (panel, exists, name) in available {
             if exists && here(panel) {
@@ -1077,6 +1085,7 @@ impl App {
             Bottom::Tests => self.tests_body(),
             Bottom::Commit => self.commit_body(),
             Bottom::Debug => self.debug_body(),
+            Bottom::Compare => self.compare_body(),
         };
         let area = container(column![header, hsep(), body])
             .style(island)

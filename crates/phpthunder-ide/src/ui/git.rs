@@ -238,49 +238,7 @@ impl App {
                 .padding([10, 16])
                 .into();
         }
-        let rows = self.commit.diff.iter().take(2000).map(|line| {
-            let (color, background, sign) = match line.kind {
-                DiffKind::Hunk => (MUTED, Color::TRANSPARENT, ""),
-                DiffKind::Context => (TEXT_SOFT, Color::TRANSPARENT, " "),
-                DiffKind::Added => (TEXT, Color { a: 0.12, ..ADDED }, "+"),
-                DiffKind::Removed => (TEXT, Color { a: 0.12, ..DELETED }, "-"),
-            };
-            let number = line.new_line.map(|n| n.to_string()).unwrap_or_default();
-            button(
-                row![
-                    label(number, 11.0, GUTTER).font(MONO).width(40),
-                    label(format!("{sign}{}", line.text), 12.0, color).font(MONO),
-                ]
-                .spacing(8),
-            )
-            .padding([0, 8])
-            .width(Fill)
-            .style(move |_: &Theme, status| button::Style {
-                // A tinted line deepens its own tint under the mouse; a plain
-                // one takes the usual wash.
-                background: match status {
-                    button::Status::Hovered | button::Status::Pressed if background.a > 0.0 => {
-                        Some(
-                            Color {
-                                a: background.a * 2.0,
-                                ..background
-                            }
-                            .into(),
-                        )
-                    }
-                    _ => interaction_wash(status).or(Some(background.into())),
-                },
-                text_color: color,
-                ..Default::default()
-            })
-            .on_press_maybe(line.new_line.map(Message::GitOpenLine))
-            .into()
-        });
-        scrollable(column(rows).padding([4, 0]))
-            .height(Fill)
-            .width(Fill)
-            .style(scrollbars)
-            .into()
+        diff_list(&self.commit.diff, Message::GitOpenLine)
     }
 
     /// Change marks beside the line numbers: bars for added and modified
@@ -329,4 +287,54 @@ impl App {
             })
             .collect()
     }
+}
+
+/// The rows of a diff: hunk headers, context, and tinted added/removed
+/// lines with their new line number; clicking a line with a number sends
+/// `open(number)` (1-based).
+pub(crate) fn diff_list<'a>(
+    lines: &'a [crate::git::DiffLine],
+    open: impl Fn(usize) -> Message + Copy + 'a,
+) -> Element<'a, Message> {
+    let rows = lines.iter().take(2000).map(|line| {
+        let (color, background, sign) = match line.kind {
+            DiffKind::Hunk => (MUTED, Color::TRANSPARENT, ""),
+            DiffKind::Context => (TEXT_SOFT, Color::TRANSPARENT, " "),
+            DiffKind::Added => (TEXT, Color { a: 0.12, ..ADDED }, "+"),
+            DiffKind::Removed => (TEXT, Color { a: 0.12, ..DELETED }, "-"),
+        };
+        let number = line.new_line.map(|n| n.to_string()).unwrap_or_default();
+        button(
+            row![
+                label(number, 11.0, GUTTER).font(MONO).width(40),
+                label(format!("{sign}{}", line.text), 12.0, color).font(MONO),
+            ]
+            .spacing(8),
+        )
+        .padding([0, 8])
+        .width(Fill)
+        .style(move |_: &Theme, status| button::Style {
+            // A tinted line deepens its own tint under the mouse; a plain
+            // one takes the usual wash.
+            background: match status {
+                button::Status::Hovered | button::Status::Pressed if background.a > 0.0 => Some(
+                    Color {
+                        a: background.a * 2.0,
+                        ..background
+                    }
+                    .into(),
+                ),
+                _ => interaction_wash(status).or(Some(background.into())),
+            },
+            text_color: color,
+            ..Default::default()
+        })
+        .on_press_maybe(line.new_line.map(open))
+        .into()
+    });
+    scrollable(column(rows).padding([4, 0]))
+        .height(Fill)
+        .width(Fill)
+        .style(scrollbars)
+        .into()
 }

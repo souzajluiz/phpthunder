@@ -2,6 +2,7 @@
 
 mod carets;
 mod command;
+mod compare;
 mod completion;
 mod debug;
 mod dock;
@@ -25,6 +26,7 @@ mod template;
 mod terminal;
 mod tooling;
 
+pub use compare::*;
 pub use files::*;
 pub(crate) use layout::*;
 pub use model::*;

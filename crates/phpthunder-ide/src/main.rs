@@ -13,6 +13,7 @@ mod git;
 mod i18n;
 mod keymap;
 mod language;
+mod local_history;
 mod log;
 mod notify;
 mod packages;

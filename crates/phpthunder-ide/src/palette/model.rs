@@ -88,6 +88,8 @@ pub enum Target {
     Location(std::path::PathBuf, usize),
     /// Paste this text at the caret (clipboard history).
     Paste(String),
+    /// Compare a local history version with the active file.
+    LocalVersion(std::path::PathBuf),
     /// Run a command (Find Action).
     Action(crate::keymap::Cmd),
     /// Surround the selection with a block construct.

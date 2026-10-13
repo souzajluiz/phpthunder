@@ -36,7 +36,7 @@ fn all_added(text: &str) -> Vec<LineChange> {
 
 impl App {
     /// Project root when it is a Git repository.
-    fn git_root(&self) -> Option<PathBuf> {
+    pub(crate) fn git_root(&self) -> Option<PathBuf> {
         self.tree.root.clone().filter(|r| git::is_repository(r))
     }
 

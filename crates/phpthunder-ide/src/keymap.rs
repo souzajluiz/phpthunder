@@ -224,11 +224,17 @@ pub enum Cmd {
     ZoomOut,
     /// Back to the normal size (`⌘0`).
     ZoomReset,
+    /// Diff the selection or file against the clipboard.
+    CompareWithClipboard,
+    /// Earlier saved versions of the file.
+    LocalHistory,
+    /// Show who last changed each line (git blame).
+    Annotate,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 106] = {
+    pub const ALL: [Cmd; 109] = {
         use Cmd::*;
         [
             Save,
@@ -337,6 +343,9 @@ impl Cmd {
             ZoomIn,
             ZoomOut,
             ZoomReset,
+            CompareWithClipboard,
+            LocalHistory,
+            Annotate,
         ]
     };
 
@@ -610,6 +619,7 @@ pub fn hint(cmd: Cmd) -> &'static str {
         ZoomIn => "⌘=",
         ZoomOut => "⌘−",
         ZoomReset => "⌘0",
+        CompareWithClipboard | LocalHistory | Annotate => "",
     }
 }
 

@@ -46,6 +46,17 @@ fn relative(root: &Path, files: &[PathBuf]) -> Vec<String> {
         .collect()
 }
 
+/// Who last changed each line of `path` (as saved on disk).
+///
+/// # Errors
+/// Returns git's error text (for example, a file Git does not track).
+pub async fn blame(root: PathBuf, path: PathBuf) -> Result<Vec<LineBlame>, String> {
+    let rel = relative(&root, std::slice::from_ref(&path));
+    let mut args = vec!["blame", "--porcelain", "--"];
+    args.extend(rel.iter().map(String::as_str));
+    run(&root, &args).await.map(|out| parse_blame(&out))
+}
+
 /// Runs `git <command> -- <files>`.
 ///
 /// # Errors

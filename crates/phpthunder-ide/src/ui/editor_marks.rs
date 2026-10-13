@@ -334,6 +334,35 @@ impl App {
         out
     }
 
+    /// Git Annotate: author and date of the last change, past the end of
+    /// each visible line, while Annotate is on for the file.
+    pub(crate) fn blame_hints<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
+        let Some(lines) = self.blame.get(&doc.path) else {
+            return Vec::new();
+        };
+        let layout = self.wrap_layout(doc);
+        let (first, last) = self.visible_lines(doc, &layout);
+        (first..=last.min(doc.line_count().saturating_sub(1)))
+            .filter_map(|line| {
+                let b = lines.get(line)?;
+                let text = if b.author.is_empty() {
+                    tr!("annotate-uncommitted")
+                } else {
+                    format!("{} · {} · {}", b.author, b.date, b.summary)
+                };
+                let col = doc.visual_column(doc.position_of(doc.line_end(line))) + 4;
+                Some(
+                    pin(container(label(text, 12.0, GUTTER))
+                        .height(CODE_LINE)
+                        .center_y(CODE_LINE))
+                    .x(col_left(&layout, col))
+                    .y(row_top(&layout, line, col))
+                    .into(),
+                )
+            })
+            .collect()
+    }
+
     /// A bookmark glyph in the gutter beside each bookmarked line.
     pub(crate) fn bookmark_marks<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
         let Some(lines) = self.bookmarks.get(&doc.path) else {

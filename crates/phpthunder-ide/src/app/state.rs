@@ -159,6 +159,10 @@ pub struct App {
     pub edit_back: usize,
     /// Copied and cut texts, newest first (`⇧⌘V`).
     pub clipboard_history: Vec<String>,
+    /// What the Compare panel shows, once something was compared.
+    pub compare: Option<Compare>,
+    /// Git Annotate lines of files where it is turned on.
+    pub blame: std::collections::HashMap<PathBuf, Vec<crate::git::LineBlame>>,
     /// Interface scale (`⌘=` / `⌘−` / `⌘0`), 1.0 by default.
     pub zoom: f32,
     /// Whether spaces and tabs are drawn as dots and arrows.
@@ -357,6 +361,8 @@ impl App {
             claude_usage: crate::claude_usage::Usage::default(),
             show_whitespace: false,
             zoom: 1.0,
+            compare: None,
+            blame: std::collections::HashMap::new(),
             bookmarks: std::collections::BTreeMap::new(),
             edit_locations: Vec::new(),
             edit_back: 0,
@@ -839,6 +845,12 @@ impl App {
                 }
                 self.goto_implementation()
             }
+            Message::ClipboardForCompare(text) => self.clipboard_arrived(text),
+            Message::BlameArrived(path, result) => {
+                self.blame_arrived(path, result);
+                Task::none()
+            }
+            Message::RestoreCompared => self.restore_compared(),
             Message::RememberSelection => {
                 self.remember_selection();
                 Task::none()
@@ -1262,6 +1274,9 @@ impl App {
         }
         doc.mark_saved();
         let path = doc.path.clone();
+        self.record_local_history();
+        // Saved lines changed: annotations would point at the wrong lines.
+        self.blame.remove(&path);
         let rescan = self.rescan_laravel_after_save(&path);
         Task::batch([rescan, self.refresh_git(), self.phpstan_after_save(path)])
     }
