@@ -21,6 +21,10 @@ pub enum Icon {
     Branch,
     /// Terminal tool in the rail (`square-terminal`).
     Terminal,
+    /// Move a tool panel to the right side (`panel-right`).
+    PanelRight,
+    /// Move a tool panel below the editor (`panel-bottom`).
+    PanelBottom,
     /// Collapsed directory in the tree; hidden replace row in the find bar.
     ChevronRight,
     /// Expanded directory in the tree; shown replace row in the find bar.
@@ -123,6 +127,8 @@ impl Icon {
             Icon::Key => include_str!("../../assets/icons/key-round.svg"),
             Icon::Docker => include_str!("../../assets/icons/container.svg"),
             Icon::Package => include_str!("../../assets/icons/package.svg"),
+            Icon::PanelRight => include_str!("../../assets/icons/panel-right.svg"),
+            Icon::PanelBottom => include_str!("../../assets/icons/panel-bottom.svg"),
         }
     }
 }

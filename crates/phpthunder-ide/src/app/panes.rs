@@ -16,6 +16,10 @@ pub const SIDEBAR_MAX: f32 = 640.0;
 pub const BOTTOM_DEFAULT: f32 = 260.0;
 /// Lowest the bottom panel can be dragged: its header plus a few rows.
 pub const BOTTOM_MIN: f32 = 120.0;
+/// Default width of the right panel area, in pixels.
+pub const RIGHT_DEFAULT: f32 = 460.0;
+/// Narrowest the right panel area can be dragged.
+pub const RIGHT_MIN: f32 = 260.0;
 /// Room the editor keeps when a pane grows into it.
 pub const EDITOR_MIN: f32 = 160.0;
 
@@ -26,6 +30,8 @@ pub enum Splitter {
     Sidebar,
     /// Between the editor and the bottom panel; drags vertically.
     Bottom,
+    /// Between the editor and the right panel; drags horizontally.
+    Right,
 }
 
 /// Current pane sizes, in logical pixels.
@@ -35,6 +41,8 @@ pub struct PaneSizes {
     pub sidebar: f32,
     /// Height of the bottom tool panel.
     pub bottom: f32,
+    /// Width of the right tool panel.
+    pub right: f32,
 }
 
 impl Default for PaneSizes {
@@ -42,6 +50,7 @@ impl Default for PaneSizes {
         Self {
             sidebar: SIDEBAR_DEFAULT,
             bottom: BOTTOM_DEFAULT,
+            right: RIGHT_DEFAULT,
         }
     }
 }
@@ -54,6 +63,10 @@ pub struct SavedLayout {
     pub sidebar: u32,
     /// Height of the bottom tool panel.
     pub bottom: u32,
+    /// Width of the right tool panel; missing in sessions saved before it
+    /// existed.
+    #[serde(default)]
+    pub right: u32,
 }
 
 impl From<PaneSizes> for SavedLayout {
@@ -61,6 +74,7 @@ impl From<PaneSizes> for SavedLayout {
         Self {
             sidebar: sizes.sidebar.round() as u32,
             bottom: sizes.bottom.round() as u32,
+            right: sizes.right.round() as u32,
         }
     }
 }
@@ -71,6 +85,11 @@ impl From<SavedLayout> for PaneSizes {
         Self {
             sidebar: (saved.sidebar as f32).clamp(SIDEBAR_MIN, SIDEBAR_MAX),
             bottom: (saved.bottom as f32).max(BOTTOM_MIN),
+            right: if saved.right == 0 {
+                RIGHT_DEFAULT
+            } else {
+                (saved.right as f32).max(RIGHT_MIN)
+            },
         }
     }
 }
@@ -122,6 +141,7 @@ impl Panes {
         let (start, ceiling) = match splitter {
             Splitter::Sidebar => (self.sizes.sidebar, SIDEBAR_MAX),
             Splitter::Bottom => (self.sizes.bottom, f32::INFINITY),
+            Splitter::Right => (self.sizes.right, f32::INFINITY),
         };
         // Never below the current size: a cramped editor still lets the
         // pane shrink, it just cannot grow.
@@ -144,14 +164,15 @@ impl Panes {
             return false;
         };
         let along = match drag.splitter {
-            Splitter::Sidebar => cursor.x,
+            Splitter::Sidebar | Splitter::Right => cursor.x,
             Splitter::Bottom => cursor.y,
         };
         let origin = *drag.origin.get_or_insert(along);
-        // The bottom panel grows as the cursor moves up.
+        // The bottom panel grows as the cursor moves up, the right one as
+        // it moves left.
         let delta = match drag.splitter {
             Splitter::Sidebar => along - origin,
-            Splitter::Bottom => origin - along,
+            Splitter::Bottom | Splitter::Right => origin - along,
         };
         let size = (drag.start + delta)
             .clamp(Self::min(drag.splitter), drag.max)
@@ -159,6 +180,7 @@ impl Panes {
         let slot = match drag.splitter {
             Splitter::Sidebar => &mut self.sizes.sidebar,
             Splitter::Bottom => &mut self.sizes.bottom,
+            Splitter::Right => &mut self.sizes.right,
         };
         let changed = *slot != size;
         *slot = size;
@@ -177,6 +199,7 @@ impl Panes {
         match splitter {
             Splitter::Sidebar => self.sizes.sidebar = defaults.sidebar,
             Splitter::Bottom => self.sizes.bottom = defaults.bottom,
+            Splitter::Right => self.sizes.right = defaults.right,
         }
     }
 
@@ -185,6 +208,7 @@ impl Panes {
         match splitter {
             Splitter::Sidebar => SIDEBAR_MIN,
             Splitter::Bottom => BOTTOM_MIN,
+            Splitter::Right => RIGHT_MIN,
         }
     }
 }
@@ -246,6 +270,17 @@ mod tests {
     }
 
     #[test]
+    fn right_panel_should_grow_when_dragged_left() {
+        let sizes = dragged(
+            Splitter::Right,
+            1000.0,
+            Point::new(800.0, 0.0),
+            Point::new(700.0, 0.0),
+        );
+        assert_eq!(sizes.right, RIGHT_DEFAULT + 100.0);
+    }
+
+    #[test]
     fn moving_without_a_drag_should_change_nothing() {
         let mut panes = Panes::default();
         assert!(!panes.moved(Point::new(10.0, 10.0)));
@@ -256,6 +291,7 @@ mod tests {
         let mut panes = Panes::new(PaneSizes {
             sidebar: 500.0,
             bottom: 400.0,
+            right: RIGHT_DEFAULT,
         });
         panes.reset(Splitter::Sidebar);
         assert_eq!(panes.sizes.sidebar, SIDEBAR_DEFAULT);
@@ -266,6 +302,7 @@ mod tests {
         let sizes = PaneSizes::from(SavedLayout {
             sidebar: 0,
             bottom: 300,
+            right: 0,
         });
         assert_eq!(sizes.sidebar, SIDEBAR_MIN);
     }

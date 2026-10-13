@@ -134,7 +134,7 @@ impl App {
             self.notice = Some(tr!("git-not-repository"));
             return Task::none();
         }
-        self.bottom = Some(Bottom::Commit);
+        self.show_panel(Bottom::Commit);
         self.refresh_git()
     }
 

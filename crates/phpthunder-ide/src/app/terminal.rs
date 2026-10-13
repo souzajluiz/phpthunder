@@ -21,12 +21,15 @@ impl App {
     /// is running, and focuses it; hides the panel when it is already shown
     /// and focused (`⌥F12`).
     pub(crate) fn toggle_terminal(&mut self) -> Task<Message> {
-        if self.bottom == Some(Bottom::Terminal) && self.terminal_focused {
-            self.bottom = None;
+        if self.is_shown(Bottom::Terminal)
+            && self.terminal_focused
+            && self.console == Bottom::Terminal
+        {
+            self.hide_panel(Bottom::Terminal);
             self.terminal_focused = false;
             return operation::focus(Id::new(EDITOR_ID));
         }
-        self.bottom = Some(Bottom::Terminal);
+        self.show_panel(Bottom::Terminal);
         if self.terminal.as_ref().is_none_or(Session::has_exited) {
             self.start_terminal();
         }
@@ -56,12 +59,13 @@ impl App {
     /// if it is not running, and focuses it; hides the panel when it is
     /// already shown and focused (`⌥⌘A`).
     pub(crate) fn toggle_claude(&mut self) -> Task<Message> {
-        if self.bottom == Some(Bottom::Claude) && self.terminal_focused {
-            self.bottom = None;
+        if self.is_shown(Bottom::Claude) && self.terminal_focused && self.console == Bottom::Claude
+        {
+            self.hide_panel(Bottom::Claude);
             self.terminal_focused = false;
             return operation::focus(Id::new(EDITOR_ID));
         }
-        self.bottom = Some(Bottom::Claude);
+        self.show_panel(Bottom::Claude);
         if self.claude.as_ref().is_none_or(Session::has_exited) {
             self.start_claude();
         }
@@ -72,7 +76,10 @@ impl App {
     /// When it is not installed, the shell's "command not found" shows in
     /// the panel above the exited banner, whose Start button retries.
     pub(crate) fn start_claude(&mut self) {
-        let (rows, cols) = self.terminal_grid.unwrap_or(DEFAULT_GRID);
+        let (rows, cols) = self
+            .claude_grid
+            .or(self.terminal_grid)
+            .unwrap_or(DEFAULT_GRID);
         match Session::spawn_program(
             &self.console_cwd(),
             rows,
@@ -87,21 +94,31 @@ impl App {
         }
     }
 
-    /// The session of the console panel on screen: Claude's when the Claude
-    /// panel is shown, else the terminal's.
+    /// The session keys and pastes go to: Claude's when the Claude panel
+    /// was focused last, else the terminal's.
     pub(crate) fn console_session(&self) -> Option<&Session> {
-        match self.bottom {
-            Some(Bottom::Claude) => self.claude.as_ref(),
+        self.session_of(self.console)
+    }
+
+    /// The session behind console panel `panel`.
+    pub(crate) fn session_of(&self, panel: Bottom) -> Option<&Session> {
+        match panel {
+            Bottom::Claude => self.claude.as_ref(),
             _ => self.terminal.as_ref(),
+        }
+    }
+
+    /// Mutable session behind console panel `panel`.
+    pub(crate) fn session_of_mut(&mut self, panel: Bottom) -> Option<&mut Session> {
+        match panel {
+            Bottom::Claude => self.claude.as_mut(),
+            _ => self.terminal.as_mut(),
         }
     }
 
     /// Mutable [`Self::console_session`].
     pub(crate) fn console_session_mut(&mut self) -> Option<&mut Session> {
-        match self.bottom {
-            Some(Bottom::Claude) => self.claude.as_mut(),
-            _ => self.terminal.as_mut(),
-        }
+        self.session_of_mut(self.console)
     }
 
     /// Gives keyboard focus to the terminal.
@@ -120,16 +137,21 @@ impl App {
         }
     }
 
-    /// Recomputes rows and columns for a new panel size.
-    pub(crate) fn terminal_resized(&mut self, size: Size) {
+    /// Recomputes rows and columns of console panel `panel` for a new size;
+    /// each console keeps its own grid, since the two may sit in different
+    /// areas.
+    pub(crate) fn terminal_resized(&mut self, panel: Bottom, size: Size) {
         let cols = ((size.width - 2.0 * TERMINAL_PADDING) / TERMINAL_CHAR_WIDTH)
             .floor()
             .max(10.0) as u16;
         let rows = ((size.height - 2.0 * TERMINAL_PADDING) / TERMINAL_LINE)
             .floor()
             .max(2.0) as u16;
-        self.terminal_grid = Some((rows, cols));
-        for session in [&mut self.terminal, &mut self.claude].into_iter().flatten() {
+        match panel {
+            Bottom::Claude => self.claude_grid = Some((rows, cols)),
+            _ => self.terminal_grid = Some((rows, cols)),
+        }
+        if let Some(session) = self.session_of_mut(panel) {
             session.resize(rows, cols);
         }
     }
@@ -175,7 +197,7 @@ impl App {
     /// Runs a command line in the terminal (starting it if needed), as if
     /// typed. Used by the Composer and test actions.
     pub(crate) fn run_in_terminal(&mut self, command: &str) -> Task<Message> {
-        self.bottom = Some(Bottom::Terminal);
+        self.show_panel(Bottom::Terminal);
         if self.terminal.as_ref().is_none_or(Session::has_exited) {
             self.start_terminal();
         }
@@ -186,8 +208,7 @@ impl App {
     /// Key handling while the terminal has focus; returns `None` to fall
     /// through to the IDE's own shortcuts.
     pub(crate) fn terminal_keyboard(&mut self, event: &keyboard::Event) -> Option<Task<Message>> {
-        if !self.terminal_focused || !matches!(self.bottom, Some(Bottom::Terminal | Bottom::Claude))
-        {
+        if !self.terminal_focused || !self.is_shown(self.console) {
             return None;
         }
         let keyboard::Event::KeyPressed {

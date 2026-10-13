@@ -39,6 +39,9 @@ pub struct SavedSession {
     /// Sidebar width and bottom panel height, shared by every project.
     #[serde(default)]
     pub layout: Option<SavedLayout>,
+    /// Tool panels the user moved to the right side.
+    #[serde(default)]
+    pub right_panels: Vec<Bottom>,
 }
 
 /// The saved session; empty when missing or unreadable.

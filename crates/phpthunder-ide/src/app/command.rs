@@ -118,7 +118,7 @@ impl App {
             Cmd::StepOut => self.debug_send(DebugCommand::StepOut),
             Cmd::StopDebug => self.debug_send(DebugCommand::Stop),
             Cmd::Problems => {
-                self.bottom = Some(Bottom::Problems);
+                self.show_panel(Bottom::Problems);
                 Task::none()
             }
         }
@@ -421,7 +421,7 @@ impl App {
             dialog.mask.clone(),
         );
         self.search = Some(Search::Running(query.clone()));
-        self.bottom = Some(Bottom::Find);
+        self.show_panel(Bottom::Find);
         // Keep the dialog settings for next time, closed.
         self.last_search = Some(SearchDialog {
             error: None,

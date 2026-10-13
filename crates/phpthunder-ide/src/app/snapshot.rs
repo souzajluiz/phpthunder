@@ -3,8 +3,10 @@
 //! indexing to settle, saves a PNG of its window and quits. With
 //! `PHPTHUNDER_SNAPSHOT_TYPE=text` (and `PHPTHUNDER_SNAPSHOT_LINE=n`, 1-based)
 //! it first types `text` on a new line after line `n` and opens completion;
-//! `PHPTHUNDER_SNAPSHOT_WRAP=1` turns soft wrap on, and
-//! `PHPTHUNDER_SNAPSHOT_CARETS=n` types with `n` carets on consecutive lines.
+//! `PHPTHUNDER_SNAPSHOT_WRAP=1` turns soft wrap on,
+//! `PHPTHUNDER_SNAPSHOT_CARETS=n` types with `n` carets on consecutive lines,
+//! and `PHPTHUNDER_SNAPSHOT_RIGHT=1` shows the terminal docked right and the
+//! Problems panel below.
 //! Used to check the look without a screen recorder.
 
 use super::*;
@@ -66,7 +68,17 @@ impl App {
         } else {
             Task::none()
         };
-        Task::batch([open, typed, wrap, shot])
+        // `PHPTHUNDER_SNAPSHOT_RIGHT=1`: both panel areas open.
+        let panels = if std::env::var_os("PHPTHUNDER_SNAPSHOT_RIGHT").is_some() {
+            Task::perform(tokio::time::sleep(OPEN_DELAY * 2), |()| {
+                Message::MovePanel(Bottom::Terminal)
+            })
+            .chain(Task::done(Message::SelectBottom(Bottom::Terminal)))
+            .chain(Task::done(Message::SelectBottom(Bottom::Problems)))
+        } else {
+            Task::none()
+        };
+        Task::batch([open, typed, wrap, panels, shot])
     }
 
     /// Types `text` on a new line after `PHPTHUNDER_SNAPSHOT_LINE` (default

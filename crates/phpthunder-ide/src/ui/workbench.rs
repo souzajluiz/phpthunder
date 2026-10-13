@@ -2,7 +2,7 @@
 //! breadcrumb, editor with completion/hover popups, usages panel, status bar.
 
 use crate::app::{
-    App, Bottom, Completion, EDITOR_ID, EDITOR_SCROLL_ID, Hover, Indexing, Message, Search,
+    App, Bottom, Completion, Dock, EDITOR_ID, EDITOR_SCROLL_ID, Hover, Indexing, Message, Search,
     Splitter, TestTarget, Usages, bindings,
 };
 use crate::editor::Document;
@@ -326,32 +326,32 @@ impl App {
                 format!("{}  {}", tr!("action-go-to-symbol"), hint(Cmd::GotoSymbol))
             ),
             item(
-                tool(Icon::Tests, self.bottom == Some(Bottom::Tests)),
-                self.bottom == Some(Bottom::Tests),
+                tool(Icon::Tests, self.is_shown(Bottom::Tests)),
+                self.is_shown(Bottom::Tests),
                 Some(Message::RunTests(TestTarget::Context)),
                 format!("{}  {}", tr!("rail-run-tests"), hint(Cmd::RunTests))
             ),
             item(
-                tool(Icon::Terminal, self.bottom == Some(Bottom::Terminal)),
-                self.bottom == Some(Bottom::Terminal),
+                tool(Icon::Terminal, self.is_shown(Bottom::Terminal)),
+                self.is_shown(Bottom::Terminal),
                 Some(Message::Command(Cmd::ToggleTerminal)),
                 format!("{}  {}", tr!("panel-terminal"), hint(Cmd::ToggleTerminal))
             ),
             item(
                 logo(Logo::Claude, 18.0),
-                self.bottom == Some(Bottom::Claude),
+                self.is_shown(Bottom::Claude),
                 Some(Message::Command(Cmd::ToggleClaude)),
                 format!("{}  {}", tr!("panel-claude"), hint(Cmd::ToggleClaude))
             ),
             item(
-                tool(Icon::Bug, self.bottom == Some(Bottom::Debug)),
-                self.bottom == Some(Bottom::Debug),
+                tool(Icon::Bug, self.is_shown(Bottom::Debug)),
+                self.is_shown(Bottom::Debug),
                 Some(Message::DebugTest),
                 format!("{}  {}", tr!("debug-test"), hint(Cmd::DebugTest))
             ),
             item(
-                tool(Icon::Commit, self.bottom == Some(Bottom::Commit)),
-                self.bottom == Some(Bottom::Commit),
+                tool(Icon::Commit, self.is_shown(Bottom::Commit)),
+                self.is_shown(Bottom::Commit),
                 Some(Message::Command(Cmd::Commit)),
                 format!("{}  {}", tr!("panel-commit"), hint(Cmd::Commit))
             ),
@@ -493,7 +493,7 @@ impl App {
         // Always the same widgets, only the color changes: the handle keeps
         // a stable hit box while it lights up.
         let (handle, interaction) = match which {
-            Splitter::Sidebar => (
+            Splitter::Sidebar | Splitter::Right => (
                 container(container(space()).width(2).height(Fill).style(fill(color)))
                     .center_x(ISLAND_GAP)
                     .height(Fill),
@@ -516,7 +516,7 @@ impl App {
     }
 
     /// Everything right of the sidebar: tabs, breadcrumb, optional find bar,
-    /// editor and optional bottom panel. With no open document it shows the
+    /// editor, and the optional bottom and right panel areas. With no open document it shows the
     /// shortcut cheat sheet instead.
     fn main_area(&self) -> El<'_> {
         let editor: El<'_> = match self.doc() {
@@ -537,10 +537,16 @@ impl App {
             }
         };
         let mut col = column![editor];
-        if let Some(panel) = self.bottom_panel() {
+        if let Some(panel) = self.panel_area(Dock::Bottom) {
             col = col.push(self.splitter(Splitter::Bottom)).push(panel);
         }
-        col.width(Fill).height(Fill).into()
+        let center = col.width(Fill).height(Fill);
+        match self.panel_area(Dock::Right) {
+            Some(panel) => row![center, self.splitter(Splitter::Right), panel]
+                .height(Fill)
+                .into(),
+            None => center.into(),
+        }
     }
 
     /// Cheat sheet of navigation shortcuts for the empty editor area; key labels
@@ -893,61 +899,84 @@ impl App {
 
     /// Bottom tool panel: Usages and Find results, as tabs. Returns `None` when
     /// no panel is open; shown under the editor by `main_area`.
-    fn bottom_panel(&self) -> Option<El<'_>> {
-        let current = self.bottom?;
+    fn panel_area(&self, dock: Dock) -> Option<El<'_>> {
+        let current = self.shown_at(dock)?;
         let tab = |b: Bottom, name: String| -> El<'_> {
             let active = b == current;
-            button(label(name, 13.0, if active { TEXT_BRIGHT } else { MUTED }))
-                .on_press(Message::SelectBottom(b))
-                .padding([0, 10])
-                .height(33)
-                .style(move |_: &Theme, status| button::Style {
-                    background: interaction_wash(status).or(Some(PANEL.into())),
-                    shadow: if active {
-                        Shadow {
-                            color: ACCENT,
-                            offset: Vector::new(0.0, 2.0),
-                            blur_radius: 0.0,
-                        }
-                    } else {
-                        Shadow::default()
-                    },
-                    text_color: TEXT,
-                    ..Default::default()
-                })
-                .into()
+            button(
+                container(label(name, 13.0, if active { TEXT_BRIGHT } else { MUTED })).center_y(33),
+            )
+            .on_press(Message::SelectBottom(b))
+            .padding([0, 10])
+            .height(33)
+            .style(move |_: &Theme, status| button::Style {
+                background: interaction_wash(status).or(Some(PANEL.into())),
+                shadow: if active {
+                    Shadow {
+                        color: ACCENT,
+                        offset: Vector::new(0.0, 2.0),
+                        blur_radius: 0.0,
+                    }
+                } else {
+                    Shadow::default()
+                },
+                text_color: TEXT,
+                ..Default::default()
+            })
+            .into()
         };
+        // Each side lists the panels docked to it; the shown one always.
+        let here = |b: Bottom| self.dock_of(b) == dock || b == current;
         let mut tabs = row![].spacing(4).align_y(Center);
-        if self.usages.is_some() {
-            tabs = tabs.push(tab(Bottom::Usages, tr!("panel-usages")));
+        let available = [
+            (Bottom::Usages, self.usages.is_some(), tr!("panel-usages")),
+            (Bottom::Find, self.search.is_some(), tr!("panel-find")),
+            (Bottom::Problems, true, tr!("panel-problems")),
+            (
+                Bottom::Hierarchy,
+                self.hierarchy.is_some(),
+                tr!("panel-hierarchy"),
+            ),
+            (Bottom::Tests, self.tests.is_some(), tr!("panel-tests")),
+            (Bottom::Terminal, true, tr!("panel-terminal")),
+            (Bottom::Claude, self.claude.is_some(), tr!("panel-claude")),
+            (Bottom::Commit, self.git.is_some(), tr!("panel-commit")),
+            (Bottom::Debug, self.debug.is_some(), tr!("panel-debug")),
+        ];
+        for (panel, exists, name) in available {
+            if exists && here(panel) {
+                tabs = tabs.push(tab(panel, name));
+            }
         }
-        if self.search.is_some() {
-            tabs = tabs.push(tab(Bottom::Find, tr!("panel-find")));
-        }
-        tabs = tabs.push(tab(Bottom::Problems, tr!("panel-problems")));
-        if self.hierarchy.is_some() {
-            tabs = tabs.push(tab(Bottom::Hierarchy, tr!("panel-hierarchy")));
-        }
-        if self.tests.is_some() {
-            tabs = tabs.push(tab(Bottom::Tests, tr!("panel-tests")));
-        }
-        tabs = tabs.push(tab(Bottom::Terminal, tr!("panel-terminal")));
-        if self.claude.is_some() {
-            tabs = tabs.push(tab(Bottom::Claude, tr!("panel-claude")));
-        }
-        if self.git.is_some() {
-            tabs = tabs.push(tab(Bottom::Commit, tr!("panel-commit")));
-        }
-        if self.debug.is_some() {
-            tabs = tabs.push(tab(Bottom::Debug, tr!("panel-debug")));
-        }
+        // Moves the shown panel to the other side.
+        let (move_icon, move_tip) = match dock {
+            Dock::Bottom => (Icon::PanelRight, tr!("panel-move-right")),
+            Dock::Right => (Icon::PanelBottom, tr!("panel-move-bottom")),
+        };
+        let move_button = tooltip(
+            button(icon(move_icon, 13.0, 2.0, MUTED))
+                .padding(6)
+                .style(ghost_button)
+                .on_press(Message::MovePanel(current)),
+            container(label(move_tip, 12.0, TEXT))
+                .padding([4, 8])
+                .style(popup),
+            tooltip::Position::Left,
+        );
         let close = button(icon(Icon::Close, 12.0, 2.0, MUTED))
             .padding(6)
             .style(ghost_button)
-            .on_press(Message::CloseBottom);
+            .on_press(Message::ClosePanels(dock));
+        // Tabs scroll sideways when the right area is too narrow for them.
+        let tabs = scrollable(tabs)
+            .direction(scrollable::Direction::Horizontal(
+                scrollable::Scrollbar::new().width(0).scroller_width(0),
+            ))
+            .width(Fill);
         let header = container(
-            row![tabs, space().width(Fill), close]
+            row![tabs, move_button, close]
                 .align_y(Center)
+                .spacing(2)
                 .padding([0, 12]),
         )
         .height(34);
@@ -956,19 +985,18 @@ impl App {
             Bottom::Find => self.find_results_body(),
             Bottom::Problems => self.problems_body(),
             Bottom::Hierarchy => self.hierarchy_body(),
-            Bottom::Terminal | Bottom::Claude => self.terminal_body(),
+            Bottom::Terminal | Bottom::Claude => self.terminal_body(current),
             Bottom::Tests => self.tests_body(),
             Bottom::Commit => self.commit_body(),
             Bottom::Debug => self.debug_body(),
         };
-        Some(
-            container(column![header, hsep(), body])
-                .height(self.panes.sizes.bottom)
-                .width(Fill)
-                .style(island)
-                .clip(true)
-                .into(),
-        )
+        let area = container(column![header, hsep(), body])
+            .style(island)
+            .clip(true);
+        Some(match dock {
+            Dock::Bottom => area.height(self.panes.sizes.bottom).width(Fill).into(),
+            Dock::Right => area.width(self.panes.sizes.right).height(Fill).into(),
+        })
     }
 
     /// Usages tab body: a progress line while searching, then one clickable row
@@ -1487,7 +1515,7 @@ impl App {
             bar = bar.push(label(doc.file_type.name(), 12.0, MUTED));
         }
         // While the Claude panel is open: whether the CLI is running, and where.
-        if self.bottom == Some(Bottom::Claude)
+        if self.is_shown(Bottom::Claude)
             && let Some(session) = &self.claude
         {
             let project = self

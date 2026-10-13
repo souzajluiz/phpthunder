@@ -77,8 +77,10 @@ pub struct App {
     pub usages: Option<Usages>,
     /// Find-in-path panel content.
     pub search: Option<Search>,
-    /// Visible bottom panel tab, `None` when hidden.
+    /// Tool panel shown below the editor, `None` when that area is hidden.
     pub bottom: Option<Bottom>,
+    /// Tool panel shown right of the editor, `None` when that area is hidden.
+    pub right: Option<Bottom>,
     /// Open command/file palette.
     pub palette: Option<Palette>,
     /// Open find/replace bar for the active document.
@@ -132,8 +134,13 @@ pub struct App {
     pub claude: Option<crate::terminal::Session>,
     /// Whether keys go to the terminal (set by clicking it or `⌥F12`).
     pub terminal_focused: bool,
+    /// Console panel keys and pastes go to: [`Bottom::Terminal`] or
+    /// [`Bottom::Claude`].
+    pub console: Bottom,
     /// Last measured terminal grid as (rows, columns).
     pub terminal_grid: Option<(u16, u16)>,
+    /// Last measured Claude panel grid as (rows, columns).
+    pub claude_grid: Option<(u16, u16)>,
     /// Content of the Tests panel.
     pub tests: Option<Tests>,
     /// Scope of the last test run, for "run again".
@@ -272,6 +279,7 @@ impl App {
             usages: None,
             search: None,
             bottom: None,
+            right: None,
             palette: None,
             find: None,
             search_dialog: None,
@@ -297,7 +305,9 @@ impl App {
             terminal: None,
             claude: None,
             terminal_focused: false,
+            console: Bottom::Terminal,
             terminal_grid: None,
+            claude_grid: None,
             tests: None,
             last_test_scope: None,
             phpstan_running: false,
@@ -617,7 +627,7 @@ impl App {
                 self.open(path, Some(pos))
             }
             Message::SelectBottom(b) => {
-                self.bottom = Some(b);
+                self.show_panel(b);
                 if b == Bottom::Claude {
                     if self
                         .claude
@@ -641,10 +651,11 @@ impl App {
                 self.terminal_focused = false;
                 Task::none()
             }
-            Message::CloseBottom => {
-                self.bottom = None;
+            Message::ClosePanels(dock) => {
+                self.close_panels(dock);
                 Task::none()
             }
+            Message::MovePanel(panel) => self.move_panel(panel),
             Message::PaletteQuery(q) => self.palette_query(q),
             Message::PaletteSubmit => self.palette_open_selected(),
             Message::PalettePick(i) => {
@@ -740,7 +751,7 @@ impl App {
             }
             Message::ResizeStart(splitter) => {
                 let room = match splitter {
-                    Splitter::Sidebar => self.editor_width,
+                    Splitter::Sidebar | Splitter::Right => self.editor_width,
                     Splitter::Bottom => self.viewport_height,
                 };
                 self.panes.begin(splitter, room);
@@ -807,17 +818,21 @@ impl App {
                 }
                 Task::none()
             }
-            Message::TerminalResized(size) => {
-                self.terminal_resized(size);
+            Message::TerminalResized(panel, size) => {
+                self.terminal_resized(panel, size);
                 Task::none()
             }
-            Message::TerminalFocus => self.focus_terminal(),
+            Message::TerminalFocus(panel) => {
+                self.console = panel;
+                self.focus_terminal()
+            }
             Message::TerminalPaste(text) => {
                 self.terminal_paste(text);
                 Task::none()
             }
-            Message::TerminalRestart => {
-                if self.bottom == Some(Bottom::Claude) {
+            Message::TerminalRestart(panel) => {
+                self.console = panel;
+                if panel == Bottom::Claude {
                     self.start_claude();
                 } else {
                     self.start_terminal();
@@ -838,8 +853,8 @@ impl App {
                 self.phpstan_done(&path, result);
                 Task::none()
             }
-            Message::TerminalScroll(lines) => {
-                if let Some(session) = self.console_session_mut() {
+            Message::TerminalScroll(panel, lines) => {
+                if let Some(session) = self.session_of_mut(panel) {
                     session.scroll(lines);
                 }
                 Task::none()
@@ -943,6 +958,7 @@ impl App {
         self.usages = None;
         self.search = None;
         self.bottom = None;
+        self.right = None;
         self.indexing = Indexing::Running;
         self.laravel = None;
         self.git = None;
@@ -1417,7 +1433,7 @@ impl App {
         let name = doc.text[word_start..word_end].to_string();
         let text = doc.text.clone();
         self.usages = Some(Usages::Searching(name));
-        self.bottom = Some(Bottom::Usages);
+        self.show_panel(Bottom::Usages);
         self.close_overlays();
         Task::perform(self.lang.clone().usages(text, offset, open), |found| {
             Message::UsagesFound(found.map(Box::new))
@@ -1449,7 +1465,7 @@ impl App {
     fn show_usages(&mut self, found: Option<Box<(Definition, Vec<Usage>)>>) {
         let Some((def, usages)) = found.map(|b| *b) else {
             self.usages = None;
-            self.bottom = None;
+            self.hide_panel(Bottom::Usages);
             self.notice = Some(tr!("notice-nothing-to-search"));
             return;
         };

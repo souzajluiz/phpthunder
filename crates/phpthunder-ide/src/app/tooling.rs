@@ -51,7 +51,7 @@ impl App {
         let scope = self.test_scope(target);
         self.last_test_scope = Some(scope.clone());
         self.tests = Some(Tests::Running(scope.label()));
-        self.bottom = Some(Bottom::Tests);
+        self.show_panel(Bottom::Tests);
         Task::perform(run_tests(root, scope), Message::TestsDone)
     }
 

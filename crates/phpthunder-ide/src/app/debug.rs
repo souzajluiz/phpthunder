@@ -55,7 +55,7 @@ impl App {
             eval: String::new(),
             evaluations: Vec::new(),
         });
-        self.bottom = Some(Bottom::Debug);
+        self.show_panel(Bottom::Debug);
         Task::run(events, Message::Debug)
     }
 
@@ -92,7 +92,7 @@ impl App {
                 view.variables.clear();
                 view.children.clear();
                 view.expanded.clear();
-                self.bottom = Some(Bottom::Debug);
+                self.show_panel(Bottom::Debug);
                 return self.show_execution_point();
             }
             DebugEvent::Variables(depth, variables) => {

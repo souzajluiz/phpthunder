@@ -139,7 +139,7 @@ impl App {
             title: tr!("hierarchy-title", name = short),
             rows,
         });
-        self.bottom = Some(Bottom::Hierarchy);
+        self.show_panel(Bottom::Hierarchy);
         Task::none()
     }
 

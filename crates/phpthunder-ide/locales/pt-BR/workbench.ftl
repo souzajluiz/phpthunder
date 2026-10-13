@@ -68,3 +68,5 @@ status-position = Ln { $line }, Col { $column }
 gutter-route-action = Ir para { $target }
 gutter-model-table = Ir para a migration de { $table }
 gutter-run = Executar: { $command }
+panel-move-right = Mover para a direita
+panel-move-bottom = Mover para baixo

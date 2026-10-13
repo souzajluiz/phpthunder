@@ -4,6 +4,7 @@ mod carets;
 mod command;
 mod completion;
 mod debug;
+mod dock;
 mod files;
 mod generate;
 mod git;

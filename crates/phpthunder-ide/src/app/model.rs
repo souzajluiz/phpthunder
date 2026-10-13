@@ -100,10 +100,12 @@ pub enum Message {
     UsagesFound(Option<Box<(Definition, Vec<Usage>)>>),
     /// Jump to the usage row at this index.
     OpenUsage(usize),
-    /// Switch the bottom panel tab.
+    /// Show a tool panel, in the area it is docked to.
     SelectBottom(Bottom),
-    /// Hide the bottom panel.
-    CloseBottom,
+    /// Hide the panel area on this side.
+    ClosePanels(Dock),
+    /// Move a tool panel to the other side (bottom <-> right).
+    MovePanel(Bottom),
     // Palette
     /// Palette input text changed.
     PaletteQuery(String),
@@ -194,16 +196,16 @@ pub enum Message {
     // Terminal
     /// The shell of this session wrote output (redraw).
     TerminalOutput(u64),
-    /// The terminal panel was laid out at this size.
-    TerminalResized(iced::Size),
-    /// The terminal panel was clicked: keys now go to the shell.
-    TerminalFocus,
+    /// A console panel (terminal or Claude) was laid out at this size.
+    TerminalResized(Bottom, iced::Size),
+    /// A console panel was clicked: keys now go to its session.
+    TerminalFocus(Bottom),
     /// Clipboard contents to paste into the shell.
     TerminalPaste(Option<String>),
-    /// Start a new shell after the previous one exited.
-    TerminalRestart,
-    /// Mouse wheel over the terminal, in lines (positive is up).
-    TerminalScroll(i32),
+    /// Start a console panel's session again after it exited.
+    TerminalRestart(Bottom),
+    /// Mouse wheel over a console panel, in lines (positive is up).
+    TerminalScroll(Bottom, i32),
     // Tools
     /// Run tests in this scope.
     RunTests(TestTarget),
@@ -403,8 +405,8 @@ pub enum Tests {
     Done(crate::testing::TestRun),
 }
 
-/// Tabs of the bottom panel.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Tool panels (tabs of the bottom or right panel area).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Bottom {
     /// Find-usages results.
     Usages,
@@ -424,6 +426,15 @@ pub enum Bottom {
     Commit,
     /// The debugger.
     Debug,
+}
+
+/// Where a tool panel is docked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Dock {
+    /// Below the editor.
+    Bottom,
+    /// Right of the editor.
+    Right,
 }
 
 /// State of the background project index, shown in the status bar.

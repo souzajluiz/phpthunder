@@ -1,7 +1,7 @@
 //! Drawing the integrated terminal from the VT100 screen.
 
 use super::*;
-use crate::app::{App, Message, TERMINAL_SINK};
+use crate::app::{App, Bottom, Message, TERMINAL_SINK};
 use crate::tr;
 use iced::widget::text::{LineHeight, Span, Wrapping};
 use iced::widget::{Id, button, column, container, mouse_area, rich_text, row, sensor, text_input};
@@ -105,17 +105,18 @@ fn screen_runs(screen: &vt100::Screen, show_cursor: bool) -> Vec<Vec<Run>> {
 }
 
 impl App {
-    /// The terminal panel body: the screen grid, an exited banner, and the
-    /// hidden input that holds focus while the terminal is active.
-    pub(crate) fn terminal_body(&self) -> Element<'_, Message> {
-        let Some(session) = self.console_session() else {
+    /// Body of console panel `panel` (terminal or Claude): the screen grid,
+    /// an exited banner, and the hidden input that holds focus while it is
+    /// the active console.
+    pub(crate) fn terminal_body(&self, panel: Bottom) -> Element<'_, Message> {
+        let Some(session) = self.session_of(panel) else {
             return container(
                 row![
                     label(tr!("terminal-none"), 12.0, MUTED),
                     button(label(tr!("terminal-start"), 12.0, TEXT_SOFT))
                         .padding([4, 10])
                         .style(ghost_button)
-                        .on_press(Message::TerminalRestart),
+                        .on_press(Message::TerminalRestart(panel)),
                 ]
                 .spacing(12)
                 .align_y(Center),
@@ -123,7 +124,8 @@ impl App {
             .padding([10, 16])
             .into();
         };
-        let rows = session.with_screen(|screen| screen_runs(screen, self.terminal_focused));
+        let focused = self.terminal_focused && self.console == panel;
+        let rows = session.with_screen(|screen| screen_runs(screen, focused));
         let lines = rows.into_iter().map(|runs| {
             let spans: Vec<Span<'_, (), Font>> = runs
                 .into_iter()
@@ -151,7 +153,7 @@ impl App {
                     button(label(tr!("terminal-restart"), 12.0, TEXT_SOFT))
                         .padding([4, 10])
                         .style(ghost_button)
-                        .on_press(Message::TerminalRestart),
+                        .on_press(Message::TerminalRestart(panel)),
                 ]
                 .spacing(12)
                 .align_y(Center)
@@ -179,18 +181,18 @@ impl App {
                 .height(Fill)
                 .style(fill(BG)),
         )
-        .on_press(Message::TerminalFocus)
-        .on_scroll(|delta| {
+        .on_press(Message::TerminalFocus(panel))
+        .on_scroll(move |delta| {
             let lines = match delta {
                 mouse::ScrollDelta::Lines { y, .. } => (y * 3.0) as i32,
                 mouse::ScrollDelta::Pixels { y, .. } => (y / TERMINAL_LINE) as i32,
             };
-            Message::TerminalScroll(lines)
+            Message::TerminalScroll(panel, lines)
         })
         .interaction(mouse::Interaction::Text);
         sensor(body)
-            .on_show(Message::TerminalResized)
-            .on_resize(Message::TerminalResized)
+            .on_show(move |size| Message::TerminalResized(panel, size))
+            .on_resize(move |size| Message::TerminalResized(panel, size))
             .into()
     }
 }
