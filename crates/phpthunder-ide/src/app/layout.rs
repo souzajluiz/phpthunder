@@ -29,9 +29,16 @@ impl App {
     }
 
     /// The row layout of `doc`: one row per line, or wrapped at the editor
-    /// width when soft wrap is on.
+    /// width when soft wrap is on. Reads the line widths in one pass over
+    /// the text: `line_text(i)` per line rescans from the start, which made
+    /// every frame quadratic and froze the window on large files.
     pub(crate) fn wrap_layout(&self, doc: &Document) -> WrapLayout {
-        let widths = (0..doc.line_count()).map(|i| doc.line_text(i).chars().count());
+        let widths = doc
+            .text
+            .split('\n')
+            .map(|line| line.strip_suffix('\r').unwrap_or(line).chars().count())
+            .chain(std::iter::repeat(0))
+            .take(doc.line_count());
         WrapLayout::new(widths, self.soft_wrap.then(|| self.wrap_columns()))
     }
 

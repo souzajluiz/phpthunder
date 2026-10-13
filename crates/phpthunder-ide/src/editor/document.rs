@@ -60,6 +60,11 @@ pub struct Document {
     pub content: Content,
     /// Mirror of `content` as one string, refreshed after every edit.
     pub text: String,
+    /// Byte offset where each line of `text` starts, rebuilt with it (see
+    /// [`Self::reindex_lines`]) so `line_start` and `position_of` are a
+    /// lookup instead of a scan from the top: the view calls them per
+    /// bracket and per line on every frame.
+    line_starts: Vec<usize>,
     /// Text as of the last load or save, compared against `text` to compute `dirty`.
     saved_text: String,
     /// Whether the text differs from what is on disk; shown in the tab title.
@@ -124,6 +129,7 @@ impl Document {
             content: Content::with_text(&text),
             saved_text: text.clone(),
             text,
+            line_starts: Vec::new(),
             dirty: false,
             highlights: Arc::default(),
             highlight_version: 0,
@@ -143,8 +149,29 @@ impl Document {
             selection_stack: Vec::new(),
             word_completion: None,
         };
+        doc.reindex_lines();
         doc.refresh_highlights();
         doc
+    }
+
+    /// Rebuilds [`Self::line_starts`] from `text`. Runs on open and after
+    /// every text change, alongside the highlights.
+    fn reindex_lines(&mut self) {
+        self.line_starts.clear();
+        self.line_starts.push(0);
+        self.line_starts
+            .extend(self.text.match_indices('\n').map(|(i, _)| i + 1));
+    }
+
+    /// The line index when it matches `text`; `None` if `text` was changed
+    /// without going through the editing methods, so callers fall back to
+    /// scanning instead of returning wrong offsets.
+    fn line_index(&self) -> Option<&[usize]> {
+        let last = *self.line_starts.last()?;
+        let fresh = last <= self.text.len()
+            && (last == 0 || self.text.as_bytes()[last - 1] == b'\n')
+            && self.text[last..].find('\n').is_none();
+        fresh.then_some(&self.line_starts)
     }
 
     /// Adopts `style` (the file's EditorConfig) for indentation and saving.
@@ -346,6 +373,7 @@ impl Document {
 
     /// Recomputes `dirty` and highlighting; runs after every text mutation.
     fn after_change(&mut self) {
+        self.reindex_lines();
         self.dirty = self.text != self.saved_text;
         self.refresh_highlights();
     }
@@ -488,6 +516,9 @@ impl Document {
         if line == 0 {
             return 0;
         }
+        if let Some(starts) = self.line_index() {
+            return starts.get(line).copied().unwrap_or(self.text.len());
+        }
         self.text
             .match_indices('\n')
             .nth(line - 1)
@@ -525,7 +556,10 @@ impl Document {
     /// Inverse of `offset`; used to turn match ranges and edits into cursor positions.
     pub fn position_of(&self, offset: usize) -> Position {
         let offset = offset.min(self.text.len());
-        let line = self.text[..offset].matches('\n').count();
+        let line = match self.line_index() {
+            Some(starts) => starts.partition_point(|&s| s <= offset) - 1,
+            None => self.text[..offset].matches('\n').count(),
+        };
         Position {
             line,
             column: offset - self.line_start(line),
