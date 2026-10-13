@@ -113,6 +113,76 @@ impl App {
             .unwrap_or_default()
     }
 
+    /// Distraction-free mode: hides the rail, sidebar, panels and status
+    /// bar, and brings them back when turned off.
+    pub(crate) fn toggle_zen(&mut self) -> Task<Message> {
+        match self.zen.take() {
+            Some((sidebar, bottom, right)) => {
+                self.sidebar = sidebar;
+                self.bottom = bottom;
+                self.right = right;
+            }
+            None => {
+                self.zen = Some((self.sidebar, self.bottom, self.right));
+                self.sidebar = false;
+                self.bottom = None;
+                self.right = None;
+            }
+        }
+        Task::none()
+    }
+
+    /// `⌥Space`: shows the source of the declaration at the caret in a
+    /// popup, without leaving the file.
+    pub(crate) fn quick_definition(&mut self) -> Task<Message> {
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        let offset = doc.offset(doc.cursor());
+        let Some(def) = self.lang.definitions(&doc.text, offset).into_iter().next() else {
+            self.notice = Some(tr!("notice-no-declaration"));
+            return Task::none();
+        };
+        let source = self
+            .docs
+            .iter()
+            .find(|d| d.path == def.path)
+            .map(|d| d.text.clone())
+            .or_else(|| std::fs::read_to_string(&def.path).ok())
+            .unwrap_or_default();
+        let span = &def.symbol.span;
+        let (first, last) = (span.start.line as usize, span.end.line as usize);
+        let lines: Vec<&str> = source
+            .lines()
+            .skip(first)
+            .take(last.min(first + 24) - first + 1)
+            .collect();
+        let indent = lines
+            .iter()
+            .filter(|l| !l.trim().is_empty())
+            .map(|l| l.len() - l.trim_start().len())
+            .min()
+            .unwrap_or(0);
+        let mut code: Vec<String> = lines
+            .iter()
+            .map(|l| l.get(indent..).unwrap_or(l.trim_start()).to_string())
+            .collect();
+        if last > first + 24 {
+            code.push("…".to_string());
+        }
+        let pos = doc.cursor();
+        let col = doc.visual_column(pos);
+        self.hover = Some(Hover {
+            line: pos.line,
+            col,
+            signature: code.join("\n"),
+            location: format!("{}:{}", self.relative(&def.path), first + 1),
+            doc: String::new(),
+            problems: Vec::new(),
+        });
+        Task::none()
+    }
+
     /// `F3`: adds or removes a bookmark on the caret line.
     pub(crate) fn toggle_bookmark(&mut self) -> Task<Message> {
         let Some(doc) = self.doc() else {

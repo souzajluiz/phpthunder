@@ -327,3 +327,5 @@ refactor-introduce-field = Introduce Field
 refactor-introduce-field-help = Property name; the value is assigned to $this->name before the statement
 refactor-introduce-parameter = Introduce Parameter
 refactor-introduce-parameter-help = Parameter name; the expression becomes its default value
+cmd-quick-definition = Quick definition
+cmd-toggle-distraction-free = Distraction-free mode

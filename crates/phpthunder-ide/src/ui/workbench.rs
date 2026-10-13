@@ -96,6 +96,22 @@ impl App {
         if self.tree.root.is_none() {
             return self.welcome();
         }
+        // Distraction-free: the editor alone, without rail and status bar.
+        if self.zen.is_some() {
+            let body = container(self.main_area()).padding(Padding {
+                left: ISLAND_GAP,
+                right: ISLAND_GAP,
+                bottom: ISLAND_GAP,
+                ..Padding::ZERO
+            });
+            return container(
+                column![self.title_bar(), body.height(Fill)]
+                    .width(Fill)
+                    .height(Fill),
+            )
+            .style(fill(CHROME))
+            .into();
+        }
         let mut body = row![self.rail()].spacing(ISLAND_GAP).padding(Padding {
             right: ISLAND_GAP,
             ..Padding::ZERO

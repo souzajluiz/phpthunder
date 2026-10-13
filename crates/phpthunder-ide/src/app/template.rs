@@ -25,6 +25,9 @@ impl App {
     /// abbreviation before the caret. Returns false when there is none, so
     /// Tab indents as usual.
     pub(crate) fn expand_template(&mut self) -> bool {
+        if self.expand_emmet() {
+            return true;
+        }
         let Some(doc) = self.doc().filter(|d| d.is_php() && d.selection().is_none()) else {
             return false;
         };
@@ -35,6 +38,37 @@ impl App {
             return false;
         };
         self.apply_expansion(expansion);
+        true
+    }
+
+    /// Tab in Blade, HTML, Vue or XML without a selection: expands the
+    /// Emmet abbreviation before the caret, caret at the first empty spot.
+    /// Returns false when there is none.
+    fn expand_emmet(&mut self) -> bool {
+        use crate::filetype::FileType;
+        let Some(doc) = self.doc().filter(|d| {
+            matches!(
+                d.file_type,
+                FileType::Blade | FileType::Html | FileType::Vue | FileType::Xml
+            ) && d.selection().is_none()
+        }) else {
+            return false;
+        };
+        let offset = doc.offset(doc.cursor());
+        let line = doc.line_text(doc.cursor().line);
+        let indent = &line[..line.len() - line.trim_start().len()];
+        let Some((start, html)) = crate::emmet::expand(&doc.text, offset, indent, &doc.indent_unit)
+        else {
+            return false;
+        };
+        let caret = html.find('|').unwrap_or(html.len());
+        let text = html.replace('|', "");
+        self.apply_expansion(Expansion {
+            start,
+            end: offset,
+            text,
+            caret: start + caret,
+        });
         true
     }
 

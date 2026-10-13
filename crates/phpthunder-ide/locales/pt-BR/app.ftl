@@ -326,3 +326,5 @@ refactor-introduce-field = Introduzir propriedade
 refactor-introduce-field-help = Nome da propriedade; o valor é atribuído a $this->nome antes da instrução
 refactor-introduce-parameter = Introduzir parâmetro
 refactor-introduce-parameter-help = Nome do parâmetro; a expressão vira seu valor padrão
+cmd-quick-definition = Definição rápida
+cmd-toggle-distraction-free = Modo sem distrações

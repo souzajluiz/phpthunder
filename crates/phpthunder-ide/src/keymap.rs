@@ -236,11 +236,15 @@ pub enum Cmd {
     IntroduceField,
     /// Turn the selected expression into a parameter (`⌥⌘P`).
     IntroduceParameter,
+    /// Show the declaration's source in a popup (`⌥Space`).
+    QuickDefinition,
+    /// Hide everything but the editor.
+    ToggleDistractionFree,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 112] = {
+    pub const ALL: [Cmd; 114] = {
         use Cmd::*;
         [
             Save,
@@ -355,6 +359,8 @@ impl Cmd {
             IntroduceConstant,
             IntroduceField,
             IntroduceParameter,
+            QuickDefinition,
+            ToggleDistractionFree,
         ]
     };
 
@@ -516,6 +522,10 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Named(Named::ArrowDown) if cmd && alt => AddCaretBelow,
         Key::Named(Named::ArrowLeft) if cmd && alt => Back,
         Key::Named(Named::ArrowRight) if cmd && alt => Forward,
+        Key::Named(Named::Space) if alt && !cmd && !m.control() => QuickDefinition,
+        Key::Character(c) if alt && !cmd && !m.control() && (c == " " || c == "\u{a0}") => {
+            QuickDefinition
+        }
         Key::Named(Named::Space) if m.control() => Complete,
         Key::Character(" ") if m.control() => Complete,
         _ => return None,
@@ -635,6 +645,8 @@ pub fn hint(cmd: Cmd) -> &'static str {
         IntroduceConstant => "⌥⌘C",
         IntroduceField => "⌥⌘F",
         IntroduceParameter => "⌥⌘P",
+        QuickDefinition => "⌥Space",
+        ToggleDistractionFree => "",
     }
 }
 

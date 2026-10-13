@@ -7,6 +7,7 @@ mod claude_usage;
 mod composer;
 mod debug;
 mod editor;
+mod emmet;
 mod filetype;
 mod formatter;
 mod git;

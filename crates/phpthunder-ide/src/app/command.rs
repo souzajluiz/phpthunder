@@ -176,6 +176,8 @@ impl App {
             Cmd::CompareWithClipboard => self.compare_with_clipboard(),
             Cmd::LocalHistory => self.open_local_history(),
             Cmd::Annotate => self.toggle_annotate(),
+            Cmd::QuickDefinition => self.quick_definition(),
+            Cmd::ToggleDistractionFree => self.toggle_zen(),
             Cmd::IntroduceConstant => {
                 self.introduce_from_selection(crate::app::RefactorAction::IntroduceConstant)
             }

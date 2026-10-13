@@ -163,6 +163,9 @@ pub struct App {
     pub compare: Option<Compare>,
     /// Git Annotate lines of files where it is turned on.
     pub blame: std::collections::HashMap<PathBuf, Vec<crate::git::LineBlame>>,
+    /// While distraction-free mode is on: the sidebar and panels to bring
+    /// back when it ends.
+    pub zen: Option<(bool, Option<Bottom>, Option<Bottom>)>,
     /// Interface scale (`⌘=` / `⌘−` / `⌘0`), 1.0 by default.
     pub zoom: f32,
     /// Whether spaces and tabs are drawn as dots and arrows.
@@ -361,6 +364,7 @@ impl App {
             claude_usage: crate::claude_usage::Usage::default(),
             show_whitespace: false,
             zoom: 1.0,
+            zen: None,
             compare: None,
             blame: std::collections::HashMap::new(),
             bookmarks: std::collections::BTreeMap::new(),
