@@ -1,0 +1,215 @@
+//! Application data: messages, panel and popup state, navigation locations.
+
+use crate::keymap::Cmd;
+use crate::language::IndexReport;
+use crate::search::{SearchResults, Toggle};
+use iced::Point;
+use iced::keyboard::{self};
+use iced::widget::scrollable::Viewport;
+use iced::widget::text_editor::Action;
+use phpthunder::analysis::{Candidate, Definition, Usage};
+use phpthunder::syntax::Pos;
+use std::path::PathBuf;
+
+/// Every event the UI, async tasks, and subscriptions feed into [`App::update`].
+#[derive(Debug, Clone)]
+pub enum Message {
+    // Project and files
+    /// Show the native folder picker.
+    OpenFolderDialog,
+    /// Folder picker (or CLI argument) result; `None` when cancelled.
+    FolderPicked(Option<PathBuf>),
+    /// Background file listing of the project finished.
+    FilesListed(Vec<PathBuf>),
+    /// Background project indexing finished.
+    Indexed(Result<IndexReport, String>),
+    /// Expand or collapse a directory in the file tree.
+    ToggleDir(PathBuf),
+    /// Open a file from the tree or palette, recording navigation history.
+    OpenFile(PathBuf),
+    /// Async file read finished: path, contents or error, cursor target.
+    FileLoaded(PathBuf, Result<String, String>, Option<Pos>),
+    /// Activate the editor tab at this index.
+    SelectTab(usize),
+    /// Close the editor tab at this index.
+    CloseTab(usize),
+    // Editor
+    /// Raw `text_editor` action (typing, clicks, motions).
+    Edit(Action),
+    /// IDE command resolved from a shortcut or menu.
+    Command(Cmd),
+    /// Bracket or quote typed; auto-paired or skipped over.
+    TypeChar(char),
+    /// Enter with auto-indent.
+    SmartEnter,
+    /// Backspace that also deletes empty bracket pairs.
+    Backspace,
+    /// Tab (`false`) or Shift+Tab outdent (`true`).
+    Indent(bool),
+    /// Editor scrollable moved or resized.
+    Scrolled(Viewport),
+    /// Move the completion selection by this delta (wraps around).
+    CompletionMove(i32),
+    /// Insert the selected completion item.
+    CompletionAccept,
+    /// Insert the completion item at this index (mouse click).
+    CompletionPick(usize),
+    /// Escape: dismiss completion, hover, notice, and the find bar.
+    CloseOverlays,
+    /// Mouse moved over the editor, in editor-local coordinates.
+    MouseMoved(Point),
+    /// Mouse left the editor area.
+    MouseLeft,
+    /// Hover delay elapsed for this generation; stale ones are ignored.
+    HoverFire(u64),
+    // Usages and bottom panel
+    /// Async find-usages finished; `None` when no symbol was under the cursor.
+    UsagesFound(Option<(Definition, Vec<Usage>)>),
+    /// Jump to the usage row at this index.
+    OpenUsage(usize),
+    /// Switch the bottom panel tab.
+    SelectBottom(Bottom),
+    /// Hide the bottom panel.
+    CloseBottom,
+    // Palette
+    /// Palette input text changed.
+    PaletteQuery(String),
+    /// Enter in the palette: open the selected entry.
+    PaletteSubmit,
+    /// Open the palette entry at this index (mouse click).
+    PalettePick(usize),
+    // Find in file
+    /// Find bar search text changed.
+    FindQuery(String),
+    /// Find bar replacement text changed.
+    ReplaceText(String),
+    /// Flip a find-bar option (case, word, regex).
+    FindToggle(Toggle),
+    /// Jump to the next (`true`) or previous (`false`) match.
+    FindStep(bool),
+    /// Show or hide the replace row of the find bar.
+    ToggleReplace,
+    /// Replace the current match and advance.
+    ReplaceOne,
+    /// Replace every match in the active document.
+    ReplaceAll,
+    /// Close the find bar and re-focus the editor.
+    CloseFind,
+    // Find in path
+    /// Find-in-path query text changed.
+    SearchQuery(String),
+    /// Find-in-path file mask changed.
+    SearchMask(String),
+    /// Flip a find-in-path option, including vendor inclusion.
+    SearchToggle(Toggle),
+    /// Start the find-in-path search.
+    SearchSubmit,
+    /// Background find-in-path finished, or the pattern was invalid.
+    SearchDone(Result<SearchResults, String>),
+    /// Open the hit at (file index, hit index) in the results panel.
+    OpenSearchHit(usize, usize),
+    /// Close the palette or find-in-path dialog.
+    CloseModal,
+    // Window
+    /// Show or hide the project sidebar.
+    ToggleSidebar,
+    /// Start dragging the borderless window from the title bar.
+    DragWindow,
+    /// Maximize or restore the window (title bar double-click).
+    ToggleMaximize,
+    /// Global keyboard event; the flag is `true` when a widget captured it.
+    Keyboard(keyboard::Event, bool),
+}
+
+/// Tabs of the bottom panel.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Bottom {
+    /// Find-usages results.
+    Usages,
+    /// Find-in-path results.
+    Find,
+}
+
+/// State of the background project index, shown in the status bar.
+pub enum Indexing {
+    /// No project opened yet.
+    Idle,
+    /// Indexing task in flight.
+    Running,
+    /// Indexing finished with these stats.
+    Done(IndexReport),
+}
+
+/// Open completion popup state; rebuilt by [`App::refresh_completion`].
+pub struct Completion {
+    /// Candidates, best first.
+    pub items: Vec<Candidate>,
+    /// Index of the highlighted candidate.
+    pub selected: usize,
+    /// Byte offset where the replaced prefix starts.
+    pub start: usize,
+    /// Visual position of the prefix start, for placing the popup.
+    pub line: usize,
+    /// Visual column of the prefix start.
+    pub col: usize,
+}
+
+/// Quick-documentation popup for the symbol under the mouse.
+pub struct Hover {
+    /// Editor line the popup anchors to.
+    pub line: usize,
+    /// Visual column of the hovered identifier's start.
+    pub col: usize,
+    /// Declaration signature, rendered as code.
+    pub signature: String,
+    /// `Owner::member · file:line` of the declaration.
+    pub location: String,
+    /// Doc comment text of the declaration.
+    pub doc: String,
+}
+
+/// One line of the usages panel.
+pub struct UsageRow {
+    /// File containing the usage.
+    pub path: PathBuf,
+    /// Start of the usage (UTF-16 position).
+    pub pos: Pos,
+    /// `file:line` label.
+    pub label: String,
+    /// Trimmed source line of the usage.
+    pub preview: String,
+    /// Whether this row is the declaration rather than a use.
+    pub is_declaration: bool,
+}
+
+/// Content of the usages panel.
+pub enum Usages {
+    /// Search for this symbol name is in flight.
+    Searching(String),
+    /// Search finished.
+    Found {
+        /// Summary header, e.g. `Foo::bar() — 3 usages in 2 files`.
+        title: String,
+        /// One row per usage, declaration included.
+        rows: Vec<UsageRow>,
+        /// Row last opened, highlighted in the panel.
+        selected: Option<usize>,
+    },
+}
+
+/// Content of the find-in-path results panel.
+pub enum Search {
+    /// Search for this query is in flight.
+    Running(String),
+    /// Results plus the (file, hit) last opened.
+    Done(SearchResults, Option<(usize, usize)>),
+}
+
+/// A place in a file, for back/forward navigation.
+#[derive(Debug, Clone)]
+pub struct Location {
+    /// File of the location.
+    pub path: PathBuf,
+    /// Cursor position (UTF-16).
+    pub pos: Pos,
+}

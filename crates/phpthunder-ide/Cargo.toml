@@ -1,0 +1,19 @@
+[package]
+name = "phpthunder-ide"
+description = "Native PHP IDE built with iced on the phpthunder engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+iced = { version = "0.14.0", features = ["svg", "tokio", "advanced"] }
+parking_lot.workspace = true
+phpthunder.workspace = true
+regex = "1.13.1"
+rfd = "0.17.2"
+tokio.workspace = true
+tree-sitter.workspace = true
+
+[lints]
+workspace = true

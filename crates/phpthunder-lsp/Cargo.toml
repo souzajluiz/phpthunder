@@ -1,0 +1,22 @@
+[package]
+name = "phpthunder-lsp"
+description = "Language server (LSP over stdio) for the phpthunder engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "phpthunder"
+path = "src/main.rs"
+
+[dependencies]
+parking_lot.workspace = true
+phpthunder.workspace = true
+serde = "1.0.229"
+serde_json = "1.0.154"
+tokio.workspace = true
+tower-lsp = "0.20.0"
+
+[lints]
+workspace = true
