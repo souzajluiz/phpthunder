@@ -99,4 +99,13 @@ impl App {
         }
         self.reveal_cursor()
     }
+
+    /// Puts a caret on every occurrence of the selection, or of the word
+    /// at the caret (`⌃⌘G`).
+    pub(crate) fn select_all_occurrences(&mut self) -> Task<Message> {
+        if let Some(doc) = self.doc_mut() {
+            doc.select_all_occurrences();
+        }
+        Task::none()
+    }
 }

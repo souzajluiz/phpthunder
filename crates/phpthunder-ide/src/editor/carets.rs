@@ -156,6 +156,22 @@ impl Document {
         }
     }
 
+    /// Selects every occurrence of the main selection (the word at the
+    /// caret first, when nothing is selected), one caret each.
+    pub fn select_all_occurrences(&mut self) {
+        if self.selection().is_none() {
+            self.select_next_occurrence();
+        }
+        // Each call adds one caret; stop when a pass adds none.
+        for _ in 0..10_000 {
+            let before = self.extra_carets.len();
+            self.select_next_occurrence();
+            if self.extra_carets.len() == before {
+                break;
+            }
+        }
+    }
+
     /// Applies `edit` at every caret as one undo step; afterwards each
     /// caret sits after its edit and the last one is the main caret.
     pub fn multi_edit(&mut self, edit: MultiEdit) {

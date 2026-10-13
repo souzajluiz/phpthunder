@@ -3,6 +3,7 @@
 
 use crate::app::{App, Bottom, EDITOR_ID, Message, Search, TestTarget};
 use crate::debug::DebugCommand;
+use crate::editor::{Document, LineTransform, Surround};
 use crate::keymap::Cmd;
 use crate::palette::{self, Mode, Palette, Target};
 use crate::search::{self, SearchDialog};
@@ -121,7 +122,95 @@ impl App {
                 self.show_panel(Bottom::Problems);
                 Task::none()
             }
+            Cmd::ExtendSelection => self.caret_action(Document::extend_selection),
+            Cmd::ShrinkSelection => self.caret_action(Document::shrink_selection),
+            Cmd::MatchBrace => self.caret_action(Document::jump_to_matching_bracket),
+            Cmd::BlockStart => self.caret_action(|d| d.jump_to_block_edge(false)),
+            Cmd::BlockEnd => self.caret_action(|d| d.jump_to_block_edge(true)),
+            Cmd::JoinLines => self.edit_with(Document::join_lines, None),
+            Cmd::SplitLine => self.edit_with(Document::split_line, None),
+            Cmd::StartNewLine => self.edit_with(|d| d.start_new_line(false), None),
+            Cmd::StartNewLineBefore => self.edit_with(|d| d.start_new_line(true), None),
+            Cmd::CompleteStatement => self.edit_with(Document::complete_statement, None),
+            Cmd::ToggleCase => self.edit_with(Document::toggle_case, None),
+            Cmd::Transpose => self.edit_with(Document::transpose, None),
+            Cmd::BlockComment => self.edit_with(Document::toggle_block_comment, None),
+            Cmd::WordCompletion => self.edit_with(Document::complete_word, None),
+            Cmd::Unwrap => self.edit_with(Document::unwrap_block, None),
+            Cmd::SortLines => self.edit_with(|d| d.transform_lines(LineTransform::Sort), None),
+            Cmd::ReverseLines => {
+                self.edit_with(|d| d.transform_lines(LineTransform::Reverse), None)
+            }
+            Cmd::UniqueLines => self.edit_with(|d| d.transform_lines(LineTransform::Unique), None),
+            Cmd::SurroundWith if has_doc => self.open_surround(),
+            Cmd::SurroundWith => Task::none(),
+            Cmd::SelectAllOccurrences => self.select_all_occurrences(),
+            Cmd::FindAction => self.open_find_action(),
+            Cmd::NextError => self.goto_problem(true),
+            Cmd::PreviousError => self.goto_problem(false),
         }
+    }
+
+    /// Runs a caret-only action (no text change) on the active document and
+    /// scrolls to the caret.
+    fn caret_action(&mut self, action: impl FnOnce(&mut Document)) -> Task<Message> {
+        let Some(doc) = self.doc_mut() else {
+            return Task::none();
+        };
+        action(doc);
+        self.reveal_cursor()
+    }
+
+    /// `⇧⌘A`: every command by name, with its shortcut, to run one.
+    fn open_find_action(&mut self) -> Task<Message> {
+        let items = Cmd::ALL
+            .iter()
+            .filter(|c| **c != Cmd::FindAction)
+            .map(|&c| palette::Item {
+                badge: "›",
+                title: c.label(),
+                matched: Vec::new(),
+                detail: crate::keymap::hint(c).to_string(),
+                target: Target::Action(c),
+            })
+            .collect();
+        self.open_choice(tr!("action-find-action"), items)
+    }
+
+    /// `⌥⌘T`: the constructs the selection can be surrounded with.
+    fn open_surround(&mut self) -> Task<Message> {
+        let items = Surround::ALL
+            .iter()
+            .map(|&s| palette::Item {
+                badge: "{",
+                title: s.label().to_string(),
+                matched: Vec::new(),
+                detail: String::new(),
+                target: Target::Surround(s),
+            })
+            .collect();
+        self.open_choice(tr!("action-surround-with"), items)
+    }
+
+    /// `F2` / `⇧F2`: moves the caret to the next (or previous) problem in
+    /// the file, wrapping around.
+    fn goto_problem(&mut self, forward: bool) -> Task<Message> {
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        let caret = doc.offset(doc.cursor());
+        let starts: Vec<usize> = doc.problems().iter().map(|p| p.start).collect();
+        let target = if forward {
+            starts.iter().find(|s| **s > caret).or(starts.first())
+        } else {
+            starts.iter().rev().find(|s| **s < caret).or(starts.last())
+        };
+        let Some(&target) = target else {
+            self.notice = Some(tr!("notice-no-problems"));
+            return Task::none();
+        };
+        let position = doc.position_of(target);
+        self.place_cursor(position)
     }
 
     // ----- palette ------------------------------------------------------------
@@ -232,6 +321,8 @@ impl App {
             Target::Checkout(branch) => self.git_checkout(branch),
             Target::CreateBranch(name) => self.git_create_branch(name),
             Target::FileAction(action) => self.run_file_action(action),
+            Target::Action(cmd) => self.command(cmd),
+            Target::Surround(construct) => self.edit_with(|d| d.surround_with(construct), None),
             Target::Line(line, col) => {
                 let Some(doc) = self.doc() else {
                     return Task::none();

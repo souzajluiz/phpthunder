@@ -135,6 +135,160 @@ pub enum Cmd {
     StepOut,
     /// Debugger: stop the session (`⌘F2`).
     StopDebug,
+    // Editing actions
+    /// Grow the selection to the next enclosing structure (`⌥↑`).
+    ExtendSelection,
+    /// Shrink the selection back one step (`⌥↓`).
+    ShrinkSelection,
+    /// Join the next line onto this one (`⌃⇧J`).
+    JoinLines,
+    /// Break the line at the caret, caret staying put (`⌘↵`).
+    SplitLine,
+    /// Open a new line below, whatever the caret column (`⇧↵`).
+    StartNewLine,
+    /// Open a new line above (`⌥⌘↵`).
+    StartNewLineBefore,
+    /// Finish the statement and move to the next line (`⇧⌘↵`).
+    CompleteStatement,
+    /// Upper- or lower-case the selection or word (`⇧⌘U`).
+    ToggleCase,
+    /// Swap the characters around the caret (`⌃T`).
+    Transpose,
+    /// Comment or uncomment with `/* */` (`⌥⌘/`).
+    BlockComment,
+    /// Jump to the matching bracket (`⌃⇧M`).
+    MatchBrace,
+    /// Jump to the start of the enclosing block (`⌥⌘[`).
+    BlockStart,
+    /// Jump to the end of the enclosing block (`⌥⌘]`).
+    BlockEnd,
+    /// Complete the word from words in the file, cycling (`⌥/`).
+    WordCompletion,
+    /// Remove the block around the caret, keeping its body (`⇧⌘⌫`).
+    Unwrap,
+    /// Surround the selection with a block construct (`⌥⌘T`).
+    SurroundWith,
+    /// Sort the selected lines (or the file).
+    SortLines,
+    /// Reverse the selected lines (or the file).
+    ReverseLines,
+    /// Remove repeated lines from the selection (or the file).
+    UniqueLines,
+    /// Add a caret at every occurrence of the selection (`⌃⌘G`).
+    SelectAllOccurrences,
+    /// Search every command by name and run it (`⇧⌘A`).
+    FindAction,
+    /// Go to the next problem in the file (`F2`).
+    NextError,
+    /// Go to the previous problem in the file (`⇧F2`).
+    PreviousError,
+}
+
+impl Cmd {
+    /// Every command, in the order the Find Action palette lists them.
+    pub const ALL: [Cmd; 85] = {
+        use Cmd::*;
+        [
+            Save,
+            CloseTab,
+            ToggleSidebar,
+            NextTab,
+            PrevTab,
+            Undo,
+            Redo,
+            ToggleComment,
+            Duplicate,
+            DeleteLine,
+            MoveLineUp,
+            MoveLineDown,
+            Complete,
+            GotoDeclaration,
+            FindUsages,
+            GotoLine,
+            GotoFile,
+            GotoClass,
+            GotoSymbol,
+            RecentFiles,
+            SearchEverywhere,
+            Back,
+            Forward,
+            Find,
+            Replace,
+            FindNext,
+            FindPrevious,
+            FindInPath,
+            QuickFix,
+            ParameterInfo,
+            Rename,
+            OptimizeImports,
+            GotoImplementation,
+            TypeHierarchy,
+            FileStructure,
+            Problems,
+            ToggleTerminal,
+            ToggleClaude,
+            RunTests,
+            Reformat,
+            Composer,
+            Generate,
+            InsertTemplate,
+            Commit,
+            Push,
+            Pull,
+            AddCaretAbove,
+            AddCaretBelow,
+            SelectNextOccurrence,
+            ToggleSoftWrap,
+            ExtractVariable,
+            ExtractMethod,
+            InlineVariable,
+            ChangeSignature,
+            MoveClass,
+            DebugTest,
+            ToggleBreakpoint,
+            Resume,
+            StepOver,
+            StepInto,
+            StepOut,
+            StopDebug,
+            ExtendSelection,
+            ShrinkSelection,
+            JoinLines,
+            SplitLine,
+            StartNewLine,
+            StartNewLineBefore,
+            CompleteStatement,
+            ToggleCase,
+            Transpose,
+            BlockComment,
+            MatchBrace,
+            BlockStart,
+            BlockEnd,
+            WordCompletion,
+            Unwrap,
+            SurroundWith,
+            SortLines,
+            ReverseLines,
+            UniqueLines,
+            SelectAllOccurrences,
+            FindAction,
+            NextError,
+            PreviousError,
+        ]
+    };
+
+    /// The command's name in the user's language (Find Action, menus).
+    pub fn label(self) -> String {
+        let name = format!("{self:?}");
+        let mut id = String::from("cmd");
+        for c in name.chars() {
+            if c.is_ascii_uppercase() {
+                id.push('-');
+            }
+            id.push(c.to_ascii_lowercase());
+        }
+        crate::i18n::translate(&id, None)
+    }
 }
 
 /// Maps a key press and its modifiers to the bound `Cmd`, or `None` if
@@ -176,11 +330,18 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("t", false, false) => Pull,
             ("f", false, false) => Find,
             ("r", false, false) => Replace,
+            ("g", false, false) if m.control() => SelectAllOccurrences,
             ("g", false, false) => FindNext,
             ("g", true, false) => FindPrevious,
             ("f", true, false) => FindInPath,
             ("[", false, false) => Back,
             ("]", false, false) => Forward,
+            ("[", false, true) => BlockStart,
+            ("]", false, true) => BlockEnd,
+            ("/", false, true) | ("÷", false, true) => BlockComment,
+            ("u", true, false) => ToggleCase,
+            ("t", false, true) => SurroundWith,
+            ("a", true, false) => FindAction,
             ("}", true, false) | ("]", true, false) => NextTab,
             ("{", true, false) | ("[", true, false) => PrevTab,
             _ => return None,
@@ -194,10 +355,29 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             DebugTest
         }
         Key::Character(c) if m.control() && !cmd && c.eq_ignore_ascii_case("h") => TypeHierarchy,
+        Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("j") => {
+            JoinLines
+        }
+        Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("m") => {
+            MatchBrace
+        }
+        Key::Character(c) if m.control() && !shift && !cmd && c.eq_ignore_ascii_case("t") => {
+            Transpose
+        }
+        Key::Character(c) if alt && !cmd && !m.control() && (c == "/" || c == "÷") => {
+            WordCompletion
+        }
         Key::Character(c) if m.control() && !cmd && !shift && c.eq_ignore_ascii_case("g") => {
             SelectNextOccurrence
         }
         Key::Named(Named::Enter) if alt && !cmd => QuickFix,
+        Key::Named(Named::Enter) if cmd && shift => CompleteStatement,
+        Key::Named(Named::Enter) if cmd && alt => StartNewLineBefore,
+        Key::Named(Named::Enter) if cmd => SplitLine,
+        Key::Named(Named::Enter) if shift && !m.control() => StartNewLine,
+        Key::Named(Named::F2) if shift && !cmd => PreviousError,
+        Key::Named(Named::F2) if !cmd && !alt => NextError,
+        Key::Named(Named::Backspace) if cmd && shift => Unwrap,
         Key::Named(Named::F6) if shift => Rename,
         Key::Named(Named::F6) if cmd => ChangeSignature,
         Key::Named(Named::F6) => MoveClass,
@@ -217,6 +397,8 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Named(Named::Backspace) if cmd => DeleteLine,
         Key::Named(Named::ArrowUp) if alt && shift => MoveLineUp,
         Key::Named(Named::ArrowDown) if alt && shift => MoveLineDown,
+        Key::Named(Named::ArrowUp) if alt && !cmd && !shift => ExtendSelection,
+        Key::Named(Named::ArrowDown) if alt && !cmd && !shift => ShrinkSelection,
         Key::Named(Named::ArrowUp) if cmd && alt => AddCaretAbove,
         Key::Named(Named::ArrowDown) if cmd && alt => AddCaretBelow,
         Key::Named(Named::ArrowLeft) if cmd && alt => Back,
@@ -294,5 +476,40 @@ pub fn hint(cmd: Cmd) -> &'static str {
         StepInto => "F7",
         StepOut => "⇧F8",
         StopDebug => "⌘F2",
+        ExtendSelection => "⌥↑",
+        ShrinkSelection => "⌥↓",
+        JoinLines => "⌃⇧J",
+        SplitLine => "⌘↵",
+        StartNewLine => "⇧↵",
+        StartNewLineBefore => "⌥⌘↵",
+        CompleteStatement => "⇧⌘↵",
+        ToggleCase => "⇧⌘U",
+        Transpose => "⌃T",
+        BlockComment => "⌥⌘/",
+        MatchBrace => "⌃⇧M",
+        BlockStart => "⌥⌘[",
+        BlockEnd => "⌥⌘]",
+        WordCompletion => "⌥/",
+        Unwrap => "⇧⌘⌫",
+        SurroundWith => "⌥⌘T",
+        SortLines | ReverseLines | UniqueLines => "",
+        SelectAllOccurrences => "⌃⌘G",
+        FindAction => "⇧⌘A",
+        NextError => "F2",
+        PreviousError => "⇧F2",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_command_should_have_a_translated_name() {
+        let untranslated: Vec<Cmd> = Cmd::ALL
+            .into_iter()
+            .filter(|c| c.label().starts_with("cmd-"))
+            .collect();
+        assert_eq!(untranslated, []);
     }
 }

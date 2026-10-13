@@ -84,6 +84,10 @@ pub enum Target {
     CreateBranch(String),
     /// Run a file operation from the project tree.
     FileAction(crate::app::FileAction),
+    /// Run a command (Find Action).
+    Action(crate::keymap::Cmd),
+    /// Surround the selection with a block construct.
+    Surround(crate::editor::Surround),
 }
 
 /// One ranked palette result.

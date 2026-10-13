@@ -99,10 +99,15 @@ pub struct Document {
     /// One indentation level for Tab, Enter and `}`: [`INDENT`] unless the
     /// file's EditorConfig asks for tabs or another width.
     pub indent_unit: String,
+    /// Selections that extend-selection (`⌥↑`) grew from, innermost last,
+    /// so shrink-selection (`⌥↓`) can step back. Cleared by any edit.
+    pub selection_stack: Vec<(usize, usize)>,
+    /// Open word completion (`⌥/`): the cycle of candidates in progress.
+    pub word_completion: Option<crate::editor::WordCompletion>,
 }
 
 /// Leading whitespace (indentation) of `line`, used to carry indentation onto new lines.
-fn leading_ws(line: &str) -> &str {
+pub(super) fn leading_ws(line: &str) -> &str {
     &line[..line.len() - line.trim_start().len()]
 }
 
@@ -135,6 +140,8 @@ impl Document {
             markdown_view: MarkdownView::default(),
             editorconfig: crate::formatter::editorconfig::Style::default(),
             indent_unit: INDENT.to_string(),
+            selection_stack: Vec::new(),
+            word_completion: None,
         };
         doc.refresh_highlights();
         doc
@@ -350,7 +357,7 @@ impl Document {
     }
 
     /// Replaces the whole text in one undo step, then places the cursor.
-    fn rewrite(&mut self, text: String, cursor: Cursor) {
+    pub(super) fn rewrite(&mut self, text: String, cursor: Cursor) {
         self.checkpoint();
         self.content = Content::with_text(&text);
         self.text = text;
@@ -623,17 +630,17 @@ impl Document {
     }
 
     /// Character starting at byte `offset`, if any; used by bracket and quote auto-pairing.
-    fn char_after(&self, offset: usize) -> Option<char> {
+    pub(super) fn char_after(&self, offset: usize) -> Option<char> {
         self.text[offset..].chars().next()
     }
 
     /// Character ending at byte `offset`, if any; used by bracket and quote auto-pairing.
-    fn char_before(&self, offset: usize) -> Option<char> {
+    pub(super) fn char_before(&self, offset: usize) -> Option<char> {
         self.text[..offset].chars().next_back()
     }
 
     /// Lines touched by the cursor or selection (inclusive).
-    fn selected_lines(&self) -> (usize, usize) {
+    pub(super) fn selected_lines(&self) -> (usize, usize) {
         let c = self.content.cursor();
         let a = c.position.line;
         let b = c.selection.map(|s| s.line).unwrap_or(a);
@@ -653,7 +660,7 @@ impl Document {
     }
 
     /// Range covering whole lines `lo..=hi`, including the final newline if any.
-    fn lines_range(&self, lo: usize, hi: usize) -> (usize, usize) {
+    pub(super) fn lines_range(&self, lo: usize, hi: usize) -> (usize, usize) {
         let start = self.line_start(lo);
         let end = self.line_start(hi + 1);
         let end = if hi + 1 >= self.line_count() {
