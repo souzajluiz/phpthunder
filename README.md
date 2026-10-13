@@ -96,6 +96,28 @@ instead.
   file moves to its PSR-4 folder, imports follow)
 - Blade: completion of `<x-` components and their attributes, `@`
   directives and the variables passed to the view
+- Find Action (`⇧⌘A`): every command by name. Editing: extend/shrink
+  selection (`⌥↑`/`⌥↓`), surround with (`⌥⌘T`) and unwrap (`⇧⌘⌦`),
+  move statement (`⇧⌘↑`/`⇧⌘↓`) and argument (`⌥⇧⌘←`/`→`), join and split
+  lines (`⌃⇧J`, `⌘↵`), complete statement (`⇧⌘↵`), toggle case (`⇧⌘U`),
+  block comment (`⌥⌘/`), cyclic word completion (`⌥/`), sort/reverse/
+  dedupe lines, select all occurrences (`⌃⌘G`), a caret per line (`⌥⇧G`)
+- Reading aids: matching brackets and the identifier at the caret are
+  highlighted, indentation guides, sticky class/function headers, override
+  and subclass arrows in the gutter, color swatches, visible whitespace,
+  quick documentation (`F1`) and definition (`⌥Space`)
+- Navigation: bookmarks (`F3`, `⌘F3`), last edit location (`⇧⌘⌫`),
+  recent locations (`⇧⌘E`), matching brace (`⌃M`), block start/end,
+  next/previous problem (`F2`/`⇧F2`), super method (`⌘U`), type
+  declaration (`⇧⌘B`), test ↔ subject (`⇧⌘T`)
+- Clipboard history (`⇧⌘V`), copy reference (`⌥⇧⌘C`), compare with
+  clipboard, local history of every save with restore, Git annotate
+- Postfix templates (`$items.foreach`, `$x.if`, `f().return`, …) and Emmet
+  in Blade/HTML (`ul>li.item$*3` + Tab)
+- Refactorings: introduce constant/field/parameter (`⌥⌘C`/`⌥⌘F`/`⌥⌘P`)
+- Inspections also flag unreachable code, duplicate array keys, `== null`,
+  empty catch blocks, self-assignments and unused private members
+- Zoom (`⌘=`/`⌘−`/`⌘0`) and distraction-free mode
 - EditorConfig: `.editorconfig` sets indentation while typing (tabs or
   spaces, width) and, on save, trims trailing whitespace, fixes the final
   newline and line endings; Reformat starts from the same style
