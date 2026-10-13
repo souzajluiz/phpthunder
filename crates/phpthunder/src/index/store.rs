@@ -126,6 +126,12 @@ pub struct Index {
     names: BTreeMap<String, Vec<SymRef>>,
     /// Word index: lowercased identifier -> files that contain it.
     words: HashMap<String, HashSet<PathBuf>>,
+    /// Lazily built set of every namespace declaring a class (lowercased,
+    /// with all parent namespaces); cleared whenever a file changes.
+    namespaces: parking_lot::Mutex<Option<std::sync::Arc<HashSet<String>>>>,
+    /// Lazily built set of lowercased FQNs that some indexed class extends
+    /// or implements; cleared whenever a file changes.
+    extended: parking_lot::Mutex<Option<std::sync::Arc<HashSet<String>>>>,
 }
 
 impl Index {
@@ -146,6 +152,8 @@ impl Index {
     /// by the initial scan.
     pub fn update(&mut self, path: PathBuf, entry: FileEntry) {
         self.remove(&path);
+        *self.namespaces.get_mut() = None;
+        *self.extended.get_mut() = None;
         for (i, sym) in entry.symbols.iter().enumerate() {
             let r = (path.clone(), i);
             self.keys
@@ -165,8 +173,57 @@ impl Index {
         self.files.insert(path, entry);
     }
 
+    /// Lowercased FQNs that some indexed class extends, implements or uses
+    /// as a trait. A member missing on one of these may live in a subclass,
+    /// so inspections do not report it. Cached until the next change.
+    pub fn extended_classes(&self) -> std::sync::Arc<HashSet<String>> {
+        let mut cache = self.extended.lock();
+        if let Some(set) = cache.as_ref() {
+            return set.clone();
+        }
+        let set: HashSet<String> = self
+            .files
+            .values()
+            .flat_map(|e| e.symbols.iter())
+            .filter(|s| s.kind.is_class_like())
+            .flat_map(|s| s.supers.iter().map(|x| x.to_ascii_lowercase()))
+            .collect();
+        let set = std::sync::Arc::new(set);
+        *cache = Some(set.clone());
+        set
+    }
+
+    /// Every namespace that contains an indexed class, lowercased, parents
+    /// included (`app`, `app\models`). Inspections use it to tell a
+    /// namespace import from a missing class, and to report missing
+    /// classes only in namespaces the project knows. Cached until the next
+    /// change.
+    pub fn namespaces(&self) -> std::sync::Arc<HashSet<String>> {
+        let mut cache = self.namespaces.lock();
+        if let Some(set) = cache.as_ref() {
+            return set.clone();
+        }
+        let mut set = HashSet::new();
+        for entry in self.files.values() {
+            for s in entry.symbols.iter().filter(|s| s.kind.is_class_like()) {
+                let mut ns = s.fqn.to_ascii_lowercase();
+                while let Some((parent, _)) = ns.rsplit_once('\\') {
+                    ns = parent.to_string();
+                    if !set.insert(ns.clone()) {
+                        break;
+                    }
+                }
+            }
+        }
+        let set = std::sync::Arc::new(set);
+        *cache = Some(set.clone());
+        set
+    }
+
     /// Drops `path` and everything derived from it; a no-op if it is not indexed. Called when a file is deleted or unreadable.
     pub fn remove(&mut self, path: &Path) {
+        *self.namespaces.get_mut() = None;
+        *self.extended.get_mut() = None;
         let Some(old) = self.files.remove(path) else {
             return;
         };

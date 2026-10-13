@@ -132,6 +132,45 @@ impl App {
                 files(&mut scored, &mut self.project_files.iter(), -5);
                 symbols(&mut scored, &|s| !s.is_virtual);
             }
+            Mode::Structure => {
+                if let Some(doc) = self.doc() {
+                    for s in self
+                        .lang
+                        .file_symbols(&doc.path)
+                        .iter()
+                        .filter(|s| !s.is_virtual)
+                    {
+                        let title = match s.kind {
+                            Kind::Method | Kind::Function => format!("{}()", s.name),
+                            Kind::Property => format!("${}", s.name),
+                            _ => s.name.clone(),
+                        };
+                        let Some((score, matched)) = fuzzy(query, &title) else {
+                            continue;
+                        };
+                        let owner = if s.kind.is_member() {
+                            s.fqn.rsplit('\\').next().unwrap_or("").to_string()
+                        } else {
+                            String::new()
+                        };
+                        // Declaration order when there is no query.
+                        let order = -(s.name_span.start.line as i32);
+                        scored.push((
+                            if query.is_empty() { order } else { score },
+                            Item {
+                                badge: badge(s.kind),
+                                title,
+                                matched,
+                                detail: format!("{owner} · line {}", s.name_span.start.line + 1)
+                                    .trim_start_matches(" · ")
+                                    .to_string(),
+                                target: Target::Symbol(doc.path.clone(), s.name_span.start),
+                            },
+                        ));
+                    }
+                }
+            }
+            Mode::Choose => {}
             Mode::Line => {
                 let mut parts = query.split(':');
                 let line = parts.next().and_then(|l| l.trim().parse::<usize>().ok());
@@ -246,7 +285,13 @@ impl App {
             column(rows).spacing(1).padding(6).into()
         };
         let footer = row![
-            text(p.mode.title()).size(11).color(MUTED),
+            text(
+                p.fixed
+                    .as_ref()
+                    .map_or(p.mode.title(), |(title, _)| title.as_str())
+            )
+            .size(11)
+            .color(MUTED),
             space().width(Fill),
             text("↑↓ navigate   ↵ open   esc close")
                 .size(11)

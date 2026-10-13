@@ -318,3 +318,32 @@ fn completes_phpdoc_virtual_members() {
     let statics = complete(&idx, &src, at(&src, "Post::published", 6));
     assert_eq!(labels(&statics), ["$table", "create", "published"]);
 }
+
+#[test]
+fn inspections_should_only_flag_real_problems_in_the_fixture() {
+    use phpthunder::index::{BUILTINS_SOURCE, index_source};
+    use phpthunder::inspection::diagnostics;
+    let mut idx = indexed();
+    idx.update(
+        PathBuf::from("/builtins.php"),
+        index_source(BUILTINS_SOURCE),
+    );
+    let mut found = Vec::new();
+    for path in php_files(&root()) {
+        let src = std::fs::read_to_string(&path).unwrap();
+        for d in diagnostics(&idx, &src) {
+            let rel = path
+                .strip_prefix(root().join("src"))
+                .unwrap()
+                .display()
+                .to_string();
+            found.push(format!("{rel}:{} {}", d.span.start.line + 1, d.message));
+        }
+    }
+    found.sort();
+    // `cache()` is a framework helper that the fixture does not define.
+    assert_eq!(
+        found,
+        ["Http/PostController.php:21 Undefined function 'cache'"]
+    );
+}

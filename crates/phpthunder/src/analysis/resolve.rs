@@ -184,7 +184,6 @@ impl<'a> Analyzer<'a> {
             | "base_clause"
             | "class_interface_clause"
             | "object_creation_expression"
-            | "binary_expression"
             | "type_list"
             | "catch_clause"
             | "attribute"
@@ -194,6 +193,16 @@ impl<'a> Analyzer<'a> {
             | "optional_type"
             | "union_type"
             | "intersection_type" => self.class_ref(node, &ctx).map(Target::Class),
+            // Only `$x instanceof Foo` names a class; other operands are
+            // constants (`__DIR__ . '/x'`, `PHP_EOL`).
+            "binary_expression"
+                if same(parent.child_by_field_name("right"), node)
+                    && parent
+                        .child_by_field_name("operator")
+                        .is_some_and(|op| self.text(op).eq_ignore_ascii_case("instanceof")) =>
+            {
+                self.class_ref(node, &ctx).map(Target::Class)
+            }
             _ => None,
         }
     }

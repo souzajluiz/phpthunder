@@ -75,6 +75,21 @@ impl App {
             Cmd::FindNext => self.find_step(true),
             Cmd::FindPrevious => self.find_step(false),
             Cmd::FindInPath => self.open_search_dialog(),
+            Cmd::QuickFix => self.open_intentions(),
+            Cmd::ParameterInfo => {
+                self.refresh_signature(true);
+                Task::none()
+            }
+            Cmd::Rename => self.open_rename(),
+            Cmd::OptimizeImports => self.optimize_imports(),
+            Cmd::GotoImplementation => self.goto_implementation(),
+            Cmd::TypeHierarchy => self.show_type_hierarchy(),
+            Cmd::FileStructure if has_doc => self.open_palette(Mode::Structure),
+            Cmd::FileStructure => Task::none(),
+            Cmd::Problems => {
+                self.bottom = Some(Bottom::Problems);
+                Task::none()
+            }
         }
     }
 
@@ -84,7 +99,7 @@ impl App {
     ///
     /// Closes other overlays first. No-op without an open project. In Recent mode the
     /// second item is preselected so Enter switches to the previous file.
-    fn open_palette(&mut self, mode: Mode) -> Task<Message> {
+    pub(crate) fn open_palette(&mut self, mode: Mode) -> Task<Message> {
         if self.tree.root.is_none() {
             return Task::none();
         }
@@ -102,6 +117,7 @@ impl App {
             query,
             items,
             selected,
+            fixed: None,
         });
         operation::focus(Id::new(palette::INPUT_ID))
     }
@@ -113,7 +129,10 @@ impl App {
         let Some(mode) = self.palette.as_ref().map(|p| p.mode) else {
             return Task::none();
         };
-        let items = self.palette_items(mode, &query);
+        let items = match self.palette.as_ref().and_then(|p| p.fixed.as_ref()) {
+            Some((_, fixed)) => filter_fixed(fixed, &query),
+            None => self.palette_items(mode, &query),
+        };
         if let Some(p) = &mut self.palette {
             p.query = query;
             p.items = items;
@@ -417,4 +436,26 @@ impl App {
         doc.select(base + start, base + end);
         self.place_selection_view(line)
     }
+}
+
+/// Filters a fixed list of palette items by fuzzy match on the title,
+/// keeping the original order for an empty query.
+pub(crate) fn filter_fixed(items: &[palette::Item], query: &str) -> Vec<palette::Item> {
+    let mut scored: Vec<(i32, palette::Item)> = items
+        .iter()
+        .filter_map(|item| {
+            let (score, matched) = palette::fuzzy(query, &item.title)?;
+            Some((
+                score,
+                palette::Item {
+                    matched,
+                    ..item.clone()
+                },
+            ))
+        })
+        .collect();
+    if !query.is_empty() {
+        scored.sort_by_key(|(score, _)| std::cmp::Reverse(*score));
+    }
+    scored.into_iter().map(|(_, item)| item).collect()
 }

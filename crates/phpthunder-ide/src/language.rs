@@ -72,6 +72,11 @@ impl Language {
         self.index.write().update(path.to_path_buf(), entry);
     }
 
+    /// Drops `path` from the index (after a file rename).
+    pub fn remove_file(&self, path: &Path) {
+        self.index.write().remove(path);
+    }
+
     /// Visits every indexed symbol under one read lock (palettes, structure).
     pub fn for_each_symbol(&self, mut f: impl FnMut(&Path, &Symbol)) {
         let index = self.index.read();

@@ -59,6 +59,10 @@ pub struct Document {
     redo: Vec<Snapshot>,
     /// Kind and time of the last grouped edit; `None` forces the next edit to start a new undo step.
     last_edit: Option<(EditKind, Instant)>,
+    /// Inspection results for the text at [`Self::diagnostics_version`].
+    pub diagnostics: Vec<phpthunder::inspection::Diagnostic>,
+    /// Document version (see [`Self::version`]) the diagnostics belong to.
+    pub diagnostics_version: u64,
 }
 
 /// Leading whitespace (indentation) of `line`, used to carry indentation onto new lines.
@@ -83,6 +87,8 @@ impl Document {
             undo: Vec::new(),
             redo: Vec::new(),
             last_edit: None,
+            diagnostics: Vec::new(),
+            diagnostics_version: 0,
         };
         doc.refresh_highlights();
         doc
@@ -265,6 +271,37 @@ impl Document {
         );
         let column = cursor.column.min(self.line_text(line).len());
         self.move_to(Position { line, column });
+    }
+
+    /// Monotonic version, bumped on every text change. Async results
+    /// (inspections) carry it so stale ones are dropped.
+    pub fn version(&self) -> u64 {
+        self.highlight_version
+    }
+
+    /// Applies text edits computed for the current text (quick fixes,
+    /// rename) as one undo step, keeping the cursor on the same code.
+    pub fn apply_edits(&mut self, edits: &[phpthunder::inspection::Edit]) {
+        if edits.is_empty() {
+            return;
+        }
+        let cursor = self.offset(self.cursor());
+        let shift: isize = edits
+            .iter()
+            .filter(|e| e.end <= cursor)
+            .map(|e| e.text.len() as isize - (e.end - e.start) as isize)
+            .sum();
+        let text = phpthunder::refactor::apply_edits(&self.text, edits);
+        let new_cursor = (cursor as isize + shift).clamp(0, text.len() as isize) as usize;
+        self.rewrite(
+            text,
+            Cursor {
+                position: Position { line: 0, column: 0 },
+                selection: None,
+            },
+        );
+        let position = self.position_of(new_cursor);
+        self.move_to(position);
     }
 
     /// LSP-style position (UTF-16 column) of an editor position.

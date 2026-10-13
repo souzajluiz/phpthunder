@@ -47,7 +47,12 @@ mod tests {
         let entry = index_source(BUILTINS_SOURCE);
         let has = |name: &str| entry.symbols.iter().any(|s| s.fqn == name);
         assert!(
-            has("strlen") && has("Exception") && has("ArrayIterator") && has("DateTimeImmutable")
+            has("strlen")
+                && has("Exception")
+                && has("ArrayIterator")
+                && has("DateTimeImmutable")
+                && has("hash_hmac")
+                && has("random_int")
         );
     }
 }

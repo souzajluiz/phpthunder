@@ -92,6 +92,19 @@ pub struct App {
     pub last_search: Option<SearchDialog>,
     /// A selection to apply once its file finishes loading.
     pub pending_select: Option<(PathBuf, usize, usize, usize)>,
+    /// Open `⌥↵` menu.
+    pub intentions: Option<Intentions>,
+    /// Open parameter info popup.
+    pub signature: Option<SignatureView>,
+    /// Open rename dialog.
+    pub rename: Option<RenameDialog>,
+    /// Content of the type hierarchy panel.
+    pub hierarchy: Option<Hierarchy>,
+    /// Set by edits and tab switches; [`App::update`] turns it into a
+    /// debounced inspection run.
+    pub inspect_pending: bool,
+    /// Generation of the latest inspection timer; older timers do nothing.
+    pub inspect_generation: u64,
 }
 
 /// Whether `c` can be part of a PHP identifier; used to decide when
@@ -102,9 +115,22 @@ pub fn is_ident(c: char) -> bool {
 
 /// Editor key bindings: popups first, then IDE shortcuts, then smart
 /// editing keys, then iced's defaults.
-pub fn bindings(key: KeyPress, completion_open: bool) -> Option<Binding<Message>> {
+pub fn bindings(
+    key: KeyPress,
+    completion_open: bool,
+    intentions_open: bool,
+) -> Option<Binding<Message>> {
     let m = key.modifiers;
     let custom = |msg| Some(Binding::Custom(msg));
+    if intentions_open {
+        match key.key.as_ref() {
+            Key::Named(Named::ArrowDown) => return custom(Message::IntentionMove(1)),
+            Key::Named(Named::ArrowUp) => return custom(Message::IntentionMove(-1)),
+            Key::Named(Named::Enter | Named::Tab) => return custom(Message::IntentionAccept),
+            Key::Named(Named::Escape) => return custom(Message::CloseOverlays),
+            _ => {}
+        }
+    }
     if completion_open {
         match key.key.as_ref() {
             Key::Named(Named::ArrowDown) => return custom(Message::CompletionMove(1)),
@@ -182,6 +208,12 @@ impl App {
             last_shift: None,
             last_search: None,
             pending_select: None,
+            intentions: None,
+            signature: None,
+            rename: None,
+            hierarchy: None,
+            inspect_pending: false,
+            inspect_generation: 0,
         };
         let folder = std::env::args()
             .nth(1)
@@ -226,6 +258,14 @@ impl App {
     /// returns follow-up work (file reads, indexing, scrolling, focus).
     /// Most arms delegate to the methods below or in the `app` command handlers.
     pub fn update(&mut self, message: Message) -> Task<Message> {
+        let task = self.handle(message);
+        let inspection = self.schedule_inspection();
+        Task::batch([task, inspection])
+    }
+
+    /// Dispatches one message; [`App::update`] wraps it to schedule
+    /// inspections after any change.
+    fn handle(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::OpenFolderDialog => Task::perform(
                 async {
@@ -257,6 +297,8 @@ impl App {
                 for doc in self.docs.iter().filter(|d| d.dirty && d.is_php()) {
                     self.lang.update_file(&doc.path, &doc.text);
                 }
+                // Inspections depend on the whole index: rerun them now.
+                self.inspect_pending = true;
                 Task::none()
             }
             Message::ToggleDir(dir) => {
@@ -273,6 +315,7 @@ impl App {
                         self.docs.push(Document::new(path.clone(), text));
                     }
                     let open = self.open(path, target);
+                    self.inspect_pending = true;
                     Task::batch([open, self.apply_pending_select()])
                 }
                 Err(e) => {
@@ -444,6 +487,36 @@ impl App {
                 iced::window::latest().and_then(iced::window::toggle_maximize)
             }
             Message::Keyboard(event, captured) => self.keyboard(event, captured),
+            Message::Inspect(generation) => self.run_inspection(generation),
+            Message::Inspected(path, version, diagnostics) => {
+                self.store_diagnostics(&path, version, diagnostics);
+                Task::none()
+            }
+            Message::IntentionMove(delta) => {
+                if let Some(menu) = &mut self.intentions {
+                    let n = menu.items.len() as i32;
+                    menu.selected = (menu.selected as i32 + delta).rem_euclid(n.max(1)) as usize;
+                }
+                Task::none()
+            }
+            Message::IntentionAccept => self.apply_selected_intention(),
+            Message::IntentionPick(i) => {
+                if let Some(menu) = &mut self.intentions {
+                    menu.selected = i;
+                }
+                self.apply_selected_intention()
+            }
+            Message::OpenProblem(i) => self.open_problem(i),
+            Message::RenameInput(name) => {
+                if let Some(dialog) = &mut self.rename {
+                    dialog.name = name;
+                    dialog.error = None;
+                }
+                Task::none()
+            }
+            Message::RenameSubmit => self.submit_rename(),
+            Message::RenamePlanned(plan) => self.apply_rename(plan),
+            Message::OpenHierarchy(i) => self.open_hierarchy_row(i),
         }
     }
 
@@ -482,7 +555,7 @@ impl App {
                         _ => Task::none(),
                     };
                 }
-                if self.search_dialog.is_some() {
+                if self.search_dialog.is_some() || self.rename.is_some() {
                     return match key.as_ref() {
                         Key::Named(Named::Escape) => self.update(Message::CloseModal),
                         _ => Task::none(),
@@ -555,6 +628,8 @@ impl App {
         self.completion = None;
         self.hover = None;
         self.notice = None;
+        self.intentions = None;
+        self.signature = None;
     }
 
     // ----- files and tabs ---------------------------------------------------
@@ -609,6 +684,9 @@ impl App {
         self.recent.retain(|p| p != &path);
         self.recent.insert(0, path);
         self.recent.truncate(50);
+        if self.docs[i].diagnostics_version != self.docs[i].version() {
+            self.inspect_pending = true;
+        }
         let task = self.refresh_find(false);
         let y = self.docs[i].scroll_y;
         Task::batch([task, scroll_to(y), operation::focus(Id::new(EDITOR_ID))])
@@ -736,6 +814,9 @@ impl App {
         {
             self.refresh_completion(false);
         }
+        if matches!(inserted, Some('(' | ',')) || (changed && self.signature.is_some()) {
+            self.refresh_signature(false);
+        }
         if goto {
             return self.goto_definition();
         }
@@ -764,6 +845,9 @@ impl App {
             _ if typed.is_none() => self.completion = None,
             _ => {}
         }
+        if matches!(typed, Some('(' | ')')) || (changed && self.signature.is_some()) {
+            self.refresh_signature(false);
+        }
         self.reveal_cursor()
     }
 
@@ -779,6 +863,8 @@ impl App {
         {
             self.lang.update_file(&doc.path.clone(), &doc.text.clone());
         }
+        self.inspect_pending = true;
+        self.intentions = None;
         let _ = self.refresh_find(false);
     }
 
@@ -931,23 +1017,40 @@ impl App {
             return; // past the end of the line
         }
         let offset = doc.offset(pos);
-        let Some(def) = self.lang.definitions(&doc.text, offset).into_iter().next() else {
+        let problems: Vec<_> = self
+            .diagnostics_at(offset)
+            .into_iter()
+            .map(|d| (d.severity, d.message))
+            .collect();
+        let def = self.lang.definitions(&doc.text, offset).into_iter().next();
+        if def.is_none() && problems.is_empty() {
             return;
-        };
-        let s = &def.symbol;
+        }
         let start = phpthunder::analysis::ident_start(&doc.text, (offset + 1).min(doc.text.len()));
-        let start_pos = doc.position_of(start);
+        let col = doc.visual_column(doc.position_of(start));
+        let (signature, location, doc_text) = match &def {
+            Some(def) => {
+                let s = &def.symbol;
+                (
+                    s.signature.clone(),
+                    format!(
+                        "{} · {}:{}",
+                        qualified(s),
+                        file_name(&def.path),
+                        s.name_span.start.line + 1
+                    ),
+                    s.doc.clone(),
+                )
+            }
+            None => (String::new(), String::new(), String::new()),
+        };
         self.hover = Some(Hover {
             line,
-            col: doc.visual_column(start_pos),
-            signature: s.signature.clone(),
-            location: format!(
-                "{} · {}:{}",
-                qualified(s),
-                file_name(&def.path),
-                s.name_span.start.line + 1
-            ),
-            doc: s.doc.clone(),
+            col,
+            signature,
+            location,
+            doc: doc_text,
+            problems,
         });
     }
 

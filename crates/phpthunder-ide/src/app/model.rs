@@ -8,6 +8,8 @@ use iced::keyboard::{self};
 use iced::widget::scrollable::Viewport;
 use iced::widget::text_editor::Action;
 use phpthunder::analysis::{Candidate, Definition, Usage};
+use phpthunder::inspection::{Diagnostic, Fix};
+use phpthunder::refactor::{RenamePlan, SignatureHelp};
 use phpthunder::syntax::Pos;
 use std::path::PathBuf;
 
@@ -119,6 +121,28 @@ pub enum Message {
     ToggleMaximize,
     /// Global keyboard event; the flag is `true` when a widget captured it.
     Keyboard(keyboard::Event, bool),
+    // Inspections and intentions
+    /// Debounce timer for inspections fired; stale generations are ignored.
+    Inspect(u64),
+    /// Inspection results for a file at a document version.
+    Inspected(PathBuf, u64, Vec<Diagnostic>),
+    /// Move the `⌥↵` menu selection by this many rows.
+    IntentionMove(i32),
+    /// Apply the selected `⌥↵` entry.
+    IntentionAccept,
+    /// Apply the `⌥↵` entry at this index (mouse).
+    IntentionPick(usize),
+    /// Jump to the problem at this index of the Problems panel.
+    OpenProblem(usize),
+    // Refactoring
+    /// The rename dialog's text changed.
+    RenameInput(String),
+    /// Confirm the rename dialog.
+    RenameSubmit,
+    /// A rename plan computed in the background, ready to apply.
+    RenamePlanned(Result<RenamePlan, String>),
+    /// Jump to the hierarchy panel row at this index.
+    OpenHierarchy(usize),
 }
 
 /// Tabs of the bottom panel.
@@ -128,6 +152,10 @@ pub enum Bottom {
     Usages,
     /// Find-in-path results.
     Find,
+    /// Inspection results for the active file.
+    Problems,
+    /// Supertypes and subtypes of a class.
+    Hierarchy,
 }
 
 /// State of the background project index, shown in the status bar.
@@ -166,6 +194,8 @@ pub struct Hover {
     pub location: String,
     /// Doc comment text of the declaration.
     pub doc: String,
+    /// Inspection messages for the hovered range, shown first.
+    pub problems: Vec<(phpthunder::inspection::Severity, String)>,
 }
 
 /// One line of the usages panel.
@@ -212,4 +242,83 @@ pub struct Location {
     pub path: PathBuf,
     /// Cursor position (UTF-16).
     pub pos: Pos,
+}
+
+/// One entry of the `⌥↵` menu.
+#[derive(Debug, Clone)]
+pub enum Intention {
+    /// A quick fix for a diagnostic at the caret.
+    Fix(Fix),
+    /// Generate stubs for the abstract/interface methods `class` lacks.
+    ImplementMethods {
+        /// FQN of the class at the caret.
+        class: String,
+    },
+    /// Remove unused imports and sort the rest.
+    OptimizeImports,
+}
+
+impl Intention {
+    /// Menu label.
+    pub fn title(&self) -> String {
+        match self {
+            Intention::Fix(fix) => fix.title.clone(),
+            Intention::ImplementMethods { .. } => "Implement methods".into(),
+            Intention::OptimizeImports => "Optimize imports".into(),
+        }
+    }
+}
+
+/// Open `⌥↵` menu, anchored at the caret.
+pub struct Intentions {
+    /// Entries, quick fixes first.
+    pub items: Vec<Intention>,
+    /// Highlighted entry.
+    pub selected: usize,
+    /// Caret line the menu anchors to.
+    pub line: usize,
+    /// Caret visual column.
+    pub col: usize,
+}
+
+/// Parameter info popup, shown above the call being typed.
+pub struct SignatureView {
+    /// Callee signature and active parameter.
+    pub help: SignatureHelp,
+    /// Caret line the popup anchors to.
+    pub line: usize,
+    /// Caret visual column.
+    pub col: usize,
+}
+
+/// The rename dialog (`⇧F6`).
+pub struct RenameDialog {
+    /// New name being typed.
+    pub name: String,
+    /// Name before the rename, shown in the title.
+    pub original: String,
+    /// Byte offset of the symbol in the active document.
+    pub offset: usize,
+    /// Last error from planning the rename.
+    pub error: Option<String>,
+}
+
+/// One row of the type hierarchy panel.
+pub struct HierarchyRow {
+    /// Indentation level (supertypes above, subtypes below the class).
+    pub depth: usize,
+    /// Class name.
+    pub label: String,
+    /// Namespace and file.
+    pub detail: String,
+    /// Where the class is declared, when indexed.
+    pub target: Option<(PathBuf, Pos)>,
+}
+
+/// Content of the type hierarchy panel.
+pub struct Hierarchy {
+    /// Panel header.
+    pub title: String,
+    /// Rows: the class, its supertypes, then its subtypes.
+    pub rows: Vec<HierarchyRow>,
 }

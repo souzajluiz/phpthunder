@@ -1,77 +1,68 @@
-//! Stroke icons, tinted at draw time.
+//! Lucide stroke icons (ISC license, `assets/icons/LICENSE`), embedded in
+//! the binary and tinted at draw time.
 
 use iced::widget::{Svg, svg};
 use iced::{Color, Length};
 
-/// Logo bolt: title bar, welcome screen and status bar.
-const BOLT: &str = r#"<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" stroke-linejoin="round"/>"#;
-/// Project tool in the rail.
-const FOLDER: &str =
-    r#"<path d="M4 5a1 1 0 0 1 1-1h5l2 2h7a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/>"#;
-/// Search tool in the rail.
-const SEARCH: &str = r#"<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>"#;
-/// Symbols tool in the rail.
-const SYMBOLS: &str = r#"<path d="M8 4 4 8l4 4M16 12l4 4-4 4M14 4l-4 16"/>"#;
-/// Git branch: rail and title bar.
-const BRANCH: &str = r#"<circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 8v8M18 10c0 4-6 3-12 6"/>"#;
-/// Terminal tool in the rail.
-const TERMINAL: &str = r#"<path d="m5 8 4 4-4 4M12 16h7"/>"#;
-/// Collapsed directory in the tree; hidden replace row in the find bar.
-const CHEVRON_RIGHT: &str = r#"<path d="m9 6 6 6-6 6"/>"#;
-/// Expanded directory in the tree; shown replace row in the find bar.
-const CHEVRON_DOWN: &str = r#"<path d="m6 9 6 6 6-6"/>"#;
-/// Close buttons on tabs, the bottom panel and the find bar.
-const CLOSE: &str = r#"<path d="M6 6l12 12M18 6 6 18"/>"#;
-
-/// Which stroke icon to draw; each variant maps to one SVG body above.
+/// Which icon to draw; each variant maps to one Lucide SVG in `assets/icons`.
 #[derive(Clone, Copy)]
 pub enum Icon {
-    /// Logo bolt.
+    /// Logo bolt (`zap`): title bar, welcome screen and status bar.
     Bolt,
-    /// Project folder.
+    /// Project tool in the rail.
     Folder,
-    /// Magnifying glass.
+    /// Search tool in the rail.
     Search,
-    /// Code brackets for symbols.
+    /// Symbols tool in the rail (`code`).
     Symbols,
-    /// Git branch.
+    /// Git branch: rail and title bar.
     Branch,
-    /// Terminal prompt.
+    /// Terminal tool in the rail (`square-terminal`).
     Terminal,
-    /// Right-pointing chevron (collapsed).
+    /// Collapsed directory in the tree; hidden replace row in the find bar.
     ChevronRight,
-    /// Down-pointing chevron (expanded).
+    /// Expanded directory in the tree; shown replace row in the find bar.
     ChevronDown,
-    /// Cross for close buttons.
+    /// Close buttons on tabs, the bottom panel and the find bar (`x`).
     Close,
+    /// Error marker (`circle-x`).
+    Error,
+    /// Warning marker (`triangle-alert`).
+    Warning,
+    /// Type hierarchy (`network`).
+    Hierarchy,
 }
 
 impl Icon {
-    /// The SVG path markup for this icon, without the `<svg>` wrapper that
-    /// `icon` adds.
-    fn body(self) -> &'static str {
+    /// The Lucide SVG source for this icon.
+    fn source(self) -> &'static str {
         match self {
-            Icon::Bolt => BOLT,
-            Icon::Folder => FOLDER,
-            Icon::Search => SEARCH,
-            Icon::Symbols => SYMBOLS,
-            Icon::Branch => BRANCH,
-            Icon::Terminal => TERMINAL,
-            Icon::ChevronRight => CHEVRON_RIGHT,
-            Icon::ChevronDown => CHEVRON_DOWN,
-            Icon::Close => CLOSE,
+            Icon::Bolt => include_str!("../../assets/icons/zap.svg"),
+            Icon::Folder => include_str!("../../assets/icons/folder.svg"),
+            Icon::Search => include_str!("../../assets/icons/search.svg"),
+            Icon::Symbols => include_str!("../../assets/icons/code.svg"),
+            Icon::Branch => include_str!("../../assets/icons/git-branch.svg"),
+            Icon::Terminal => include_str!("../../assets/icons/square-terminal.svg"),
+            Icon::ChevronRight => include_str!("../../assets/icons/chevron-right.svg"),
+            Icon::ChevronDown => include_str!("../../assets/icons/chevron-down.svg"),
+            Icon::Close => include_str!("../../assets/icons/x.svg"),
+            Icon::Error => include_str!("../../assets/icons/circle-x.svg"),
+            Icon::Warning => include_str!("../../assets/icons/triangle-alert.svg"),
+            Icon::Hierarchy => include_str!("../../assets/icons/network.svg"),
         }
     }
 }
 
 /// Builds an SVG widget for `which`, `size` px square with the given stroke
-/// width, tinted with `color`. Called throughout the UI. The markup is drawn
-/// with a white stroke and recolored by the svg style, so one path serves
-/// every tint; each call allocates a fresh SVG handle.
+/// width, tinted with `color`. Called throughout the UI.
+///
+/// Lucide draws with `currentColor`, which the SVG renderer cannot resolve,
+/// so the stroke is set to white and the svg style recolors it; one source
+/// serves every tint.
 pub fn icon<'a>(which: Icon, size: f32, stroke: f32, color: Color) -> Svg<'a> {
-    let source = format!(
-        r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="{stroke}" stroke-linecap="round">{}</svg>"#,
-        which.body()
+    let source = which.source().replace("currentColor", "white").replace(
+        r#"stroke-width="2""#,
+        &format!(r#"stroke-width="{stroke}""#),
     );
     svg(svg::Handle::from_memory(source.into_bytes()))
         .width(Length::Fixed(size))

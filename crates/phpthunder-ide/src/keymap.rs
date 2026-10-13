@@ -67,6 +67,22 @@ pub enum Cmd {
     FindPrevious,
     /// Open the find-in-path dialog.
     FindInPath,
+    /// Quick fixes and intentions at the caret (`⌥↵`).
+    QuickFix,
+    /// Parameter info for the call at the caret (`⌘P`).
+    ParameterInfo,
+    /// Rename the symbol at the caret (`⇧F6`).
+    Rename,
+    /// Remove unused imports and sort the rest (`⌃⌥O`).
+    OptimizeImports,
+    /// Go to subclasses or overriding methods (`⌥⌘B`).
+    GotoImplementation,
+    /// Show the type hierarchy panel (`⌃H`).
+    TypeHierarchy,
+    /// Popup with the symbols of the current file (`⌘F12`).
+    FileStructure,
+    /// Show the Problems panel (`⌘6`).
+    Problems,
 }
 
 /// Maps a key press and its modifiers to the bound `Cmd`, or `None` if
@@ -87,6 +103,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("/", false, false) => ToggleComment,
             ("d", false, false) => Duplicate,
             ("b", false, false) => GotoDeclaration,
+            ("b", false, true) => GotoImplementation,
+            ("p", false, false) => ParameterInfo,
+            ("6", false, false) => Problems,
             ("l", false, false) => GotoLine,
             ("o", true, false) => GotoFile,
             ("o", false, false) => GotoClass,
@@ -103,6 +122,11 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("{", true, false) | ("[", true, false) => PrevTab,
             _ => return None,
         },
+        Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("o") => OptimizeImports,
+        Key::Character(c) if m.control() && !cmd && c.eq_ignore_ascii_case("h") => TypeHierarchy,
+        Key::Named(Named::Enter) if alt && !cmd => QuickFix,
+        Key::Named(Named::F6) if shift => Rename,
+        Key::Named(Named::F12) if cmd => FileStructure,
         Key::Named(Named::F12) if shift => FindUsages,
         Key::Named(Named::F12) => GotoDeclaration,
         Key::Named(Named::F7) if alt => FindUsages,
@@ -152,5 +176,13 @@ pub fn hint(cmd: Cmd) -> &'static str {
         FindNext => "⌘G",
         FindPrevious => "⇧⌘G",
         FindInPath => "⇧⌘F",
+        QuickFix => "⌥↵",
+        ParameterInfo => "⌘P",
+        Rename => "⇧F6",
+        OptimizeImports => "⌃⌥O",
+        GotoImplementation => "⌥⌘B",
+        TypeHierarchy => "⌃H",
+        FileStructure => "⌘F12",
+        Problems => "⌘6",
     }
 }

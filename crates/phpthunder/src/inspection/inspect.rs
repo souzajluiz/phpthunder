@@ -48,26 +48,36 @@ fn has_builtins(index: &Index) -> bool {
     !index.classes("Exception").is_empty() && !index.functions(&["strlen".to_string()]).is_empty()
 }
 
-/// Whether a missing class FQN should be reported: its root namespace must
-/// be known to the index (so a missing vendor package is not an error).
-fn namespace_known(index: &Index, fqn: &str, roots: &HashSet<String>) -> bool {
-    match fqn.split_once('\\') {
-        Some((root, _)) => roots.contains(&root.to_ascii_lowercase()),
-        None => has_builtins(index),
-    }
-}
+/// Names PHP parses like function calls but that are language constructs.
+const LANGUAGE_CONSTRUCTS: &[&str] = &[
+    "isset",
+    "empty",
+    "unset",
+    "eval",
+    "exit",
+    "die",
+    "list",
+    "array",
+    "print",
+    "echo",
+    "include",
+    "include_once",
+    "require",
+    "require_once",
+];
 
-/// Lowercased first namespace segment of every indexed class.
-fn known_roots(index: &Index) -> HashSet<String> {
-    let mut roots = HashSet::new();
-    for (_, symbols) in index.files() {
-        for s in symbols.iter().filter(|s| s.kind.is_class_like()) {
-            if let Some((root, _)) = s.fqn.split_once('\\') {
-                roots.insert(root.to_ascii_lowercase());
-            }
-        }
+/// Whether a missing class FQN should be reported.
+///
+/// Global names are never reported: frameworks register class aliases at
+/// runtime (`Schema`, `Config`). A namespaced name is reported only when
+/// its root namespace is known (so a vendor package that is not installed
+/// is not an error) and it is not itself a namespace (`use Filament\Pages;`).
+fn should_report_class(fqn: &str, namespaces: &HashSet<String>) -> bool {
+    let lower = fqn.to_ascii_lowercase();
+    match lower.split_once('\\') {
+        Some((root, _)) => namespaces.contains(root) && !namespaces.contains(&lower),
+        None => false,
     }
-    roots
 }
 
 /// Whether every class in the hierarchy of `class` is indexed and none has
@@ -96,7 +106,7 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
     let tree = parse(src);
     let analyzer = Analyzer::new(index, src, &tree);
     let lines = LineIndex::new(src);
-    let roots = known_roots(index);
+    let namespaces = index.namespaces();
     let builtins = has_builtins(index);
     let mut out = Vec::new();
     let mut push = |node: Node, severity: Severity, message: String, code: Code| {
@@ -134,7 +144,7 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
             .unwrap_or(node);
         match target {
             Target::Class(fqn) => {
-                if index.classes(&fqn).is_empty() && namespace_known(index, &fqn, &roots) {
+                if index.classes(&fqn).is_empty() && should_report_class(&fqn, &namespaces) {
                     let short = fqn.rsplit('\\').next().unwrap_or(&fqn);
                     push(
                         report_node,
@@ -145,8 +155,9 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
                 }
             }
             Target::Function(candidates) => {
-                if builtins && index.functions(&candidates).is_empty() {
-                    let name = text(report_node, src).to_string();
+                let name = text(report_node, src).to_string();
+                let construct = LANGUAGE_CONSTRUCTS.contains(&name.to_ascii_lowercase().as_str());
+                if builtins && !construct && index.functions(&candidates).is_empty() {
                     push(
                         report_node,
                         Severity::Error,
@@ -159,6 +170,18 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
                 if tag == MemberTag::Constant || !index.find_member(&class, tag, &name).is_empty() {
                     continue;
                 }
+                // A subclass may declare it (`DateTime` vs `Carbon`), a
+                // rebound closure `$this` may be anything, and a property
+                // assigned in this file is a dynamic one.
+                let extended = index
+                    .extended_classes()
+                    .contains(&class.to_ascii_lowercase());
+                let dynamic_property = tag == MemberTag::Property
+                    && (src.contains(&format!("->{name} ="))
+                        || src.contains(&format!("->{name}[")));
+                if extended || dynamic_property || this_in_closure(node, src) {
+                    continue;
+                }
                 let is_enum_builtin = tag == MemberTag::Method
                     && matches!(
                         name.to_ascii_lowercase().as_str(),
@@ -168,7 +191,18 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
                         .classes(&class)
                         .iter()
                         .any(|(_, s)| s.kind == Kind::Enum);
-                if is_enum_builtin || !hierarchy_closed(index, &class, tag) {
+                let receiver_kind = index.classes(&class).first().map(|(_, s)| s.kind);
+                // Traits and interfaces are completed by the classes using
+                // them, and enums carry `name` / `value` implicitly.
+                let open_receiver = matches!(receiver_kind, Some(Kind::Trait | Kind::Interface));
+                let enum_property = tag == MemberTag::Property
+                    && receiver_kind == Some(Kind::Enum)
+                    && matches!(name.as_str(), "name" | "value");
+                if is_enum_builtin
+                    || open_receiver
+                    || enum_property
+                    || !hierarchy_closed(index, &class, tag)
+                {
                     continue;
                 }
                 let short = class.rsplit('\\').next().unwrap_or(&class).to_string();
@@ -198,6 +232,29 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
     undefined_variables(tree.root_node(), src, &mut push);
     out.sort_by_key(|d| (d.start, d.severity));
     out
+}
+
+/// Whether the member access at `name` is on `$this` inside a closure,
+/// where `$this` can be rebound (`Collection::macro`, test closures).
+fn this_in_closure(name: Node, src: &str) -> bool {
+    let Some(access) = name.parent() else {
+        return false;
+    };
+    let on_this = access
+        .child_by_field_name("object")
+        .is_some_and(|o| text(o, src) == "$this");
+    if !on_this {
+        return false;
+    }
+    let mut cur = access.parent();
+    while let Some(n) = cur {
+        match n.kind() {
+            "anonymous_function" | "arrow_function" => return true,
+            "method_declaration" | "function_definition" => return false,
+            _ => cur = n.parent(),
+        }
+    }
+    false
 }
 
 /// Whether `name` is the name being declared (class, function, method,
@@ -354,6 +411,16 @@ fn check_function_scope(
                 }
                 continue;
             }
+            // `new class($a) { ... }`: constructor arguments are read here,
+            // the class body is a scope of its own.
+            "anonymous_class" => {
+                let mut ac = node.walk();
+                stack.extend(
+                    node.named_children(&mut ac)
+                        .filter(|c| c.kind() == "arguments"),
+                );
+                continue;
+            }
             "assignment_expression"
             | "reference_assignment_expression"
             | "augmented_assignment_expression" => {
@@ -402,6 +469,11 @@ fn check_function_scope(
             | "include_once_expression"
             | "require_expression"
             | "require_once_expression" => dynamic = true,
+            // `static::$x` / `self::$x` are static properties, not locals.
+            "variable_name"
+                if node
+                    .parent()
+                    .is_some_and(|p| p.kind() == "scoped_property_access_expression") => {}
             "variable_name" => reads.push(node),
             "dynamic_variable_name" => dynamic = true,
             _ => {}
@@ -584,5 +656,46 @@ mod tests {
             out,
             "<?php class A {\n    function ok() {}\n\n    public function make()\n    {\n    }\n}\n"
         );
+    }
+    #[test]
+    fn diagnostics_should_ignore_language_constructs_and_magic_constants() {
+        let index = index_with(&[
+            ("/b.php", BUILTINS),
+            ("/u.php", "<?php namespace App; class U {}"),
+        ]);
+        let src = "<?php namespace App; function f($a) { if (isset($a) || empty($a)) { exit; } return __DIR__ . '/x'; }";
+        assert!(codes(&index, src).is_empty());
+    }
+
+    #[test]
+    fn diagnostics_should_ignore_global_aliases_and_namespace_imports() {
+        let index = index_with(&[
+            ("/b.php", BUILTINS),
+            ("/p.php", "<?php namespace Lib\\Pages; class Dashboard {}"),
+        ]);
+        // Global code (migrations, config) uses runtime aliases like `Schema`.
+        assert!(codes(&index, "<?php Schema::create('t');").is_empty());
+        let src = "<?php namespace Lib; use Lib\\Pages; new Pages\\Dashboard();";
+        assert!(codes(&index, src).is_empty());
+    }
+
+    #[test]
+    fn diagnostics_should_not_check_members_of_traits_interfaces_or_enum_values() {
+        let index = index_with(&[
+            ("/b.php", BUILTINS),
+            (
+                "/t.php",
+                "<?php trait T { function f() { return $this->belongsTo(); } } interface I {} enum E: string { case A = 'a'; }",
+            ),
+        ]);
+        let src = "<?php trait T { function f() { return $this->belongsTo(); } } function g(I $i) { $i->anything(); return E::A->value; }";
+        assert!(codes(&index, src).is_empty());
+    }
+
+    #[test]
+    fn diagnostics_should_treat_static_properties_as_defined() {
+        let index = index_with(&[("/b.php", BUILTINS)]);
+        let src = "<?php class C { private static $cache; static function f() { return self::$cache ?? static::$cache; } }";
+        assert!(codes(&index, src).is_empty());
     }
 }

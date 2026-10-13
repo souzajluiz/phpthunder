@@ -17,13 +17,14 @@ use iced::widget::{
     space, stack, text, text_editor, tooltip,
 };
 use iced::{Center, Color, Element, Fill, Font, Length, Padding, Shadow, Size, Theme, Vector};
+use phpthunder::inspection::Severity;
 use phpthunder::symbol::Kind;
 
 /// Shorthand for an element producing app `Message`s.
 type El<'a> = Element<'a, Message>;
 
 /// Width of the line-number gutter; also the x origin for popups and find marks.
-const GUTTER_WIDTH: f32 = 56.0;
+pub(crate) const GUTTER_WIDTH: f32 = 56.0;
 /// Matches the macOS title bar so the window buttons are vertically centered.
 const TITLE_BAR_HEIGHT: f32 = 32.0;
 /// Left space reserved for the macOS window buttons inside the title bar.
@@ -33,7 +34,7 @@ const TRAFFIC_LIGHTS_INSET: f32 = 76.0;
 #[cfg(not(target_os = "macos"))]
 const TRAFFIC_LIGHTS_INSET: f32 = 6.0;
 /// Height of a project tree, usages or find-result row.
-const ROW_HEIGHT: f32 = 26.0;
+pub(crate) const ROW_HEIGHT: f32 = 26.0;
 /// Completion rows visible at once; the window follows the selection.
 const COMPLETION_ROWS: usize = 8;
 /// Height of one completion row.
@@ -43,10 +44,10 @@ const COMPLETION_LIST_WIDTH: f32 = 340.0;
 /// Width of the completion details pane beside the list.
 const COMPLETION_DOC_WIDTH: f32 = 300.0;
 /// Width of the hover popup; also used to clamp it inside the editor.
-const HOVER_WIDTH: f32 = 460.0;
+pub(crate) const HOVER_WIDTH: f32 = 460.0;
 
 /// Text at `size` px in `color`: the building block for labels in this module.
-fn label<'a>(s: impl text::IntoFragment<'a>, size: f32, color: Color) -> text::Text<'a> {
+pub(crate) fn label<'a>(s: impl text::IntoFragment<'a>, size: f32, color: Color) -> text::Text<'a> {
     text(s).size(size).color(color)
 }
 
@@ -117,9 +118,10 @@ impl App {
         ]
         .width(Fill)
         .height(Fill);
-        let modal: Option<El<'_>> = match (&self.palette, &self.search_dialog) {
-            (Some(p), _) => Some(self.palette_view(p)),
-            (None, Some(_)) => Some(self.search_dialog_view()),
+        let modal: Option<El<'_>> = match (&self.palette, &self.search_dialog, &self.rename) {
+            (Some(p), _, _) => Some(self.palette_view(p)),
+            (None, Some(_), _) => Some(self.search_dialog_view()),
+            (None, None, Some(_)) => Some(self.rename_dialog_view()),
             _ => None,
         };
         match modal {
@@ -478,6 +480,7 @@ impl App {
     /// hover logic; popups are layered on top by `overlays`.
     fn editor_area<'a>(&'a self, doc: &'a Document) -> El<'a> {
         let completion_open = self.completion.is_some();
+        let intentions_open = self.intentions.is_some();
         let cursor_line = doc.cursor().line;
 
         let numbers: Vec<Span<'static, (), Font>> = (0..doc.line_count())
@@ -523,7 +526,7 @@ impl App {
                 doc.highlight_settings(),
                 crate::editor::format_token,
             )
-            .key_binding(move |key| bindings(key, completion_open))
+            .key_binding(move |key| bindings(key, completion_open, intentions_open))
             .style(editor);
 
         let current_line = pin(container(space())
@@ -546,6 +549,9 @@ impl App {
         for mark in self.find_marks(doc) {
             content = content.push_under(mark);
         }
+        for mark in self.diagnostic_marks(doc) {
+            content = content.push_under(mark);
+        }
 
         let scroller = scrollable(content)
             .id(EDITOR_SCROLL_ID)
@@ -565,7 +571,26 @@ impl App {
     fn overlays<'a>(&'a self, doc: &'a Document, size: Size) -> El<'a> {
         let mut layers = Stack::new().width(Fill).height(Fill);
         let scroll = doc.scroll_y;
-        if let Some(c) = &self.completion {
+        if let Some(view) = &self.signature {
+            // Above the caret line, so it never covers what is being typed.
+            let y = (EDITOR_PAD_TOP + view.line as f32 * CODE_LINE - scroll - 34.0).max(0.0);
+            let x = (GUTTER_WIDTH + EDITOR_PAD_LEFT + view.col as f32 * CHAR_WIDTH - 40.0)
+                .clamp(0.0, (size.width - 300.0).max(0.0));
+            layers = layers.push(pin(signature_popup(view)).x(x).y(y));
+        }
+        if let Some(menu) = &self.intentions {
+            let (popup, h) = intentions_popup(menu);
+            let below = EDITOR_PAD_TOP + (menu.line + 1) as f32 * CODE_LINE - scroll + 2.0;
+            let above = EDITOR_PAD_TOP + menu.line as f32 * CODE_LINE - scroll - h - 2.0;
+            let y = if below + h > size.height && above >= 0.0 {
+                above
+            } else {
+                below
+            };
+            let x = (GUTTER_WIDTH + EDITOR_PAD_LEFT + menu.col as f32 * CHAR_WIDTH)
+                .clamp(0.0, (size.width - INTENTIONS_WIDTH - 8.0).max(0.0));
+            layers = layers.push(pin(popup).x(x).y(y));
+        } else if let Some(c) = &self.completion {
             let (popup, w, h) = completion_popup(c);
             let below = EDITOR_PAD_TOP + (c.line + 1) as f32 * CODE_LINE - scroll + 2.0;
             let above = EDITOR_PAD_TOP + c.line as f32 * CODE_LINE - scroll - h - 2.0;
@@ -638,6 +663,10 @@ impl App {
         if self.search.is_some() {
             tabs = tabs.push(tab(Bottom::Find, "Find"));
         }
+        tabs = tabs.push(tab(Bottom::Problems, "Problems"));
+        if self.hierarchy.is_some() {
+            tabs = tabs.push(tab(Bottom::Hierarchy, "Hierarchy"));
+        }
         let close = button(icon(Icon::Close, 12.0, 2.0, MUTED))
             .padding(6)
             .style(ghost_button)
@@ -651,6 +680,8 @@ impl App {
         let body = match current {
             Bottom::Usages => self.usages_body(),
             Bottom::Find => self.find_results_body(),
+            Bottom::Problems => self.problems_body(),
+            Bottom::Hierarchy => self.hierarchy_body(),
         };
         Some(
             container(column![header, hsep(), body])
@@ -1071,6 +1102,46 @@ impl App {
         .spacing(18)
         .align_y(Center)
         .padding([0, 12]);
+        if let Some(doc) = self.doc().filter(|d| d.is_php()) {
+            let (errors, warnings) = self.problem_counts();
+            let count = |which: Icon, n: usize, severity: Severity| {
+                let color = if n > 0 {
+                    severity_color(severity)
+                } else {
+                    MUTED
+                };
+                row![
+                    icon(which, 12.0, 2.0, color),
+                    label(n.to_string(), 12.0, color)
+                ]
+                .spacing(4)
+                .align_y(Center)
+            };
+            let counts = row![
+                count(Icon::Error, errors, Severity::Error),
+                count(Icon::Warning, warnings, Severity::Warning)
+            ]
+            .spacing(10);
+            let stale = doc.diagnostics_version != doc.version();
+            bar = bar.push(tooltip(
+                button(counts)
+                    .padding([2, 6])
+                    .style(ghost_button)
+                    .on_press(Message::Command(Cmd::Problems)),
+                container(label(
+                    if stale {
+                        "Inspecting…"
+                    } else {
+                        "Problems  ⌘6"
+                    },
+                    12.0,
+                    TEXT,
+                ))
+                .padding([4, 8])
+                .style(popup),
+                tooltip::Position::Top,
+            ));
+        }
         if let Some(doc) = self.doc() {
             let pos = doc.cursor();
             bar = bar
@@ -1199,7 +1270,18 @@ fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
 /// Hover card for the symbol under the mouse: signature, doc text (if any)
 /// and declaration location. Placed by `overlays`.
 fn hover_popup(h: &Hover) -> El<'_> {
-    let mut col = column![label(h.signature.clone(), 13.0, SYN_VARIABLE).font(MONO)].spacing(8);
+    let mut col = column![].spacing(8);
+    for (severity, message) in &h.problems {
+        col = col.push(label(message.clone(), 13.0, severity_color(*severity)));
+    }
+    if h.signature.is_empty() {
+        return container(col)
+            .padding([10, 14])
+            .width(HOVER_WIDTH)
+            .style(popup)
+            .into();
+    }
+    col = col.push(label(h.signature.clone(), 13.0, SYN_VARIABLE).font(MONO));
     if !h.doc.is_empty() {
         col = col.push(label(h.doc.clone(), 13.0, rgb(0xB5BCCA)));
     }

@@ -30,6 +30,11 @@ pub enum Mode {
     Line,
     /// Files and symbols together, files slightly demoted.
     Everywhere,
+    /// Symbols declared in the active file (`⌘F12`).
+    Structure,
+    /// A fixed list of targets to choose from (e.g. implementations);
+    /// the list and its title live in [`Palette::fixed`].
+    Choose,
 }
 
 impl Mode {
@@ -42,6 +47,8 @@ impl Mode {
             Mode::Recent => "Recent files",
             Mode::Line => "Go to line",
             Mode::Everywhere => "Search everywhere",
+            Mode::Structure => "File structure",
+            Mode::Choose => "Choose",
         }
     }
 
@@ -91,4 +98,7 @@ pub struct Palette {
     pub items: Vec<Item>,
     /// Index into `items` of the highlighted row.
     pub selected: usize,
+    /// For [`Mode::Choose`]: the footer title and the full list the query
+    /// filters.
+    pub fixed: Option<(String, Vec<Item>)>,
 }

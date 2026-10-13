@@ -569,6 +569,4789 @@ class stdClass
 
 }
 
+function strtotime(string $datetime, ?int $baseTimestamp = NULL): int|false {}
+
+function date(string $format, ?int $timestamp = NULL): string {}
+
+function idate(string $format, ?int $timestamp = NULL): int|false {}
+
+function gmdate(string $format, ?int $timestamp = NULL): string {}
+
+function mktime(int $hour, ?int $minute = NULL, ?int $second = NULL, ?int $month = NULL, ?int $day = NULL, ?int $year = NULL): int|false {}
+
+function gmmktime(int $hour, ?int $minute = NULL, ?int $second = NULL, ?int $month = NULL, ?int $day = NULL, ?int $year = NULL): int|false {}
+
+function checkdate(int $month, int $day, int $year): bool {}
+
+function strftime(string $format, ?int $timestamp = NULL): string|false {}
+
+function gmstrftime(string $format, ?int $timestamp = NULL): string|false {}
+
+function time(): int {}
+
+function localtime(?int $timestamp = NULL, bool $associative = false): array {}
+
+function getdate(?int $timestamp = NULL): array {}
+
+function date_create(string $datetime = 'now', ?\DateTimeZone $timezone = NULL): \DateTime|false {}
+
+function date_create_immutable(string $datetime = 'now', ?\DateTimeZone $timezone = NULL): \DateTimeImmutable|false {}
+
+function date_create_from_format(string $format, string $datetime, ?\DateTimeZone $timezone = NULL): \DateTime|false {}
+
+function date_create_immutable_from_format(string $format, string $datetime, ?\DateTimeZone $timezone = NULL): \DateTimeImmutable|false {}
+
+function date_parse(string $datetime): array {}
+
+function date_parse_from_format(string $format, string $datetime): array {}
+
+function date_get_last_errors(): array|false {}
+
+function date_format(\DateTimeInterface $object, string $format): string {}
+
+function date_modify(\DateTime $object, string $modifier): \DateTime|false {}
+
+function date_add(\DateTime $object, \DateInterval $interval): \DateTime {}
+
+function date_sub(\DateTime $object, \DateInterval $interval): \DateTime {}
+
+function date_timezone_get(\DateTimeInterface $object): \DateTimeZone|false {}
+
+function date_timezone_set(\DateTime $object, \DateTimeZone $timezone): \DateTime {}
+
+function date_offset_get(\DateTimeInterface $object): int {}
+
+function date_diff(\DateTimeInterface $baseObject, \DateTimeInterface $targetObject, bool $absolute = false): \DateInterval {}
+
+function date_time_set(\DateTime $object, int $hour, int $minute, int $second = 0, int $microsecond = 0): \DateTime {}
+
+function date_date_set(\DateTime $object, int $year, int $month, int $day): \DateTime {}
+
+function date_isodate_set(\DateTime $object, int $year, int $week, int $dayOfWeek = 1): \DateTime {}
+
+function date_timestamp_set(\DateTime $object, int $timestamp): \DateTime {}
+
+function date_timestamp_get(\DateTimeInterface $object): int {}
+
+function timezone_open(string $timezone): \DateTimeZone|false {}
+
+function timezone_name_get(\DateTimeZone $object): string {}
+
+function timezone_name_from_abbr(string $abbr, int $utcOffset = -1, int $isDST = -1): string|false {}
+
+function timezone_offset_get(\DateTimeZone $object, \DateTimeInterface $datetime): int {}
+
+function timezone_transitions_get(\DateTimeZone $object, int $timestampBegin = \PHP_INT_MIN, int $timestampEnd = \PHP_INT_MAX): array|false {}
+
+function timezone_location_get(\DateTimeZone $object): array|false {}
+
+function timezone_identifiers_list(int $timezoneGroup = \DateTimeZone::ALL, ?string $countryCode = NULL): array {}
+
+function timezone_abbreviations_list(): array {}
+
+function timezone_version_get(): string {}
+
+function date_interval_create_from_date_string(string $datetime): \DateInterval|false {}
+
+function date_interval_format(\DateInterval $object, string $format): string {}
+
+function date_default_timezone_set(string $timezoneId): bool {}
+
+function date_default_timezone_get(): string {}
+
+function date_sunrise(int $timestamp, int $returnFormat = \SUNFUNCS_RET_STRING, ?float $latitude = NULL, ?float $longitude = NULL, ?float $zenith = NULL, ?float $utcOffset = NULL): string|int|float|false {}
+
+function date_sunset(int $timestamp, int $returnFormat = \SUNFUNCS_RET_STRING, ?float $latitude = NULL, ?float $longitude = NULL, ?float $zenith = NULL, ?float $utcOffset = NULL): string|int|float|false {}
+
+function date_sun_info(int $timestamp, float $latitude, float $longitude): array {}
+
+const DATE_ATOM = 'Y-m-d\\TH:i:sP';
+
+const DATE_COOKIE = 'l, d-M-Y H:i:s T';
+
+const DATE_ISO8601 = 'Y-m-d\\TH:i:sO';
+
+const DATE_ISO8601_EXPANDED = 'X-m-d\\TH:i:sP';
+
+const DATE_RFC822 = 'D, d M y H:i:s O';
+
+const DATE_RFC850 = 'l, d-M-y H:i:s T';
+
+const DATE_RFC1036 = 'D, d M y H:i:s O';
+
+const DATE_RFC1123 = 'D, d M Y H:i:s O';
+
+const DATE_RFC7231 = 'D, d M Y H:i:s \\G\\M\\T';
+
+const DATE_RFC2822 = 'D, d M Y H:i:s O';
+
+const DATE_RFC3339 = 'Y-m-d\\TH:i:sP';
+
+const DATE_RFC3339_EXTENDED = 'Y-m-d\\TH:i:s.vP';
+
+const DATE_RSS = 'D, d M Y H:i:s O';
+
+const DATE_W3C = 'Y-m-d\\TH:i:sP';
+
+const SUNFUNCS_RET_TIMESTAMP = 0;
+
+const SUNFUNCS_RET_STRING = 1;
+
+const SUNFUNCS_RET_DOUBLE = 2;
+
+interface DateTimeInterface
+{
+    const ATOM = null;
+    const COOKIE = null;
+    const ISO8601 = null;
+    const ISO8601_EXPANDED = null;
+    const RFC822 = null;
+    const RFC850 = null;
+    const RFC1036 = null;
+    const RFC1123 = null;
+    const RFC7231 = null;
+    const RFC2822 = null;
+    const RFC3339 = null;
+    const RFC3339_EXTENDED = null;
+    const RSS = null;
+    const W3C = null;
+    public function format(string $format): string;
+    public function getTimezone(): \DateTimeZone|false;
+    public function getOffset(): int;
+    public function getTimestamp(): int;
+    public function getMicrosecond(): int;
+    public function diff(\DateTimeInterface $targetObject, bool $absolute = false): \DateInterval;
+    public function __wakeup(): void;
+    public function __serialize(): array;
+    public function __unserialize(array $data): void;
+}
+
+class DateTime implements \DateTimeInterface
+{
+    public function __construct(string $datetime = 'now', ?\DateTimeZone $timezone = NULL) {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function __wakeup(): void {}
+    public static function __set_state(array $array): \DateTime {}
+    public static function createFromImmutable(\DateTimeImmutable $object): static {}
+    public static function createFromInterface(\DateTimeInterface $object): \DateTime {}
+    public static function createFromFormat(string $format, string $datetime, ?\DateTimeZone $timezone = NULL): \DateTime|false {}
+    public static function createFromTimestamp(int|float $timestamp): static {}
+    public static function getLastErrors(): array|false {}
+    public function format(string $format): string {}
+    public function modify(string $modifier): \DateTime {}
+    public function add(\DateInterval $interval): \DateTime {}
+    public function sub(\DateInterval $interval): \DateTime {}
+    public function getTimezone(): \DateTimeZone|false {}
+    public function setTimezone(\DateTimeZone $timezone): \DateTime {}
+    public function getOffset(): int {}
+    public function getMicrosecond(): int {}
+    public function setTime(int $hour, int $minute, int $second = 0, int $microsecond = 0): \DateTime {}
+    public function setDate(int $year, int $month, int $day): \DateTime {}
+    public function setISODate(int $year, int $week, int $dayOfWeek = 1): \DateTime {}
+    public function setTimestamp(int $timestamp): \DateTime {}
+    public function setMicrosecond(int $microsecond): static {}
+    public function getTimestamp(): int {}
+    public function diff(\DateTimeInterface $targetObject, bool $absolute = false): \DateInterval {}
+}
+
+class DateTimeImmutable implements \DateTimeInterface
+{
+    public function __construct(string $datetime = 'now', ?\DateTimeZone $timezone = NULL) {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function __wakeup(): void {}
+    public static function __set_state(array $array): \DateTimeImmutable {}
+    public static function createFromFormat(string $format, string $datetime, ?\DateTimeZone $timezone = NULL): \DateTimeImmutable|false {}
+    public static function createFromTimestamp(int|float $timestamp): static {}
+    public static function getLastErrors(): array|false {}
+    public function format(string $format): string {}
+    public function getTimezone(): \DateTimeZone|false {}
+    public function getOffset(): int {}
+    public function getTimestamp(): int {}
+    public function getMicrosecond(): int {}
+    public function diff(\DateTimeInterface $targetObject, bool $absolute = false): \DateInterval {}
+    public function modify(string $modifier): \DateTimeImmutable {}
+    public function add(\DateInterval $interval): \DateTimeImmutable {}
+    public function sub(\DateInterval $interval): \DateTimeImmutable {}
+    public function setTimezone(\DateTimeZone $timezone): \DateTimeImmutable {}
+    public function setTime(int $hour, int $minute, int $second = 0, int $microsecond = 0): \DateTimeImmutable {}
+    public function setDate(int $year, int $month, int $day): \DateTimeImmutable {}
+    public function setISODate(int $year, int $week, int $dayOfWeek = 1): \DateTimeImmutable {}
+    public function setTimestamp(int $timestamp): \DateTimeImmutable {}
+    public function setMicrosecond(int $microsecond): static {}
+    public static function createFromMutable(\DateTime $object): static {}
+    public static function createFromInterface(\DateTimeInterface $object): \DateTimeImmutable {}
+}
+
+class DateTimeZone
+{
+    const AFRICA = null;
+    const AMERICA = null;
+    const ANTARCTICA = null;
+    const ARCTIC = null;
+    const ASIA = null;
+    const ATLANTIC = null;
+    const AUSTRALIA = null;
+    const EUROPE = null;
+    const INDIAN = null;
+    const PACIFIC = null;
+    const UTC = null;
+    const ALL = null;
+    const ALL_WITH_BC = null;
+    const PER_COUNTRY = null;
+    public function __construct(string $timezone) {}
+    public function getName(): string {}
+    public function getOffset(\DateTimeInterface $datetime): int {}
+    public function getTransitions(int $timestampBegin = \PHP_INT_MIN, int $timestampEnd = \PHP_INT_MAX): array|false {}
+    public function getLocation(): array|false {}
+    public static function listAbbreviations(): array {}
+    public static function listIdentifiers(int $timezoneGroup = \DateTimeZone::ALL, ?string $countryCode = NULL): array {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function __wakeup(): void {}
+    public static function __set_state(array $array): \DateTimeZone {}
+}
+
+class DateInterval
+{
+    public function __construct(string $duration) {}
+    public static function createFromDateString(string $datetime): \DateInterval {}
+    public function format(string $format): string {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function __wakeup(): void {}
+    public static function __set_state(array $array): \DateInterval {}
+}
+
+class DatePeriod implements \IteratorAggregate, \Traversable
+{
+    const EXCLUDE_START_DATE = null;
+    const INCLUDE_END_DATE = null;
+    public ?\DateTimeInterface $start;
+    public ?\DateTimeInterface $current;
+    public ?\DateTimeInterface $end;
+    public ?\DateInterval $interval;
+    public int $recurrences;
+    public bool $include_start_date;
+    public bool $include_end_date;
+    public static function createFromISO8601String(string $specification, int $options = 0): static {}
+    public function __construct($start, $interval = null, $end = null, $options = null) {}
+    public function getStartDate(): \DateTimeInterface {}
+    public function getEndDate(): ?\DateTimeInterface {}
+    public function getDateInterval(): \DateInterval {}
+    public function getRecurrences(): ?int {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function __wakeup(): void {}
+    public static function __set_state(array $array): \DatePeriod {}
+    public function getIterator(): \Iterator {}
+}
+
+class DateError extends \Error
+{
+
+}
+
+class DateObjectError extends \DateError
+{
+
+}
+
+class DateRangeError extends \DateError
+{
+
+}
+
+class DateException extends \Exception
+{
+
+}
+
+class DateInvalidTimeZoneException extends \DateException
+{
+
+}
+
+class DateInvalidOperationException extends \DateException
+{
+
+}
+
+class DateMalformedStringException extends \DateException
+{
+
+}
+
+class DateMalformedIntervalStringException extends \DateException
+{
+
+}
+
+class DateMalformedPeriodStringException extends \DateException
+{
+
+}
+
+function libxml_set_streams_context($context): void {}
+
+function libxml_use_internal_errors(?bool $use_errors = NULL): bool {}
+
+function libxml_get_last_error(): \LibXMLError|false {}
+
+function libxml_get_errors(): array {}
+
+function libxml_clear_errors(): void {}
+
+function libxml_disable_entity_loader(bool $disable = true): bool {}
+
+function libxml_set_external_entity_loader(?callable $resolver_function): bool {}
+
+function libxml_get_external_entity_loader(): ?callable {}
+
+const LIBXML_VERSION = 21205;
+
+const LIBXML_DOTTED_VERSION = '2.12.5';
+
+const LIBXML_LOADED_VERSION = '21205';
+
+const LIBXML_RECOVER = 1;
+
+const LIBXML_NOENT = 2;
+
+const LIBXML_DTDLOAD = 4;
+
+const LIBXML_DTDATTR = 8;
+
+const LIBXML_DTDVALID = 16;
+
+const LIBXML_NOERROR = 32;
+
+const LIBXML_NOWARNING = 64;
+
+const LIBXML_NOBLANKS = 256;
+
+const LIBXML_XINCLUDE = 1024;
+
+const LIBXML_NSCLEAN = 8192;
+
+const LIBXML_NOCDATA = 16384;
+
+const LIBXML_NONET = 2048;
+
+const LIBXML_PEDANTIC = 128;
+
+const LIBXML_COMPACT = 65536;
+
+const LIBXML_NOXMLDECL = 2;
+
+const LIBXML_PARSEHUGE = 524288;
+
+const LIBXML_BIGLINES = 4194304;
+
+const LIBXML_NOEMPTYTAG = 4;
+
+const LIBXML_SCHEMA_CREATE = 1;
+
+const LIBXML_HTML_NOIMPLIED = 8192;
+
+const LIBXML_HTML_NODEFDTD = 4;
+
+const LIBXML_ERR_NONE = 0;
+
+const LIBXML_ERR_WARNING = 1;
+
+const LIBXML_ERR_ERROR = 2;
+
+const LIBXML_ERR_FATAL = 3;
+
+class LibXMLError
+{
+    public int $level;
+    public int $code;
+    public int $column;
+    public string $message;
+    public string $file;
+    public int $line;
+}
+
+function openssl_x509_export_to_file(\OpenSSLCertificate|string $certificate, string $output_filename, bool $no_text = true): bool {}
+
+function openssl_x509_export(\OpenSSLCertificate|string $certificate, &$output, bool $no_text = true): bool {}
+
+function openssl_x509_fingerprint(\OpenSSLCertificate|string $certificate, string $digest_algo = 'sha1', bool $binary = false): string|false {}
+
+function openssl_x509_check_private_key(\OpenSSLCertificate|string $certificate, $private_key): bool {}
+
+function openssl_x509_verify(\OpenSSLCertificate|string $certificate, $public_key): int {}
+
+function openssl_x509_parse(\OpenSSLCertificate|string $certificate, bool $short_names = true): array|false {}
+
+function openssl_x509_checkpurpose(\OpenSSLCertificate|string $certificate, int $purpose, array $ca_info = [], ?string $untrusted_certificates_file = NULL): int|bool {}
+
+function openssl_x509_read(\OpenSSLCertificate|string $certificate): \OpenSSLCertificate|false {}
+
+function openssl_x509_free(\OpenSSLCertificate $certificate): void {}
+
+function openssl_pkcs12_export_to_file(\OpenSSLCertificate|string $certificate, string $output_filename, $private_key, string $passphrase, array $options = []): bool {}
+
+function openssl_pkcs12_export(\OpenSSLCertificate|string $certificate, &$output, $private_key, string $passphrase, array $options = []): bool {}
+
+function openssl_pkcs12_read(string $pkcs12, &$certificates, string $passphrase): bool {}
+
+function openssl_csr_export_to_file(\OpenSSLCertificateSigningRequest|string $csr, string $output_filename, bool $no_text = true): bool {}
+
+function openssl_csr_export(\OpenSSLCertificateSigningRequest|string $csr, &$output, bool $no_text = true): bool {}
+
+function openssl_csr_sign(\OpenSSLCertificateSigningRequest|string $csr, \OpenSSLCertificate|string|null $ca_certificate, $private_key, int $days, ?array $options = NULL, int $serial = 0, ?string $serial_hex = NULL): \OpenSSLCertificate|false {}
+
+function openssl_csr_new(array $distinguished_names, &$private_key, ?array $options = NULL, ?array $extra_attributes = NULL): \OpenSSLCertificateSigningRequest|bool {}
+
+function openssl_csr_get_subject(\OpenSSLCertificateSigningRequest|string $csr, bool $short_names = true): array|false {}
+
+function openssl_csr_get_public_key(\OpenSSLCertificateSigningRequest|string $csr, bool $short_names = true): \OpenSSLAsymmetricKey|false {}
+
+function openssl_pkey_new(?array $options = NULL): \OpenSSLAsymmetricKey|false {}
+
+function openssl_pkey_export_to_file($key, string $output_filename, ?string $passphrase = NULL, ?array $options = NULL): bool {}
+
+function openssl_pkey_export($key, &$output, ?string $passphrase = NULL, ?array $options = NULL): bool {}
+
+function openssl_pkey_get_public($public_key): \OpenSSLAsymmetricKey|false {}
+
+function openssl_get_publickey($public_key): \OpenSSLAsymmetricKey|false {}
+
+function openssl_pkey_free(\OpenSSLAsymmetricKey $key): void {}
+
+function openssl_free_key(\OpenSSLAsymmetricKey $key): void {}
+
+function openssl_pkey_get_private($private_key, ?string $passphrase = NULL): \OpenSSLAsymmetricKey|false {}
+
+function openssl_get_privatekey($private_key, ?string $passphrase = NULL): \OpenSSLAsymmetricKey|false {}
+
+function openssl_pkey_get_details(\OpenSSLAsymmetricKey $key): array|false {}
+
+function openssl_pbkdf2(string $password, string $salt, int $key_length, int $iterations, string $digest_algo = 'sha1'): string|false {}
+
+function openssl_pkcs7_verify(string $input_filename, int $flags, ?string $signers_certificates_filename = NULL, array $ca_info = [], ?string $untrusted_certificates_filename = NULL, ?string $content = NULL, ?string $output_filename = NULL): int|bool {}
+
+function openssl_pkcs7_encrypt(string $input_filename, string $output_filename, $certificate, ?array $headers, int $flags = 0, int $cipher_algo = \OPENSSL_CIPHER_AES_128_CBC): bool {}
+
+function openssl_pkcs7_sign(string $input_filename, string $output_filename, \OpenSSLCertificate|string $certificate, $private_key, ?array $headers, int $flags = \PKCS7_DETACHED, ?string $untrusted_certificates_filename = NULL): bool {}
+
+function openssl_pkcs7_decrypt(string $input_filename, string $output_filename, $certificate, $private_key = NULL): bool {}
+
+function openssl_pkcs7_read(string $data, &$certificates): bool {}
+
+function openssl_cms_verify(string $input_filename, int $flags = 0, ?string $certificates = NULL, array $ca_info = [], ?string $untrusted_certificates_filename = NULL, ?string $content = NULL, ?string $pk7 = NULL, ?string $sigfile = NULL, int $encoding = \OPENSSL_ENCODING_SMIME): bool {}
+
+function openssl_cms_encrypt(string $input_filename, string $output_filename, $certificate, ?array $headers, int $flags = 0, int $encoding = \OPENSSL_ENCODING_SMIME, int $cipher_algo = \OPENSSL_CIPHER_AES_128_CBC): bool {}
+
+function openssl_cms_sign(string $input_filename, string $output_filename, \OpenSSLCertificate|string $certificate, $private_key, ?array $headers, int $flags = 0, int $encoding = \OPENSSL_ENCODING_SMIME, ?string $untrusted_certificates_filename = NULL): bool {}
+
+function openssl_cms_decrypt(string $input_filename, string $output_filename, $certificate, $private_key = NULL, int $encoding = \OPENSSL_ENCODING_SMIME): bool {}
+
+function openssl_cms_read(string $input_filename, &$certificates): bool {}
+
+function openssl_private_encrypt(string $data, &$encrypted_data, $private_key, int $padding = \OPENSSL_PKCS1_PADDING): bool {}
+
+function openssl_private_decrypt(string $data, &$decrypted_data, $private_key, int $padding = \OPENSSL_PKCS1_PADDING): bool {}
+
+function openssl_public_encrypt(string $data, &$encrypted_data, $public_key, int $padding = \OPENSSL_PKCS1_PADDING): bool {}
+
+function openssl_public_decrypt(string $data, &$decrypted_data, $public_key, int $padding = \OPENSSL_PKCS1_PADDING): bool {}
+
+function openssl_error_string(): string|false {}
+
+function openssl_sign(string $data, &$signature, $private_key, string|int $algorithm = \OPENSSL_ALGO_SHA1): bool {}
+
+function openssl_verify(string $data, string $signature, $public_key, string|int $algorithm = \OPENSSL_ALGO_SHA1): int|false {}
+
+function openssl_seal(string $data, &$sealed_data, &$encrypted_keys, array $public_key, string $cipher_algo, &$iv = NULL): int|false {}
+
+function openssl_open(string $data, &$output, string $encrypted_key, $private_key, string $cipher_algo, ?string $iv = NULL): bool {}
+
+function openssl_get_md_methods(bool $aliases = false): array {}
+
+function openssl_get_cipher_methods(bool $aliases = false): array {}
+
+function openssl_get_curve_names(): array|false {}
+
+function openssl_digest(string $data, string $digest_algo, bool $binary = false): string|false {}
+
+function openssl_encrypt(string $data, string $cipher_algo, string $passphrase, int $options = 0, string $iv = '', &$tag = NULL, string $aad = '', int $tag_length = 16): string|false {}
+
+function openssl_decrypt(string $data, string $cipher_algo, string $passphrase, int $options = 0, string $iv = '', ?string $tag = NULL, string $aad = ''): string|false {}
+
+function openssl_cipher_iv_length(string $cipher_algo): int|false {}
+
+function openssl_cipher_key_length(string $cipher_algo): int|false {}
+
+function openssl_dh_compute_key(string $public_key, \OpenSSLAsymmetricKey $private_key): string|false {}
+
+function openssl_pkey_derive($public_key, $private_key, int $key_length = 0): string|false {}
+
+function openssl_random_pseudo_bytes(int $length, &$strong_result = NULL): string {}
+
+function openssl_spki_new(\OpenSSLAsymmetricKey $private_key, string $challenge, int $digest_algo = \OPENSSL_ALGO_MD5): string|false {}
+
+function openssl_spki_verify(string $spki): bool {}
+
+function openssl_spki_export(string $spki): string|false {}
+
+function openssl_spki_export_challenge(string $spki): string|false {}
+
+function openssl_get_cert_locations(): array {}
+
+const OPENSSL_VERSION_TEXT = 'OpenSSL 3.4.1 11 Feb 2025';
+
+const OPENSSL_VERSION_NUMBER = 809500688;
+
+const X509_PURPOSE_SSL_CLIENT = 1;
+
+const X509_PURPOSE_SSL_SERVER = 2;
+
+const X509_PURPOSE_NS_SSL_SERVER = 3;
+
+const X509_PURPOSE_SMIME_SIGN = 4;
+
+const X509_PURPOSE_SMIME_ENCRYPT = 5;
+
+const X509_PURPOSE_CRL_SIGN = 6;
+
+const X509_PURPOSE_ANY = 7;
+
+const X509_PURPOSE_OCSP_HELPER = 8;
+
+const X509_PURPOSE_TIMESTAMP_SIGN = 9;
+
+const OPENSSL_ALGO_SHA1 = 1;
+
+const OPENSSL_ALGO_MD5 = 2;
+
+const OPENSSL_ALGO_MD4 = 3;
+
+const OPENSSL_ALGO_SHA224 = 6;
+
+const OPENSSL_ALGO_SHA256 = 7;
+
+const OPENSSL_ALGO_SHA384 = 8;
+
+const OPENSSL_ALGO_SHA512 = 9;
+
+const OPENSSL_ALGO_RMD160 = 10;
+
+const PKCS7_DETACHED = 64;
+
+const PKCS7_TEXT = 1;
+
+const PKCS7_NOINTERN = 16;
+
+const PKCS7_NOVERIFY = 32;
+
+const PKCS7_NOCHAIN = 8;
+
+const PKCS7_NOCERTS = 2;
+
+const PKCS7_NOATTR = 256;
+
+const PKCS7_BINARY = 128;
+
+const PKCS7_NOSIGS = 4;
+
+const PKCS7_NOOLDMIMETYPE = 1024;
+
+const OPENSSL_CMS_DETACHED = 64;
+
+const OPENSSL_CMS_TEXT = 1;
+
+const OPENSSL_CMS_NOINTERN = 16;
+
+const OPENSSL_CMS_NOVERIFY = 32;
+
+const OPENSSL_CMS_NOCERTS = 2;
+
+const OPENSSL_CMS_NOATTR = 256;
+
+const OPENSSL_CMS_BINARY = 128;
+
+const OPENSSL_CMS_NOSIGS = 12;
+
+const OPENSSL_CMS_OLDMIMETYPE = 1024;
+
+const OPENSSL_PKCS1_PADDING = 1;
+
+const OPENSSL_NO_PADDING = 3;
+
+const OPENSSL_PKCS1_OAEP_PADDING = 4;
+
+const OPENSSL_DEFAULT_STREAM_CIPHERS = 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-';
+
+const OPENSSL_CIPHER_RC2_40 = 0;
+
+const OPENSSL_CIPHER_RC2_128 = 1;
+
+const OPENSSL_CIPHER_RC2_64 = 2;
+
+const OPENSSL_CIPHER_DES = 3;
+
+const OPENSSL_CIPHER_3DES = 4;
+
+const OPENSSL_CIPHER_AES_128_CBC = 5;
+
+const OPENSSL_CIPHER_AES_192_CBC = 6;
+
+const OPENSSL_CIPHER_AES_256_CBC = 7;
+
+const OPENSSL_KEYTYPE_RSA = 0;
+
+const OPENSSL_KEYTYPE_DSA = 1;
+
+const OPENSSL_KEYTYPE_DH = 2;
+
+const OPENSSL_KEYTYPE_EC = 3;
+
+const OPENSSL_KEYTYPE_X25519 = 4;
+
+const OPENSSL_KEYTYPE_ED25519 = 5;
+
+const OPENSSL_KEYTYPE_X448 = 6;
+
+const OPENSSL_KEYTYPE_ED448 = 7;
+
+const OPENSSL_RAW_DATA = 1;
+
+const OPENSSL_ZERO_PADDING = 2;
+
+const OPENSSL_DONT_ZERO_PAD_KEY = 4;
+
+const OPENSSL_TLSEXT_SERVER_NAME = 1;
+
+const OPENSSL_ENCODING_DER = 0;
+
+const OPENSSL_ENCODING_SMIME = 1;
+
+const OPENSSL_ENCODING_PEM = 2;
+
+final class OpenSSLCertificate
+{
+
+}
+
+final class OpenSSLCertificateSigningRequest
+{
+
+}
+
+final class OpenSSLAsymmetricKey
+{
+
+}
+
+function preg_match(string $pattern, string $subject, &$matches = NULL, int $flags = 0, int $offset = 0): int|false {}
+
+function preg_match_all(string $pattern, string $subject, &$matches = NULL, int $flags = 0, int $offset = 0): int|false {}
+
+function preg_replace(array|string $pattern, array|string $replacement, array|string $subject, int $limit = -1, &$count = NULL): array|string|null {}
+
+function preg_filter(array|string $pattern, array|string $replacement, array|string $subject, int $limit = -1, &$count = NULL): array|string|null {}
+
+function preg_replace_callback(array|string $pattern, callable $callback, array|string $subject, int $limit = -1, &$count = NULL, int $flags = 0): array|string|null {}
+
+function preg_replace_callback_array(array $pattern, array|string $subject, int $limit = -1, &$count = NULL, int $flags = 0): array|string|null {}
+
+function preg_split(string $pattern, string $subject, int $limit = -1, int $flags = 0): array|false {}
+
+function preg_quote(string $str, ?string $delimiter = NULL): string {}
+
+function preg_grep(string $pattern, array $array, int $flags = 0): array|false {}
+
+function preg_last_error(): int {}
+
+function preg_last_error_msg(): string {}
+
+const PREG_PATTERN_ORDER = 1;
+
+const PREG_SET_ORDER = 2;
+
+const PREG_OFFSET_CAPTURE = 256;
+
+const PREG_UNMATCHED_AS_NULL = 512;
+
+const PREG_SPLIT_NO_EMPTY = 1;
+
+const PREG_SPLIT_DELIM_CAPTURE = 2;
+
+const PREG_SPLIT_OFFSET_CAPTURE = 4;
+
+const PREG_GREP_INVERT = 1;
+
+const PREG_NO_ERROR = 0;
+
+const PREG_INTERNAL_ERROR = 1;
+
+const PREG_BACKTRACK_LIMIT_ERROR = 2;
+
+const PREG_RECURSION_LIMIT_ERROR = 3;
+
+const PREG_BAD_UTF8_ERROR = 4;
+
+const PREG_BAD_UTF8_OFFSET_ERROR = 5;
+
+const PREG_JIT_STACKLIMIT_ERROR = 6;
+
+const PCRE_VERSION = '10.44 2024-06-07';
+
+const PCRE_VERSION_MAJOR = 10;
+
+const PCRE_VERSION_MINOR = 44;
+
+const PCRE_JIT_SUPPORT = true;
+
+const SQLITE3_ASSOC = 1;
+
+const SQLITE3_NUM = 2;
+
+const SQLITE3_BOTH = 3;
+
+const SQLITE3_INTEGER = 1;
+
+const SQLITE3_FLOAT = 2;
+
+const SQLITE3_TEXT = 3;
+
+const SQLITE3_BLOB = 4;
+
+const SQLITE3_NULL = 5;
+
+const SQLITE3_OPEN_READONLY = 1;
+
+const SQLITE3_OPEN_READWRITE = 2;
+
+const SQLITE3_OPEN_CREATE = 4;
+
+const SQLITE3_DETERMINISTIC = 2048;
+
+class SQLite3Exception extends \Exception
+{
+
+}
+
+class SQLite3
+{
+    const OK = null;
+    const DENY = null;
+    const IGNORE = null;
+    const CREATE_INDEX = null;
+    const CREATE_TABLE = null;
+    const CREATE_TEMP_INDEX = null;
+    const CREATE_TEMP_TABLE = null;
+    const CREATE_TEMP_TRIGGER = null;
+    const CREATE_TEMP_VIEW = null;
+    const CREATE_TRIGGER = null;
+    const CREATE_VIEW = null;
+    const DELETE = null;
+    const DROP_INDEX = null;
+    const DROP_TABLE = null;
+    const DROP_TEMP_INDEX = null;
+    const DROP_TEMP_TABLE = null;
+    const DROP_TEMP_TRIGGER = null;
+    const DROP_TEMP_VIEW = null;
+    const DROP_TRIGGER = null;
+    const DROP_VIEW = null;
+    const INSERT = null;
+    const PRAGMA = null;
+    const READ = null;
+    const SELECT = null;
+    const TRANSACTION = null;
+    const UPDATE = null;
+    const ATTACH = null;
+    const DETACH = null;
+    const ALTER_TABLE = null;
+    const REINDEX = null;
+    const ANALYZE = null;
+    const CREATE_VTABLE = null;
+    const DROP_VTABLE = null;
+    const FUNCTION = null;
+    const SAVEPOINT = null;
+    const COPY = null;
+    const RECURSIVE = null;
+    public function __construct(string $filename, int $flags = 6, string $encryptionKey = '') {}
+    public function open(string $filename, int $flags = 6, string $encryptionKey = ''): void {}
+    public function close(): bool {}
+    public static function version(): array {}
+    public function lastInsertRowID(): int {}
+    public function lastErrorCode(): int {}
+    public function lastExtendedErrorCode(): int {}
+    public function lastErrorMsg(): string {}
+    public function changes(): int {}
+    public function busyTimeout(int $milliseconds): bool {}
+    public function loadExtension(string $name): bool {}
+    public function backup(\SQLite3 $destination, string $sourceDatabase = 'main', string $destinationDatabase = 'main'): bool {}
+    public static function escapeString(string $string): string {}
+    public function prepare(string $query): \SQLite3Stmt|false {}
+    public function exec(string $query): bool {}
+    public function query(string $query): \SQLite3Result|false {}
+    public function querySingle(string $query, bool $entireRow = false): mixed {}
+    public function createFunction(string $name, callable $callback, int $argCount = -1, int $flags = 0): bool {}
+    public function createAggregate(string $name, callable $stepCallback, callable $finalCallback, int $argCount = -1): bool {}
+    public function createCollation(string $name, callable $callback): bool {}
+    public function openBlob(string $table, string $column, int $rowid, string $database = 'main', int $flags = \SQLITE3_OPEN_READONLY) {}
+    public function enableExceptions(bool $enable = false): bool {}
+    public function enableExtendedResultCodes(bool $enable = true): bool {}
+    public function setAuthorizer(?callable $callback): bool {}
+}
+
+class SQLite3Stmt
+{
+    public function bindParam(string|int $param, mixed &$var, int $type = \SQLITE3_TEXT): bool {}
+    public function bindValue(string|int $param, mixed $value, int $type = \SQLITE3_TEXT): bool {}
+    public function clear(): bool {}
+    public function close(): true {}
+    public function execute(): \SQLite3Result|false {}
+    public function getSQL(bool $expand = false): string|false {}
+    public function paramCount(): int {}
+    public function readOnly(): bool {}
+    public function reset(): bool {}
+}
+
+class SQLite3Result
+{
+    public function numColumns(): int {}
+    public function columnName(int $column): string|false {}
+    public function columnType(int $column): int|false {}
+    public function fetchArray(int $mode = \SQLITE3_BOTH): array|false {}
+    public function reset(): bool {}
+    public function finalize(): true {}
+}
+
+function ob_gzhandler(string $data, int $flags): string|false {}
+
+function zlib_get_coding_type(): string|false {}
+
+function gzfile(string $filename, int $use_include_path = 0): array|false {}
+
+function gzopen(string $filename, string $mode, int $use_include_path = 0) {}
+
+function readgzfile(string $filename, int $use_include_path = 0): int|false {}
+
+function zlib_encode(string $data, int $encoding, int $level = -1): string|false {}
+
+function zlib_decode(string $data, int $max_length = 0): string|false {}
+
+function gzdeflate(string $data, int $level = -1, int $encoding = \ZLIB_ENCODING_RAW): string|false {}
+
+function gzencode(string $data, int $level = -1, int $encoding = \ZLIB_ENCODING_GZIP): string|false {}
+
+function gzcompress(string $data, int $level = -1, int $encoding = \ZLIB_ENCODING_DEFLATE): string|false {}
+
+function gzinflate(string $data, int $max_length = 0): string|false {}
+
+function gzdecode(string $data, int $max_length = 0): string|false {}
+
+function gzuncompress(string $data, int $max_length = 0): string|false {}
+
+function gzwrite($stream, string $data, ?int $length = NULL): int|false {}
+
+function gzputs($stream, string $data, ?int $length = NULL): int|false {}
+
+function gzrewind($stream): bool {}
+
+function gzclose($stream): bool {}
+
+function gzeof($stream): bool {}
+
+function gzgetc($stream): string|false {}
+
+function gzpassthru($stream): int {}
+
+function gzseek($stream, int $offset, int $whence = \SEEK_SET): int {}
+
+function gztell($stream): int|false {}
+
+function gzread($stream, int $length): string|false {}
+
+function gzgets($stream, ?int $length = NULL): string|false {}
+
+function deflate_init(int $encoding, object|array $options = []): \DeflateContext|false {}
+
+function deflate_add(\DeflateContext $context, string $data, int $flush_mode = \ZLIB_SYNC_FLUSH): string|false {}
+
+function inflate_init(int $encoding, object|array $options = []): \InflateContext|false {}
+
+function inflate_add(\InflateContext $context, string $data, int $flush_mode = \ZLIB_SYNC_FLUSH): string|false {}
+
+function inflate_get_status(\InflateContext $context): int {}
+
+function inflate_get_read_len(\InflateContext $context): int {}
+
+const FORCE_GZIP = 31;
+
+const FORCE_DEFLATE = 15;
+
+const ZLIB_ENCODING_RAW = -15;
+
+const ZLIB_ENCODING_GZIP = 31;
+
+const ZLIB_ENCODING_DEFLATE = 15;
+
+const ZLIB_NO_FLUSH = 0;
+
+const ZLIB_PARTIAL_FLUSH = 1;
+
+const ZLIB_SYNC_FLUSH = 2;
+
+const ZLIB_FULL_FLUSH = 3;
+
+const ZLIB_BLOCK = 5;
+
+const ZLIB_FINISH = 4;
+
+const ZLIB_FILTERED = 1;
+
+const ZLIB_HUFFMAN_ONLY = 2;
+
+const ZLIB_RLE = 3;
+
+const ZLIB_FIXED = 4;
+
+const ZLIB_DEFAULT_STRATEGY = 0;
+
+const ZLIB_VERSION = '1.3.1';
+
+const ZLIB_VERNUM = 4880;
+
+const ZLIB_OK = 0;
+
+const ZLIB_STREAM_END = 1;
+
+const ZLIB_NEED_DICT = 2;
+
+const ZLIB_ERRNO = -1;
+
+const ZLIB_STREAM_ERROR = -2;
+
+const ZLIB_DATA_ERROR = -3;
+
+const ZLIB_MEM_ERROR = -4;
+
+const ZLIB_BUF_ERROR = -5;
+
+const ZLIB_VERSION_ERROR = -6;
+
+final class InflateContext
+{
+
+}
+
+final class DeflateContext
+{
+
+}
+
+function bcadd(string $num1, string $num2, ?int $scale = NULL): string {}
+
+function bcsub(string $num1, string $num2, ?int $scale = NULL): string {}
+
+function bcmul(string $num1, string $num2, ?int $scale = NULL): string {}
+
+function bcdiv(string $num1, string $num2, ?int $scale = NULL): string {}
+
+function bcmod(string $num1, string $num2, ?int $scale = NULL): string {}
+
+function bcdivmod(string $num1, string $num2, ?int $scale = NULL): array {}
+
+function bcpowmod(string $num, string $exponent, string $modulus, ?int $scale = NULL): string {}
+
+function bcpow(string $num, string $exponent, ?int $scale = NULL): string {}
+
+function bcsqrt(string $num, ?int $scale = NULL): string {}
+
+function bccomp(string $num1, string $num2, ?int $scale = NULL): int {}
+
+function bcscale(?int $scale = NULL): int {}
+
+function bcfloor(string $num): string {}
+
+function bcceil(string $num): string {}
+
+function bcround(string $num, int $precision = 0, \RoundingMode $mode = \RoundingMode::HalfAwayFromZero): string {}
+
+function bzopen($file, string $mode) {}
+
+function bzread($bz, int $length = 1024): string|false {}
+
+function bzwrite($bz, string $data, ?int $length = NULL): int|false {}
+
+function bzflush($bz): bool {}
+
+function bzclose($bz): bool {}
+
+function bzerrno($bz): int {}
+
+function bzerrstr($bz): string {}
+
+function bzerror($bz): array {}
+
+function bzcompress(string $data, int $block_size = 4, int $work_factor = 0): string|int {}
+
+function bzdecompress(string $data, bool $use_less_memory = false): string|int|false {}
+
+function cal_days_in_month(int $calendar, int $month, int $year): int {}
+
+function cal_from_jd(int $julian_day, int $calendar): array {}
+
+function cal_info(int $calendar = -1): array {}
+
+function cal_to_jd(int $calendar, int $month, int $day, int $year): int {}
+
+function easter_date(?int $year = NULL, int $mode = \CAL_EASTER_DEFAULT): int {}
+
+function easter_days(?int $year = NULL, int $mode = \CAL_EASTER_DEFAULT): int {}
+
+function frenchtojd(int $month, int $day, int $year): int {}
+
+function gregoriantojd(int $month, int $day, int $year): int {}
+
+function jddayofweek(int $julian_day, int $mode = \CAL_DOW_DAYNO): string|int {}
+
+function jdmonthname(int $julian_day, int $mode): string {}
+
+function jdtofrench(int $julian_day): string {}
+
+function jdtogregorian(int $julian_day): string {}
+
+function jdtojewish(int $julian_day, bool $hebrew = false, int $flags = 0): string {}
+
+function jdtojulian(int $julian_day): string {}
+
+function jdtounix(int $julian_day): int {}
+
+function jewishtojd(int $month, int $day, int $year): int {}
+
+function juliantojd(int $month, int $day, int $year): int {}
+
+function unixtojd(?int $timestamp = NULL): int|false {}
+
+const CAL_GREGORIAN = 0;
+
+const CAL_JULIAN = 1;
+
+const CAL_JEWISH = 2;
+
+const CAL_FRENCH = 3;
+
+const CAL_NUM_CALS = 4;
+
+const CAL_DOW_DAYNO = 0;
+
+const CAL_DOW_SHORT = 2;
+
+const CAL_DOW_LONG = 1;
+
+const CAL_MONTH_GREGORIAN_SHORT = 0;
+
+const CAL_MONTH_GREGORIAN_LONG = 1;
+
+const CAL_MONTH_JULIAN_SHORT = 2;
+
+const CAL_MONTH_JULIAN_LONG = 3;
+
+const CAL_MONTH_JEWISH = 4;
+
+const CAL_MONTH_FRENCH = 5;
+
+const CAL_EASTER_DEFAULT = 0;
+
+const CAL_EASTER_ROMAN = 1;
+
+const CAL_EASTER_ALWAYS_GREGORIAN = 2;
+
+const CAL_EASTER_ALWAYS_JULIAN = 3;
+
+const CAL_JEWISH_ADD_ALAFIM_GERESH = 2;
+
+const CAL_JEWISH_ADD_ALAFIM = 4;
+
+const CAL_JEWISH_ADD_GERESHAYIM = 8;
+
+function ctype_alnum(mixed $text): bool {}
+
+function ctype_alpha(mixed $text): bool {}
+
+function ctype_cntrl(mixed $text): bool {}
+
+function ctype_digit(mixed $text): bool {}
+
+function ctype_lower(mixed $text): bool {}
+
+function ctype_graph(mixed $text): bool {}
+
+function ctype_print(mixed $text): bool {}
+
+function ctype_punct(mixed $text): bool {}
+
+function ctype_space(mixed $text): bool {}
+
+function ctype_upper(mixed $text): bool {}
+
+function ctype_xdigit(mixed $text): bool {}
+
+function curl_close(\CurlHandle $handle): void {}
+
+function curl_copy_handle(\CurlHandle $handle): \CurlHandle|false {}
+
+function curl_errno(\CurlHandle $handle): int {}
+
+function curl_error(\CurlHandle $handle): string {}
+
+function curl_escape(\CurlHandle $handle, string $string): string|false {}
+
+function curl_unescape(\CurlHandle $handle, string $string): string|false {}
+
+function curl_multi_setopt(\CurlMultiHandle $multi_handle, int $option, mixed $value): bool {}
+
+function curl_exec(\CurlHandle $handle): string|bool {}
+
+function curl_file_create(string $filename, ?string $mime_type = NULL, ?string $posted_filename = NULL): \CURLFile {}
+
+function curl_getinfo(\CurlHandle $handle, ?int $option = NULL): mixed {}
+
+function curl_init(?string $url = NULL): \CurlHandle|false {}
+
+function curl_upkeep(\CurlHandle $handle): bool {}
+
+function curl_multi_add_handle(\CurlMultiHandle $multi_handle, \CurlHandle $handle): int {}
+
+function curl_multi_close(\CurlMultiHandle $multi_handle): void {}
+
+function curl_multi_errno(\CurlMultiHandle $multi_handle): int {}
+
+function curl_multi_exec(\CurlMultiHandle $multi_handle, &$still_running): int {}
+
+function curl_multi_getcontent(\CurlHandle $handle): ?string {}
+
+function curl_multi_info_read(\CurlMultiHandle $multi_handle, &$queued_messages = NULL): array|false {}
+
+function curl_multi_init(): \CurlMultiHandle {}
+
+function curl_multi_remove_handle(\CurlMultiHandle $multi_handle, \CurlHandle $handle): int {}
+
+function curl_multi_select(\CurlMultiHandle $multi_handle, float $timeout = 1.0): int {}
+
+function curl_multi_strerror(int $error_code): ?string {}
+
+function curl_pause(\CurlHandle $handle, int $flags): int {}
+
+function curl_reset(\CurlHandle $handle): void {}
+
+function curl_setopt_array(\CurlHandle $handle, array $options): bool {}
+
+function curl_setopt(\CurlHandle $handle, int $option, mixed $value): bool {}
+
+function curl_share_close(\CurlShareHandle $share_handle): void {}
+
+function curl_share_errno(\CurlShareHandle $share_handle): int {}
+
+function curl_share_init(): \CurlShareHandle {}
+
+function curl_share_setopt(\CurlShareHandle $share_handle, int $option, mixed $value): bool {}
+
+function curl_share_strerror(int $error_code): ?string {}
+
+function curl_strerror(int $error_code): ?string {}
+
+function curl_version(): array|false {}
+
+const CURLOPT_AUTOREFERER = 58;
+
+const CURLOPT_BINARYTRANSFER = 19914;
+
+const CURLOPT_BUFFERSIZE = 98;
+
+const CURLOPT_CAINFO = 10065;
+
+const CURLOPT_CAPATH = 10097;
+
+const CURLOPT_CONNECTTIMEOUT = 78;
+
+const CURLOPT_COOKIE = 10022;
+
+const CURLOPT_COOKIEFILE = 10031;
+
+const CURLOPT_COOKIEJAR = 10082;
+
+const CURLOPT_COOKIESESSION = 96;
+
+const CURLOPT_CRLF = 27;
+
+const CURLOPT_CUSTOMREQUEST = 10036;
+
+const CURLOPT_DNS_CACHE_TIMEOUT = 92;
+
+const CURLOPT_DNS_USE_GLOBAL_CACHE = 91;
+
+const CURLOPT_EGDSOCKET = 10077;
+
+const CURLOPT_ENCODING = 10102;
+
+const CURLOPT_FAILONERROR = 45;
+
+const CURLOPT_FILE = 10001;
+
+const CURLOPT_FILETIME = 69;
+
+const CURLOPT_FOLLOWLOCATION = 52;
+
+const CURLOPT_FORBID_REUSE = 75;
+
+const CURLOPT_FRESH_CONNECT = 74;
+
+const CURLOPT_FTPAPPEND = 50;
+
+const CURLOPT_FTPLISTONLY = 48;
+
+const CURLOPT_FTPPORT = 10017;
+
+const CURLOPT_FTP_USE_EPRT = 106;
+
+const CURLOPT_FTP_USE_EPSV = 85;
+
+const CURLOPT_HEADER = 42;
+
+const CURLOPT_HEADERFUNCTION = 20079;
+
+const CURLOPT_HTTP200ALIASES = 10104;
+
+const CURLOPT_HTTPGET = 80;
+
+const CURLOPT_HTTPHEADER = 10023;
+
+const CURLOPT_HTTPPROXYTUNNEL = 61;
+
+const CURLOPT_HTTP_VERSION = 84;
+
+const CURLOPT_INFILE = 10009;
+
+const CURLOPT_INFILESIZE = 14;
+
+const CURLOPT_INTERFACE = 10062;
+
+const CURLOPT_KRB4LEVEL = 10063;
+
+const CURLOPT_LOW_SPEED_LIMIT = 19;
+
+const CURLOPT_LOW_SPEED_TIME = 20;
+
+const CURLOPT_MAXCONNECTS = 71;
+
+const CURLOPT_MAXREDIRS = 68;
+
+const CURLOPT_NETRC = 51;
+
+const CURLOPT_NOBODY = 44;
+
+const CURLOPT_NOPROGRESS = 43;
+
+const CURLOPT_NOSIGNAL = 99;
+
+const CURLOPT_PORT = 3;
+
+const CURLOPT_POST = 47;
+
+const CURLOPT_POSTFIELDS = 10015;
+
+const CURLOPT_POSTQUOTE = 10039;
+
+const CURLOPT_PREQUOTE = 10093;
+
+const CURLOPT_PRIVATE = 10103;
+
+const CURLOPT_PROGRESSFUNCTION = 20056;
+
+const CURLOPT_PROXY = 10004;
+
+const CURLOPT_PROXYPORT = 59;
+
+const CURLOPT_PROXYTYPE = 101;
+
+const CURLOPT_PROXYUSERPWD = 10006;
+
+const CURLOPT_PUT = 54;
+
+const CURLOPT_QUOTE = 10028;
+
+const CURLOPT_RANDOM_FILE = 10076;
+
+const CURLOPT_RANGE = 10007;
+
+const CURLOPT_READDATA = 10009;
+
+const CURLOPT_READFUNCTION = 20012;
+
+const CURLOPT_REFERER = 10016;
+
+const CURLOPT_RESUME_FROM = 21;
+
+const CURLOPT_RETURNTRANSFER = 19913;
+
+const CURLOPT_SHARE = 10100;
+
+const CURLOPT_SSLCERT = 10025;
+
+const CURLOPT_SSLCERTPASSWD = 10026;
+
+const CURLOPT_SSLCERTTYPE = 10086;
+
+const CURLOPT_SSLENGINE = 10089;
+
+const CURLOPT_SSLENGINE_DEFAULT = 90;
+
+const CURLOPT_SSLKEY = 10087;
+
+const CURLOPT_SSLKEYPASSWD = 10026;
+
+const CURLOPT_SSLKEYTYPE = 10088;
+
+const CURLOPT_SSLVERSION = 32;
+
+const CURLOPT_SSL_CIPHER_LIST = 10083;
+
+const CURLOPT_SSL_VERIFYHOST = 81;
+
+const CURLOPT_SSL_VERIFYPEER = 64;
+
+const CURLOPT_STDERR = 10037;
+
+const CURLOPT_TCP_KEEPCNT = 326;
+
+const CURLOPT_TELNETOPTIONS = 10070;
+
+const CURLOPT_TIMECONDITION = 33;
+
+const CURLOPT_TIMEOUT = 13;
+
+const CURLOPT_TIMEVALUE = 34;
+
+const CURLOPT_TRANSFERTEXT = 53;
+
+const CURLOPT_UNRESTRICTED_AUTH = 105;
+
+const CURLOPT_UPLOAD = 46;
+
+const CURLOPT_URL = 10002;
+
+const CURLOPT_USERAGENT = 10018;
+
+const CURLOPT_USERPWD = 10005;
+
+const CURLOPT_VERBOSE = 41;
+
+const CURLOPT_WRITEFUNCTION = 20011;
+
+const CURLOPT_WRITEHEADER = 10029;
+
+const CURLOPT_XFERINFOFUNCTION = 20219;
+
+const CURLOPT_DEBUGFUNCTION = 20094;
+
+const CURLINFO_TEXT = 0;
+
+const CURLINFO_HEADER_IN = 1;
+
+const CURLINFO_DATA_IN = 3;
+
+const CURLINFO_DATA_OUT = 4;
+
+const CURLINFO_SSL_DATA_OUT = 6;
+
+const CURLINFO_SSL_DATA_IN = 5;
+
+const CURLE_ABORTED_BY_CALLBACK = 42;
+
+const CURLE_BAD_CALLING_ORDER = 44;
+
+const CURLE_BAD_CONTENT_ENCODING = 61;
+
+const CURLE_BAD_DOWNLOAD_RESUME = 36;
+
+const CURLE_BAD_FUNCTION_ARGUMENT = 43;
+
+const CURLE_BAD_PASSWORD_ENTERED = 46;
+
+const CURLE_COULDNT_CONNECT = 7;
+
+const CURLE_COULDNT_RESOLVE_HOST = 6;
+
+const CURLE_COULDNT_RESOLVE_PROXY = 5;
+
+const CURLE_FAILED_INIT = 2;
+
+const CURLE_FILE_COULDNT_READ_FILE = 37;
+
+const CURLE_FTP_ACCESS_DENIED = 9;
+
+const CURLE_FTP_BAD_DOWNLOAD_RESUME = 36;
+
+const CURLE_FTP_CANT_GET_HOST = 15;
+
+const CURLE_FTP_CANT_RECONNECT = 16;
+
+const CURLE_FTP_COULDNT_GET_SIZE = 32;
+
+const CURLE_FTP_COULDNT_RETR_FILE = 19;
+
+const CURLE_FTP_COULDNT_SET_ASCII = 29;
+
+const CURLE_FTP_COULDNT_SET_BINARY = 17;
+
+const CURLE_FTP_COULDNT_STOR_FILE = 25;
+
+const CURLE_FTP_COULDNT_USE_REST = 31;
+
+const CURLE_FTP_PARTIAL_FILE = 18;
+
+const CURLE_FTP_PORT_FAILED = 30;
+
+const CURLE_FTP_QUOTE_ERROR = 21;
+
+const CURLE_FTP_USER_PASSWORD_INCORRECT = 10;
+
+const CURLE_FTP_WEIRD_227_FORMAT = 14;
+
+const CURLE_FTP_WEIRD_PASS_REPLY = 11;
+
+const CURLE_FTP_WEIRD_PASV_REPLY = 13;
+
+const CURLE_FTP_WEIRD_SERVER_REPLY = 8;
+
+const CURLE_FTP_WEIRD_USER_REPLY = 12;
+
+const CURLE_FTP_WRITE_ERROR = 20;
+
+const CURLE_FUNCTION_NOT_FOUND = 41;
+
+const CURLE_GOT_NOTHING = 52;
+
+const CURLE_HTTP_NOT_FOUND = 22;
+
+const CURLE_HTTP_PORT_FAILED = 45;
+
+const CURLE_HTTP_POST_ERROR = 34;
+
+const CURLE_HTTP_RANGE_ERROR = 33;
+
+const CURLE_HTTP_RETURNED_ERROR = 22;
+
+const CURLE_LDAP_CANNOT_BIND = 38;
+
+const CURLE_LDAP_SEARCH_FAILED = 39;
+
+const CURLE_LIBRARY_NOT_FOUND = 40;
+
+const CURLE_MALFORMAT_USER = 24;
+
+const CURLE_OBSOLETE = 50;
+
+const CURLE_OK = 0;
+
+const CURLE_OPERATION_TIMEDOUT = 28;
+
+const CURLE_OPERATION_TIMEOUTED = 28;
+
+const CURLE_OUT_OF_MEMORY = 27;
+
+const CURLE_PARTIAL_FILE = 18;
+
+const CURLE_READ_ERROR = 26;
+
+const CURLE_RECV_ERROR = 56;
+
+const CURLE_SEND_ERROR = 55;
+
+const CURLE_SHARE_IN_USE = 57;
+
+const CURLE_SSL_CACERT = 60;
+
+const CURLE_SSL_CERTPROBLEM = 58;
+
+const CURLE_SSL_CIPHER = 59;
+
+const CURLE_SSL_CONNECT_ERROR = 35;
+
+const CURLE_SSL_ENGINE_NOTFOUND = 53;
+
+const CURLE_SSL_ENGINE_SETFAILED = 54;
+
+const CURLE_SSL_PEER_CERTIFICATE = 60;
+
+const CURLE_SSL_PINNEDPUBKEYNOTMATCH = 90;
+
+const CURLE_TELNET_OPTION_SYNTAX = 49;
+
+const CURLE_TOO_MANY_REDIRECTS = 47;
+
+const CURLE_UNKNOWN_TELNET_OPTION = 48;
+
+const CURLE_UNSUPPORTED_PROTOCOL = 1;
+
+const CURLE_URL_MALFORMAT = 3;
+
+const CURLE_URL_MALFORMAT_USER = 4;
+
+const CURLE_WRITE_ERROR = 23;
+
+const CURLINFO_CONNECT_TIME = 3145733;
+
+const CURLINFO_CONTENT_LENGTH_DOWNLOAD = 3145743;
+
+const CURLINFO_CONTENT_LENGTH_UPLOAD = 3145744;
+
+const CURLINFO_CONTENT_TYPE = 1048594;
+
+const CURLINFO_EFFECTIVE_URL = 1048577;
+
+const CURLINFO_FILETIME = 2097166;
+
+const CURLINFO_HEADER_OUT = 2;
+
+const CURLINFO_HEADER_SIZE = 2097163;
+
+const CURLINFO_HTTP_CODE = 2097154;
+
+const CURLINFO_LASTONE = 70;
+
+const CURLINFO_NAMELOOKUP_TIME = 3145732;
+
+const CURLINFO_PRETRANSFER_TIME = 3145734;
+
+const CURLINFO_PRIVATE = 1048597;
+
+const CURLINFO_REDIRECT_COUNT = 2097172;
+
+const CURLINFO_REDIRECT_TIME = 3145747;
+
+const CURLINFO_REQUEST_SIZE = 2097164;
+
+const CURLINFO_SIZE_DOWNLOAD = 3145736;
+
+const CURLINFO_SIZE_UPLOAD = 3145735;
+
+const CURLINFO_SPEED_DOWNLOAD = 3145737;
+
+const CURLINFO_SPEED_UPLOAD = 3145738;
+
+const CURLINFO_SSL_VERIFYRESULT = 2097165;
+
+const CURLINFO_STARTTRANSFER_TIME = 3145745;
+
+const CURLINFO_TOTAL_TIME = 3145731;
+
+const CURLINFO_EFFECTIVE_METHOD = 1048634;
+
+const CURLINFO_CAPATH = 1048638;
+
+const CURLINFO_CAINFO = 1048637;
+
+const CURLMSG_DONE = 1;
+
+const CURLVERSION_NOW = 11;
+
+const CURLM_BAD_EASY_HANDLE = 2;
+
+const CURLM_BAD_HANDLE = 1;
+
+const CURLM_CALL_MULTI_PERFORM = -1;
+
+const CURLM_INTERNAL_ERROR = 4;
+
+const CURLM_OK = 0;
+
+const CURLM_OUT_OF_MEMORY = 3;
+
+const CURLM_ADDED_ALREADY = 7;
+
+const CURLPROXY_HTTP = 0;
+
+const CURLPROXY_SOCKS4 = 4;
+
+const CURLPROXY_SOCKS5 = 5;
+
+const CURLSHOPT_NONE = 0;
+
+const CURLSHOPT_SHARE = 1;
+
+const CURLSHOPT_UNSHARE = 2;
+
+const CURL_HTTP_VERSION_1_0 = 1;
+
+const CURL_HTTP_VERSION_1_1 = 2;
+
+const CURL_HTTP_VERSION_NONE = 0;
+
+const CURL_LOCK_DATA_COOKIE = 2;
+
+const CURL_LOCK_DATA_DNS = 3;
+
+const CURL_LOCK_DATA_SSL_SESSION = 4;
+
+const CURL_NETRC_IGNORED = 0;
+
+const CURL_NETRC_OPTIONAL = 1;
+
+const CURL_NETRC_REQUIRED = 2;
+
+const CURL_SSLVERSION_DEFAULT = 0;
+
+const CURL_SSLVERSION_SSLv2 = 2;
+
+const CURL_SSLVERSION_SSLv3 = 3;
+
+const CURL_SSLVERSION_TLSv1 = 1;
+
+const CURL_TIMECOND_IFMODSINCE = 1;
+
+const CURL_TIMECOND_IFUNMODSINCE = 2;
+
+const CURL_TIMECOND_LASTMOD = 3;
+
+const CURL_TIMECOND_NONE = 0;
+
+const CURL_VERSION_ASYNCHDNS = 128;
+
+const CURL_VERSION_CONV = 4096;
+
+const CURL_VERSION_DEBUG = 64;
+
+const CURL_VERSION_GSSNEGOTIATE = 32;
+
+const CURL_VERSION_IDN = 1024;
+
+const CURL_VERSION_IPV6 = 1;
+
+const CURL_VERSION_KERBEROS4 = 2;
+
+const CURL_VERSION_LARGEFILE = 512;
+
+const CURL_VERSION_LIBZ = 8;
+
+const CURL_VERSION_NTLM = 16;
+
+const CURL_VERSION_SPNEGO = 256;
+
+const CURL_VERSION_SSL = 4;
+
+const CURL_VERSION_SSPI = 2048;
+
+const CURLOPT_HTTPAUTH = 107;
+
+const CURLAUTH_ANY = -17;
+
+const CURLAUTH_ANYSAFE = -18;
+
+const CURLAUTH_BASIC = 1;
+
+const CURLAUTH_DIGEST = 2;
+
+const CURLAUTH_GSSNEGOTIATE = 4;
+
+const CURLAUTH_NONE = 0;
+
+const CURLAUTH_NTLM = 8;
+
+const CURLINFO_HTTP_CONNECTCODE = 2097174;
+
+const CURLOPT_FTP_CREATE_MISSING_DIRS = 110;
+
+const CURLOPT_PROXYAUTH = 111;
+
+const CURLE_FILESIZE_EXCEEDED = 63;
+
+const CURLE_LDAP_INVALID_URL = 62;
+
+const CURLINFO_HTTPAUTH_AVAIL = 2097175;
+
+const CURLINFO_RESPONSE_CODE = 2097154;
+
+const CURLINFO_PROXYAUTH_AVAIL = 2097176;
+
+const CURLOPT_FTP_RESPONSE_TIMEOUT = 112;
+
+const CURLOPT_SERVER_RESPONSE_TIMEOUT = 112;
+
+const CURLOPT_IPRESOLVE = 113;
+
+const CURLOPT_MAXFILESIZE = 114;
+
+const CURL_IPRESOLVE_V4 = 1;
+
+const CURL_IPRESOLVE_V6 = 2;
+
+const CURL_IPRESOLVE_WHATEVER = 0;
+
+const CURLE_FTP_SSL_FAILED = 64;
+
+const CURLFTPSSL_ALL = 3;
+
+const CURLFTPSSL_CONTROL = 2;
+
+const CURLFTPSSL_NONE = 0;
+
+const CURLFTPSSL_TRY = 1;
+
+const CURLOPT_FTP_SSL = 119;
+
+const CURLOPT_NETRC_FILE = 10118;
+
+const CURLOPT_MAXFILESIZE_LARGE = 30117;
+
+const CURLOPT_TCP_NODELAY = 121;
+
+const CURLFTPAUTH_DEFAULT = 0;
+
+const CURLFTPAUTH_SSL = 1;
+
+const CURLFTPAUTH_TLS = 2;
+
+const CURLOPT_FTPSSLAUTH = 129;
+
+const CURLOPT_FTP_ACCOUNT = 10134;
+
+const CURLINFO_OS_ERRNO = 2097177;
+
+const CURLINFO_NUM_CONNECTS = 2097178;
+
+const CURLINFO_SSL_ENGINES = 4194331;
+
+const CURLINFO_COOKIELIST = 4194332;
+
+const CURLOPT_COOKIELIST = 10135;
+
+const CURLOPT_IGNORE_CONTENT_LENGTH = 136;
+
+const CURLOPT_FTP_SKIP_PASV_IP = 137;
+
+const CURLOPT_FTP_FILEMETHOD = 138;
+
+const CURLOPT_CONNECT_ONLY = 141;
+
+const CURLOPT_LOCALPORT = 139;
+
+const CURLOPT_LOCALPORTRANGE = 140;
+
+const CURLFTPMETHOD_DEFAULT = 0;
+
+const CURLFTPMETHOD_MULTICWD = 1;
+
+const CURLFTPMETHOD_NOCWD = 2;
+
+const CURLFTPMETHOD_SINGLECWD = 3;
+
+const CURLINFO_FTP_ENTRY_PATH = 1048606;
+
+const CURLOPT_FTP_ALTERNATIVE_TO_USER = 10147;
+
+const CURLOPT_MAX_RECV_SPEED_LARGE = 30146;
+
+const CURLOPT_MAX_SEND_SPEED_LARGE = 30145;
+
+const CURLE_SSL_CACERT_BADFILE = 77;
+
+const CURLOPT_SSL_SESSIONID_CACHE = 150;
+
+const CURLMOPT_PIPELINING = 3;
+
+const CURLE_SSH = 79;
+
+const CURLOPT_FTP_SSL_CCC = 154;
+
+const CURLOPT_SSH_AUTH_TYPES = 151;
+
+const CURLOPT_SSH_PRIVATE_KEYFILE = 10153;
+
+const CURLOPT_SSH_PUBLIC_KEYFILE = 10152;
+
+const CURLFTPSSL_CCC_ACTIVE = 2;
+
+const CURLFTPSSL_CCC_NONE = 0;
+
+const CURLFTPSSL_CCC_PASSIVE = 1;
+
+const CURLOPT_CONNECTTIMEOUT_MS = 156;
+
+const CURLOPT_HTTP_CONTENT_DECODING = 158;
+
+const CURLOPT_HTTP_TRANSFER_DECODING = 157;
+
+const CURLOPT_TIMEOUT_MS = 155;
+
+const CURLMOPT_MAXCONNECTS = 6;
+
+const CURLOPT_KRBLEVEL = 10063;
+
+const CURLOPT_NEW_DIRECTORY_PERMS = 160;
+
+const CURLOPT_NEW_FILE_PERMS = 159;
+
+const CURLOPT_APPEND = 50;
+
+const CURLOPT_DIRLISTONLY = 48;
+
+const CURLOPT_USE_SSL = 119;
+
+const CURLUSESSL_ALL = 3;
+
+const CURLUSESSL_CONTROL = 2;
+
+const CURLUSESSL_NONE = 0;
+
+const CURLUSESSL_TRY = 1;
+
+const CURLOPT_SSH_HOST_PUBLIC_KEY_MD5 = 10162;
+
+const CURLOPT_PROXY_TRANSFER_MODE = 166;
+
+const CURLPAUSE_ALL = 5;
+
+const CURLPAUSE_CONT = 0;
+
+const CURLPAUSE_RECV = 1;
+
+const CURLPAUSE_RECV_CONT = 0;
+
+const CURLPAUSE_SEND = 4;
+
+const CURLPAUSE_SEND_CONT = 0;
+
+const CURL_READFUNC_PAUSE = 268435457;
+
+const CURL_WRITEFUNC_PAUSE = 268435457;
+
+const CURLPROXY_SOCKS4A = 6;
+
+const CURLPROXY_SOCKS5_HOSTNAME = 7;
+
+const CURLINFO_REDIRECT_URL = 1048607;
+
+const CURLINFO_APPCONNECT_TIME = 3145761;
+
+const CURLINFO_PRIMARY_IP = 1048608;
+
+const CURLOPT_ADDRESS_SCOPE = 171;
+
+const CURLOPT_CRLFILE = 10169;
+
+const CURLOPT_ISSUERCERT = 10170;
+
+const CURLOPT_KEYPASSWD = 10026;
+
+const CURLSSH_AUTH_ANY = -1;
+
+const CURLSSH_AUTH_DEFAULT = -1;
+
+const CURLSSH_AUTH_HOST = 4;
+
+const CURLSSH_AUTH_KEYBOARD = 8;
+
+const CURLSSH_AUTH_NONE = 0;
+
+const CURLSSH_AUTH_PASSWORD = 2;
+
+const CURLSSH_AUTH_PUBLICKEY = 1;
+
+const CURLINFO_CERTINFO = 4194338;
+
+const CURLOPT_CERTINFO = 172;
+
+const CURLOPT_PASSWORD = 10174;
+
+const CURLOPT_POSTREDIR = 161;
+
+const CURLOPT_PROXYPASSWORD = 10176;
+
+const CURLOPT_PROXYUSERNAME = 10175;
+
+const CURLOPT_USERNAME = 10173;
+
+const CURL_REDIR_POST_301 = 1;
+
+const CURL_REDIR_POST_302 = 2;
+
+const CURL_REDIR_POST_ALL = 7;
+
+const CURLAUTH_DIGEST_IE = 16;
+
+const CURLINFO_CONDITION_UNMET = 2097187;
+
+const CURLOPT_NOPROXY = 10177;
+
+const CURLOPT_PROTOCOLS = 181;
+
+const CURLOPT_REDIR_PROTOCOLS = 182;
+
+const CURLOPT_SOCKS5_GSSAPI_NEC = 180;
+
+const CURLOPT_SOCKS5_GSSAPI_SERVICE = 10179;
+
+const CURLOPT_TFTP_BLKSIZE = 178;
+
+const CURLPROTO_ALL = -1;
+
+const CURLPROTO_DICT = 512;
+
+const CURLPROTO_FILE = 1024;
+
+const CURLPROTO_FTP = 4;
+
+const CURLPROTO_FTPS = 8;
+
+const CURLPROTO_HTTP = 1;
+
+const CURLPROTO_HTTPS = 2;
+
+const CURLPROTO_LDAP = 128;
+
+const CURLPROTO_LDAPS = 256;
+
+const CURLPROTO_SCP = 16;
+
+const CURLPROTO_SFTP = 32;
+
+const CURLPROTO_TELNET = 64;
+
+const CURLPROTO_TFTP = 2048;
+
+const CURLPROXY_HTTP_1_0 = 1;
+
+const CURLFTP_CREATE_DIR = 1;
+
+const CURLFTP_CREATE_DIR_NONE = 0;
+
+const CURLFTP_CREATE_DIR_RETRY = 2;
+
+const CURL_VERSION_CURLDEBUG = 8192;
+
+const CURLOPT_SSH_KNOWNHOSTS = 10183;
+
+const CURLKHMATCH_OK = 0;
+
+const CURLKHMATCH_MISMATCH = 1;
+
+const CURLKHMATCH_MISSING = 2;
+
+const CURLKHMATCH_LAST = 3;
+
+const CURLINFO_RTSP_CLIENT_CSEQ = 2097189;
+
+const CURLINFO_RTSP_CSEQ_RECV = 2097191;
+
+const CURLINFO_RTSP_SERVER_CSEQ = 2097190;
+
+const CURLINFO_RTSP_SESSION_ID = 1048612;
+
+const CURLOPT_FTP_USE_PRET = 188;
+
+const CURLOPT_MAIL_FROM = 10186;
+
+const CURLOPT_MAIL_RCPT = 10187;
+
+const CURLOPT_RTSP_CLIENT_CSEQ = 193;
+
+const CURLOPT_RTSP_REQUEST = 189;
+
+const CURLOPT_RTSP_SERVER_CSEQ = 194;
+
+const CURLOPT_RTSP_SESSION_ID = 10190;
+
+const CURLOPT_RTSP_STREAM_URI = 10191;
+
+const CURLOPT_RTSP_TRANSPORT = 10192;
+
+const CURLPROTO_IMAP = 4096;
+
+const CURLPROTO_IMAPS = 8192;
+
+const CURLPROTO_POP3 = 16384;
+
+const CURLPROTO_POP3S = 32768;
+
+const CURLPROTO_RTSP = 262144;
+
+const CURLPROTO_SMTP = 65536;
+
+const CURLPROTO_SMTPS = 131072;
+
+const CURL_RTSPREQ_ANNOUNCE = 3;
+
+const CURL_RTSPREQ_DESCRIBE = 2;
+
+const CURL_RTSPREQ_GET_PARAMETER = 8;
+
+const CURL_RTSPREQ_OPTIONS = 1;
+
+const CURL_RTSPREQ_PAUSE = 6;
+
+const CURL_RTSPREQ_PLAY = 5;
+
+const CURL_RTSPREQ_RECEIVE = 11;
+
+const CURL_RTSPREQ_RECORD = 10;
+
+const CURL_RTSPREQ_SET_PARAMETER = 9;
+
+const CURL_RTSPREQ_SETUP = 4;
+
+const CURL_RTSPREQ_TEARDOWN = 7;
+
+const CURLINFO_LOCAL_IP = 1048617;
+
+const CURLINFO_LOCAL_PORT = 2097194;
+
+const CURLINFO_PRIMARY_PORT = 2097192;
+
+const CURLOPT_FNMATCH_FUNCTION = 20200;
+
+const CURLOPT_WILDCARDMATCH = 197;
+
+const CURLPROTO_RTMP = 524288;
+
+const CURLPROTO_RTMPE = 2097152;
+
+const CURLPROTO_RTMPS = 8388608;
+
+const CURLPROTO_RTMPT = 1048576;
+
+const CURLPROTO_RTMPTE = 4194304;
+
+const CURLPROTO_RTMPTS = 16777216;
+
+const CURL_FNMATCHFUNC_FAIL = 2;
+
+const CURL_FNMATCHFUNC_MATCH = 0;
+
+const CURL_FNMATCHFUNC_NOMATCH = 1;
+
+const CURLPROTO_GOPHER = 33554432;
+
+const CURLAUTH_ONLY = 2147483648;
+
+const CURLOPT_RESOLVE = 10203;
+
+const CURLOPT_TLSAUTH_PASSWORD = 10205;
+
+const CURLOPT_TLSAUTH_TYPE = 10206;
+
+const CURLOPT_TLSAUTH_USERNAME = 10204;
+
+const CURL_TLSAUTH_SRP = 1;
+
+const CURL_VERSION_TLSAUTH_SRP = 16384;
+
+const CURLOPT_ACCEPT_ENCODING = 10102;
+
+const CURLOPT_TRANSFER_ENCODING = 207;
+
+const CURLAUTH_NTLM_WB = 32;
+
+const CURLGSSAPI_DELEGATION_FLAG = 2;
+
+const CURLGSSAPI_DELEGATION_POLICY_FLAG = 1;
+
+const CURLOPT_GSSAPI_DELEGATION = 210;
+
+const CURL_VERSION_NTLM_WB = 32768;
+
+const CURLOPT_ACCEPTTIMEOUT_MS = 212;
+
+const CURLOPT_DNS_SERVERS = 10211;
+
+const CURLOPT_MAIL_AUTH = 10217;
+
+const CURLOPT_SSL_OPTIONS = 216;
+
+const CURLOPT_TCP_KEEPALIVE = 213;
+
+const CURLOPT_TCP_KEEPIDLE = 214;
+
+const CURLOPT_TCP_KEEPINTVL = 215;
+
+const CURLSSLOPT_ALLOW_BEAST = 1;
+
+const CURL_REDIR_POST_303 = 4;
+
+const CURLSSH_AUTH_AGENT = 16;
+
+const CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE = 30010;
+
+const CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE = 30009;
+
+const CURLMOPT_MAX_HOST_CONNECTIONS = 7;
+
+const CURLMOPT_MAX_PIPELINE_LENGTH = 8;
+
+const CURLMOPT_MAX_TOTAL_CONNECTIONS = 13;
+
+const CURLOPT_SASL_IR = 218;
+
+const CURLOPT_DNS_INTERFACE = 10221;
+
+const CURLOPT_DNS_LOCAL_IP4 = 10222;
+
+const CURLOPT_DNS_LOCAL_IP6 = 10223;
+
+const CURLOPT_XOAUTH2_BEARER = 10220;
+
+const CURL_HTTP_VERSION_2_0 = 3;
+
+const CURL_VERSION_HTTP2 = 65536;
+
+const CURLOPT_LOGIN_OPTIONS = 10224;
+
+const CURL_SSLVERSION_TLSv1_0 = 4;
+
+const CURL_SSLVERSION_TLSv1_1 = 5;
+
+const CURL_SSLVERSION_TLSv1_2 = 6;
+
+const CURLOPT_EXPECT_100_TIMEOUT_MS = 227;
+
+const CURLOPT_SSL_ENABLE_ALPN = 226;
+
+const CURLOPT_SSL_ENABLE_NPN = 225;
+
+const CURLHEADER_SEPARATE = 1;
+
+const CURLHEADER_UNIFIED = 0;
+
+const CURLOPT_HEADEROPT = 229;
+
+const CURLOPT_PROXYHEADER = 10228;
+
+const CURLAUTH_NEGOTIATE = 4;
+
+const CURL_VERSION_GSSAPI = 131072;
+
+const CURLOPT_PINNEDPUBLICKEY = 10230;
+
+const CURLOPT_UNIX_SOCKET_PATH = 10231;
+
+const CURLPROTO_SMB = 67108864;
+
+const CURLPROTO_SMBS = 134217728;
+
+const CURL_VERSION_KERBEROS5 = 262144;
+
+const CURL_VERSION_UNIX_SOCKETS = 524288;
+
+const CURLOPT_SSL_VERIFYSTATUS = 232;
+
+const CURLOPT_PATH_AS_IS = 234;
+
+const CURLOPT_SSL_FALSESTART = 233;
+
+const CURL_HTTP_VERSION_2 = 3;
+
+const CURLOPT_PIPEWAIT = 237;
+
+const CURLOPT_PROXY_SERVICE_NAME = 10235;
+
+const CURLOPT_SERVICE_NAME = 10236;
+
+const CURLPIPE_NOTHING = 0;
+
+const CURLPIPE_HTTP1 = 1;
+
+const CURLPIPE_MULTIPLEX = 2;
+
+const CURLSSLOPT_NO_REVOKE = 2;
+
+const CURLOPT_DEFAULT_PROTOCOL = 10238;
+
+const CURLOPT_STREAM_WEIGHT = 239;
+
+const CURLMOPT_PUSHFUNCTION = 20014;
+
+const CURL_PUSH_OK = 0;
+
+const CURL_PUSH_DENY = 1;
+
+const CURL_HTTP_VERSION_2TLS = 4;
+
+const CURL_VERSION_PSL = 1048576;
+
+const CURLOPT_TFTP_NO_OPTIONS = 242;
+
+const CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE = 5;
+
+const CURLOPT_CONNECT_TO = 10243;
+
+const CURLOPT_TCP_FASTOPEN = 244;
+
+const CURLINFO_HTTP_VERSION = 2097198;
+
+const CURLE_WEIRD_SERVER_REPLY = 8;
+
+const CURLOPT_KEEP_SENDING_ON_ERROR = 245;
+
+const CURL_SSLVERSION_TLSv1_3 = 7;
+
+const CURL_VERSION_HTTPS_PROXY = 2097152;
+
+const CURLINFO_PROTOCOL = 2097200;
+
+const CURLINFO_PROXY_SSL_VERIFYRESULT = 2097199;
+
+const CURLINFO_SCHEME = 1048625;
+
+const CURLOPT_PRE_PROXY = 10262;
+
+const CURLOPT_PROXY_CAINFO = 10246;
+
+const CURLOPT_PROXY_CAPATH = 10247;
+
+const CURLOPT_PROXY_CRLFILE = 10260;
+
+const CURLOPT_PROXY_KEYPASSWD = 10258;
+
+const CURLOPT_PROXY_PINNEDPUBLICKEY = 10263;
+
+const CURLOPT_PROXY_SSL_CIPHER_LIST = 10259;
+
+const CURLOPT_PROXY_SSL_OPTIONS = 261;
+
+const CURLOPT_PROXY_SSL_VERIFYHOST = 249;
+
+const CURLOPT_PROXY_SSL_VERIFYPEER = 248;
+
+const CURLOPT_PROXY_SSLCERT = 10254;
+
+const CURLOPT_PROXY_SSLCERTTYPE = 10255;
+
+const CURLOPT_PROXY_SSLKEY = 10256;
+
+const CURLOPT_PROXY_SSLKEYTYPE = 10257;
+
+const CURLOPT_PROXY_SSLVERSION = 250;
+
+const CURLOPT_PROXY_TLSAUTH_PASSWORD = 10252;
+
+const CURLOPT_PROXY_TLSAUTH_TYPE = 10253;
+
+const CURLOPT_PROXY_TLSAUTH_USERNAME = 10251;
+
+const CURLPROXY_HTTPS = 2;
+
+const CURL_MAX_READ_SIZE = 10485760;
+
+const CURLOPT_ABSTRACT_UNIX_SOCKET = 10264;
+
+const CURL_SSLVERSION_MAX_DEFAULT = 65536;
+
+const CURL_SSLVERSION_MAX_NONE = 0;
+
+const CURL_SSLVERSION_MAX_TLSv1_0 = 262144;
+
+const CURL_SSLVERSION_MAX_TLSv1_1 = 327680;
+
+const CURL_SSLVERSION_MAX_TLSv1_2 = 393216;
+
+const CURL_SSLVERSION_MAX_TLSv1_3 = 458752;
+
+const CURLOPT_SUPPRESS_CONNECT_HEADERS = 265;
+
+const CURLAUTH_GSSAPI = 4;
+
+const CURLINFO_CONTENT_LENGTH_DOWNLOAD_T = 6291471;
+
+const CURLINFO_CONTENT_LENGTH_UPLOAD_T = 6291472;
+
+const CURLINFO_SIZE_DOWNLOAD_T = 6291464;
+
+const CURLINFO_SIZE_UPLOAD_T = 6291463;
+
+const CURLINFO_SPEED_DOWNLOAD_T = 6291465;
+
+const CURLINFO_SPEED_UPLOAD_T = 6291466;
+
+const CURLOPT_REQUEST_TARGET = 10266;
+
+const CURLOPT_SOCKS5_AUTH = 267;
+
+const CURLOPT_SSH_COMPRESSION = 268;
+
+const CURL_VERSION_MULTI_SSL = 4194304;
+
+const CURL_VERSION_BROTLI = 8388608;
+
+const CURL_LOCK_DATA_CONNECT = 5;
+
+const CURLSSH_AUTH_GSSAPI = 32;
+
+const CURLINFO_FILETIME_T = 6291470;
+
+const CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS = 271;
+
+const CURLOPT_TIMEVALUE_LARGE = 30270;
+
+const CURLOPT_DNS_SHUFFLE_ADDRESSES = 275;
+
+const CURLOPT_HAPROXYPROTOCOL = 274;
+
+const CURL_LOCK_DATA_PSL = 6;
+
+const CURLAUTH_BEARER = 64;
+
+const CURLINFO_APPCONNECT_TIME_T = 6291512;
+
+const CURLINFO_CONNECT_TIME_T = 6291508;
+
+const CURLINFO_NAMELOOKUP_TIME_T = 6291507;
+
+const CURLINFO_PRETRANSFER_TIME_T = 6291509;
+
+const CURLINFO_REDIRECT_TIME_T = 6291511;
+
+const CURLINFO_STARTTRANSFER_TIME_T = 6291510;
+
+const CURLINFO_TOTAL_TIME_T = 6291506;
+
+const CURLINFO_POSTTRANSFER_TIME_T = 6291523;
+
+const CURLOPT_DISALLOW_USERNAME_IN_URL = 278;
+
+const CURLOPT_PROXY_TLS13_CIPHERS = 10277;
+
+const CURLOPT_TLS13_CIPHERS = 10276;
+
+const CURLOPT_DOH_URL = 10279;
+
+const CURLOPT_UPKEEP_INTERVAL_MS = 281;
+
+const CURLOPT_UPLOAD_BUFFERSIZE = 280;
+
+const CURLOPT_HTTP09_ALLOWED = 285;
+
+const CURLALTSVC_H1 = 8;
+
+const CURLALTSVC_H2 = 16;
+
+const CURLALTSVC_H3 = 32;
+
+const CURLALTSVC_READONLYFILE = 4;
+
+const CURLOPT_ALTSVC = 10287;
+
+const CURLOPT_ALTSVC_CTRL = 286;
+
+const CURL_VERSION_ALTSVC = 16777216;
+
+const CURLOPT_MAXAGE_CONN = 288;
+
+const CURLOPT_SASL_AUTHZID = 10289;
+
+const CURL_VERSION_HTTP3 = 33554432;
+
+const CURLINFO_RETRY_AFTER = 6291513;
+
+const CURL_HTTP_VERSION_3 = 30;
+
+const CURLMOPT_MAX_CONCURRENT_STREAMS = 16;
+
+const CURLSSLOPT_NO_PARTIALCHAIN = 4;
+
+const CURLOPT_MAIL_RCPT_ALLLOWFAILS = 290;
+
+const CURLSSLOPT_REVOKE_BEST_EFFORT = 8;
+
+const CURLOPT_ISSUERCERT_BLOB = 40295;
+
+const CURLOPT_PROXY_ISSUERCERT = 10296;
+
+const CURLOPT_PROXY_ISSUERCERT_BLOB = 40297;
+
+const CURLOPT_PROXY_SSLCERT_BLOB = 40293;
+
+const CURLOPT_PROXY_SSLKEY_BLOB = 40294;
+
+const CURLOPT_SSLCERT_BLOB = 40291;
+
+const CURLOPT_SSLKEY_BLOB = 40292;
+
+const CURLPROTO_MQTT = 268435456;
+
+const CURLSSLOPT_NATIVE_CA = 16;
+
+const CURL_VERSION_UNICODE = 134217728;
+
+const CURL_VERSION_ZSTD = 67108864;
+
+const CURLE_PROXY = 97;
+
+const CURLINFO_PROXY_ERROR = 2097211;
+
+const CURLOPT_SSL_EC_CURVES = 10298;
+
+const CURLPX_BAD_ADDRESS_TYPE = 1;
+
+const CURLPX_BAD_VERSION = 2;
+
+const CURLPX_CLOSED = 3;
+
+const CURLPX_GSSAPI = 4;
+
+const CURLPX_GSSAPI_PERMSG = 5;
+
+const CURLPX_GSSAPI_PROTECTION = 6;
+
+const CURLPX_IDENTD = 7;
+
+const CURLPX_IDENTD_DIFFER = 8;
+
+const CURLPX_LONG_HOSTNAME = 9;
+
+const CURLPX_LONG_PASSWD = 10;
+
+const CURLPX_LONG_USER = 11;
+
+const CURLPX_NO_AUTH = 12;
+
+const CURLPX_OK = 0;
+
+const CURLPX_RECV_ADDRESS = 13;
+
+const CURLPX_RECV_AUTH = 14;
+
+const CURLPX_RECV_CONNECT = 15;
+
+const CURLPX_RECV_REQACK = 16;
+
+const CURLPX_REPLY_ADDRESS_TYPE_NOT_SUPPORTED = 17;
+
+const CURLPX_REPLY_COMMAND_NOT_SUPPORTED = 18;
+
+const CURLPX_REPLY_CONNECTION_REFUSED = 19;
+
+const CURLPX_REPLY_GENERAL_SERVER_FAILURE = 20;
+
+const CURLPX_REPLY_HOST_UNREACHABLE = 21;
+
+const CURLPX_REPLY_NETWORK_UNREACHABLE = 22;
+
+const CURLPX_REPLY_NOT_ALLOWED = 23;
+
+const CURLPX_REPLY_TTL_EXPIRED = 24;
+
+const CURLPX_REPLY_UNASSIGNED = 25;
+
+const CURLPX_REQUEST_FAILED = 26;
+
+const CURLPX_RESOLVE_HOST = 27;
+
+const CURLPX_SEND_AUTH = 28;
+
+const CURLPX_SEND_CONNECT = 29;
+
+const CURLPX_SEND_REQUEST = 30;
+
+const CURLPX_UNKNOWN_FAIL = 31;
+
+const CURLPX_UNKNOWN_MODE = 32;
+
+const CURLPX_USER_REJECTED = 33;
+
+const CURLHSTS_ENABLE = 1;
+
+const CURLHSTS_READONLYFILE = 2;
+
+const CURLOPT_HSTS = 10300;
+
+const CURLOPT_HSTS_CTRL = 299;
+
+const CURL_VERSION_HSTS = 268435456;
+
+const CURLAUTH_AWS_SIGV4 = 128;
+
+const CURLOPT_AWS_SIGV4 = 10305;
+
+const CURLINFO_REFERER = 1048636;
+
+const CURLOPT_DOH_SSL_VERIFYHOST = 307;
+
+const CURLOPT_DOH_SSL_VERIFYPEER = 306;
+
+const CURLOPT_DOH_SSL_VERIFYSTATUS = 308;
+
+const CURL_VERSION_GSASL = 536870912;
+
+const CURLOPT_CAINFO_BLOB = 40309;
+
+const CURLOPT_PROXY_CAINFO_BLOB = 40310;
+
+const CURLSSLOPT_AUTO_CLIENT_CERT = 32;
+
+const CURLOPT_MAXLIFETIME_CONN = 314;
+
+const CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256 = 10311;
+
+const CURLOPT_PREREQFUNCTION = 20312;
+
+const CURL_PREREQFUNC_OK = 0;
+
+const CURL_PREREQFUNC_ABORT = 1;
+
+const CURLOPT_MIME_OPTIONS = 315;
+
+const CURLMIMEOPT_FORMESCAPE = 1;
+
+const CURLOPT_SSH_HOSTKEYFUNCTION = 20316;
+
+const CURLOPT_PROTOCOLS_STR = 10318;
+
+const CURLOPT_REDIR_PROTOCOLS_STR = 10319;
+
+const CURLOPT_WS_OPTIONS = 320;
+
+const CURLWS_RAW_MODE = 1;
+
+const CURLOPT_CA_CACHE_TIMEOUT = 321;
+
+const CURLOPT_QUICK_EXIT = 322;
+
+const CURL_HTTP_VERSION_3ONLY = 31;
+
+const CURLOPT_SAFE_UPLOAD = -1;
+
+final class CurlHandle
+{
+
+}
+
+final class CurlMultiHandle
+{
+
+}
+
+final class CurlShareHandle
+{
+
+}
+
+class CURLFile
+{
+    public string $name;
+    public string $mime;
+    public string $postname;
+    public function __construct(string $filename, ?string $mime_type = NULL, ?string $posted_filename = NULL) {}
+    public function getFilename(): string {}
+    public function getMimeType(): string {}
+    public function getPostFilename(): string {}
+    public function setMimeType(string $mime_type): void {}
+    public function setPostFilename(string $posted_filename): void {}
+}
+
+class CURLStringFile
+{
+    public string $data;
+    public string $postname;
+    public string $mime;
+    public function __construct(string $data, string $postname, string $mime = 'application/octet-stream') {}
+}
+
+function dba_popen(string $path, string $mode, ?string $handler = NULL, int $permission = 420, int $map_size = 0, ?int $flags = NULL): \Dba\Connection|false {}
+
+function dba_open(string $path, string $mode, ?string $handler = NULL, int $permission = 420, int $map_size = 0, ?int $flags = NULL): \Dba\Connection|false {}
+
+function dba_close(\Dba\Connection $dba): void {}
+
+function dba_exists(array|string $key, \Dba\Connection $dba): bool {}
+
+function dba_fetch(array|string $key, $dba, $skip = 0): string|false {}
+
+function dba_key_split(string|false|null $key): array|false {}
+
+function dba_firstkey(\Dba\Connection $dba): string|false {}
+
+function dba_nextkey(\Dba\Connection $dba): string|false {}
+
+function dba_delete(array|string $key, \Dba\Connection $dba): bool {}
+
+function dba_insert(array|string $key, string $value, \Dba\Connection $dba): bool {}
+
+function dba_replace(array|string $key, string $value, \Dba\Connection $dba): bool {}
+
+function dba_optimize(\Dba\Connection $dba): bool {}
+
+function dba_sync(\Dba\Connection $dba): bool {}
+
+function dba_handlers(bool $full_info = false): array {}
+
+function dba_list(): array {}
+
+function dom_import_simplexml(object $node): \DOMAttr|\DOMElement {}
+
+const XML_ELEMENT_NODE = 1;
+
+const XML_ATTRIBUTE_NODE = 2;
+
+const XML_TEXT_NODE = 3;
+
+const XML_CDATA_SECTION_NODE = 4;
+
+const XML_ENTITY_REF_NODE = 5;
+
+const XML_ENTITY_NODE = 6;
+
+const XML_PI_NODE = 7;
+
+const XML_COMMENT_NODE = 8;
+
+const XML_DOCUMENT_NODE = 9;
+
+const XML_DOCUMENT_TYPE_NODE = 10;
+
+const XML_DOCUMENT_FRAG_NODE = 11;
+
+const XML_NOTATION_NODE = 12;
+
+const XML_HTML_DOCUMENT_NODE = 13;
+
+const XML_DTD_NODE = 14;
+
+const XML_ELEMENT_DECL_NODE = 15;
+
+const XML_ATTRIBUTE_DECL_NODE = 16;
+
+const XML_ENTITY_DECL_NODE = 17;
+
+const XML_NAMESPACE_DECL_NODE = 18;
+
+const XML_LOCAL_NAMESPACE = 18;
+
+const XML_ATTRIBUTE_CDATA = 1;
+
+const XML_ATTRIBUTE_ID = 2;
+
+const XML_ATTRIBUTE_IDREF = 3;
+
+const XML_ATTRIBUTE_IDREFS = 4;
+
+const XML_ATTRIBUTE_ENTITY = 6;
+
+const XML_ATTRIBUTE_NMTOKEN = 7;
+
+const XML_ATTRIBUTE_NMTOKENS = 8;
+
+const XML_ATTRIBUTE_ENUMERATION = 9;
+
+const XML_ATTRIBUTE_NOTATION = 10;
+
+const DOM_PHP_ERR = 0;
+
+const DOM_INDEX_SIZE_ERR = 1;
+
+const DOMSTRING_SIZE_ERR = 2;
+
+const DOM_HIERARCHY_REQUEST_ERR = 3;
+
+const DOM_WRONG_DOCUMENT_ERR = 4;
+
+const DOM_INVALID_CHARACTER_ERR = 5;
+
+const DOM_NO_DATA_ALLOWED_ERR = 6;
+
+const DOM_NO_MODIFICATION_ALLOWED_ERR = 7;
+
+const DOM_NOT_FOUND_ERR = 8;
+
+const DOM_NOT_SUPPORTED_ERR = 9;
+
+const DOM_INUSE_ATTRIBUTE_ERR = 10;
+
+const DOM_INVALID_STATE_ERR = 11;
+
+const DOM_SYNTAX_ERR = 12;
+
+const DOM_INVALID_MODIFICATION_ERR = 13;
+
+const DOM_NAMESPACE_ERR = 14;
+
+const DOM_INVALID_ACCESS_ERR = 15;
+
+const DOM_VALIDATION_ERR = 16;
+
+final class DOMException extends \Exception
+{
+    public $code;
+}
+
+final class DOMException extends \Exception
+{
+    public $code;
+}
+
+interface DOMParentNode
+{
+    public function append(...$nodes): void;
+    public function prepend(...$nodes): void;
+    public function replaceChildren(...$nodes): void;
+}
+
+interface DOMChildNode
+{
+    public function remove(): void;
+    public function before(...$nodes): void;
+    public function after(...$nodes): void;
+    public function replaceWith(...$nodes): void;
+}
+
+class DOMImplementation
+{
+    public function hasFeature(string $feature, string $version): bool {}
+    public function createDocumentType(string $qualifiedName, string $publicId = '', string $systemId = '') {}
+    public function createDocument(?string $namespace = NULL, string $qualifiedName = '', ?\DOMDocumentType $doctype = NULL): \DOMDocument {}
+}
+
+class DOMNode
+{
+    const DOCUMENT_POSITION_DISCONNECTED = null;
+    const DOCUMENT_POSITION_PRECEDING = null;
+    const DOCUMENT_POSITION_FOLLOWING = null;
+    const DOCUMENT_POSITION_CONTAINS = null;
+    const DOCUMENT_POSITION_CONTAINED_BY = null;
+    const DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC = null;
+    public string $nodeName;
+    public ?string $nodeValue;
+    public int $nodeType;
+    public ?\DOMNode $parentNode;
+    public ?\DOMElement $parentElement;
+    public \DOMNodeList $childNodes;
+    public ?\DOMNode $firstChild;
+    public ?\DOMNode $lastChild;
+    public ?\DOMNode $previousSibling;
+    public ?\DOMNode $nextSibling;
+    public ?\DOMNamedNodeMap $attributes;
+    public bool $isConnected;
+    public ?\DOMDocument $ownerDocument;
+    public ?string $namespaceURI;
+    public string $prefix;
+    public ?string $localName;
+    public ?string $baseURI;
+    public string $textContent;
+    public function appendChild(\DOMNode $node) {}
+    public function C14N(bool $exclusive = false, bool $withComments = false, ?array $xpath = NULL, ?array $nsPrefixes = NULL): string|false {}
+    public function C14NFile(string $uri, bool $exclusive = false, bool $withComments = false, ?array $xpath = NULL, ?array $nsPrefixes = NULL): int|false {}
+    public function cloneNode(bool $deep = false) {}
+    public function getLineNo(): int {}
+    public function getNodePath(): ?string {}
+    public function hasAttributes(): bool {}
+    public function hasChildNodes(): bool {}
+    public function insertBefore(\DOMNode $node, ?\DOMNode $child = NULL) {}
+    public function isDefaultNamespace(string $namespace): bool {}
+    public function isSameNode(\DOMNode $otherNode): bool {}
+    public function isEqualNode(?\DOMNode $otherNode): bool {}
+    public function isSupported(string $feature, string $version): bool {}
+    public function lookupNamespaceURI(?string $prefix): ?string {}
+    public function lookupPrefix(string $namespace): ?string {}
+    public function normalize(): void {}
+    public function removeChild(\DOMNode $child) {}
+    public function replaceChild(\DOMNode $node, \DOMNode $child) {}
+    public function contains(\DOMNode|\DOMNameSpaceNode|null $other): bool {}
+    public function getRootNode(?array $options = NULL): \DOMNode {}
+    public function compareDocumentPosition(\DOMNode $other): int {}
+    public function __sleep(): array {}
+    public function __wakeup(): void {}
+}
+
+class DOMNameSpaceNode
+{
+    public string $nodeName;
+    public ?string $nodeValue;
+    public int $nodeType;
+    public string $prefix;
+    public ?string $localName;
+    public ?string $namespaceURI;
+    public bool $isConnected;
+    public ?\DOMDocument $ownerDocument;
+    public ?\DOMNode $parentNode;
+    public ?\DOMElement $parentElement;
+    public function __sleep(): array {}
+    public function __wakeup(): void {}
+}
+
+class DOMDocumentFragment extends \DOMNode implements \DOMParentNode
+{
+    public ?\DOMElement $firstElementChild;
+    public ?\DOMElement $lastElementChild;
+    public int $childElementCount;
+    public function __construct() {}
+    public function appendXML(string $data): bool {}
+    public function append(...$nodes): void {}
+    public function prepend(...$nodes): void {}
+    public function replaceChildren(...$nodes): void {}
+}
+
+class DOMDocument extends \DOMNode implements \DOMParentNode
+{
+    public ?\DOMDocumentType $doctype;
+    public \DOMImplementation $implementation;
+    public ?\DOMElement $documentElement;
+    public ?string $actualEncoding;
+    public ?string $encoding;
+    public ?string $xmlEncoding;
+    public bool $standalone;
+    public bool $xmlStandalone;
+    public ?string $version;
+    public ?string $xmlVersion;
+    public bool $strictErrorChecking;
+    public ?string $documentURI;
+    public mixed $config;
+    public bool $formatOutput;
+    public bool $validateOnParse;
+    public bool $resolveExternals;
+    public bool $preserveWhiteSpace;
+    public bool $recover;
+    public bool $substituteEntities;
+    public ?\DOMElement $firstElementChild;
+    public ?\DOMElement $lastElementChild;
+    public int $childElementCount;
+    public function __construct(string $version = '1.0', string $encoding = '') {}
+    public function createAttribute(string $localName) {}
+    public function createAttributeNS(?string $namespace, string $qualifiedName) {}
+    public function createCDATASection(string $data) {}
+    public function createComment(string $data): \DOMComment {}
+    public function createDocumentFragment(): \DOMDocumentFragment {}
+    public function createElement(string $localName, string $value = '') {}
+    public function createElementNS(?string $namespace, string $qualifiedName, string $value = '') {}
+    public function createEntityReference(string $name) {}
+    public function createProcessingInstruction(string $target, string $data = '') {}
+    public function createTextNode(string $data): \DOMText {}
+    public function getElementById(string $elementId): ?\DOMElement {}
+    public function getElementsByTagName(string $qualifiedName): \DOMNodeList {}
+    public function getElementsByTagNameNS(?string $namespace, string $localName): \DOMNodeList {}
+    public function importNode(\DOMNode $node, bool $deep = false) {}
+    public function load(string $filename, int $options = 0): bool {}
+    public function loadXML(string $source, int $options = 0): bool {}
+    public function normalizeDocument(): void {}
+    public function registerNodeClass(string $baseClass, ?string $extendedClass): true {}
+    public function save(string $filename, int $options = 0): int|false {}
+    public function loadHTML(string $source, int $options = 0): bool {}
+    public function loadHTMLFile(string $filename, int $options = 0): bool {}
+    public function saveHTML(?\DOMNode $node = NULL): string|false {}
+    public function saveHTMLFile(string $filename): int|false {}
+    public function saveXML(?\DOMNode $node = NULL, int $options = 0): string|false {}
+    public function schemaValidate(string $filename, int $flags = 0): bool {}
+    public function schemaValidateSource(string $source, int $flags = 0): bool {}
+    public function relaxNGValidate(string $filename): bool {}
+    public function relaxNGValidateSource(string $source): bool {}
+    public function validate(): bool {}
+    public function xinclude(int $options = 0): int|false {}
+    public function adoptNode(\DOMNode $node): \DOMNode|false {}
+    public function append(...$nodes): void {}
+    public function prepend(...$nodes): void {}
+    public function replaceChildren(...$nodes): void {}
+}
+
+class DOMNodeList implements \IteratorAggregate, \Traversable, \Countable
+{
+    public int $length;
+    public function count(): int {}
+    public function getIterator(): \Iterator {}
+    public function item(int $index) {}
+}
+
+class DOMNamedNodeMap implements \IteratorAggregate, \Traversable, \Countable
+{
+    public int $length;
+    public function getNamedItem(string $qualifiedName): ?\DOMNode {}
+    public function getNamedItemNS(?string $namespace, string $localName): ?\DOMNode {}
+    public function item(int $index): ?\DOMNode {}
+    public function count(): int {}
+    public function getIterator(): \Iterator {}
+}
+
+class DOMCharacterData extends \DOMNode implements \DOMChildNode
+{
+    public string $data;
+    public int $length;
+    public ?\DOMElement $previousElementSibling;
+    public ?\DOMElement $nextElementSibling;
+    public function appendData(string $data): true {}
+    public function substringData(int $offset, int $count) {}
+    public function insertData(int $offset, string $data): bool {}
+    public function deleteData(int $offset, int $count): bool {}
+    public function replaceData(int $offset, int $count, string $data): bool {}
+    public function replaceWith(...$nodes): void {}
+    public function remove(): void {}
+    public function before(...$nodes): void {}
+    public function after(...$nodes): void {}
+}
+
+class DOMAttr extends \DOMNode
+{
+    public string $name;
+    public bool $specified;
+    public string $value;
+    public ?\DOMElement $ownerElement;
+    public mixed $schemaTypeInfo;
+    public function __construct(string $name, string $value = '') {}
+    public function isId(): bool {}
+}
+
+class DOMElement extends \DOMNode implements \DOMParentNode, \DOMChildNode
+{
+    public string $tagName;
+    public string $className;
+    public string $id;
+    public mixed $schemaTypeInfo;
+    public ?\DOMElement $firstElementChild;
+    public ?\DOMElement $lastElementChild;
+    public int $childElementCount;
+    public ?\DOMElement $previousElementSibling;
+    public ?\DOMElement $nextElementSibling;
+    public function __construct(string $qualifiedName, ?string $value = NULL, string $namespace = '') {}
+    public function getAttribute(string $qualifiedName): string {}
+    public function getAttributeNames(): array {}
+    public function getAttributeNS(?string $namespace, string $localName): string {}
+    public function getAttributeNode(string $qualifiedName) {}
+    public function getAttributeNodeNS(?string $namespace, string $localName) {}
+    public function getElementsByTagName(string $qualifiedName): \DOMNodeList {}
+    public function getElementsByTagNameNS(?string $namespace, string $localName): \DOMNodeList {}
+    public function hasAttribute(string $qualifiedName): bool {}
+    public function hasAttributeNS(?string $namespace, string $localName): bool {}
+    public function removeAttribute(string $qualifiedName): bool {}
+    public function removeAttributeNS(?string $namespace, string $localName): void {}
+    public function removeAttributeNode(\DOMAttr $attr) {}
+    public function setAttribute(string $qualifiedName, string $value) {}
+    public function setAttributeNS(?string $namespace, string $qualifiedName, string $value): void {}
+    public function setAttributeNode(\DOMAttr $attr) {}
+    public function setAttributeNodeNS(\DOMAttr $attr) {}
+    public function setIdAttribute(string $qualifiedName, bool $isId): void {}
+    public function setIdAttributeNS(string $namespace, string $qualifiedName, bool $isId): void {}
+    public function setIdAttributeNode(\DOMAttr $attr, bool $isId): void {}
+    public function toggleAttribute(string $qualifiedName, ?bool $force = NULL): bool {}
+    public function remove(): void {}
+    public function before(...$nodes): void {}
+    public function after(...$nodes): void {}
+    public function replaceWith(...$nodes): void {}
+    public function append(...$nodes): void {}
+    public function prepend(...$nodes): void {}
+    public function replaceChildren(...$nodes): void {}
+    public function insertAdjacentElement(string $where, \DOMElement $element): ?\DOMElement {}
+    public function insertAdjacentText(string $where, string $data): void {}
+}
+
+class DOMText extends \DOMCharacterData
+{
+    public string $wholeText;
+    public function __construct(string $data = '') {}
+    public function isWhitespaceInElementContent(): bool {}
+    public function isElementContentWhitespace(): bool {}
+    public function splitText(int $offset) {}
+}
+
+class DOMComment extends \DOMCharacterData
+{
+    public function __construct(string $data = '') {}
+}
+
+class DOMCdataSection extends \DOMText
+{
+    public function __construct(string $data) {}
+}
+
+class DOMDocumentType extends \DOMNode
+{
+    public string $name;
+    public \DOMNamedNodeMap $entities;
+    public \DOMNamedNodeMap $notations;
+    public string $publicId;
+    public string $systemId;
+    public ?string $internalSubset;
+}
+
+class DOMNotation extends \DOMNode
+{
+    public string $publicId;
+    public string $systemId;
+}
+
+class DOMEntity extends \DOMNode
+{
+    public ?string $publicId;
+    public ?string $systemId;
+    public ?string $notationName;
+    public ?string $actualEncoding;
+    public ?string $encoding;
+    public ?string $version;
+}
+
+class DOMEntityReference extends \DOMNode
+{
+    public function __construct(string $name) {}
+}
+
+class DOMProcessingInstruction extends \DOMNode
+{
+    public string $target;
+    public string $data;
+    public function __construct(string $name, string $value = '') {}
+}
+
+class DOMXPath
+{
+    public \DOMDocument $document;
+    public bool $registerNodeNamespaces;
+    public function __construct(\DOMDocument $document, bool $registerNodeNS = true) {}
+    public function evaluate(string $expression, ?\DOMNode $contextNode = NULL, bool $registerNodeNS = true): mixed {}
+    public function query(string $expression, ?\DOMNode $contextNode = NULL, bool $registerNodeNS = true): mixed {}
+    public function registerNamespace(string $prefix, string $namespace): bool {}
+    public function registerPhpFunctions(array|string|null $restrict = NULL): void {}
+    public function registerPhpFunctionNS(string $namespaceURI, string $name, callable $callable): void {}
+    public static function quote(string $str): string {}
+}
+
+function json_encode(mixed $value, int $flags = 0, int $depth = 512): string|false {}
+
+function json_decode(string $json, ?bool $associative = NULL, int $depth = 512, int $flags = 0): mixed {}
+
+function json_validate(string $json, int $depth = 512, int $flags = 0): bool {}
+
+function json_last_error(): int {}
+
+function json_last_error_msg(): string {}
+
+const JSON_HEX_TAG = 1;
+
+const JSON_HEX_AMP = 2;
+
+const JSON_HEX_APOS = 4;
+
+const JSON_HEX_QUOT = 8;
+
+const JSON_FORCE_OBJECT = 16;
+
+const JSON_NUMERIC_CHECK = 32;
+
+const JSON_UNESCAPED_SLASHES = 64;
+
+const JSON_PRETTY_PRINT = 128;
+
+const JSON_UNESCAPED_UNICODE = 256;
+
+const JSON_PARTIAL_OUTPUT_ON_ERROR = 512;
+
+const JSON_PRESERVE_ZERO_FRACTION = 1024;
+
+const JSON_UNESCAPED_LINE_TERMINATORS = 2048;
+
+const JSON_OBJECT_AS_ARRAY = 1;
+
+const JSON_BIGINT_AS_STRING = 2;
+
+const JSON_INVALID_UTF8_IGNORE = 1048576;
+
+const JSON_INVALID_UTF8_SUBSTITUTE = 2097152;
+
+const JSON_THROW_ON_ERROR = 4194304;
+
+const JSON_ERROR_NONE = 0;
+
+const JSON_ERROR_DEPTH = 1;
+
+const JSON_ERROR_STATE_MISMATCH = 2;
+
+const JSON_ERROR_CTRL_CHAR = 3;
+
+const JSON_ERROR_SYNTAX = 4;
+
+const JSON_ERROR_UTF8 = 5;
+
+const JSON_ERROR_RECURSION = 6;
+
+const JSON_ERROR_INF_OR_NAN = 7;
+
+const JSON_ERROR_UNSUPPORTED_TYPE = 8;
+
+const JSON_ERROR_INVALID_PROPERTY_NAME = 9;
+
+const JSON_ERROR_UTF16 = 10;
+
+const JSON_ERROR_NON_BACKED_ENUM = 11;
+
+interface JsonSerializable
+{
+    public function jsonSerialize(): mixed;
+}
+
+class JsonException extends \Exception
+{
+
+}
+
+final class FFI
+{
+    const __BIGGEST_ALIGNMENT__ = null;
+    public static function cdef(string $code = '', ?string $lib = NULL): \FFI {}
+    public static function load(string $filename): ?\FFI {}
+    public static function scope(string $name): \FFI {}
+    public static function new(\FFI\CType|string $type, bool $owned = true, bool $persistent = false): \FFI\CData {}
+    public static function free(\FFI\CData &$ptr): void {}
+    public static function cast(\FFI\CType|string $type, &$ptr): \FFI\CData {}
+    public static function type(string $type): \FFI\CType {}
+    public static function typeof(\FFI\CData &$ptr): \FFI\CType {}
+    public static function arrayType(\FFI\CType $type, array $dimensions): \FFI\CType {}
+    public static function addr(\FFI\CData &$ptr): \FFI\CData {}
+    public static function sizeof(\FFI\CData|\FFI\CType &$ptr): int {}
+    public static function alignof(\FFI\CData|\FFI\CType &$ptr): int {}
+    public static function memcpy(\FFI\CData &$to, &$from, int $size): void {}
+    public static function memcmp(&$ptr1, &$ptr2, int $size): int {}
+    public static function memset(\FFI\CData &$ptr, int $value, int $size): void {}
+    public static function string(\FFI\CData &$ptr, ?int $size = NULL): string {}
+    public static function isNull(\FFI\CData &$ptr): bool {}
+}
+
+function finfo_open(int $flags = \FILEINFO_NONE, ?string $magic_database = NULL): \finfo|false {}
+
+function finfo_close(\finfo $finfo): bool {}
+
+function finfo_set_flags(\finfo $finfo, int $flags): true {}
+
+function finfo_file(\finfo $finfo, string $filename, int $flags = \FILEINFO_NONE, $context = NULL): string|false {}
+
+function finfo_buffer(\finfo $finfo, string $string, int $flags = \FILEINFO_NONE, $context = NULL): string|false {}
+
+function mime_content_type($filename): string|false {}
+
+const FILEINFO_NONE = 0;
+
+const FILEINFO_SYMLINK = 2;
+
+const FILEINFO_MIME = 1040;
+
+const FILEINFO_MIME_TYPE = 16;
+
+const FILEINFO_MIME_ENCODING = 1024;
+
+const FILEINFO_DEVICES = 8;
+
+const FILEINFO_CONTINUE = 32;
+
+const FILEINFO_PRESERVE_ATIME = 128;
+
+const FILEINFO_RAW = 256;
+
+const FILEINFO_APPLE = 2048;
+
+const FILEINFO_EXTENSION = 16777216;
+
+class finfo
+{
+    public function __construct(int $flags = \FILEINFO_NONE, ?string $magic_database = NULL) {}
+    public function file(string $filename, int $flags = \FILEINFO_NONE, $context = NULL): string|false {}
+    public function buffer(string $string, int $flags = \FILEINFO_NONE, $context = NULL): string|false {}
+    public function set_flags(int $flags): true {}
+}
+
+function filter_has_var(int $input_type, string $var_name): bool {}
+
+function filter_input(int $type, string $var_name, int $filter = \FILTER_DEFAULT, array|int $options = 0): mixed {}
+
+function filter_var(mixed $value, int $filter = \FILTER_DEFAULT, array|int $options = 0): mixed {}
+
+function filter_input_array(int $type, array|int $options = \FILTER_DEFAULT, bool $add_empty = true): array|false|null {}
+
+function filter_var_array(array $array, array|int $options = \FILTER_DEFAULT, bool $add_empty = true): array|false|null {}
+
+function filter_list(): array {}
+
+function filter_id(string $name): int|false {}
+
+const INPUT_POST = 0;
+
+const INPUT_GET = 1;
+
+const INPUT_COOKIE = 2;
+
+const INPUT_ENV = 4;
+
+const INPUT_SERVER = 5;
+
+const FILTER_FLAG_NONE = 0;
+
+const FILTER_REQUIRE_SCALAR = 33554432;
+
+const FILTER_REQUIRE_ARRAY = 16777216;
+
+const FILTER_FORCE_ARRAY = 67108864;
+
+const FILTER_NULL_ON_FAILURE = 134217728;
+
+const FILTER_VALIDATE_INT = 257;
+
+const FILTER_VALIDATE_BOOLEAN = 258;
+
+const FILTER_VALIDATE_BOOL = 258;
+
+const FILTER_VALIDATE_FLOAT = 259;
+
+const FILTER_VALIDATE_REGEXP = 272;
+
+const FILTER_VALIDATE_DOMAIN = 277;
+
+const FILTER_VALIDATE_URL = 273;
+
+const FILTER_VALIDATE_EMAIL = 274;
+
+const FILTER_VALIDATE_IP = 275;
+
+const FILTER_VALIDATE_MAC = 276;
+
+const FILTER_DEFAULT = 516;
+
+const FILTER_UNSAFE_RAW = 516;
+
+const FILTER_SANITIZE_STRING = 513;
+
+const FILTER_SANITIZE_STRIPPED = 513;
+
+const FILTER_SANITIZE_ENCODED = 514;
+
+const FILTER_SANITIZE_SPECIAL_CHARS = 515;
+
+const FILTER_SANITIZE_FULL_SPECIAL_CHARS = 522;
+
+const FILTER_SANITIZE_EMAIL = 517;
+
+const FILTER_SANITIZE_URL = 518;
+
+const FILTER_SANITIZE_NUMBER_INT = 519;
+
+const FILTER_SANITIZE_NUMBER_FLOAT = 520;
+
+const FILTER_SANITIZE_ADD_SLASHES = 523;
+
+const FILTER_CALLBACK = 1024;
+
+const FILTER_FLAG_ALLOW_OCTAL = 1;
+
+const FILTER_FLAG_ALLOW_HEX = 2;
+
+const FILTER_FLAG_STRIP_LOW = 4;
+
+const FILTER_FLAG_STRIP_HIGH = 8;
+
+const FILTER_FLAG_STRIP_BACKTICK = 512;
+
+const FILTER_FLAG_ENCODE_LOW = 16;
+
+const FILTER_FLAG_ENCODE_HIGH = 32;
+
+const FILTER_FLAG_ENCODE_AMP = 64;
+
+const FILTER_FLAG_NO_ENCODE_QUOTES = 128;
+
+const FILTER_FLAG_EMPTY_STRING_NULL = 256;
+
+const FILTER_FLAG_ALLOW_FRACTION = 4096;
+
+const FILTER_FLAG_ALLOW_THOUSAND = 8192;
+
+const FILTER_FLAG_ALLOW_SCIENTIFIC = 16384;
+
+const FILTER_FLAG_PATH_REQUIRED = 262144;
+
+const FILTER_FLAG_QUERY_REQUIRED = 524288;
+
+const FILTER_FLAG_IPV4 = 1048576;
+
+const FILTER_FLAG_IPV6 = 2097152;
+
+const FILTER_FLAG_NO_RES_RANGE = 4194304;
+
+const FILTER_FLAG_NO_PRIV_RANGE = 8388608;
+
+const FILTER_FLAG_GLOBAL_RANGE = 268435456;
+
+const FILTER_FLAG_HOSTNAME = 1048576;
+
+const FILTER_FLAG_EMAIL_UNICODE = 1048576;
+
+function ftp_connect(string $hostname, int $port = 21, int $timeout = 90): \FTP\Connection|false {}
+
+function ftp_ssl_connect(string $hostname, int $port = 21, int $timeout = 90): \FTP\Connection|false {}
+
+function ftp_login(\FTP\Connection $ftp, string $username, string $password): bool {}
+
+function ftp_pwd(\FTP\Connection $ftp): string|false {}
+
+function ftp_cdup(\FTP\Connection $ftp): bool {}
+
+function ftp_chdir(\FTP\Connection $ftp, string $directory): bool {}
+
+function ftp_exec(\FTP\Connection $ftp, string $command): bool {}
+
+function ftp_raw(\FTP\Connection $ftp, string $command): ?array {}
+
+function ftp_mkdir(\FTP\Connection $ftp, string $directory): string|false {}
+
+function ftp_rmdir(\FTP\Connection $ftp, string $directory): bool {}
+
+function ftp_chmod(\FTP\Connection $ftp, int $permissions, string $filename): int|false {}
+
+function ftp_alloc(\FTP\Connection $ftp, int $size, &$response = NULL): bool {}
+
+function ftp_nlist(\FTP\Connection $ftp, string $directory): array|false {}
+
+function ftp_rawlist(\FTP\Connection $ftp, string $directory, bool $recursive = false): array|false {}
+
+function ftp_mlsd(\FTP\Connection $ftp, string $directory): array|false {}
+
+function ftp_systype(\FTP\Connection $ftp): string|false {}
+
+function ftp_fget(\FTP\Connection $ftp, $stream, string $remote_filename, int $mode = \FTP_BINARY, int $offset = 0): bool {}
+
+function ftp_nb_fget(\FTP\Connection $ftp, $stream, string $remote_filename, int $mode = \FTP_BINARY, int $offset = 0): int {}
+
+function ftp_pasv(\FTP\Connection $ftp, bool $enable): bool {}
+
+function ftp_get(\FTP\Connection $ftp, string $local_filename, string $remote_filename, int $mode = \FTP_BINARY, int $offset = 0): bool {}
+
+function ftp_nb_get(\FTP\Connection $ftp, string $local_filename, string $remote_filename, int $mode = \FTP_BINARY, int $offset = 0): int|false {}
+
+function ftp_nb_continue(\FTP\Connection $ftp): int {}
+
+function ftp_fput(\FTP\Connection $ftp, string $remote_filename, $stream, int $mode = \FTP_BINARY, int $offset = 0): bool {}
+
+function ftp_nb_fput(\FTP\Connection $ftp, string $remote_filename, $stream, int $mode = \FTP_BINARY, int $offset = 0): int {}
+
+function ftp_put(\FTP\Connection $ftp, string $remote_filename, string $local_filename, int $mode = \FTP_BINARY, int $offset = 0): bool {}
+
+function ftp_append(\FTP\Connection $ftp, string $remote_filename, string $local_filename, int $mode = \FTP_BINARY): bool {}
+
+function ftp_nb_put(\FTP\Connection $ftp, string $remote_filename, string $local_filename, int $mode = \FTP_BINARY, int $offset = 0): int|false {}
+
+function ftp_size(\FTP\Connection $ftp, string $filename): int {}
+
+function ftp_mdtm(\FTP\Connection $ftp, string $filename): int {}
+
+function ftp_rename(\FTP\Connection $ftp, string $from, string $to): bool {}
+
+function ftp_delete(\FTP\Connection $ftp, string $filename): bool {}
+
+function ftp_site(\FTP\Connection $ftp, string $command): bool {}
+
+function ftp_close(\FTP\Connection $ftp): bool {}
+
+function ftp_quit(\FTP\Connection $ftp): bool {}
+
+function ftp_set_option(\FTP\Connection $ftp, int $option, $value): bool {}
+
+function ftp_get_option(\FTP\Connection $ftp, int $option): int|bool {}
+
+const FTP_ASCII = 1;
+
+const FTP_TEXT = 1;
+
+const FTP_BINARY = 2;
+
+const FTP_IMAGE = 2;
+
+const FTP_AUTORESUME = -1;
+
+const FTP_TIMEOUT_SEC = 0;
+
+const FTP_AUTOSEEK = 1;
+
+const FTP_USEPASVADDRESS = 2;
+
+const FTP_FAILED = 0;
+
+const FTP_FINISHED = 1;
+
+const FTP_MOREDATA = 2;
+
+function gd_info(): array {}
+
+function imageloadfont(string $filename): \GdFont|false {}
+
+function imagesetstyle(\GdImage $image, array $style): bool {}
+
+function imagecreatetruecolor(int $width, int $height): \GdImage|false {}
+
+function imageistruecolor(\GdImage $image): bool {}
+
+function imagetruecolortopalette(\GdImage $image, bool $dither, int $num_colors): bool {}
+
+function imagepalettetotruecolor(\GdImage $image): bool {}
+
+function imagecolormatch(\GdImage $image1, \GdImage $image2): bool {}
+
+function imagesetthickness(\GdImage $image, int $thickness): bool {}
+
+function imagefilledellipse(\GdImage $image, int $center_x, int $center_y, int $width, int $height, int $color): bool {}
+
+function imagefilledarc(\GdImage $image, int $center_x, int $center_y, int $width, int $height, int $start_angle, int $end_angle, int $color, int $style): bool {}
+
+function imagealphablending(\GdImage $image, bool $enable): bool {}
+
+function imagesavealpha(\GdImage $image, bool $enable): bool {}
+
+function imagelayereffect(\GdImage $image, int $effect): bool {}
+
+function imagecolorallocatealpha(\GdImage $image, int $red, int $green, int $blue, int $alpha): int|false {}
+
+function imagecolorresolvealpha(\GdImage $image, int $red, int $green, int $blue, int $alpha): int {}
+
+function imagecolorclosestalpha(\GdImage $image, int $red, int $green, int $blue, int $alpha): int {}
+
+function imagecolorexactalpha(\GdImage $image, int $red, int $green, int $blue, int $alpha): int {}
+
+function imagecopyresampled(\GdImage $dst_image, \GdImage $src_image, int $dst_x, int $dst_y, int $src_x, int $src_y, int $dst_width, int $dst_height, int $src_width, int $src_height): bool {}
+
+function imagerotate(\GdImage $image, float $angle, int $background_color): \GdImage|false {}
+
+function imagesettile(\GdImage $image, \GdImage $tile): bool {}
+
+function imagesetbrush(\GdImage $image, \GdImage $brush): bool {}
+
+function imagecreate(int $width, int $height): \GdImage|false {}
+
+function imagetypes(): int {}
+
+function imagecreatefromstring(string $data): \GdImage|false {}
+
+function imagecreatefromgif(string $filename): \GdImage|false {}
+
+function imagecreatefromjpeg(string $filename): \GdImage|false {}
+
+function imagecreatefrompng(string $filename): \GdImage|false {}
+
+function imagecreatefromwebp(string $filename): \GdImage|false {}
+
+function imagecreatefromxbm(string $filename): \GdImage|false {}
+
+function imagecreatefromwbmp(string $filename): \GdImage|false {}
+
+function imagecreatefromgd(string $filename): \GdImage|false {}
+
+function imagecreatefromgd2(string $filename): \GdImage|false {}
+
+function imagecreatefromgd2part(string $filename, int $x, int $y, int $width, int $height): \GdImage|false {}
+
+function imagecreatefrombmp(string $filename): \GdImage|false {}
+
+function imagecreatefromtga(string $filename): \GdImage|false {}
+
+function imagexbm(\GdImage $image, ?string $filename, ?int $foreground_color = NULL): bool {}
+
+function imagegif(\GdImage $image, $file = NULL): bool {}
+
+function imagepng(\GdImage $image, $file = NULL, int $quality = -1, int $filters = -1): bool {}
+
+function imagewebp(\GdImage $image, $file = NULL, int $quality = -1): bool {}
+
+function imagejpeg(\GdImage $image, $file = NULL, int $quality = -1): bool {}
+
+function imagewbmp(\GdImage $image, $file = NULL, ?int $foreground_color = NULL): bool {}
+
+function imagegd(\GdImage $image, ?string $file = NULL): bool {}
+
+function imagegd2(\GdImage $image, ?string $file = NULL, int $chunk_size = 128, int $mode = \IMG_GD2_RAW): bool {}
+
+function imagebmp(\GdImage $image, $file = NULL, bool $compressed = true): bool {}
+
+function imagedestroy(\GdImage $image): bool {}
+
+function imagecolorallocate(\GdImage $image, int $red, int $green, int $blue): int|false {}
+
+function imagepalettecopy(\GdImage $dst, \GdImage $src): void {}
+
+function imagecolorat(\GdImage $image, int $x, int $y): int|false {}
+
+function imagecolorclosest(\GdImage $image, int $red, int $green, int $blue): int {}
+
+function imagecolorclosesthwb(\GdImage $image, int $red, int $green, int $blue): int {}
+
+function imagecolordeallocate(\GdImage $image, int $color): bool {}
+
+function imagecolorresolve(\GdImage $image, int $red, int $green, int $blue): int {}
+
+function imagecolorexact(\GdImage $image, int $red, int $green, int $blue): int {}
+
+function imagecolorset(\GdImage $image, int $color, int $red, int $green, int $blue, int $alpha = 0): ?false {}
+
+function imagecolorsforindex(\GdImage $image, int $color): array {}
+
+function imagegammacorrect(\GdImage $image, float $input_gamma, float $output_gamma): bool {}
+
+function imagesetpixel(\GdImage $image, int $x, int $y, int $color): bool {}
+
+function imageline(\GdImage $image, int $x1, int $y1, int $x2, int $y2, int $color): bool {}
+
+function imagedashedline(\GdImage $image, int $x1, int $y1, int $x2, int $y2, int $color): bool {}
+
+function imagerectangle(\GdImage $image, int $x1, int $y1, int $x2, int $y2, int $color): bool {}
+
+function imagefilledrectangle(\GdImage $image, int $x1, int $y1, int $x2, int $y2, int $color): bool {}
+
+function imagearc(\GdImage $image, int $center_x, int $center_y, int $width, int $height, int $start_angle, int $end_angle, int $color): bool {}
+
+function imageellipse(\GdImage $image, int $center_x, int $center_y, int $width, int $height, int $color): bool {}
+
+function imagefilltoborder(\GdImage $image, int $x, int $y, int $border_color, int $color): bool {}
+
+function imagefill(\GdImage $image, int $x, int $y, int $color): bool {}
+
+function imagecolorstotal(\GdImage $image): int {}
+
+function imagecolortransparent(\GdImage $image, ?int $color = NULL): int {}
+
+function imageinterlace(\GdImage $image, ?bool $enable = NULL): bool {}
+
+function imagepolygon(\GdImage $image, array $points, int $num_points_or_color, ?int $color = NULL): bool {}
+
+function imageopenpolygon(\GdImage $image, array $points, int $num_points_or_color, ?int $color = NULL): bool {}
+
+function imagefilledpolygon(\GdImage $image, array $points, int $num_points_or_color, ?int $color = NULL): bool {}
+
+function imagefontwidth(\GdFont|int $font): int {}
+
+function imagefontheight(\GdFont|int $font): int {}
+
+function imagechar(\GdImage $image, \GdFont|int $font, int $x, int $y, string $char, int $color): bool {}
+
+function imagecharup(\GdImage $image, \GdFont|int $font, int $x, int $y, string $char, int $color): bool {}
+
+function imagestring(\GdImage $image, \GdFont|int $font, int $x, int $y, string $string, int $color): bool {}
+
+function imagestringup(\GdImage $image, \GdFont|int $font, int $x, int $y, string $string, int $color): bool {}
+
+function imagecopy(\GdImage $dst_image, \GdImage $src_image, int $dst_x, int $dst_y, int $src_x, int $src_y, int $src_width, int $src_height): bool {}
+
+function imagecopymerge(\GdImage $dst_image, \GdImage $src_image, int $dst_x, int $dst_y, int $src_x, int $src_y, int $src_width, int $src_height, int $pct): bool {}
+
+function imagecopymergegray(\GdImage $dst_image, \GdImage $src_image, int $dst_x, int $dst_y, int $src_x, int $src_y, int $src_width, int $src_height, int $pct): bool {}
+
+function imagecopyresized(\GdImage $dst_image, \GdImage $src_image, int $dst_x, int $dst_y, int $src_x, int $src_y, int $dst_width, int $dst_height, int $src_width, int $src_height): bool {}
+
+function imagesx(\GdImage $image): int {}
+
+function imagesy(\GdImage $image): int {}
+
+function imagesetclip(\GdImage $image, int $x1, int $y1, int $x2, int $y2): bool {}
+
+function imagegetclip(\GdImage $image): array {}
+
+function imageftbbox(float $size, float $angle, string $font_filename, string $string, array $options = []): array|false {}
+
+function imagefttext(\GdImage $image, float $size, float $angle, int $x, int $y, int $color, string $font_filename, string $text, array $options = []): array|false {}
+
+function imagettfbbox(float $size, float $angle, string $font_filename, string $string, array $options = []): array|false {}
+
+function imagettftext(\GdImage $image, float $size, float $angle, int $x, int $y, int $color, string $font_filename, string $text, array $options = []): array|false {}
+
+function imagefilter(\GdImage $image, int $filter, ...$args): bool {}
+
+function imageconvolution(\GdImage $image, array $matrix, float $divisor, float $offset): bool {}
+
+function imageflip(\GdImage $image, int $mode): bool {}
+
+function imageantialias(\GdImage $image, bool $enable): bool {}
+
+function imagecrop(\GdImage $image, array $rectangle): \GdImage|false {}
+
+function imagecropauto(\GdImage $image, int $mode = \IMG_CROP_DEFAULT, float $threshold = 0.5, int $color = -1): \GdImage|false {}
+
+function imagescale(\GdImage $image, int $width, int $height = -1, int $mode = \IMG_BILINEAR_FIXED): \GdImage|false {}
+
+function imageaffine(\GdImage $image, array $affine, ?array $clip = NULL): \GdImage|false {}
+
+function imageaffinematrixget(int $type, $options): array|false {}
+
+function imageaffinematrixconcat(array $matrix1, array $matrix2): array|false {}
+
+function imagegetinterpolation(\GdImage $image): int {}
+
+function imagesetinterpolation(\GdImage $image, int $method = \IMG_BILINEAR_FIXED): bool {}
+
+function imageresolution(\GdImage $image, ?int $resolution_x = NULL, ?int $resolution_y = NULL): array|bool {}
+
+const IMG_AVIF = 256;
+
+const IMG_GIF = 1;
+
+const IMG_JPG = 2;
+
+const IMG_JPEG = 2;
+
+const IMG_PNG = 4;
+
+const IMG_WBMP = 8;
+
+const IMG_XPM = 16;
+
+const IMG_WEBP = 32;
+
+const IMG_BMP = 64;
+
+const IMG_TGA = 128;
+
+const IMG_WEBP_LOSSLESS = 101;
+
+const IMG_COLOR_TILED = -5;
+
+const IMG_COLOR_STYLED = -2;
+
+const IMG_COLOR_BRUSHED = -3;
+
+const IMG_COLOR_STYLEDBRUSHED = -4;
+
+const IMG_COLOR_TRANSPARENT = -6;
+
+const IMG_ARC_ROUNDED = 0;
+
+const IMG_ARC_PIE = 0;
+
+const IMG_ARC_CHORD = 1;
+
+const IMG_ARC_NOFILL = 2;
+
+const IMG_ARC_EDGED = 4;
+
+const IMG_GD2_RAW = 1;
+
+const IMG_GD2_COMPRESSED = 2;
+
+const IMG_FLIP_HORIZONTAL = 1;
+
+const IMG_FLIP_VERTICAL = 2;
+
+const IMG_FLIP_BOTH = 3;
+
+const IMG_EFFECT_REPLACE = 0;
+
+const IMG_EFFECT_ALPHABLEND = 1;
+
+const IMG_EFFECT_NORMAL = 2;
+
+const IMG_EFFECT_OVERLAY = 3;
+
+const IMG_EFFECT_MULTIPLY = 4;
+
+const IMG_CROP_DEFAULT = 0;
+
+const IMG_CROP_TRANSPARENT = 1;
+
+const IMG_CROP_BLACK = 2;
+
+const IMG_CROP_WHITE = 3;
+
+const IMG_CROP_SIDES = 4;
+
+const IMG_CROP_THRESHOLD = 5;
+
+const IMG_BELL = 1;
+
+const IMG_BESSEL = 2;
+
+const IMG_BILINEAR_FIXED = 3;
+
+const IMG_BICUBIC = 4;
+
+const IMG_BICUBIC_FIXED = 5;
+
+const IMG_BLACKMAN = 6;
+
+const IMG_BOX = 7;
+
+const IMG_BSPLINE = 8;
+
+const IMG_CATMULLROM = 9;
+
+const IMG_GAUSSIAN = 10;
+
+const IMG_GENERALIZED_CUBIC = 11;
+
+const IMG_HERMITE = 12;
+
+const IMG_HAMMING = 13;
+
+const IMG_HANNING = 14;
+
+const IMG_MITCHELL = 15;
+
+const IMG_POWER = 17;
+
+const IMG_QUADRATIC = 18;
+
+const IMG_SINC = 19;
+
+const IMG_NEAREST_NEIGHBOUR = 16;
+
+const IMG_WEIGHTED4 = 21;
+
+const IMG_TRIANGLE = 20;
+
+const IMG_AFFINE_TRANSLATE = 0;
+
+const IMG_AFFINE_SCALE = 1;
+
+const IMG_AFFINE_ROTATE = 2;
+
+const IMG_AFFINE_SHEAR_HORIZONTAL = 3;
+
+const IMG_AFFINE_SHEAR_VERTICAL = 4;
+
+const GD_BUNDLED = 1;
+
+const IMG_FILTER_NEGATE = 0;
+
+const IMG_FILTER_GRAYSCALE = 1;
+
+const IMG_FILTER_BRIGHTNESS = 2;
+
+const IMG_FILTER_CONTRAST = 3;
+
+const IMG_FILTER_COLORIZE = 4;
+
+const IMG_FILTER_EDGEDETECT = 5;
+
+const IMG_FILTER_GAUSSIAN_BLUR = 7;
+
+const IMG_FILTER_SELECTIVE_BLUR = 8;
+
+const IMG_FILTER_EMBOSS = 6;
+
+const IMG_FILTER_MEAN_REMOVAL = 9;
+
+const IMG_FILTER_SMOOTH = 10;
+
+const IMG_FILTER_PIXELATE = 11;
+
+const IMG_FILTER_SCATTER = 12;
+
+const GD_VERSION = '2.0.35';
+
+const GD_MAJOR_VERSION = 2;
+
+const GD_MINOR_VERSION = 0;
+
+const GD_RELEASE_VERSION = 35;
+
+const GD_EXTRA_VERSION = '';
+
+const PNG_NO_FILTER = 0;
+
+const PNG_FILTER_NONE = 8;
+
+const PNG_FILTER_SUB = 16;
+
+const PNG_FILTER_UP = 32;
+
+const PNG_FILTER_AVG = 64;
+
+const PNG_FILTER_PAETH = 128;
+
+const PNG_ALL_FILTERS = 248;
+
+final class GdImage
+{
+
+}
+
+final class GdFont
+{
+
+}
+
+function textdomain(?string $domain = NULL): string {}
+
+function gettext(string $message): string {}
+
+function _(string $message): string {}
+
+function dgettext(string $domain, string $message): string {}
+
+function dcgettext(string $domain, string $message, int $category): string {}
+
+function bindtextdomain(string $domain, ?string $directory = NULL): string|false {}
+
+function ngettext(string $singular, string $plural, int $count): string {}
+
+function dngettext(string $domain, string $singular, string $plural, int $count): string {}
+
+function dcngettext(string $domain, string $singular, string $plural, int $count, int $category): string {}
+
+function bind_textdomain_codeset(string $domain, ?string $codeset = NULL): string|false {}
+
+function gmp_init(string|int $num, int $base = 0): \GMP {}
+
+function gmp_import(string $data, int $word_size = 1, int $flags = 17): \GMP {}
+
+function gmp_export(\GMP|string|int $num, int $word_size = 1, int $flags = 17): string {}
+
+function gmp_intval(\GMP|string|int $num): int {}
+
+function gmp_strval(\GMP|string|int $num, int $base = 10): string {}
+
+function gmp_add(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_sub(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_mul(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_div_qr(\GMP|string|int $num1, \GMP|string|int $num2, int $rounding_mode = \GMP_ROUND_ZERO): array {}
+
+function gmp_div_q(\GMP|string|int $num1, \GMP|string|int $num2, int $rounding_mode = \GMP_ROUND_ZERO): \GMP {}
+
+function gmp_div_r(\GMP|string|int $num1, \GMP|string|int $num2, int $rounding_mode = \GMP_ROUND_ZERO): \GMP {}
+
+function gmp_div(\GMP|string|int $num1, \GMP|string|int $num2, int $rounding_mode = \GMP_ROUND_ZERO): \GMP {}
+
+function gmp_mod(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_divexact(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_neg(\GMP|string|int $num): \GMP {}
+
+function gmp_abs(\GMP|string|int $num): \GMP {}
+
+function gmp_fact(\GMP|string|int $num): \GMP {}
+
+function gmp_sqrt(\GMP|string|int $num): \GMP {}
+
+function gmp_sqrtrem(\GMP|string|int $num): array {}
+
+function gmp_root(\GMP|string|int $num, int $nth): \GMP {}
+
+function gmp_rootrem(\GMP|string|int $num, int $nth): array {}
+
+function gmp_pow(\GMP|string|int $num, int $exponent): \GMP {}
+
+function gmp_powm(\GMP|string|int $num, \GMP|string|int $exponent, \GMP|string|int $modulus): \GMP {}
+
+function gmp_perfect_square(\GMP|string|int $num): bool {}
+
+function gmp_perfect_power(\GMP|string|int $num): bool {}
+
+function gmp_prob_prime(\GMP|string|int $num, int $repetitions = 10): int {}
+
+function gmp_gcd(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_gcdext(\GMP|string|int $num1, \GMP|string|int $num2): array {}
+
+function gmp_lcm(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_invert(\GMP|string|int $num1, \GMP|string|int $num2): \GMP|false {}
+
+function gmp_jacobi(\GMP|string|int $num1, \GMP|string|int $num2): int {}
+
+function gmp_legendre(\GMP|string|int $num1, \GMP|string|int $num2): int {}
+
+function gmp_kronecker(\GMP|string|int $num1, \GMP|string|int $num2): int {}
+
+function gmp_cmp(\GMP|string|int $num1, \GMP|string|int $num2): int {}
+
+function gmp_sign(\GMP|string|int $num): int {}
+
+function gmp_random_seed(\GMP|string|int $seed): void {}
+
+function gmp_random_bits(int $bits): \GMP {}
+
+function gmp_random_range(\GMP|string|int $min, \GMP|string|int $max): \GMP {}
+
+function gmp_and(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_or(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_com(\GMP|string|int $num): \GMP {}
+
+function gmp_xor(\GMP|string|int $num1, \GMP|string|int $num2): \GMP {}
+
+function gmp_setbit(\GMP $num, int $index, bool $value = true): void {}
+
+function gmp_clrbit(\GMP $num, int $index): void {}
+
+function gmp_testbit(\GMP|string|int $num, int $index): bool {}
+
+function gmp_scan0(\GMP|string|int $num1, int $start): int {}
+
+function gmp_scan1(\GMP|string|int $num1, int $start): int {}
+
+function gmp_popcount(\GMP|string|int $num): int {}
+
+function gmp_hamdist(\GMP|string|int $num1, \GMP|string|int $num2): int {}
+
+function gmp_nextprime(\GMP|string|int $num): \GMP {}
+
+function gmp_binomial(\GMP|string|int $n, int $k): \GMP {}
+
+const GMP_ROUND_ZERO = 0;
+
+const GMP_ROUND_PLUSINF = 1;
+
+const GMP_ROUND_MINUSINF = 2;
+
+const GMP_VERSION = '6.3.0';
+
+const GMP_MSW_FIRST = 1;
+
+const GMP_LSW_FIRST = 2;
+
+const GMP_LITTLE_ENDIAN = 4;
+
+const GMP_BIG_ENDIAN = 8;
+
+const GMP_NATIVE_ENDIAN = 16;
+
+final class GMP
+{
+    public function __construct(string|int $num = 0, int $base = 0) {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+}
+
+function hash(string $algo, string $data, bool $binary = false, array $options = []): string {}
+
+function hash_file(string $algo, string $filename, bool $binary = false, array $options = []): string|false {}
+
+function hash_hmac(string $algo, string $data, string $key, bool $binary = false): string {}
+
+function hash_hmac_file(string $algo, string $filename, string $key, bool $binary = false): string|false {}
+
+function hash_init(string $algo, int $flags = 0, string $key = '', array $options = []): \HashContext {}
+
+function hash_update(\HashContext $context, string $data): true {}
+
+function hash_update_stream(\HashContext $context, $stream, int $length = -1): int {}
+
+function hash_update_file(\HashContext $context, string $filename, $stream_context = NULL): bool {}
+
+function hash_final(\HashContext $context, bool $binary = false): string {}
+
+function hash_copy(\HashContext $context): \HashContext {}
+
+function hash_algos(): array {}
+
+function hash_hmac_algos(): array {}
+
+function hash_pbkdf2(string $algo, string $password, string $salt, int $iterations, int $length = 0, bool $binary = false, array $options = []): string {}
+
+function hash_equals(string $known_string, string $user_string): bool {}
+
+function hash_hkdf(string $algo, string $key, int $length = 0, string $info = '', string $salt = ''): string {}
+
+const HASH_HMAC = 1;
+
+final class HashContext
+{
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function __debugInfo(): array {}
+}
+
+function iconv_strlen(string $string, ?string $encoding = NULL): int|false {}
+
+function iconv_substr(string $string, int $offset, ?int $length = NULL, ?string $encoding = NULL): string|false {}
+
+function iconv_strpos(string $haystack, string $needle, int $offset = 0, ?string $encoding = NULL): int|false {}
+
+function iconv_strrpos(string $haystack, string $needle, ?string $encoding = NULL): int|false {}
+
+function iconv_mime_encode(string $field_name, string $field_value, array $options = []): string|false {}
+
+function iconv_mime_decode(string $string, int $mode = 0, ?string $encoding = NULL): string|false {}
+
+function iconv_mime_decode_headers(string $headers, int $mode = 0, ?string $encoding = NULL): array|false {}
+
+function iconv(string $from_encoding, string $to_encoding, string $string): string|false {}
+
+function iconv_set_encoding(string $type, string $encoding): bool {}
+
+function iconv_get_encoding(string $type = 'all'): array|string|false {}
+
+const ICONV_IMPL = 'libiconv';
+
+const ICONV_VERSION = '1.18';
+
+const ICONV_MIME_DECODE_STRICT = 1;
+
+const ICONV_MIME_DECODE_CONTINUE_ON_ERROR = 2;
+
+function class_implements($object_or_class, bool $autoload = true): array|false {}
+
+function class_parents($object_or_class, bool $autoload = true): array|false {}
+
+function class_uses($object_or_class, bool $autoload = true): array|false {}
+
+function spl_autoload(string $class, ?string $file_extensions = NULL): void {}
+
+function spl_autoload_call(string $class): void {}
+
+function spl_autoload_extensions(?string $file_extensions = NULL): string {}
+
+function spl_autoload_functions(): array {}
+
+function spl_autoload_register(?callable $callback = NULL, bool $throw = true, bool $prepend = false): bool {}
+
+function spl_autoload_unregister(callable $callback): bool {}
+
+function spl_classes(): array {}
+
+function spl_object_hash(object $object): string {}
+
+function spl_object_id(object $object): int {}
+
+function iterator_apply(\Traversable $iterator, callable $callback, ?array $args = NULL): int {}
+
+function iterator_count(\Traversable|array $iterator): int {}
+
+function iterator_to_array(\Traversable|array $iterator, bool $preserve_keys = true): array {}
+
+class LogicException extends \Exception
+{
+
+}
+
+class BadFunctionCallException extends \LogicException
+{
+
+}
+
+class BadMethodCallException extends \BadFunctionCallException
+{
+
+}
+
+class DomainException extends \LogicException
+{
+
+}
+
+class InvalidArgumentException extends \LogicException
+{
+
+}
+
+class LengthException extends \LogicException
+{
+
+}
+
+class OutOfRangeException extends \LogicException
+{
+
+}
+
+class RuntimeException extends \Exception
+{
+
+}
+
+class OutOfBoundsException extends \RuntimeException
+{
+
+}
+
+class OverflowException extends \RuntimeException
+{
+
+}
+
+class RangeException extends \RuntimeException
+{
+
+}
+
+class UnderflowException extends \RuntimeException
+{
+
+}
+
+class UnexpectedValueException extends \RuntimeException
+{
+
+}
+
+interface RecursiveIterator extends \Iterator, \Traversable
+{
+    public function hasChildren(): bool;
+    public function getChildren(): ?\RecursiveIterator;
+}
+
+interface OuterIterator extends \Iterator, \Traversable
+{
+    public function getInnerIterator(): ?\Iterator;
+}
+
+class RecursiveIteratorIterator implements \OuterIterator, \Traversable, \Iterator
+{
+    const LEAVES_ONLY = null;
+    const SELF_FIRST = null;
+    const CHILD_FIRST = null;
+    const CATCH_GET_CHILD = null;
+    public function __construct(\Traversable $iterator, int $mode = \RecursiveIteratorIterator::LEAVES_ONLY, int $flags = 0) {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function key(): mixed {}
+    public function current(): mixed {}
+    public function next(): void {}
+    public function getDepth(): int {}
+    public function getSubIterator(?int $level = NULL): ?\RecursiveIterator {}
+    public function getInnerIterator(): \RecursiveIterator {}
+    public function beginIteration(): void {}
+    public function endIteration(): void {}
+    public function callHasChildren(): bool {}
+    public function callGetChildren(): ?\RecursiveIterator {}
+    public function beginChildren(): void {}
+    public function endChildren(): void {}
+    public function nextElement(): void {}
+    public function setMaxDepth(int $maxDepth = -1): void {}
+    public function getMaxDepth(): int|false {}
+}
+
+class IteratorIterator implements \OuterIterator, \Traversable, \Iterator
+{
+    public function __construct(\Traversable $iterator, ?string $class = NULL) {}
+    public function getInnerIterator(): ?\Iterator {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function key(): mixed {}
+    public function current(): mixed {}
+    public function next(): void {}
+}
+
+abstract class FilterIterator extends \IteratorIterator
+{
+    public function accept(): bool;
+    public function __construct(\Iterator $iterator) {}
+    public function rewind(): void {}
+    public function next(): void {}
+}
+
+abstract class RecursiveFilterIterator extends \FilterIterator implements \RecursiveIterator
+{
+    public function __construct(\RecursiveIterator $iterator) {}
+    public function hasChildren(): bool {}
+    public function getChildren(): ?\RecursiveFilterIterator {}
+}
+
+class CallbackFilterIterator extends \FilterIterator
+{
+    public function __construct(\Iterator $iterator, callable $callback) {}
+    public function accept(): bool {}
+}
+
+class RecursiveCallbackFilterIterator extends \CallbackFilterIterator implements \RecursiveIterator
+{
+    public function __construct(\RecursiveIterator $iterator, callable $callback) {}
+    public function hasChildren(): bool {}
+    public function getChildren(): \RecursiveCallbackFilterIterator {}
+}
+
+class ParentIterator extends \RecursiveFilterIterator
+{
+    public function __construct(\RecursiveIterator $iterator) {}
+    public function accept(): bool {}
+}
+
+interface SeekableIterator extends \Iterator, \Traversable
+{
+    public function seek(int $offset): void;
+}
+
+class LimitIterator extends \IteratorIterator
+{
+    public function __construct(\Iterator $iterator, int $offset = 0, int $limit = -1) {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function next(): void {}
+    public function seek(int $offset): int {}
+    public function getPosition(): int {}
+}
+
+class CachingIterator extends \IteratorIterator implements \Stringable, \ArrayAccess, \Countable
+{
+    const CALL_TOSTRING = null;
+    const CATCH_GET_CHILD = null;
+    const TOSTRING_USE_KEY = null;
+    const TOSTRING_USE_CURRENT = null;
+    const TOSTRING_USE_INNER = null;
+    const FULL_CACHE = null;
+    public function __construct(\Iterator $iterator, int $flags = \CachingIterator::CALL_TOSTRING) {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function next(): void {}
+    public function hasNext(): bool {}
+    public function __toString(): string {}
+    public function getFlags(): int {}
+    public function setFlags(int $flags): void {}
+    public function offsetGet($key): mixed {}
+    public function offsetSet($key, mixed $value): void {}
+    public function offsetUnset($key): void {}
+    public function offsetExists($key): bool {}
+    public function getCache(): array {}
+    public function count(): int {}
+}
+
+class RecursiveCachingIterator extends \CachingIterator implements \RecursiveIterator
+{
+    public function __construct(\Iterator $iterator, int $flags = \RecursiveCachingIterator::CALL_TOSTRING) {}
+    public function hasChildren(): bool {}
+    public function getChildren(): ?\RecursiveCachingIterator {}
+}
+
+class NoRewindIterator extends \IteratorIterator
+{
+    public function __construct(\Iterator $iterator) {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function key(): mixed {}
+    public function current(): mixed {}
+    public function next(): void {}
+}
+
+class AppendIterator extends \IteratorIterator
+{
+    public function __construct() {}
+    public function append(\Iterator $iterator): void {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function current(): mixed {}
+    public function next(): void {}
+    public function getIteratorIndex(): ?int {}
+    public function getArrayIterator(): \ArrayIterator {}
+}
+
+class InfiniteIterator extends \IteratorIterator
+{
+    public function __construct(\Iterator $iterator) {}
+    public function next(): void {}
+}
+
+class RegexIterator extends \FilterIterator
+{
+    const USE_KEY = null;
+    const INVERT_MATCH = null;
+    const MATCH = null;
+    const GET_MATCH = null;
+    const ALL_MATCHES = null;
+    const SPLIT = null;
+    const REPLACE = null;
+    public ?string $replacement;
+    public function __construct(\Iterator $iterator, string $pattern, int $mode = \RegexIterator::MATCH, int $flags = 0, int $pregFlags = 0) {}
+    public function accept(): bool {}
+    public function getMode(): int {}
+    public function setMode(int $mode): void {}
+    public function getFlags(): int {}
+    public function setFlags(int $flags): void {}
+    public function getRegex(): string {}
+    public function getPregFlags(): int {}
+    public function setPregFlags(int $pregFlags): void {}
+}
+
+class RecursiveRegexIterator extends \RegexIterator implements \RecursiveIterator
+{
+    public function __construct(\RecursiveIterator $iterator, string $pattern, int $mode = \RecursiveRegexIterator::MATCH, int $flags = 0, int $pregFlags = 0) {}
+    public function accept(): bool {}
+    public function hasChildren(): bool {}
+    public function getChildren(): \RecursiveRegexIterator {}
+}
+
+class EmptyIterator implements \Iterator, \Traversable
+{
+    public function current(): never {}
+    public function next(): void {}
+    public function key(): never {}
+    public function valid(): false {}
+    public function rewind(): void {}
+}
+
+class RecursiveTreeIterator extends \RecursiveIteratorIterator
+{
+    const BYPASS_CURRENT = null;
+    const BYPASS_KEY = null;
+    const PREFIX_LEFT = null;
+    const PREFIX_MID_HAS_NEXT = null;
+    const PREFIX_MID_LAST = null;
+    const PREFIX_END_HAS_NEXT = null;
+    const PREFIX_END_LAST = null;
+    const PREFIX_RIGHT = null;
+    public function __construct($iterator, int $flags = \RecursiveTreeIterator::BYPASS_KEY, int $cachingIteratorFlags = \CachingIterator::CATCH_GET_CHILD, int $mode = \RecursiveTreeIterator::SELF_FIRST) {}
+    public function key(): mixed {}
+    public function current(): mixed {}
+    public function getPrefix(): string {}
+    public function setPostfix(string $postfix): void {}
+    public function setPrefixPart(int $part, string $value): void {}
+    public function getEntry(): string {}
+    public function getPostfix(): string {}
+}
+
+class ArrayObject implements \IteratorAggregate, \Traversable, \ArrayAccess, \Serializable, \Countable
+{
+    const STD_PROP_LIST = null;
+    const ARRAY_AS_PROPS = null;
+    public function __construct(object|array $array = [], int $flags = 0, string $iteratorClass = 'ArrayIterator') {}
+    public function offsetExists(mixed $key): bool {}
+    public function offsetGet(mixed $key): mixed {}
+    public function offsetSet(mixed $key, mixed $value): void {}
+    public function offsetUnset(mixed $key): void {}
+    public function append(mixed $value): void {}
+    public function getArrayCopy(): array {}
+    public function count(): int {}
+    public function getFlags(): int {}
+    public function setFlags(int $flags): void {}
+    public function asort(int $flags = \SORT_REGULAR): true {}
+    public function ksort(int $flags = \SORT_REGULAR): true {}
+    public function uasort(callable $callback): true {}
+    public function uksort(callable $callback): true {}
+    public function natsort(): true {}
+    public function natcasesort(): true {}
+    public function unserialize(string $data): void {}
+    public function serialize(): string {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function getIterator(): \Iterator {}
+    public function exchangeArray(object|array $array): array {}
+    public function setIteratorClass(string $iteratorClass): void {}
+    public function getIteratorClass(): string {}
+    public function __debugInfo(): array {}
+}
+
+class ArrayIterator implements \SeekableIterator, \Traversable, \Iterator, \ArrayAccess, \Serializable, \Countable
+{
+    const STD_PROP_LIST = null;
+    const ARRAY_AS_PROPS = null;
+    public function __construct(object|array $array = [], int $flags = 0) {}
+    public function offsetExists(mixed $key): bool {}
+    public function offsetGet(mixed $key): mixed {}
+    public function offsetSet(mixed $key, mixed $value): void {}
+    public function offsetUnset(mixed $key): void {}
+    public function append(mixed $value): void {}
+    public function getArrayCopy(): array {}
+    public function count(): int {}
+    public function getFlags(): int {}
+    public function setFlags(int $flags): void {}
+    public function asort(int $flags = \SORT_REGULAR): true {}
+    public function ksort(int $flags = \SORT_REGULAR): true {}
+    public function uasort(callable $callback): true {}
+    public function uksort(callable $callback): true {}
+    public function natsort(): true {}
+    public function natcasesort(): true {}
+    public function unserialize(string $data): void {}
+    public function serialize(): string {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function rewind(): void {}
+    public function current(): mixed {}
+    public function key(): string|int|null {}
+    public function next(): void {}
+    public function valid(): bool {}
+    public function seek(int $offset): void {}
+    public function __debugInfo(): array {}
+}
+
+class RecursiveArrayIterator extends \ArrayIterator implements \RecursiveIterator
+{
+    const CHILD_ARRAYS_ONLY = null;
+    public function hasChildren(): bool {}
+    public function getChildren(): ?\RecursiveArrayIterator {}
+}
+
+class SplFileInfo implements \Stringable
+{
+    public function __construct(string $filename) {}
+    public function getPath(): string {}
+    public function getFilename(): string {}
+    public function getExtension(): string {}
+    public function getBasename(string $suffix = ''): string {}
+    public function getPathname(): string {}
+    public function getPerms(): int|false {}
+    public function getInode(): int|false {}
+    public function getSize(): int|false {}
+    public function getOwner(): int|false {}
+    public function getGroup(): int|false {}
+    public function getATime(): int|false {}
+    public function getMTime(): int|false {}
+    public function getCTime(): int|false {}
+    public function getType(): string|false {}
+    public function isWritable(): bool {}
+    public function isReadable(): bool {}
+    public function isExecutable(): bool {}
+    public function isFile(): bool {}
+    public function isDir(): bool {}
+    public function isLink(): bool {}
+    public function getLinkTarget(): string|false {}
+    public function getRealPath(): string|false {}
+    public function getFileInfo(?string $class = NULL): \SplFileInfo {}
+    public function getPathInfo(?string $class = NULL): ?\SplFileInfo {}
+    public function openFile(string $mode = 'r', bool $useIncludePath = false, $context = NULL): \SplFileObject {}
+    public function setFileClass(string $class = 'SplFileObject'): void {}
+    public function setInfoClass(string $class = 'SplFileInfo'): void {}
+    public function __toString(): string {}
+    public function __debugInfo(): array {}
+    public function _bad_state_ex(): void {}
+}
+
+class DirectoryIterator extends \SplFileInfo implements \SeekableIterator, \Traversable, \Iterator
+{
+    public function __construct(string $directory) {}
+    public function getFilename(): string {}
+    public function getExtension(): string {}
+    public function getBasename(string $suffix = ''): string {}
+    public function isDot(): bool {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function key(): mixed {}
+    public function current(): mixed {}
+    public function next(): void {}
+    public function seek(int $offset): void {}
+    public function __toString(): string {}
+}
+
+class FilesystemIterator extends \DirectoryIterator
+{
+    const CURRENT_MODE_MASK = null;
+    const CURRENT_AS_PATHNAME = null;
+    const CURRENT_AS_FILEINFO = null;
+    const CURRENT_AS_SELF = null;
+    const KEY_MODE_MASK = null;
+    const KEY_AS_PATHNAME = null;
+    const FOLLOW_SYMLINKS = null;
+    const KEY_AS_FILENAME = null;
+    const NEW_CURRENT_AND_KEY = null;
+    const OTHER_MODE_MASK = null;
+    const SKIP_DOTS = null;
+    const UNIX_PATHS = null;
+    public function __construct(string $directory, int $flags = 4096) {}
+    public function rewind(): void {}
+    public function key(): string {}
+    public function current(): \SplFileInfo|\FilesystemIterator|string {}
+    public function getFlags(): int {}
+    public function setFlags(int $flags): void {}
+}
+
+class RecursiveDirectoryIterator extends \FilesystemIterator implements \RecursiveIterator
+{
+    public function __construct(string $directory, int $flags = 0) {}
+    public function hasChildren(bool $allowLinks = false): bool {}
+    public function getChildren(): \RecursiveDirectoryIterator {}
+    public function getSubPath(): string {}
+    public function getSubPathname(): string {}
+}
+
+class GlobIterator extends \FilesystemIterator implements \Countable
+{
+    public function __construct(string $pattern, int $flags = 0) {}
+    public function count(): int {}
+}
+
+class SplFileObject extends \SplFileInfo implements \RecursiveIterator, \Traversable, \Iterator, \SeekableIterator
+{
+    const DROP_NEW_LINE = null;
+    const READ_AHEAD = null;
+    const SKIP_EMPTY = null;
+    const READ_CSV = null;
+    public function __construct(string $filename, string $mode = 'r', bool $useIncludePath = false, $context = NULL) {}
+    public function rewind(): void {}
+    public function eof(): bool {}
+    public function valid(): bool {}
+    public function fgets(): string {}
+    public function fread(int $length): string|false {}
+    public function fgetcsv(string $separator = ',', string $enclosure = '"', string $escape = '\\'): array|false {}
+    public function fputcsv(array $fields, string $separator = ',', string $enclosure = '"', string $escape = '\\', string $eol = ''): int|false {}
+    public function setCsvControl(string $separator = ',', string $enclosure = '"', string $escape = '\\'): void {}
+    public function getCsvControl(): array {}
+    public function flock(int $operation, &$wouldBlock = NULL): bool {}
+    public function fflush(): bool {}
+    public function ftell(): int|false {}
+    public function fseek(int $offset, int $whence = \SEEK_SET): int {}
+    public function fgetc(): string|false {}
+    public function fpassthru(): int {}
+    public function fscanf(string $format, mixed &...$vars): array|int|null {}
+    public function fwrite(string $data, int $length = 0): int|false {}
+    public function fstat(): array {}
+    public function ftruncate(int $size): bool {}
+    public function current(): array|string|false {}
+    public function key(): int {}
+    public function next(): void {}
+    public function setFlags(int $flags): void {}
+    public function getFlags(): int {}
+    public function setMaxLineLen(int $maxLength): void {}
+    public function getMaxLineLen(): int {}
+    public function hasChildren(): false {}
+    public function getChildren(): null {}
+    public function seek(int $line): void {}
+    public function getCurrentLine(): string {}
+    public function __toString(): string {}
+}
+
+class SplTempFileObject extends \SplFileObject
+{
+    public function __construct(int $maxMemory = 2097152) {}
+}
+
+class SplDoublyLinkedList implements \Iterator, \Traversable, \Countable, \ArrayAccess, \Serializable
+{
+    const IT_MODE_LIFO = null;
+    const IT_MODE_FIFO = null;
+    const IT_MODE_DELETE = null;
+    const IT_MODE_KEEP = null;
+    public function add(int $index, mixed $value): void {}
+    public function pop(): mixed {}
+    public function shift(): mixed {}
+    public function push(mixed $value): void {}
+    public function unshift(mixed $value): void {}
+    public function top(): mixed {}
+    public function bottom(): mixed {}
+    public function __debugInfo(): array {}
+    public function count(): int {}
+    public function isEmpty(): bool {}
+    public function setIteratorMode(int $mode): int {}
+    public function getIteratorMode(): int {}
+    public function offsetExists($index): bool {}
+    public function offsetGet($index): mixed {}
+    public function offsetSet($index, mixed $value): void {}
+    public function offsetUnset($index): void {}
+    public function rewind(): void {}
+    public function current(): mixed {}
+    public function key(): int {}
+    public function prev(): void {}
+    public function next(): void {}
+    public function valid(): bool {}
+    public function unserialize(string $data): void {}
+    public function serialize(): string {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+}
+
+class SplQueue extends \SplDoublyLinkedList
+{
+    public function enqueue(mixed $value): void {}
+    public function dequeue(): mixed {}
+}
+
+class SplStack extends \SplDoublyLinkedList
+{
+
+}
+
+abstract class SplHeap implements \Iterator, \Traversable, \Countable
+{
+    public function extract(): mixed {}
+    public function insert(mixed $value): true {}
+    public function top(): mixed {}
+    public function count(): int {}
+    public function isEmpty(): bool {}
+    public function rewind(): void {}
+    public function current(): mixed {}
+    public function key(): int {}
+    public function next(): void {}
+    public function valid(): bool {}
+    public function recoverFromCorruption(): true {}
+    protected function compare(mixed $value1, mixed $value2): int;
+    public function isCorrupted(): bool {}
+    public function __debugInfo(): array {}
+}
+
+class SplMinHeap extends \SplHeap
+{
+    protected function compare(mixed $value1, mixed $value2): int {}
+}
+
+class SplMaxHeap extends \SplHeap
+{
+    protected function compare(mixed $value1, mixed $value2): int {}
+}
+
+class SplPriorityQueue implements \Iterator, \Traversable, \Countable
+{
+    const EXTR_BOTH = null;
+    const EXTR_PRIORITY = null;
+    const EXTR_DATA = null;
+    public function compare(mixed $priority1, mixed $priority2): int {}
+    public function insert(mixed $value, mixed $priority): true {}
+    public function setExtractFlags(int $flags): int {}
+    public function top(): mixed {}
+    public function extract(): mixed {}
+    public function count(): int {}
+    public function isEmpty(): bool {}
+    public function rewind(): void {}
+    public function current(): mixed {}
+    public function key(): int {}
+    public function next(): void {}
+    public function valid(): bool {}
+    public function recoverFromCorruption(): true {}
+    public function isCorrupted(): bool {}
+    public function getExtractFlags(): int {}
+    public function __debugInfo(): array {}
+}
+
+class SplFixedArray implements \IteratorAggregate, \Traversable, \ArrayAccess, \Countable, \JsonSerializable
+{
+    public function __construct(int $size = 0) {}
+    public function __wakeup(): void {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function count(): int {}
+    public function toArray(): array {}
+    public static function fromArray(array $array, bool $preserveKeys = true): \SplFixedArray {}
+    public function getSize(): int {}
+    public function setSize(int $size): true {}
+    public function offsetExists($index): bool {}
+    public function offsetGet($index): mixed {}
+    public function offsetSet($index, mixed $value): void {}
+    public function offsetUnset($index): void {}
+    public function getIterator(): \Iterator {}
+    public function jsonSerialize(): array {}
+}
+
+interface SplObserver
+{
+    public function update(\SplSubject $subject): void;
+}
+
+interface SplSubject
+{
+    public function attach(\SplObserver $observer): void;
+    public function detach(\SplObserver $observer): void;
+    public function notify(): void;
+}
+
+class SplObjectStorage implements \Countable, \SeekableIterator, \Traversable, \Iterator, \Serializable, \ArrayAccess
+{
+    public function attach(object $object, mixed $info = NULL): void {}
+    public function detach(object $object): void {}
+    public function contains(object $object): bool {}
+    public function addAll(\SplObjectStorage $storage): int {}
+    public function removeAll(\SplObjectStorage $storage): int {}
+    public function removeAllExcept(\SplObjectStorage $storage): int {}
+    public function getInfo(): mixed {}
+    public function setInfo(mixed $info): void {}
+    public function count(int $mode = \COUNT_NORMAL): int {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function key(): int {}
+    public function current(): object {}
+    public function next(): void {}
+    public function seek(int $offset): void {}
+    public function unserialize(string $data): void {}
+    public function serialize(): string {}
+    public function offsetExists($object): bool {}
+    public function offsetGet($object): mixed {}
+    public function offsetSet($object, mixed $info = NULL): void {}
+    public function offsetUnset($object): void {}
+    public function getHash(object $object): string {}
+    public function __serialize(): array {}
+    public function __unserialize(array $data): void {}
+    public function __debugInfo(): array {}
+}
+
+class MultipleIterator implements \Iterator, \Traversable
+{
+    const MIT_NEED_ANY = null;
+    const MIT_NEED_ALL = null;
+    const MIT_KEYS_NUMERIC = null;
+    const MIT_KEYS_ASSOC = null;
+    public function __construct(int $flags = 1) {}
+    public function getFlags(): int {}
+    public function setFlags(int $flags): void {}
+    public function attachIterator(\Iterator $iterator, string|int|null $info = NULL): void {}
+    public function detachIterator(\Iterator $iterator): void {}
+    public function containsIterator(\Iterator $iterator): bool {}
+    public function countIterators(): int {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function key(): array {}
+    public function current(): array {}
+    public function next(): void {}
+    public function __debugInfo(): array {}
+}
+
+function session_name(?string $name = NULL): string|false {}
+
+function session_module_name(?string $module = NULL): string|false {}
+
+function session_save_path(?string $path = NULL): string|false {}
+
+function session_id(?string $id = NULL): string|false {}
+
+function session_create_id(string $prefix = ''): string|false {}
+
+function session_regenerate_id(bool $delete_old_session = false): bool {}
+
+function session_decode(string $data): bool {}
+
+function session_encode(): string|false {}
+
+function session_destroy(): bool {}
+
+function session_unset(): bool {}
+
+function session_gc(): int|false {}
+
+function session_get_cookie_params(): array {}
+
+function session_write_close(): bool {}
+
+function session_abort(): bool {}
+
+function session_reset(): bool {}
+
+function session_status(): int {}
+
+function session_register_shutdown(): void {}
+
+function session_commit(): bool {}
+
+function session_set_save_handler($open, $close = null, callable $read = null, callable $write = null, callable $destroy = null, callable $gc = null, ?callable $create_sid = NULL, ?callable $validate_sid = NULL, ?callable $update_timestamp = NULL): bool {}
+
+function session_cache_limiter(?string $value = NULL): string|false {}
+
+function session_cache_expire(?int $value = NULL): int|false {}
+
+function session_set_cookie_params(array|int $lifetime_or_options, ?string $path = NULL, ?string $domain = NULL, ?bool $secure = NULL, ?bool $httponly = NULL): bool {}
+
+function session_start(array $options = []): bool {}
+
+const PHP_SESSION_DISABLED = 0;
+
+const PHP_SESSION_NONE = 1;
+
+const PHP_SESSION_ACTIVE = 2;
+
+interface SessionHandlerInterface
+{
+    public function open(string $path, string $name): bool;
+    public function close(): bool;
+    public function read(string $id): string|false;
+    public function write(string $id, string $data): bool;
+    public function destroy(string $id): bool;
+    public function gc(int $max_lifetime): int|false;
+}
+
+interface SessionIdInterface
+{
+    public function create_sid(): string;
+}
+
+interface SessionUpdateTimestampHandlerInterface
+{
+    public function validateId(string $id): bool;
+    public function updateTimestamp(string $id, string $data): bool;
+}
+
+class SessionHandler implements \SessionHandlerInterface, \SessionIdInterface
+{
+    public function open(string $path, string $name): bool {}
+    public function close(): bool {}
+    public function read(string $id): string|false {}
+    public function write(string $id, string $data): bool {}
+    public function destroy(string $id): bool {}
+    public function gc(int $max_lifetime): int|false {}
+    public function create_sid(): string {}
+}
+
 function set_time_limit(int $seconds): bool {}
 
 function header_register_callback(callable $callback): bool {}
@@ -2431,7 +7214,6 @@ enum RoundingMode implements \UnitEnum
     case AwayFromZero;
     case NegativeInfinity;
     case PositiveInfinity;
-    public string $name;
 }
 
 class php_user_filter
@@ -2459,1158 +7241,6 @@ class Directory
     public function close(): void {}
     public function rewind(): void {}
     public function read(): string|false {}
-}
-
-function strtotime(string $datetime, ?int $baseTimestamp = NULL): int|false {}
-
-function date(string $format, ?int $timestamp = NULL): string {}
-
-function idate(string $format, ?int $timestamp = NULL): int|false {}
-
-function gmdate(string $format, ?int $timestamp = NULL): string {}
-
-function mktime(int $hour, ?int $minute = NULL, ?int $second = NULL, ?int $month = NULL, ?int $day = NULL, ?int $year = NULL): int|false {}
-
-function gmmktime(int $hour, ?int $minute = NULL, ?int $second = NULL, ?int $month = NULL, ?int $day = NULL, ?int $year = NULL): int|false {}
-
-function checkdate(int $month, int $day, int $year): bool {}
-
-function strftime(string $format, ?int $timestamp = NULL): string|false {}
-
-function gmstrftime(string $format, ?int $timestamp = NULL): string|false {}
-
-function time(): int {}
-
-function localtime(?int $timestamp = NULL, bool $associative = false): array {}
-
-function getdate(?int $timestamp = NULL): array {}
-
-function date_create(string $datetime = 'now', ?\DateTimeZone $timezone = NULL): \DateTime|false {}
-
-function date_create_immutable(string $datetime = 'now', ?\DateTimeZone $timezone = NULL): \DateTimeImmutable|false {}
-
-function date_create_from_format(string $format, string $datetime, ?\DateTimeZone $timezone = NULL): \DateTime|false {}
-
-function date_create_immutable_from_format(string $format, string $datetime, ?\DateTimeZone $timezone = NULL): \DateTimeImmutable|false {}
-
-function date_parse(string $datetime): array {}
-
-function date_parse_from_format(string $format, string $datetime): array {}
-
-function date_get_last_errors(): array|false {}
-
-function date_format(\DateTimeInterface $object, string $format): string {}
-
-function date_modify(\DateTime $object, string $modifier): \DateTime|false {}
-
-function date_add(\DateTime $object, \DateInterval $interval): \DateTime {}
-
-function date_sub(\DateTime $object, \DateInterval $interval): \DateTime {}
-
-function date_timezone_get(\DateTimeInterface $object): \DateTimeZone|false {}
-
-function date_timezone_set(\DateTime $object, \DateTimeZone $timezone): \DateTime {}
-
-function date_offset_get(\DateTimeInterface $object): int {}
-
-function date_diff(\DateTimeInterface $baseObject, \DateTimeInterface $targetObject, bool $absolute = false): \DateInterval {}
-
-function date_time_set(\DateTime $object, int $hour, int $minute, int $second = 0, int $microsecond = 0): \DateTime {}
-
-function date_date_set(\DateTime $object, int $year, int $month, int $day): \DateTime {}
-
-function date_isodate_set(\DateTime $object, int $year, int $week, int $dayOfWeek = 1): \DateTime {}
-
-function date_timestamp_set(\DateTime $object, int $timestamp): \DateTime {}
-
-function date_timestamp_get(\DateTimeInterface $object): int {}
-
-function timezone_open(string $timezone): \DateTimeZone|false {}
-
-function timezone_name_get(\DateTimeZone $object): string {}
-
-function timezone_name_from_abbr(string $abbr, int $utcOffset = -1, int $isDST = -1): string|false {}
-
-function timezone_offset_get(\DateTimeZone $object, \DateTimeInterface $datetime): int {}
-
-function timezone_transitions_get(\DateTimeZone $object, int $timestampBegin = \PHP_INT_MIN, int $timestampEnd = \PHP_INT_MAX): array|false {}
-
-function timezone_location_get(\DateTimeZone $object): array|false {}
-
-function timezone_identifiers_list(int $timezoneGroup = \DateTimeZone::ALL, ?string $countryCode = NULL): array {}
-
-function timezone_abbreviations_list(): array {}
-
-function timezone_version_get(): string {}
-
-function date_interval_create_from_date_string(string $datetime): \DateInterval|false {}
-
-function date_interval_format(\DateInterval $object, string $format): string {}
-
-function date_default_timezone_set(string $timezoneId): bool {}
-
-function date_default_timezone_get(): string {}
-
-function date_sunrise(int $timestamp, int $returnFormat = \SUNFUNCS_RET_STRING, ?float $latitude = NULL, ?float $longitude = NULL, ?float $zenith = NULL, ?float $utcOffset = NULL): string|int|float|false {}
-
-function date_sunset(int $timestamp, int $returnFormat = \SUNFUNCS_RET_STRING, ?float $latitude = NULL, ?float $longitude = NULL, ?float $zenith = NULL, ?float $utcOffset = NULL): string|int|float|false {}
-
-function date_sun_info(int $timestamp, float $latitude, float $longitude): array {}
-
-const DATE_ATOM = 'Y-m-d\\TH:i:sP';
-
-const DATE_COOKIE = 'l, d-M-Y H:i:s T';
-
-const DATE_ISO8601 = 'Y-m-d\\TH:i:sO';
-
-const DATE_ISO8601_EXPANDED = 'X-m-d\\TH:i:sP';
-
-const DATE_RFC822 = 'D, d M y H:i:s O';
-
-const DATE_RFC850 = 'l, d-M-y H:i:s T';
-
-const DATE_RFC1036 = 'D, d M y H:i:s O';
-
-const DATE_RFC1123 = 'D, d M Y H:i:s O';
-
-const DATE_RFC7231 = 'D, d M Y H:i:s \\G\\M\\T';
-
-const DATE_RFC2822 = 'D, d M Y H:i:s O';
-
-const DATE_RFC3339 = 'Y-m-d\\TH:i:sP';
-
-const DATE_RFC3339_EXTENDED = 'Y-m-d\\TH:i:s.vP';
-
-const DATE_RSS = 'D, d M Y H:i:s O';
-
-const DATE_W3C = 'Y-m-d\\TH:i:sP';
-
-const SUNFUNCS_RET_TIMESTAMP = 0;
-
-const SUNFUNCS_RET_STRING = 1;
-
-const SUNFUNCS_RET_DOUBLE = 2;
-
-interface DateTimeInterface
-{
-    const ATOM = null;
-    const COOKIE = null;
-    const ISO8601 = null;
-    const ISO8601_EXPANDED = null;
-    const RFC822 = null;
-    const RFC850 = null;
-    const RFC1036 = null;
-    const RFC1123 = null;
-    const RFC7231 = null;
-    const RFC2822 = null;
-    const RFC3339 = null;
-    const RFC3339_EXTENDED = null;
-    const RSS = null;
-    const W3C = null;
-    public function format(string $format): string;
-    public function getTimezone(): \DateTimeZone|false;
-    public function getOffset(): int;
-    public function getTimestamp(): int;
-    public function getMicrosecond(): int;
-    public function diff(\DateTimeInterface $targetObject, bool $absolute = false): \DateInterval;
-    public function __wakeup(): void;
-    public function __serialize(): array;
-    public function __unserialize(array $data): void;
-}
-
-class DateTime implements \DateTimeInterface
-{
-    public function __construct(string $datetime = 'now', ?\DateTimeZone $timezone = NULL) {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function __wakeup(): void {}
-    public static function __set_state(array $array): \DateTime {}
-    public static function createFromImmutable(\DateTimeImmutable $object): static {}
-    public static function createFromInterface(\DateTimeInterface $object): \DateTime {}
-    public static function createFromFormat(string $format, string $datetime, ?\DateTimeZone $timezone = NULL): \DateTime|false {}
-    public static function createFromTimestamp(int|float $timestamp): static {}
-    public static function getLastErrors(): array|false {}
-    public function format(string $format): string {}
-    public function modify(string $modifier): \DateTime {}
-    public function add(\DateInterval $interval): \DateTime {}
-    public function sub(\DateInterval $interval): \DateTime {}
-    public function getTimezone(): \DateTimeZone|false {}
-    public function setTimezone(\DateTimeZone $timezone): \DateTime {}
-    public function getOffset(): int {}
-    public function getMicrosecond(): int {}
-    public function setTime(int $hour, int $minute, int $second = 0, int $microsecond = 0): \DateTime {}
-    public function setDate(int $year, int $month, int $day): \DateTime {}
-    public function setISODate(int $year, int $week, int $dayOfWeek = 1): \DateTime {}
-    public function setTimestamp(int $timestamp): \DateTime {}
-    public function setMicrosecond(int $microsecond): static {}
-    public function getTimestamp(): int {}
-    public function diff(\DateTimeInterface $targetObject, bool $absolute = false): \DateInterval {}
-}
-
-class DateTimeImmutable implements \DateTimeInterface
-{
-    public function __construct(string $datetime = 'now', ?\DateTimeZone $timezone = NULL) {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function __wakeup(): void {}
-    public static function __set_state(array $array): \DateTimeImmutable {}
-    public static function createFromFormat(string $format, string $datetime, ?\DateTimeZone $timezone = NULL): \DateTimeImmutable|false {}
-    public static function createFromTimestamp(int|float $timestamp): static {}
-    public static function getLastErrors(): array|false {}
-    public function format(string $format): string {}
-    public function getTimezone(): \DateTimeZone|false {}
-    public function getOffset(): int {}
-    public function getTimestamp(): int {}
-    public function getMicrosecond(): int {}
-    public function diff(\DateTimeInterface $targetObject, bool $absolute = false): \DateInterval {}
-    public function modify(string $modifier): \DateTimeImmutable {}
-    public function add(\DateInterval $interval): \DateTimeImmutable {}
-    public function sub(\DateInterval $interval): \DateTimeImmutable {}
-    public function setTimezone(\DateTimeZone $timezone): \DateTimeImmutable {}
-    public function setTime(int $hour, int $minute, int $second = 0, int $microsecond = 0): \DateTimeImmutable {}
-    public function setDate(int $year, int $month, int $day): \DateTimeImmutable {}
-    public function setISODate(int $year, int $week, int $dayOfWeek = 1): \DateTimeImmutable {}
-    public function setTimestamp(int $timestamp): \DateTimeImmutable {}
-    public function setMicrosecond(int $microsecond): static {}
-    public static function createFromMutable(\DateTime $object): static {}
-    public static function createFromInterface(\DateTimeInterface $object): \DateTimeImmutable {}
-}
-
-class DateTimeZone
-{
-    const AFRICA = null;
-    const AMERICA = null;
-    const ANTARCTICA = null;
-    const ARCTIC = null;
-    const ASIA = null;
-    const ATLANTIC = null;
-    const AUSTRALIA = null;
-    const EUROPE = null;
-    const INDIAN = null;
-    const PACIFIC = null;
-    const UTC = null;
-    const ALL = null;
-    const ALL_WITH_BC = null;
-    const PER_COUNTRY = null;
-    public function __construct(string $timezone) {}
-    public function getName(): string {}
-    public function getOffset(\DateTimeInterface $datetime): int {}
-    public function getTransitions(int $timestampBegin = \PHP_INT_MIN, int $timestampEnd = \PHP_INT_MAX): array|false {}
-    public function getLocation(): array|false {}
-    public static function listAbbreviations(): array {}
-    public static function listIdentifiers(int $timezoneGroup = \DateTimeZone::ALL, ?string $countryCode = NULL): array {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function __wakeup(): void {}
-    public static function __set_state(array $array): \DateTimeZone {}
-}
-
-class DateInterval
-{
-    public function __construct(string $duration) {}
-    public static function createFromDateString(string $datetime): \DateInterval {}
-    public function format(string $format): string {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function __wakeup(): void {}
-    public static function __set_state(array $array): \DateInterval {}
-}
-
-class DatePeriod implements \IteratorAggregate, \Traversable
-{
-    const EXCLUDE_START_DATE = null;
-    const INCLUDE_END_DATE = null;
-    public ?\DateTimeInterface $start;
-    public ?\DateTimeInterface $current;
-    public ?\DateTimeInterface $end;
-    public ?\DateInterval $interval;
-    public int $recurrences;
-    public bool $include_start_date;
-    public bool $include_end_date;
-    public static function createFromISO8601String(string $specification, int $options = 0): static {}
-    public function __construct($start, $interval = null, $end = null, $options = null) {}
-    public function getStartDate(): \DateTimeInterface {}
-    public function getEndDate(): ?\DateTimeInterface {}
-    public function getDateInterval(): \DateInterval {}
-    public function getRecurrences(): ?int {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function __wakeup(): void {}
-    public static function __set_state(array $array): \DatePeriod {}
-    public function getIterator(): \Iterator {}
-}
-
-class DateError extends \Error
-{
-
-}
-
-class DateObjectError extends \DateError
-{
-
-}
-
-class DateRangeError extends \DateError
-{
-
-}
-
-class DateException extends \Exception
-{
-
-}
-
-class DateInvalidTimeZoneException extends \DateException
-{
-
-}
-
-class DateInvalidOperationException extends \DateException
-{
-
-}
-
-class DateMalformedStringException extends \DateException
-{
-
-}
-
-class DateMalformedIntervalStringException extends \DateException
-{
-
-}
-
-class DateMalformedPeriodStringException extends \DateException
-{
-
-}
-
-function json_encode(mixed $value, int $flags = 0, int $depth = 512): string|false {}
-
-function json_decode(string $json, ?bool $associative = NULL, int $depth = 512, int $flags = 0): mixed {}
-
-function json_validate(string $json, int $depth = 512, int $flags = 0): bool {}
-
-function json_last_error(): int {}
-
-function json_last_error_msg(): string {}
-
-const JSON_HEX_TAG = 1;
-
-const JSON_HEX_AMP = 2;
-
-const JSON_HEX_APOS = 4;
-
-const JSON_HEX_QUOT = 8;
-
-const JSON_FORCE_OBJECT = 16;
-
-const JSON_NUMERIC_CHECK = 32;
-
-const JSON_UNESCAPED_SLASHES = 64;
-
-const JSON_PRETTY_PRINT = 128;
-
-const JSON_UNESCAPED_UNICODE = 256;
-
-const JSON_PARTIAL_OUTPUT_ON_ERROR = 512;
-
-const JSON_PRESERVE_ZERO_FRACTION = 1024;
-
-const JSON_UNESCAPED_LINE_TERMINATORS = 2048;
-
-const JSON_OBJECT_AS_ARRAY = 1;
-
-const JSON_BIGINT_AS_STRING = 2;
-
-const JSON_INVALID_UTF8_IGNORE = 1048576;
-
-const JSON_INVALID_UTF8_SUBSTITUTE = 2097152;
-
-const JSON_THROW_ON_ERROR = 4194304;
-
-const JSON_ERROR_NONE = 0;
-
-const JSON_ERROR_DEPTH = 1;
-
-const JSON_ERROR_STATE_MISMATCH = 2;
-
-const JSON_ERROR_CTRL_CHAR = 3;
-
-const JSON_ERROR_SYNTAX = 4;
-
-const JSON_ERROR_UTF8 = 5;
-
-const JSON_ERROR_RECURSION = 6;
-
-const JSON_ERROR_INF_OR_NAN = 7;
-
-const JSON_ERROR_UNSUPPORTED_TYPE = 8;
-
-const JSON_ERROR_INVALID_PROPERTY_NAME = 9;
-
-const JSON_ERROR_UTF16 = 10;
-
-const JSON_ERROR_NON_BACKED_ENUM = 11;
-
-interface JsonSerializable
-{
-    public function jsonSerialize(): mixed;
-}
-
-class JsonException extends \Exception
-{
-
-}
-
-function preg_match(string $pattern, string $subject, &$matches = NULL, int $flags = 0, int $offset = 0): int|false {}
-
-function preg_match_all(string $pattern, string $subject, &$matches = NULL, int $flags = 0, int $offset = 0): int|false {}
-
-function preg_replace(array|string $pattern, array|string $replacement, array|string $subject, int $limit = -1, &$count = NULL): array|string|null {}
-
-function preg_filter(array|string $pattern, array|string $replacement, array|string $subject, int $limit = -1, &$count = NULL): array|string|null {}
-
-function preg_replace_callback(array|string $pattern, callable $callback, array|string $subject, int $limit = -1, &$count = NULL, int $flags = 0): array|string|null {}
-
-function preg_replace_callback_array(array $pattern, array|string $subject, int $limit = -1, &$count = NULL, int $flags = 0): array|string|null {}
-
-function preg_split(string $pattern, string $subject, int $limit = -1, int $flags = 0): array|false {}
-
-function preg_quote(string $str, ?string $delimiter = NULL): string {}
-
-function preg_grep(string $pattern, array $array, int $flags = 0): array|false {}
-
-function preg_last_error(): int {}
-
-function preg_last_error_msg(): string {}
-
-const PREG_PATTERN_ORDER = 1;
-
-const PREG_SET_ORDER = 2;
-
-const PREG_OFFSET_CAPTURE = 256;
-
-const PREG_UNMATCHED_AS_NULL = 512;
-
-const PREG_SPLIT_NO_EMPTY = 1;
-
-const PREG_SPLIT_DELIM_CAPTURE = 2;
-
-const PREG_SPLIT_OFFSET_CAPTURE = 4;
-
-const PREG_GREP_INVERT = 1;
-
-const PREG_NO_ERROR = 0;
-
-const PREG_INTERNAL_ERROR = 1;
-
-const PREG_BACKTRACK_LIMIT_ERROR = 2;
-
-const PREG_RECURSION_LIMIT_ERROR = 3;
-
-const PREG_BAD_UTF8_ERROR = 4;
-
-const PREG_BAD_UTF8_OFFSET_ERROR = 5;
-
-const PREG_JIT_STACKLIMIT_ERROR = 6;
-
-const PCRE_VERSION = '10.44 2024-06-07';
-
-const PCRE_VERSION_MAJOR = 10;
-
-const PCRE_VERSION_MINOR = 44;
-
-const PCRE_JIT_SUPPORT = true;
-
-function class_implements($object_or_class, bool $autoload = true): array|false {}
-
-function class_parents($object_or_class, bool $autoload = true): array|false {}
-
-function class_uses($object_or_class, bool $autoload = true): array|false {}
-
-function spl_autoload(string $class, ?string $file_extensions = NULL): void {}
-
-function spl_autoload_call(string $class): void {}
-
-function spl_autoload_extensions(?string $file_extensions = NULL): string {}
-
-function spl_autoload_functions(): array {}
-
-function spl_autoload_register(?callable $callback = NULL, bool $throw = true, bool $prepend = false): bool {}
-
-function spl_autoload_unregister(callable $callback): bool {}
-
-function spl_classes(): array {}
-
-function spl_object_hash(object $object): string {}
-
-function spl_object_id(object $object): int {}
-
-function iterator_apply(\Traversable $iterator, callable $callback, ?array $args = NULL): int {}
-
-function iterator_count(\Traversable|array $iterator): int {}
-
-function iterator_to_array(\Traversable|array $iterator, bool $preserve_keys = true): array {}
-
-class LogicException extends \Exception
-{
-
-}
-
-class BadFunctionCallException extends \LogicException
-{
-
-}
-
-class BadMethodCallException extends \BadFunctionCallException
-{
-
-}
-
-class DomainException extends \LogicException
-{
-
-}
-
-class InvalidArgumentException extends \LogicException
-{
-
-}
-
-class LengthException extends \LogicException
-{
-
-}
-
-class OutOfRangeException extends \LogicException
-{
-
-}
-
-class RuntimeException extends \Exception
-{
-
-}
-
-class OutOfBoundsException extends \RuntimeException
-{
-
-}
-
-class OverflowException extends \RuntimeException
-{
-
-}
-
-class RangeException extends \RuntimeException
-{
-
-}
-
-class UnderflowException extends \RuntimeException
-{
-
-}
-
-class UnexpectedValueException extends \RuntimeException
-{
-
-}
-
-interface RecursiveIterator extends \Iterator, \Traversable
-{
-    public function hasChildren(): bool;
-    public function getChildren(): ?\RecursiveIterator;
-}
-
-interface OuterIterator extends \Iterator, \Traversable
-{
-    public function getInnerIterator(): ?\Iterator;
-}
-
-class RecursiveIteratorIterator implements \OuterIterator, \Traversable, \Iterator
-{
-    const LEAVES_ONLY = null;
-    const SELF_FIRST = null;
-    const CHILD_FIRST = null;
-    const CATCH_GET_CHILD = null;
-    public function __construct(\Traversable $iterator, int $mode = \RecursiveIteratorIterator::LEAVES_ONLY, int $flags = 0) {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function key(): mixed {}
-    public function current(): mixed {}
-    public function next(): void {}
-    public function getDepth(): int {}
-    public function getSubIterator(?int $level = NULL): ?\RecursiveIterator {}
-    public function getInnerIterator(): \RecursiveIterator {}
-    public function beginIteration(): void {}
-    public function endIteration(): void {}
-    public function callHasChildren(): bool {}
-    public function callGetChildren(): ?\RecursiveIterator {}
-    public function beginChildren(): void {}
-    public function endChildren(): void {}
-    public function nextElement(): void {}
-    public function setMaxDepth(int $maxDepth = -1): void {}
-    public function getMaxDepth(): int|false {}
-}
-
-class IteratorIterator implements \OuterIterator, \Traversable, \Iterator
-{
-    public function __construct(\Traversable $iterator, ?string $class = NULL) {}
-    public function getInnerIterator(): ?\Iterator {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function key(): mixed {}
-    public function current(): mixed {}
-    public function next(): void {}
-}
-
-abstract class FilterIterator extends \IteratorIterator
-{
-    public function accept(): bool;
-    public function __construct(\Iterator $iterator) {}
-    public function rewind(): void {}
-    public function next(): void {}
-}
-
-abstract class RecursiveFilterIterator extends \FilterIterator implements \RecursiveIterator
-{
-    public function __construct(\RecursiveIterator $iterator) {}
-    public function hasChildren(): bool {}
-    public function getChildren(): ?\RecursiveFilterIterator {}
-}
-
-class CallbackFilterIterator extends \FilterIterator
-{
-    public function __construct(\Iterator $iterator, callable $callback) {}
-    public function accept(): bool {}
-}
-
-class RecursiveCallbackFilterIterator extends \CallbackFilterIterator implements \RecursiveIterator
-{
-    public function __construct(\RecursiveIterator $iterator, callable $callback) {}
-    public function hasChildren(): bool {}
-    public function getChildren(): \RecursiveCallbackFilterIterator {}
-}
-
-class ParentIterator extends \RecursiveFilterIterator
-{
-    public function __construct(\RecursiveIterator $iterator) {}
-    public function accept(): bool {}
-}
-
-interface SeekableIterator extends \Iterator, \Traversable
-{
-    public function seek(int $offset): void;
-}
-
-class LimitIterator extends \IteratorIterator
-{
-    public function __construct(\Iterator $iterator, int $offset = 0, int $limit = -1) {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function next(): void {}
-    public function seek(int $offset): int {}
-    public function getPosition(): int {}
-}
-
-class CachingIterator extends \IteratorIterator implements \Stringable, \ArrayAccess, \Countable
-{
-    const CALL_TOSTRING = null;
-    const CATCH_GET_CHILD = null;
-    const TOSTRING_USE_KEY = null;
-    const TOSTRING_USE_CURRENT = null;
-    const TOSTRING_USE_INNER = null;
-    const FULL_CACHE = null;
-    public function __construct(\Iterator $iterator, int $flags = \CachingIterator::CALL_TOSTRING) {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function next(): void {}
-    public function hasNext(): bool {}
-    public function __toString(): string {}
-    public function getFlags(): int {}
-    public function setFlags(int $flags): void {}
-    public function offsetGet($key): mixed {}
-    public function offsetSet($key, mixed $value): void {}
-    public function offsetUnset($key): void {}
-    public function offsetExists($key): bool {}
-    public function getCache(): array {}
-    public function count(): int {}
-}
-
-class RecursiveCachingIterator extends \CachingIterator implements \RecursiveIterator
-{
-    public function __construct(\Iterator $iterator, int $flags = \RecursiveCachingIterator::CALL_TOSTRING) {}
-    public function hasChildren(): bool {}
-    public function getChildren(): ?\RecursiveCachingIterator {}
-}
-
-class NoRewindIterator extends \IteratorIterator
-{
-    public function __construct(\Iterator $iterator) {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function key(): mixed {}
-    public function current(): mixed {}
-    public function next(): void {}
-}
-
-class AppendIterator extends \IteratorIterator
-{
-    public function __construct() {}
-    public function append(\Iterator $iterator): void {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function current(): mixed {}
-    public function next(): void {}
-    public function getIteratorIndex(): ?int {}
-    public function getArrayIterator(): \ArrayIterator {}
-}
-
-class InfiniteIterator extends \IteratorIterator
-{
-    public function __construct(\Iterator $iterator) {}
-    public function next(): void {}
-}
-
-class RegexIterator extends \FilterIterator
-{
-    const USE_KEY = null;
-    const INVERT_MATCH = null;
-    const MATCH = null;
-    const GET_MATCH = null;
-    const ALL_MATCHES = null;
-    const SPLIT = null;
-    const REPLACE = null;
-    public ?string $replacement;
-    public function __construct(\Iterator $iterator, string $pattern, int $mode = \RegexIterator::MATCH, int $flags = 0, int $pregFlags = 0) {}
-    public function accept(): bool {}
-    public function getMode(): int {}
-    public function setMode(int $mode): void {}
-    public function getFlags(): int {}
-    public function setFlags(int $flags): void {}
-    public function getRegex(): string {}
-    public function getPregFlags(): int {}
-    public function setPregFlags(int $pregFlags): void {}
-}
-
-class RecursiveRegexIterator extends \RegexIterator implements \RecursiveIterator
-{
-    public function __construct(\RecursiveIterator $iterator, string $pattern, int $mode = \RecursiveRegexIterator::MATCH, int $flags = 0, int $pregFlags = 0) {}
-    public function accept(): bool {}
-    public function hasChildren(): bool {}
-    public function getChildren(): \RecursiveRegexIterator {}
-}
-
-class EmptyIterator implements \Iterator, \Traversable
-{
-    public function current(): never {}
-    public function next(): void {}
-    public function key(): never {}
-    public function valid(): false {}
-    public function rewind(): void {}
-}
-
-class RecursiveTreeIterator extends \RecursiveIteratorIterator
-{
-    const BYPASS_CURRENT = null;
-    const BYPASS_KEY = null;
-    const PREFIX_LEFT = null;
-    const PREFIX_MID_HAS_NEXT = null;
-    const PREFIX_MID_LAST = null;
-    const PREFIX_END_HAS_NEXT = null;
-    const PREFIX_END_LAST = null;
-    const PREFIX_RIGHT = null;
-    public function __construct($iterator, int $flags = \RecursiveTreeIterator::BYPASS_KEY, int $cachingIteratorFlags = \CachingIterator::CATCH_GET_CHILD, int $mode = \RecursiveTreeIterator::SELF_FIRST) {}
-    public function key(): mixed {}
-    public function current(): mixed {}
-    public function getPrefix(): string {}
-    public function setPostfix(string $postfix): void {}
-    public function setPrefixPart(int $part, string $value): void {}
-    public function getEntry(): string {}
-    public function getPostfix(): string {}
-}
-
-class ArrayObject implements \IteratorAggregate, \Traversable, \ArrayAccess, \Serializable, \Countable
-{
-    const STD_PROP_LIST = null;
-    const ARRAY_AS_PROPS = null;
-    public function __construct(object|array $array = [], int $flags = 0, string $iteratorClass = 'ArrayIterator') {}
-    public function offsetExists(mixed $key): bool {}
-    public function offsetGet(mixed $key): mixed {}
-    public function offsetSet(mixed $key, mixed $value): void {}
-    public function offsetUnset(mixed $key): void {}
-    public function append(mixed $value): void {}
-    public function getArrayCopy(): array {}
-    public function count(): int {}
-    public function getFlags(): int {}
-    public function setFlags(int $flags): void {}
-    public function asort(int $flags = \SORT_REGULAR): true {}
-    public function ksort(int $flags = \SORT_REGULAR): true {}
-    public function uasort(callable $callback): true {}
-    public function uksort(callable $callback): true {}
-    public function natsort(): true {}
-    public function natcasesort(): true {}
-    public function unserialize(string $data): void {}
-    public function serialize(): string {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function getIterator(): \Iterator {}
-    public function exchangeArray(object|array $array): array {}
-    public function setIteratorClass(string $iteratorClass): void {}
-    public function getIteratorClass(): string {}
-    public function __debugInfo(): array {}
-}
-
-class ArrayIterator implements \SeekableIterator, \Traversable, \Iterator, \ArrayAccess, \Serializable, \Countable
-{
-    const STD_PROP_LIST = null;
-    const ARRAY_AS_PROPS = null;
-    public function __construct(object|array $array = [], int $flags = 0) {}
-    public function offsetExists(mixed $key): bool {}
-    public function offsetGet(mixed $key): mixed {}
-    public function offsetSet(mixed $key, mixed $value): void {}
-    public function offsetUnset(mixed $key): void {}
-    public function append(mixed $value): void {}
-    public function getArrayCopy(): array {}
-    public function count(): int {}
-    public function getFlags(): int {}
-    public function setFlags(int $flags): void {}
-    public function asort(int $flags = \SORT_REGULAR): true {}
-    public function ksort(int $flags = \SORT_REGULAR): true {}
-    public function uasort(callable $callback): true {}
-    public function uksort(callable $callback): true {}
-    public function natsort(): true {}
-    public function natcasesort(): true {}
-    public function unserialize(string $data): void {}
-    public function serialize(): string {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function rewind(): void {}
-    public function current(): mixed {}
-    public function key(): string|int|null {}
-    public function next(): void {}
-    public function valid(): bool {}
-    public function seek(int $offset): void {}
-    public function __debugInfo(): array {}
-}
-
-class RecursiveArrayIterator extends \ArrayIterator implements \RecursiveIterator
-{
-    const CHILD_ARRAYS_ONLY = null;
-    public function hasChildren(): bool {}
-    public function getChildren(): ?\RecursiveArrayIterator {}
-}
-
-class SplFileInfo implements \Stringable
-{
-    public function __construct(string $filename) {}
-    public function getPath(): string {}
-    public function getFilename(): string {}
-    public function getExtension(): string {}
-    public function getBasename(string $suffix = ''): string {}
-    public function getPathname(): string {}
-    public function getPerms(): int|false {}
-    public function getInode(): int|false {}
-    public function getSize(): int|false {}
-    public function getOwner(): int|false {}
-    public function getGroup(): int|false {}
-    public function getATime(): int|false {}
-    public function getMTime(): int|false {}
-    public function getCTime(): int|false {}
-    public function getType(): string|false {}
-    public function isWritable(): bool {}
-    public function isReadable(): bool {}
-    public function isExecutable(): bool {}
-    public function isFile(): bool {}
-    public function isDir(): bool {}
-    public function isLink(): bool {}
-    public function getLinkTarget(): string|false {}
-    public function getRealPath(): string|false {}
-    public function getFileInfo(?string $class = NULL): \SplFileInfo {}
-    public function getPathInfo(?string $class = NULL): ?\SplFileInfo {}
-    public function openFile(string $mode = 'r', bool $useIncludePath = false, $context = NULL): \SplFileObject {}
-    public function setFileClass(string $class = 'SplFileObject'): void {}
-    public function setInfoClass(string $class = 'SplFileInfo'): void {}
-    public function __toString(): string {}
-    public function __debugInfo(): array {}
-    public function _bad_state_ex(): void {}
-}
-
-class DirectoryIterator extends \SplFileInfo implements \SeekableIterator, \Traversable, \Iterator
-{
-    public function __construct(string $directory) {}
-    public function getFilename(): string {}
-    public function getExtension(): string {}
-    public function getBasename(string $suffix = ''): string {}
-    public function isDot(): bool {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function key(): mixed {}
-    public function current(): mixed {}
-    public function next(): void {}
-    public function seek(int $offset): void {}
-    public function __toString(): string {}
-}
-
-class FilesystemIterator extends \DirectoryIterator
-{
-    const CURRENT_MODE_MASK = null;
-    const CURRENT_AS_PATHNAME = null;
-    const CURRENT_AS_FILEINFO = null;
-    const CURRENT_AS_SELF = null;
-    const KEY_MODE_MASK = null;
-    const KEY_AS_PATHNAME = null;
-    const FOLLOW_SYMLINKS = null;
-    const KEY_AS_FILENAME = null;
-    const NEW_CURRENT_AND_KEY = null;
-    const OTHER_MODE_MASK = null;
-    const SKIP_DOTS = null;
-    const UNIX_PATHS = null;
-    public function __construct(string $directory, int $flags = 4096) {}
-    public function rewind(): void {}
-    public function key(): string {}
-    public function current(): \SplFileInfo|\FilesystemIterator|string {}
-    public function getFlags(): int {}
-    public function setFlags(int $flags): void {}
-}
-
-class RecursiveDirectoryIterator extends \FilesystemIterator implements \RecursiveIterator
-{
-    public function __construct(string $directory, int $flags = 0) {}
-    public function hasChildren(bool $allowLinks = false): bool {}
-    public function getChildren(): \RecursiveDirectoryIterator {}
-    public function getSubPath(): string {}
-    public function getSubPathname(): string {}
-}
-
-class GlobIterator extends \FilesystemIterator implements \Countable
-{
-    public function __construct(string $pattern, int $flags = 0) {}
-    public function count(): int {}
-}
-
-class SplFileObject extends \SplFileInfo implements \RecursiveIterator, \Traversable, \Iterator, \SeekableIterator
-{
-    const DROP_NEW_LINE = null;
-    const READ_AHEAD = null;
-    const SKIP_EMPTY = null;
-    const READ_CSV = null;
-    public function __construct(string $filename, string $mode = 'r', bool $useIncludePath = false, $context = NULL) {}
-    public function rewind(): void {}
-    public function eof(): bool {}
-    public function valid(): bool {}
-    public function fgets(): string {}
-    public function fread(int $length): string|false {}
-    public function fgetcsv(string $separator = ',', string $enclosure = '"', string $escape = '\\'): array|false {}
-    public function fputcsv(array $fields, string $separator = ',', string $enclosure = '"', string $escape = '\\', string $eol = ''): int|false {}
-    public function setCsvControl(string $separator = ',', string $enclosure = '"', string $escape = '\\'): void {}
-    public function getCsvControl(): array {}
-    public function flock(int $operation, &$wouldBlock = NULL): bool {}
-    public function fflush(): bool {}
-    public function ftell(): int|false {}
-    public function fseek(int $offset, int $whence = \SEEK_SET): int {}
-    public function fgetc(): string|false {}
-    public function fpassthru(): int {}
-    public function fscanf(string $format, mixed &...$vars): array|int|null {}
-    public function fwrite(string $data, int $length = 0): int|false {}
-    public function fstat(): array {}
-    public function ftruncate(int $size): bool {}
-    public function current(): array|string|false {}
-    public function key(): int {}
-    public function next(): void {}
-    public function setFlags(int $flags): void {}
-    public function getFlags(): int {}
-    public function setMaxLineLen(int $maxLength): void {}
-    public function getMaxLineLen(): int {}
-    public function hasChildren(): false {}
-    public function getChildren(): null {}
-    public function seek(int $line): void {}
-    public function getCurrentLine(): string {}
-    public function __toString(): string {}
-}
-
-class SplTempFileObject extends \SplFileObject
-{
-    public function __construct(int $maxMemory = 2097152) {}
-}
-
-class SplDoublyLinkedList implements \Iterator, \Traversable, \Countable, \ArrayAccess, \Serializable
-{
-    const IT_MODE_LIFO = null;
-    const IT_MODE_FIFO = null;
-    const IT_MODE_DELETE = null;
-    const IT_MODE_KEEP = null;
-    public function add(int $index, mixed $value): void {}
-    public function pop(): mixed {}
-    public function shift(): mixed {}
-    public function push(mixed $value): void {}
-    public function unshift(mixed $value): void {}
-    public function top(): mixed {}
-    public function bottom(): mixed {}
-    public function __debugInfo(): array {}
-    public function count(): int {}
-    public function isEmpty(): bool {}
-    public function setIteratorMode(int $mode): int {}
-    public function getIteratorMode(): int {}
-    public function offsetExists($index): bool {}
-    public function offsetGet($index): mixed {}
-    public function offsetSet($index, mixed $value): void {}
-    public function offsetUnset($index): void {}
-    public function rewind(): void {}
-    public function current(): mixed {}
-    public function key(): int {}
-    public function prev(): void {}
-    public function next(): void {}
-    public function valid(): bool {}
-    public function unserialize(string $data): void {}
-    public function serialize(): string {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-}
-
-class SplQueue extends \SplDoublyLinkedList
-{
-    public function enqueue(mixed $value): void {}
-    public function dequeue(): mixed {}
-}
-
-class SplStack extends \SplDoublyLinkedList
-{
-
-}
-
-abstract class SplHeap implements \Iterator, \Traversable, \Countable
-{
-    public function extract(): mixed {}
-    public function insert(mixed $value): true {}
-    public function top(): mixed {}
-    public function count(): int {}
-    public function isEmpty(): bool {}
-    public function rewind(): void {}
-    public function current(): mixed {}
-    public function key(): int {}
-    public function next(): void {}
-    public function valid(): bool {}
-    public function recoverFromCorruption(): true {}
-    protected function compare(mixed $value1, mixed $value2): int;
-    public function isCorrupted(): bool {}
-    public function __debugInfo(): array {}
-}
-
-class SplMinHeap extends \SplHeap
-{
-    protected function compare(mixed $value1, mixed $value2): int {}
-}
-
-class SplMaxHeap extends \SplHeap
-{
-    protected function compare(mixed $value1, mixed $value2): int {}
-}
-
-class SplPriorityQueue implements \Iterator, \Traversable, \Countable
-{
-    const EXTR_BOTH = null;
-    const EXTR_PRIORITY = null;
-    const EXTR_DATA = null;
-    public function compare(mixed $priority1, mixed $priority2): int {}
-    public function insert(mixed $value, mixed $priority): true {}
-    public function setExtractFlags(int $flags): int {}
-    public function top(): mixed {}
-    public function extract(): mixed {}
-    public function count(): int {}
-    public function isEmpty(): bool {}
-    public function rewind(): void {}
-    public function current(): mixed {}
-    public function key(): int {}
-    public function next(): void {}
-    public function valid(): bool {}
-    public function recoverFromCorruption(): true {}
-    public function isCorrupted(): bool {}
-    public function getExtractFlags(): int {}
-    public function __debugInfo(): array {}
-}
-
-class SplFixedArray implements \IteratorAggregate, \Traversable, \ArrayAccess, \Countable, \JsonSerializable
-{
-    public function __construct(int $size = 0) {}
-    public function __wakeup(): void {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function count(): int {}
-    public function toArray(): array {}
-    public static function fromArray(array $array, bool $preserveKeys = true): \SplFixedArray {}
-    public function getSize(): int {}
-    public function setSize(int $size): true {}
-    public function offsetExists($index): bool {}
-    public function offsetGet($index): mixed {}
-    public function offsetSet($index, mixed $value): void {}
-    public function offsetUnset($index): void {}
-    public function getIterator(): \Iterator {}
-    public function jsonSerialize(): array {}
-}
-
-interface SplObserver
-{
-    public function update(\SplSubject $subject): void;
-}
-
-interface SplSubject
-{
-    public function attach(\SplObserver $observer): void;
-    public function detach(\SplObserver $observer): void;
-    public function notify(): void;
-}
-
-class SplObjectStorage implements \Countable, \SeekableIterator, \Traversable, \Iterator, \Serializable, \ArrayAccess
-{
-    public function attach(object $object, mixed $info = NULL): void {}
-    public function detach(object $object): void {}
-    public function contains(object $object): bool {}
-    public function addAll(\SplObjectStorage $storage): int {}
-    public function removeAll(\SplObjectStorage $storage): int {}
-    public function removeAllExcept(\SplObjectStorage $storage): int {}
-    public function getInfo(): mixed {}
-    public function setInfo(mixed $info): void {}
-    public function count(int $mode = \COUNT_NORMAL): int {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function key(): int {}
-    public function current(): object {}
-    public function next(): void {}
-    public function seek(int $offset): void {}
-    public function unserialize(string $data): void {}
-    public function serialize(): string {}
-    public function offsetExists($object): bool {}
-    public function offsetGet($object): mixed {}
-    public function offsetSet($object, mixed $info = NULL): void {}
-    public function offsetUnset($object): void {}
-    public function getHash(object $object): string {}
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function __debugInfo(): array {}
-}
-
-class MultipleIterator implements \Iterator, \Traversable
-{
-    const MIT_NEED_ANY = null;
-    const MIT_NEED_ALL = null;
-    const MIT_KEYS_NUMERIC = null;
-    const MIT_KEYS_ASSOC = null;
-    public function __construct(int $flags = 1) {}
-    public function getFlags(): int {}
-    public function setFlags(int $flags): void {}
-    public function attachIterator(\Iterator $iterator, string|int|null $info = NULL): void {}
-    public function detachIterator(\Iterator $iterator): void {}
-    public function containsIterator(\Iterator $iterator): bool {}
-    public function countIterators(): int {}
-    public function rewind(): void {}
-    public function valid(): bool {}
-    public function key(): array {}
-    public function current(): array {}
-    public function next(): void {}
-    public function __debugInfo(): array {}
 }
 
 function mb_language(?string $language = NULL): string|bool {}
@@ -3761,3789 +7391,1549 @@ const MB_CASE_TITLE_SIMPLE = 6;
 
 const MB_CASE_FOLD_SIMPLE = 7;
 
-function ctype_alnum(mixed $text): bool {}
+function igbinary_serialize($value) {}
 
-function ctype_alpha(mixed $text): bool {}
+function igbinary_unserialize($str) {}
 
-function ctype_cntrl(mixed $text): bool {}
-
-function ctype_digit(mixed $text): bool {}
-
-function ctype_lower(mixed $text): bool {}
-
-function ctype_graph(mixed $text): bool {}
-
-function ctype_print(mixed $text): bool {}
-
-function ctype_punct(mixed $text): bool {}
-
-function ctype_space(mixed $text): bool {}
-
-function ctype_upper(mixed $text): bool {}
-
-function ctype_xdigit(mixed $text): bool {}
-
-class ReflectionException extends \Exception
+class ImagickException extends \Exception
 {
 
 }
 
-class Reflection
-{
-    public static function getModifierNames(int $modifiers): array {}
-}
-
-interface Reflector extends \Stringable
+class ImagickDrawException extends \Exception
 {
 
 }
 
-abstract class ReflectionFunctionAbstract implements \Reflector, \Stringable
+class ImagickPixelIteratorException extends \Exception
 {
-    public string $name;
-    public function inNamespace(): bool {}
-    public function isClosure(): bool {}
-    public function isDeprecated(): bool {}
-    public function isInternal(): bool {}
-    public function isUserDefined(): bool {}
-    public function isGenerator(): bool {}
-    public function isVariadic(): bool {}
-    public function isStatic(): bool {}
-    public function getClosureThis(): ?object {}
-    public function getClosureScopeClass(): ?\ReflectionClass {}
-    public function getClosureCalledClass(): ?\ReflectionClass {}
-    public function getClosureUsedVariables(): array {}
-    public function getDocComment(): string|false {}
-    public function getEndLine(): int|false {}
-    public function getExtension(): ?\ReflectionExtension {}
-    public function getExtensionName(): string|false {}
-    public function getFileName(): string|false {}
-    public function getName(): string {}
-    public function getNamespaceName(): string {}
-    public function getNumberOfParameters(): int {}
-    public function getNumberOfRequiredParameters(): int {}
-    public function getParameters(): array {}
-    public function getShortName(): string {}
-    public function getStartLine(): int|false {}
-    public function getStaticVariables(): array {}
-    public function returnsReference(): bool {}
-    public function hasReturnType(): bool {}
-    public function getReturnType(): ?\ReflectionType {}
-    public function hasTentativeReturnType(): bool {}
-    public function getTentativeReturnType(): ?\ReflectionType {}
-    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
+
 }
 
-class ReflectionFunction extends \ReflectionFunctionAbstract
+class ImagickPixelException extends \Exception
 {
-    const IS_DEPRECATED = null;
-    public function __construct(\Closure|string $function) {}
+
+}
+
+class ImagickKernelException extends \Exception
+{
+
+}
+
+class Imagick implements \Stringable, \Iterator, \Traversable, \Countable
+{
+    const COLOR_BLACK = null;
+    const COLOR_BLUE = null;
+    const COLOR_CYAN = null;
+    const COLOR_GREEN = null;
+    const COLOR_RED = null;
+    const COLOR_YELLOW = null;
+    const COLOR_MAGENTA = null;
+    const COLOR_ALPHA = null;
+    const COLOR_FUZZ = null;
+    const IMAGICK_EXTNUM = null;
+    const IMAGICK_EXTVER = null;
+    const QUANTUM_RANGE = null;
+    const USE_ZEND_MM = null;
+    const COMPOSITE_DEFAULT = null;
+    const COMPOSITE_UNDEFINED = null;
+    const COMPOSITE_NO = null;
+    const COMPOSITE_ATOP = null;
+    const COMPOSITE_BLEND = null;
+    const COMPOSITE_BUMPMAP = null;
+    const COMPOSITE_CLEAR = null;
+    const COMPOSITE_COLORBURN = null;
+    const COMPOSITE_COLORDODGE = null;
+    const COMPOSITE_COLORIZE = null;
+    const COMPOSITE_COPYBLACK = null;
+    const COMPOSITE_COPYBLUE = null;
+    const COMPOSITE_COPY = null;
+    const COMPOSITE_COPYCYAN = null;
+    const COMPOSITE_COPYGREEN = null;
+    const COMPOSITE_COPYMAGENTA = null;
+    const COMPOSITE_COPYALPHA = null;
+    const COMPOSITE_COPYOPACITY = null;
+    const COMPOSITE_COPYRED = null;
+    const COMPOSITE_COPYYELLOW = null;
+    const COMPOSITE_DARKEN = null;
+    const COMPOSITE_DSTATOP = null;
+    const COMPOSITE_DST = null;
+    const COMPOSITE_DSTIN = null;
+    const COMPOSITE_DSTOUT = null;
+    const COMPOSITE_DSTOVER = null;
+    const COMPOSITE_DIFFERENCE = null;
+    const COMPOSITE_DISPLACE = null;
+    const COMPOSITE_DISSOLVE = null;
+    const COMPOSITE_EXCLUSION = null;
+    const COMPOSITE_HARDLIGHT = null;
+    const COMPOSITE_HUE = null;
+    const COMPOSITE_IN = null;
+    const COMPOSITE_LIGHTEN = null;
+    const COMPOSITE_LUMINIZE = null;
+    const COMPOSITE_MODULATE = null;
+    const COMPOSITE_MULTIPLY = null;
+    const COMPOSITE_OUT = null;
+    const COMPOSITE_OVER = null;
+    const COMPOSITE_OVERLAY = null;
+    const COMPOSITE_PLUS = null;
+    const COMPOSITE_REPLACE = null;
+    const COMPOSITE_SATURATE = null;
+    const COMPOSITE_SCREEN = null;
+    const COMPOSITE_SOFTLIGHT = null;
+    const COMPOSITE_SRCATOP = null;
+    const COMPOSITE_SRC = null;
+    const COMPOSITE_SRCIN = null;
+    const COMPOSITE_SRCOUT = null;
+    const COMPOSITE_SRCOVER = null;
+    const COMPOSITE_THRESHOLD = null;
+    const COMPOSITE_XOR = null;
+    const COMPOSITE_CHANGEMASK = null;
+    const COMPOSITE_LINEARLIGHT = null;
+    const COMPOSITE_DISTORT = null;
+    const COMPOSITE_BLUR = null;
+    const COMPOSITE_PEGTOPLIGHT = null;
+    const COMPOSITE_VIVIDLIGHT = null;
+    const COMPOSITE_PINLIGHT = null;
+    const COMPOSITE_LINEARDODGE = null;
+    const COMPOSITE_LINEARBURN = null;
+    const COMPOSITE_MATHEMATICS = null;
+    const COMPOSITE_MODULUSADD = null;
+    const COMPOSITE_MODULUSSUBTRACT = null;
+    const COMPOSITE_MINUSDST = null;
+    const COMPOSITE_DIVIDEDST = null;
+    const COMPOSITE_DIVIDESRC = null;
+    const COMPOSITE_MINUSSRC = null;
+    const COMPOSITE_DARKENINTENSITY = null;
+    const COMPOSITE_LIGHTENINTENSITY = null;
+    const COMPOSITE_HARDMIX = null;
+    const COMPOSITE_STEREO = null;
+    const COMPOSITE_FREEZE = null;
+    const COMPOSITE_INTERPOLATE = null;
+    const COMPOSITE_NEGATE = null;
+    const COMPOSITE_REFLECT = null;
+    const COMPOSITE_SOFTBURN = null;
+    const COMPOSITE_SOFTDODGE = null;
+    const COMPOSITE_STAMP = null;
+    const COMPOSITE_RMSE = null;
+    const COMPOSITE_SALIENCY_BLEND = null;
+    const COMPOSITE_SEAMLESS_BLEND = null;
+    const MONTAGEMODE_FRAME = null;
+    const MONTAGEMODE_UNFRAME = null;
+    const MONTAGEMODE_CONCATENATE = null;
+    const STYLE_NORMAL = null;
+    const STYLE_ITALIC = null;
+    const STYLE_OBLIQUE = null;
+    const STYLE_ANY = null;
+    const STYLE_BOLD = null;
+    const FILTER_UNDEFINED = null;
+    const FILTER_POINT = null;
+    const FILTER_BOX = null;
+    const FILTER_TRIANGLE = null;
+    const FILTER_HERMITE = null;
+    const FILTER_HANNING = null;
+    const FILTER_HANN = null;
+    const FILTER_HAMMING = null;
+    const FILTER_BLACKMAN = null;
+    const FILTER_GAUSSIAN = null;
+    const FILTER_QUADRATIC = null;
+    const FILTER_CUBIC = null;
+    const FILTER_CATROM = null;
+    const FILTER_MITCHELL = null;
+    const FILTER_LANCZOS = null;
+    const FILTER_BESSEL = null;
+    const FILTER_SINC = null;
+    const FILTER_KAISER = null;
+    const FILTER_WELSH = null;
+    const FILTER_WELCH = null;
+    const FILTER_PARZEN = null;
+    const FILTER_LAGRANGE = null;
+    const FILTER_SENTINEL = null;
+    const FILTER_BOHMAN = null;
+    const FILTER_BARTLETT = null;
+    const FILTER_JINC = null;
+    const FILTER_SINCFAST = null;
+    const FILTER_ROBIDOUX = null;
+    const FILTER_LANCZOSSHARP = null;
+    const FILTER_LANCZOS2 = null;
+    const FILTER_LANCZOS2SHARP = null;
+    const FILTER_ROBIDOUXSHARP = null;
+    const FILTER_COSINE = null;
+    const FILTER_SPLINE = null;
+    const FILTER_LANCZOSRADIUS = null;
+    const FILTER_CUBIC_SPLINE = null;
+    const IMGTYPE_UNDEFINED = null;
+    const IMGTYPE_BILEVEL = null;
+    const IMGTYPE_GRAYSCALE = null;
+    const IMGTYPE_GRAYSCALEALPHA = null;
+    const IMGTYPE_GRAYSCALEMATTE = null;
+    const IMGTYPE_PALETTE = null;
+    const IMGTYPE_PALETTEMATTE = null;
+    const IMGTYPE_PALETTEALPHA = null;
+    const IMGTYPE_TRUECOLOR = null;
+    const IMGTYPE_TRUECOLORALPHA = null;
+    const IMGTYPE_TRUECOLORMATTE = null;
+    const IMGTYPE_COLORSEPARATION = null;
+    const IMGTYPE_COLORSEPARATIONALPHA = null;
+    const IMGTYPE_COLORSEPARATIONMATTE = null;
+    const IMGTYPE_OPTIMIZE = null;
+    const IMGTYPE_PALETTEBILEVELALPHA = null;
+    const IMGTYPE_PALETTEBILEVELMATTE = null;
+    const RESOLUTION_UNDEFINED = null;
+    const RESOLUTION_PIXELSPERINCH = null;
+    const RESOLUTION_PIXELSPERCENTIMETER = null;
+    const COMPRESSION_UNDEFINED = null;
+    const COMPRESSION_NO = null;
+    const COMPRESSION_BZIP = null;
+    const COMPRESSION_FAX = null;
+    const COMPRESSION_GROUP4 = null;
+    const COMPRESSION_JPEG = null;
+    const COMPRESSION_JPEG2000 = null;
+    const COMPRESSION_LOSSLESSJPEG = null;
+    const COMPRESSION_LZW = null;
+    const COMPRESSION_RLE = null;
+    const COMPRESSION_ZIP = null;
+    const COMPRESSION_DXT1 = null;
+    const COMPRESSION_DXT3 = null;
+    const COMPRESSION_DXT5 = null;
+    const COMPRESSION_ZIPS = null;
+    const COMPRESSION_PIZ = null;
+    const COMPRESSION_PXR24 = null;
+    const COMPRESSION_B44 = null;
+    const COMPRESSION_B44A = null;
+    const COMPRESSION_LZMA = null;
+    const COMPRESSION_JBIG1 = null;
+    const COMPRESSION_JBIG2 = null;
+    const COMPRESSION_ZSTD = null;
+    const COMPRESSION_WEBP = null;
+    const COMPRESSION_DWAA = null;
+    const COMPRESSION_DWAB = null;
+    const PAINT_POINT = null;
+    const PAINT_REPLACE = null;
+    const PAINT_FLOODFILL = null;
+    const PAINT_FILLTOBORDER = null;
+    const PAINT_RESET = null;
+    const GRAVITY_NORTHWEST = null;
+    const GRAVITY_NORTH = null;
+    const GRAVITY_NORTHEAST = null;
+    const GRAVITY_WEST = null;
+    const GRAVITY_CENTER = null;
+    const GRAVITY_EAST = null;
+    const GRAVITY_SOUTHWEST = null;
+    const GRAVITY_SOUTH = null;
+    const GRAVITY_SOUTHEAST = null;
+    const GRAVITY_FORGET = null;
+    const STRETCH_NORMAL = null;
+    const STRETCH_ULTRACONDENSED = null;
+    const STRETCH_EXTRACONDENSED = null;
+    const STRETCH_CONDENSED = null;
+    const STRETCH_SEMICONDENSED = null;
+    const STRETCH_SEMIEXPANDED = null;
+    const STRETCH_EXPANDED = null;
+    const STRETCH_EXTRAEXPANDED = null;
+    const STRETCH_ULTRAEXPANDED = null;
+    const STRETCH_ANY = null;
+    const ALIGN_UNDEFINED = null;
+    const ALIGN_LEFT = null;
+    const ALIGN_CENTER = null;
+    const ALIGN_RIGHT = null;
+    const DECORATION_NO = null;
+    const DECORATION_UNDERLINE = null;
+    const DECORATION_OVERLINE = null;
+    const DECORATION_LINETROUGH = null;
+    const DECORATION_LINETHROUGH = null;
+    const NOISE_UNIFORM = null;
+    const NOISE_GAUSSIAN = null;
+    const NOISE_MULTIPLICATIVEGAUSSIAN = null;
+    const NOISE_IMPULSE = null;
+    const NOISE_LAPLACIAN = null;
+    const NOISE_POISSON = null;
+    const NOISE_RANDOM = null;
+    const CHANNEL_UNDEFINED = null;
+    const CHANNEL_RED = null;
+    const CHANNEL_GRAY = null;
+    const CHANNEL_CYAN = null;
+    const CHANNEL_GREEN = null;
+    const CHANNEL_MAGENTA = null;
+    const CHANNEL_BLUE = null;
+    const CHANNEL_YELLOW = null;
+    const CHANNEL_ALPHA = null;
+    const CHANNEL_OPACITY = null;
+    const CHANNEL_BLACK = null;
+    const CHANNEL_INDEX = null;
+    const CHANNEL_ALL = null;
+    const CHANNEL_DEFAULT = null;
+    const CHANNEL_RGBA = null;
+    const CHANNEL_TRUEALPHA = null;
+    const CHANNEL_RGBS = null;
+    const CHANNEL_GRAY_CHANNELS = null;
+    const CHANNEL_SYNC = null;
+    const CHANNEL_READ_MASK = null;
+    const CHANNEL_WRITE_MASK = null;
+    const CHANNEL_META = null;
+    const CHANNEL_COMPOSITE_MASK = null;
+    const CHANNEL_COMPOSITES = null;
+    const METRIC_ABSOLUTEERRORMETRIC = null;
+    const METRIC_MEANABSOLUTEERROR = null;
+    const METRIC_MEANERRORPERPIXELMETRIC = null;
+    const METRIC_MEANSQUAREERROR = null;
+    const METRIC_PEAKABSOLUTEERROR = null;
+    const METRIC_PEAKSIGNALTONOISERATIO = null;
+    const METRIC_ROOTMEANSQUAREDERROR = null;
+    const METRIC_NORMALIZEDCROSSCORRELATIONERRORMETRIC = null;
+    const METRIC_FUZZERROR = null;
+    const METRIC_PERCEPTUALHASH_ERROR = null;
+    const METRIC_STRUCTURAL_SIMILARITY_ERROR = null;
+    const METRIC_STRUCTURAL_DISSIMILARITY_ERROR = null;
+    const PIXEL_CHAR = null;
+    const PIXELSTORAGE_CHAR = null;
+    const PIXEL_DOUBLE = null;
+    const PIXELSTORAGE_DOUBLE = null;
+    const PIXEL_FLOAT = null;
+    const PIXELSTORAGE_FLOAT = null;
+    const PIXEL_LONG = null;
+    const PIXELSTORAGE_LONG = null;
+    const PIXEL_QUANTUM = null;
+    const PIXELSTORAGE_QUANTUM = null;
+    const PIXEL_SHORT = null;
+    const PIXELSTORAGE_SHORT = null;
+    const EVALUATE_UNDEFINED = null;
+    const EVALUATE_ADD = null;
+    const EVALUATE_AND = null;
+    const EVALUATE_DIVIDE = null;
+    const EVALUATE_LEFTSHIFT = null;
+    const EVALUATE_MAX = null;
+    const EVALUATE_MIN = null;
+    const EVALUATE_MULTIPLY = null;
+    const EVALUATE_OR = null;
+    const EVALUATE_RIGHTSHIFT = null;
+    const EVALUATE_SET = null;
+    const EVALUATE_SUBTRACT = null;
+    const EVALUATE_XOR = null;
+    const EVALUATE_POW = null;
+    const EVALUATE_LOG = null;
+    const EVALUATE_THRESHOLD = null;
+    const EVALUATE_THRESHOLDBLACK = null;
+    const EVALUATE_THRESHOLDWHITE = null;
+    const EVALUATE_GAUSSIANNOISE = null;
+    const EVALUATE_IMPULSENOISE = null;
+    const EVALUATE_LAPLACIANNOISE = null;
+    const EVALUATE_MULTIPLICATIVENOISE = null;
+    const EVALUATE_POISSONNOISE = null;
+    const EVALUATE_UNIFORMNOISE = null;
+    const EVALUATE_COSINE = null;
+    const EVALUATE_SINE = null;
+    const EVALUATE_ADDMODULUS = null;
+    const EVALUATE_MEAN = null;
+    const EVALUATE_ABS = null;
+    const EVALUATE_EXPONENTIAL = null;
+    const EVALUATE_MEDIAN = null;
+    const EVALUATE_SUM = null;
+    const EVALUATE_ROOT_MEAN_SQUARE = null;
+    const EVALUATE_INVERSE_LOG = null;
+    const COLORSPACE_UNDEFINED = null;
+    const COLORSPACE_RGB = null;
+    const COLORSPACE_GRAY = null;
+    const COLORSPACE_TRANSPARENT = null;
+    const COLORSPACE_OHTA = null;
+    const COLORSPACE_XYZ = null;
+    const COLORSPACE_YCBCR = null;
+    const COLORSPACE_YCC = null;
+    const COLORSPACE_YIQ = null;
+    const COLORSPACE_YPBPR = null;
+    const COLORSPACE_YUV = null;
+    const COLORSPACE_CMYK = null;
+    const COLORSPACE_SRGB = null;
+    const COLORSPACE_HSB = null;
+    const COLORSPACE_HSL = null;
+    const COLORSPACE_HWB = null;
+    const COLORSPACE_LOG = null;
+    const COLORSPACE_CMY = null;
+    const COLORSPACE_LUV = null;
+    const COLORSPACE_HCL = null;
+    const COLORSPACE_LCH = null;
+    const COLORSPACE_LMS = null;
+    const COLORSPACE_LCHAB = null;
+    const COLORSPACE_LCHUV = null;
+    const COLORSPACE_SCRGB = null;
+    const COLORSPACE_HSI = null;
+    const COLORSPACE_HSV = null;
+    const COLORSPACE_HCLP = null;
+    const COLORSPACE_YDBDR = null;
+    const COLORSPACE_REC601YCBCR = null;
+    const COLORSPACE_REC709YCBCR = null;
+    const COLORSPACE_XYY = null;
+    const COLORSPACE_LINEARGRAY = null;
+    const COLORSPACE_DISPLAYP3 = null;
+    const COLORSPACE_ADOBE98 = null;
+    const COLORSPACE_PROPHOTO = null;
+    const COLORSPACE_JZAZBZ = null;
+    const VIRTUALPIXELMETHOD_UNDEFINED = null;
+    const VIRTUALPIXELMETHOD_BACKGROUND = null;
+    const VIRTUALPIXELMETHOD_EDGE = null;
+    const VIRTUALPIXELMETHOD_MIRROR = null;
+    const VIRTUALPIXELMETHOD_TILE = null;
+    const VIRTUALPIXELMETHOD_TRANSPARENT = null;
+    const VIRTUALPIXELMETHOD_MASK = null;
+    const VIRTUALPIXELMETHOD_BLACK = null;
+    const VIRTUALPIXELMETHOD_GRAY = null;
+    const VIRTUALPIXELMETHOD_WHITE = null;
+    const VIRTUALPIXELMETHOD_HORIZONTALTILE = null;
+    const VIRTUALPIXELMETHOD_VERTICALTILE = null;
+    const VIRTUALPIXELMETHOD_HORIZONTALTILEEDGE = null;
+    const VIRTUALPIXELMETHOD_VERTICALTILEEDGE = null;
+    const VIRTUALPIXELMETHOD_CHECKERTILE = null;
+    const VIRTUALPIXELMETHOD_DITHER = null;
+    const VIRTUALPIXELMETHOD_RANDOM = null;
+    const PREVIEW_UNDEFINED = null;
+    const PREVIEW_ROTATE = null;
+    const PREVIEW_SHEAR = null;
+    const PREVIEW_ROLL = null;
+    const PREVIEW_HUE = null;
+    const PREVIEW_SATURATION = null;
+    const PREVIEW_BRIGHTNESS = null;
+    const PREVIEW_GAMMA = null;
+    const PREVIEW_SPIFF = null;
+    const PREVIEW_DULL = null;
+    const PREVIEW_GRAYSCALE = null;
+    const PREVIEW_QUANTIZE = null;
+    const PREVIEW_DESPECKLE = null;
+    const PREVIEW_REDUCENOISE = null;
+    const PREVIEW_ADDNOISE = null;
+    const PREVIEW_SHARPEN = null;
+    const PREVIEW_BLUR = null;
+    const PREVIEW_THRESHOLD = null;
+    const PREVIEW_EDGEDETECT = null;
+    const PREVIEW_SPREAD = null;
+    const PREVIEW_SOLARIZE = null;
+    const PREVIEW_SHADE = null;
+    const PREVIEW_RAISE = null;
+    const PREVIEW_SEGMENT = null;
+    const PREVIEW_SWIRL = null;
+    const PREVIEW_IMPLODE = null;
+    const PREVIEW_WAVE = null;
+    const PREVIEW_OILPAINT = null;
+    const PREVIEW_CHARCOALDRAWING = null;
+    const PREVIEW_JPEG = null;
+    const RENDERINGINTENT_UNDEFINED = null;
+    const RENDERINGINTENT_SATURATION = null;
+    const RENDERINGINTENT_PERCEPTUAL = null;
+    const RENDERINGINTENT_ABSOLUTE = null;
+    const RENDERINGINTENT_RELATIVE = null;
+    const INTERLACE_UNDEFINED = null;
+    const INTERLACE_NO = null;
+    const INTERLACE_LINE = null;
+    const INTERLACE_PLANE = null;
+    const INTERLACE_PARTITION = null;
+    const INTERLACE_GIF = null;
+    const INTERLACE_JPEG = null;
+    const INTERLACE_PNG = null;
+    const FILLRULE_UNDEFINED = null;
+    const FILLRULE_EVENODD = null;
+    const FILLRULE_NONZERO = null;
+    const PATHUNITS_UNDEFINED = null;
+    const PATHUNITS_USERSPACE = null;
+    const PATHUNITS_USERSPACEONUSE = null;
+    const PATHUNITS_OBJECTBOUNDINGBOX = null;
+    const LINECAP_UNDEFINED = null;
+    const LINECAP_BUTT = null;
+    const LINECAP_ROUND = null;
+    const LINECAP_SQUARE = null;
+    const LINEJOIN_UNDEFINED = null;
+    const LINEJOIN_MITER = null;
+    const LINEJOIN_ROUND = null;
+    const LINEJOIN_BEVEL = null;
+    const RESOURCETYPE_UNDEFINED = null;
+    const RESOURCETYPE_AREA = null;
+    const RESOURCETYPE_DISK = null;
+    const RESOURCETYPE_FILE = null;
+    const RESOURCETYPE_MAP = null;
+    const RESOURCETYPE_MEMORY = null;
+    const RESOURCETYPE_TIME = null;
+    const RESOURCETYPE_THROTTLE = null;
+    const RESOURCETYPE_THREAD = null;
+    const RESOURCETYPE_WIDTH = null;
+    const RESOURCETYPE_HEIGHT = null;
+    const RESOURCETYPE_LISTLENGTH = null;
+    const DISPOSE_UNRECOGNIZED = null;
+    const DISPOSE_UNDEFINED = null;
+    const DISPOSE_NONE = null;
+    const DISPOSE_BACKGROUND = null;
+    const DISPOSE_PREVIOUS = null;
+    const INTERPOLATE_UNDEFINED = null;
+    const INTERPOLATE_AVERAGE = null;
+    const INTERPOLATE_BILINEAR = null;
+    const INTERPOLATE_INTEGER = null;
+    const INTERPOLATE_MESH = null;
+    const INTERPOLATE_SPLINE = null;
+    const INTERPOLATE_AVERAGE_9 = null;
+    const INTERPOLATE_AVERAGE_16 = null;
+    const INTERPOLATE_BLEND = null;
+    const INTERPOLATE_BACKGROUND_COLOR = null;
+    const INTERPOLATE_CATROM = null;
+    const INTERPOLATE_NEAREST_PIXEL = null;
+    const LAYERMETHOD_UNDEFINED = null;
+    const LAYERMETHOD_COALESCE = null;
+    const LAYERMETHOD_COMPAREANY = null;
+    const LAYERMETHOD_COMPARECLEAR = null;
+    const LAYERMETHOD_COMPAREOVERLAY = null;
+    const LAYERMETHOD_DISPOSE = null;
+    const LAYERMETHOD_OPTIMIZE = null;
+    const LAYERMETHOD_OPTIMIZEPLUS = null;
+    const LAYERMETHOD_OPTIMIZETRANS = null;
+    const LAYERMETHOD_COMPOSITE = null;
+    const LAYERMETHOD_OPTIMIZEIMAGE = null;
+    const LAYERMETHOD_REMOVEDUPS = null;
+    const LAYERMETHOD_REMOVEZERO = null;
+    const LAYERMETHOD_TRIMBOUNDS = null;
+    const ORIENTATION_UNDEFINED = null;
+    const ORIENTATION_TOPLEFT = null;
+    const ORIENTATION_TOPRIGHT = null;
+    const ORIENTATION_BOTTOMRIGHT = null;
+    const ORIENTATION_BOTTOMLEFT = null;
+    const ORIENTATION_LEFTTOP = null;
+    const ORIENTATION_RIGHTTOP = null;
+    const ORIENTATION_RIGHTBOTTOM = null;
+    const ORIENTATION_LEFTBOTTOM = null;
+    const DISTORTION_UNDEFINED = null;
+    const DISTORTION_AFFINE = null;
+    const DISTORTION_AFFINEPROJECTION = null;
+    const DISTORTION_ARC = null;
+    const DISTORTION_BILINEAR = null;
+    const DISTORTION_PERSPECTIVE = null;
+    const DISTORTION_PERSPECTIVEPROJECTION = null;
+    const DISTORTION_SCALEROTATETRANSLATE = null;
+    const DISTORTION_POLYNOMIAL = null;
+    const DISTORTION_POLAR = null;
+    const DISTORTION_DEPOLAR = null;
+    const DISTORTION_BARREL = null;
+    const DISTORTION_SHEPARDS = null;
+    const DISTORTION_SENTINEL = null;
+    const DISTORTION_RIGID_AFFINE = null;
+    const DISTORTION_BARRELINVERSE = null;
+    const DISTORTION_BILINEARFORWARD = null;
+    const DISTORTION_BILINEARREVERSE = null;
+    const DISTORTION_RESIZE = null;
+    const DISTORTION_CYLINDER2PLANE = null;
+    const DISTORTION_PLANE2CYLINDER = null;
+    const LAYERMETHOD_MERGE = null;
+    const LAYERMETHOD_FLATTEN = null;
+    const LAYERMETHOD_MOSAIC = null;
+    const ALPHACHANNEL_ACTIVATE = null;
+    const ALPHACHANNEL_ON = null;
+    const ALPHACHANNEL_SET = null;
+    const ALPHACHANNEL_UNDEFINED = null;
+    const ALPHACHANNEL_DISCRETE = null;
+    const ALPHACHANNEL_COPY = null;
+    const ALPHACHANNEL_DEACTIVATE = null;
+    const ALPHACHANNEL_EXTRACT = null;
+    const ALPHACHANNEL_OFF = null;
+    const ALPHACHANNEL_OPAQUE = null;
+    const ALPHACHANNEL_SHAPE = null;
+    const ALPHACHANNEL_TRANSPARENT = null;
+    const ALPHACHANNEL_ASSOCIATE = null;
+    const ALPHACHANNEL_DISSOCIATE = null;
+    const SPARSECOLORMETHOD_UNDEFINED = null;
+    const SPARSECOLORMETHOD_BARYCENTRIC = null;
+    const SPARSECOLORMETHOD_BILINEAR = null;
+    const SPARSECOLORMETHOD_POLYNOMIAL = null;
+    const SPARSECOLORMETHOD_SPEPARDS = null;
+    const SPARSECOLORMETHOD_VORONOI = null;
+    const SPARSECOLORMETHOD_INVERSE = null;
+    const SPARSECOLORMETHOD_MANHATTAN = null;
+    const DITHERMETHOD_UNDEFINED = null;
+    const DITHERMETHOD_NO = null;
+    const DITHERMETHOD_RIEMERSMA = null;
+    const DITHERMETHOD_FLOYDSTEINBERG = null;
+    const FUNCTION_UNDEFINED = null;
+    const FUNCTION_POLYNOMIAL = null;
+    const FUNCTION_SINUSOID = null;
+    const ALPHACHANNEL_BACKGROUND = null;
+    const FUNCTION_ARCSIN = null;
+    const FUNCTION_ARCTAN = null;
+    const ALPHACHANNEL_REMOVE = null;
+    const STATISTIC_GRADIENT = null;
+    const STATISTIC_MAXIMUM = null;
+    const STATISTIC_MEAN = null;
+    const STATISTIC_MEDIAN = null;
+    const STATISTIC_MINIMUM = null;
+    const STATISTIC_MODE = null;
+    const STATISTIC_NONPEAK = null;
+    const STATISTIC_STANDARD_DEVIATION = null;
+    const STATISTIC_ROOT_MEAN_SQUARE = null;
+    const STATISTIC_CONTRAST = null;
+    const MORPHOLOGY_CONVOLVE = null;
+    const MORPHOLOGY_CORRELATE = null;
+    const MORPHOLOGY_ERODE = null;
+    const MORPHOLOGY_DILATE = null;
+    const MORPHOLOGY_ERODE_INTENSITY = null;
+    const MORPHOLOGY_DILATE_INTENSITY = null;
+    const MORPHOLOGY_DISTANCE = null;
+    const MORPHOLOGY_OPEN = null;
+    const MORPHOLOGY_CLOSE = null;
+    const MORPHOLOGY_OPEN_INTENSITY = null;
+    const MORPHOLOGY_CLOSE_INTENSITY = null;
+    const MORPHOLOGY_SMOOTH = null;
+    const MORPHOLOGY_EDGE_IN = null;
+    const MORPHOLOGY_EDGE_OUT = null;
+    const MORPHOLOGY_EDGE = null;
+    const MORPHOLOGY_TOP_HAT = null;
+    const MORPHOLOGY_BOTTOM_HAT = null;
+    const MORPHOLOGY_HIT_AND_MISS = null;
+    const MORPHOLOGY_THINNING = null;
+    const MORPHOLOGY_THICKEN = null;
+    const MORPHOLOGY_VORONOI = null;
+    const MORPHOLOGY_ITERATIVE = null;
+    const KERNEL_UNITY = null;
+    const KERNEL_GAUSSIAN = null;
+    const KERNEL_DIFFERENCE_OF_GAUSSIANS = null;
+    const KERNEL_LAPLACIAN_OF_GAUSSIANS = null;
+    const KERNEL_BLUR = null;
+    const KERNEL_COMET = null;
+    const KERNEL_LAPLACIAN = null;
+    const KERNEL_SOBEL = null;
+    const KERNEL_FREI_CHEN = null;
+    const KERNEL_ROBERTS = null;
+    const KERNEL_PREWITT = null;
+    const KERNEL_COMPASS = null;
+    const KERNEL_KIRSCH = null;
+    const KERNEL_DIAMOND = null;
+    const KERNEL_SQUARE = null;
+    const KERNEL_RECTANGLE = null;
+    const KERNEL_OCTAGON = null;
+    const KERNEL_DISK = null;
+    const KERNEL_PLUS = null;
+    const KERNEL_CROSS = null;
+    const KERNEL_RING = null;
+    const KERNEL_PEAKS = null;
+    const KERNEL_EDGES = null;
+    const KERNEL_CORNERS = null;
+    const KERNEL_DIAGONALS = null;
+    const KERNEL_LINE_ENDS = null;
+    const KERNEL_LINE_JUNCTIONS = null;
+    const KERNEL_RIDGES = null;
+    const KERNEL_CONVEX_HULL = null;
+    const KERNEL_THIN_SE = null;
+    const KERNEL_SKELETON = null;
+    const KERNEL_CHEBYSHEV = null;
+    const KERNEL_MANHATTAN = null;
+    const KERNEL_OCTAGONAL = null;
+    const KERNEL_EUCLIDEAN = null;
+    const KERNEL_USER_DEFINED = null;
+    const KERNEL_BINOMIAL = null;
+    const DIRECTION_LEFT_TO_RIGHT = null;
+    const DIRECTION_RIGHT_TO_LEFT = null;
+    const NORMALIZE_KERNEL_NONE = null;
+    const NORMALIZE_KERNEL_VALUE = null;
+    const NORMALIZE_KERNEL_CORRELATE = null;
+    const NORMALIZE_KERNEL_PERCENT = null;
+    const PIXELMASK_READ = null;
+    const PIXELMASK_WRITE = null;
+    const PIXELMASK_COMPOSITE = null;
+    const AUTO_THRESHOLD_KAPUR = null;
+    const AUTO_THRESHOLD_OTSU = null;
+    const AUTO_THRESHOLD_TRIANGLE = null;
+    const COMPLEX_OPERATOR_ADD = null;
+    const COMPLEX_OPERATOR_CONJUGATE = null;
+    const COMPLEX_OPERATOR_DIVIDE = null;
+    const COMPLEX_OPERATOR_MAGNITUDEPHASE = null;
+    const COMPLEX_OPERATOR_MULTIPLY = null;
+    const COMPLEX_OPERATOR_REALIMAGINARY = null;
+    const COMPLEX_OPERATOR_SUBTRACT = null;
+    const IMAGE_TYPE_BILEVEL = null;
+    const IMAGE_TYPE_GRAYSCALE = null;
+    const IMAGE_TYPE_GRAYSCALE_ALPHA = null;
+    const IMAGE_TYPE_PALETTE = null;
+    const IMAGE_TYPE_PALETTE_ALPHA = null;
+    const IMAGE_TYPE_TRUE_COLOR = null;
+    const IMAGE_TYPE_TRUE_COLOR_ALPHA = null;
+    const IMAGE_TYPE_COLOR_SEPARATION = null;
+    const IMAGE_TYPE_COLOR_SEPARATION_ALPHA = null;
+    const IMAGE_TYPE_OPTIMIZE = null;
+    const IMAGE_TYPE_PALETTE_BILEVEL_ALPHA = null;
+    public function optimizeImageLayers(): \Imagick {}
+    public function compareImageLayers(int $metric): \Imagick {}
+    public function pingImageBlob(string $image): bool {}
+    public function pingImageFile(mixed $filehandle, ?string $filename = NULL): bool {}
+    public function transposeImage(): bool {}
+    public function transverseImage(): bool {}
+    public function trimImage(float $fuzz): bool {}
+    public function waveImage(float $amplitude, float $length): bool {}
+    public function waveImageWithMethod(float $amplitude, float $length, int $interpolate_method): bool {}
+    public function vignetteImage(float $black_point, float $white_point, int $x, int $y): bool {}
+    public function uniqueImageColors(): bool {}
+    public function setImageMatte(bool $matte): bool {}
+    public function adaptiveResizeImage(int $columns, int $rows, bool $bestfit = false, bool $legacy = false): bool {}
+    public function sketchImage(float $radius, float $sigma, float $angle): bool {}
+    public function shadeImage(bool $gray, float $azimuth, float $elevation): bool {}
+    public function getSizeOffset(): int {}
+    public function setSizeOffset(int $columns, int $rows, int $offset): bool {}
+    public function adaptiveBlurImage(float $radius, float $sigma, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function contrastStretchImage(float $black_point, float $white_point, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function adaptiveSharpenImage(float $radius, float $sigma, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function randomThresholdImage(float $low, float $high, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function roundCornersImage(float $x_rounding, float $y_rounding, float $stroke_width = 10, float $displace = 5, float $size_correction = -6): bool {}
+    public function roundCorners(float $x_rounding, float $y_rounding, float $stroke_width = 10, float $displace = 5, float $size_correction = -6): bool {}
+    public function setIteratorIndex(int $index): bool {}
+    public function getIteratorIndex(): int {}
+    public function setImageAlpha(float $alpha): bool {}
+    public function polaroidWithTextAndMethod(\ImagickDraw $settings, float $angle, string $caption, int $method): bool {}
+    public function polaroidImage(\ImagickDraw $settings, float $angle): bool {}
+    public function getImageProperty(string $name): string {}
+    public function setImageProperty(string $name, string $value): bool {}
+    public function deleteImageProperty(string $name): bool {}
+    public function identifyFormat(string $format): string {}
+    public function setImageInterpolateMethod(int $method): bool {}
+    public function getImageInterpolateMethod(): int {}
+    public function linearStretchImage(float $black_point, float $white_point): bool {}
+    public function getImageLength(): int {}
+    public function extentImage(int $width, int $height, int $x, int $y): bool {}
+    public function getImageOrientation(): int {}
+    public function setImageOrientation(int $orientation): bool {}
+    public function clutImage(\Imagick $lookup_table, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function clutImageWithInterpolate(\Imagick $lookup_table, int $pixel_interpolate_method): bool {}
+    public function getImageProperties(string $pattern = '*', bool $include_values = true): array {}
+    public function getImageProfiles(string $pattern = '*', bool $include_values = true): array {}
+    public function distortImage(int $distortion, array $arguments, bool $bestfit): bool {}
+    public function writeImageFile(mixed $filehandle, ?string $format = NULL): bool {}
+    public function writeImagesFile(mixed $filehandle, ?string $format = NULL): bool {}
+    public function resetImagePage(string $page): bool {}
+    public function animateImages(string $x_server): bool {}
+    public function setFont(string $font): bool {}
+    public function getFont(): string {}
+    public function setPointSize(float $point_size): bool {}
+    public function getPointSize(): float {}
+    public function mergeImageLayers(int $layermethod): \Imagick {}
+    public function setImageAlphaChannel(int $alphachannel): bool {}
+    public function floodfillPaintImage(\ImagickPixel|string $fill_color, float $fuzz, \ImagickPixel|string $border_color, int $x, int $y, bool $invert, ?int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function opaquePaintImage(\ImagickPixel|string $target_color, \ImagickPixel|string $fill_color, float $fuzz, bool $invert, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function transparentPaintImage(\ImagickPixel|string $target_color, float $alpha, float $fuzz, bool $invert): bool {}
+    public function liquidRescaleImage(int $width, int $height, float $delta_x, float $rigidity): bool {}
+    public function encipherImage(string $passphrase): bool {}
+    public function decipherImage(string $passphrase): bool {}
+    public function setGravity(int $gravity): bool {}
+    public function getGravity(): int {}
+    public function getImageChannelRange(int $channel): array {}
+    public function getImageAlphaChannel(): bool {}
+    public function getImageChannelDistortions(\Imagick $reference_image, int $metric, int $channel = \Imagick::CHANNEL_DEFAULT): float {}
+    public function setImageGravity(int $gravity): bool {}
+    public function getImageGravity(): int {}
+    public function importImagePixels(int $x, int $y, int $width, int $height, string $map, int $pixelstorage, array $pixels): bool {}
+    public function deskewImage(float $threshold): bool {}
+    public function segmentImage(int $colorspace, float $cluster_threshold, float $smooth_threshold, bool $verbose = false): bool {}
+    public function sparseColorImage(int $sparsecolormethod, array $arguments, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function remapImage(\Imagick $replacement, int $dither_method): bool {}
+    public function houghLineImage(int $width, int $height, float $threshold): bool {}
+    public function exportImagePixels(int $x, int $y, int $width, int $height, string $map, int $pixelstorage): array {}
+    public function getImageChannelKurtosis(int $channel = \Imagick::CHANNEL_DEFAULT): array {}
+    public function functionImage(int $function, array $parameters, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function transformImageColorspace(int $colorspace): bool {}
+    public function haldClutImage(\Imagick $clut, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function autoLevelImage(int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function blueShiftImage(float $factor = 1.5): bool {}
+    public function getImageArtifact(string $artifact): ?string {}
+    public function setImageArtifact(string $artifact, ?string $value): bool {}
+    public function deleteImageArtifact(string $artifact): bool {}
+    public function getColorspace(): int {}
+    public function setColorspace(int $colorspace): bool {}
+    public function clampImage(int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function smushImages(bool $stack, int $offset): \Imagick {}
+    public function __construct(array|string|int|float|null $files = NULL) {}
     public function __toString(): string {}
-    public function isAnonymous(): bool {}
-    public function isDisabled(): bool {}
-    public function invoke(mixed ...$args): mixed {}
-    public function invokeArgs(array $args): mixed {}
-    public function getClosure(): \Closure {}
-}
-
-final class ReflectionGenerator
-{
-    public function __construct(\Generator $generator) {}
-    public function getExecutingLine(): int {}
-    public function getExecutingFile(): string {}
-    public function getTrace(int $options = \DEBUG_BACKTRACE_PROVIDE_OBJECT): array {}
-    public function getFunction(): \ReflectionFunctionAbstract {}
-    public function getThis(): ?object {}
-    public function getExecutingGenerator(): \Generator {}
-    public function isClosed(): bool {}
-}
-
-class ReflectionParameter implements \Stringable, \Reflector
-{
-    public string $name;
-    public function __construct($function, string|int $param) {}
-    public function __toString(): string {}
-    public function getName(): string {}
-    public function isPassedByReference(): bool {}
-    public function canBePassedByValue(): bool {}
-    public function getDeclaringFunction(): \ReflectionFunctionAbstract {}
-    public function getDeclaringClass(): ?\ReflectionClass {}
-    public function getClass(): ?\ReflectionClass {}
-    public function hasType(): bool {}
-    public function getType(): ?\ReflectionType {}
-    public function isArray(): bool {}
-    public function isCallable(): bool {}
-    public function allowsNull(): bool {}
-    public function getPosition(): int {}
-    public function isOptional(): bool {}
-    public function isDefaultValueAvailable(): bool {}
-    public function getDefaultValue(): mixed {}
-    public function isDefaultValueConstant(): bool {}
-    public function getDefaultValueConstantName(): ?string {}
-    public function isVariadic(): bool {}
-    public function isPromoted(): bool {}
-    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
-}
-
-abstract class ReflectionType implements \Stringable
-{
-    public function allowsNull(): bool {}
-    public function __toString(): string {}
-}
-
-class ReflectionNamedType extends \ReflectionType
-{
-    public function getName(): string {}
-    public function isBuiltin(): bool {}
-}
-
-class ReflectionUnionType extends \ReflectionType
-{
-    public function getTypes(): array {}
-}
-
-class ReflectionIntersectionType extends \ReflectionType
-{
-    public function getTypes(): array {}
-}
-
-class ReflectionMethod extends \ReflectionFunctionAbstract
-{
-    const IS_STATIC = null;
-    const IS_PUBLIC = null;
-    const IS_PROTECTED = null;
-    const IS_PRIVATE = null;
-    const IS_ABSTRACT = null;
-    const IS_FINAL = null;
-    public string $class;
-    public function __construct(object|string $objectOrMethod, ?string $method = NULL) {}
-    public static function createFromMethodName(string $method): static {}
-    public function __toString(): string {}
-    public function isPublic(): bool {}
-    public function isPrivate(): bool {}
-    public function isProtected(): bool {}
-    public function isAbstract(): bool {}
-    public function isFinal(): bool {}
-    public function isConstructor(): bool {}
-    public function isDestructor(): bool {}
-    public function getClosure(?object $object = NULL): \Closure {}
-    public function getModifiers(): int {}
-    public function invoke(?object $object, mixed ...$args): mixed {}
-    public function invokeArgs(?object $object, array $args): mixed {}
-    public function getDeclaringClass(): \ReflectionClass {}
-    public function getPrototype(): \ReflectionMethod {}
-    public function hasPrototype(): bool {}
-    public function setAccessible(bool $accessible): void {}
-}
-
-class ReflectionClass implements \Stringable, \Reflector
-{
-    const IS_IMPLICIT_ABSTRACT = null;
-    const IS_EXPLICIT_ABSTRACT = null;
-    const IS_FINAL = null;
-    const IS_READONLY = null;
-    const SKIP_INITIALIZATION_ON_SERIALIZE = null;
-    const SKIP_DESTRUCTOR = null;
-    public string $name;
-    public function __construct(object|string $objectOrClass) {}
-    public function __toString(): string {}
-    public function getName(): string {}
-    public function isInternal(): bool {}
-    public function isUserDefined(): bool {}
-    public function isAnonymous(): bool {}
-    public function isInstantiable(): bool {}
-    public function isCloneable(): bool {}
-    public function getFileName(): string|false {}
-    public function getStartLine(): int|false {}
-    public function getEndLine(): int|false {}
-    public function getDocComment(): string|false {}
-    public function getConstructor(): ?\ReflectionMethod {}
-    public function hasMethod(string $name): bool {}
-    public function getMethod(string $name): \ReflectionMethod {}
-    public function getMethods(?int $filter = NULL): array {}
-    public function hasProperty(string $name): bool {}
-    public function getProperty(string $name): \ReflectionProperty {}
-    public function getProperties(?int $filter = NULL): array {}
-    public function hasConstant(string $name): bool {}
-    public function getConstants(?int $filter = NULL): array {}
-    public function getReflectionConstants(?int $filter = NULL): array {}
-    public function getConstant(string $name): mixed {}
-    public function getReflectionConstant(string $name): \ReflectionClassConstant|false {}
-    public function getInterfaces(): array {}
-    public function getInterfaceNames(): array {}
-    public function isInterface(): bool {}
-    public function getTraits(): array {}
-    public function getTraitNames(): array {}
-    public function getTraitAliases(): array {}
-    public function isTrait(): bool {}
-    public function isEnum(): bool {}
-    public function isAbstract(): bool {}
-    public function isFinal(): bool {}
-    public function isReadOnly(): bool {}
-    public function getModifiers(): int {}
-    public function isInstance(object $object): bool {}
-    public function newInstance(mixed ...$args): object {}
-    public function newInstanceWithoutConstructor(): object {}
-    public function newInstanceArgs(array $args = []): ?object {}
-    public function newLazyGhost(callable $initializer, int $options = 0): object {}
-    public function newLazyProxy(callable $factory, int $options = 0): object {}
-    public function resetAsLazyGhost(object $object, callable $initializer, int $options = 0): void {}
-    public function resetAsLazyProxy(object $object, callable $factory, int $options = 0): void {}
-    public function initializeLazyObject(object $object): object {}
-    public function isUninitializedLazyObject(object $object): bool {}
-    public function markLazyObjectAsInitialized(object $object): object {}
-    public function getLazyInitializer(object $object): ?callable {}
-    public function getParentClass(): \ReflectionClass|false {}
-    public function isSubclassOf(\ReflectionClass|string $class): bool {}
-    public function getStaticProperties(): array {}
-    public function getStaticPropertyValue(string $name, mixed $default = null): mixed {}
-    public function setStaticPropertyValue(string $name, mixed $value): void {}
-    public function getDefaultProperties(): array {}
-    public function isIterable(): bool {}
-    public function isIterateable(): bool {}
-    public function implementsInterface(\ReflectionClass|string $interface): bool {}
-    public function getExtension(): ?\ReflectionExtension {}
-    public function getExtensionName(): string|false {}
-    public function inNamespace(): bool {}
-    public function getNamespaceName(): string {}
-    public function getShortName(): string {}
-    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
-}
-
-class ReflectionObject extends \ReflectionClass
-{
-    public function __construct(object $object) {}
-}
-
-class ReflectionProperty implements \Stringable, \Reflector
-{
-    const IS_STATIC = null;
-    const IS_READONLY = null;
-    const IS_PUBLIC = null;
-    const IS_PROTECTED = null;
-    const IS_PRIVATE = null;
-    const IS_ABSTRACT = null;
-    const IS_PROTECTED_SET = null;
-    const IS_PRIVATE_SET = null;
-    const IS_VIRTUAL = null;
-    const IS_FINAL = null;
-    public string $name;
-    public string $class;
-    public function __construct(object|string $class, string $property) {}
-    public function __toString(): string {}
-    public function getName(): string {}
-    public function getValue(?object $object = NULL): mixed {}
-    public function setValue(mixed $objectOrValue, mixed $value = null): void {}
-    public function getRawValue(object $object): mixed {}
-    public function setRawValue(object $object, mixed $value): void {}
-    public function setRawValueWithoutLazyInitialization(object $object, mixed $value): void {}
-    public function skipLazyInitialization(object $object): void {}
-    public function isLazy(object $object): bool {}
-    public function isInitialized(?object $object = NULL): bool {}
-    public function isPublic(): bool {}
-    public function isPrivate(): bool {}
-    public function isProtected(): bool {}
-    public function isPrivateSet(): bool {}
-    public function isProtectedSet(): bool {}
-    public function isStatic(): bool {}
-    public function isReadOnly(): bool {}
-    public function isDefault(): bool {}
-    public function isDynamic(): bool {}
-    public function isAbstract(): bool {}
-    public function isVirtual(): bool {}
-    public function isPromoted(): bool {}
-    public function getModifiers(): int {}
-    public function getDeclaringClass(): \ReflectionClass {}
-    public function getDocComment(): string|false {}
-    public function setAccessible(bool $accessible): void {}
-    public function getType(): ?\ReflectionType {}
-    public function getSettableType(): ?\ReflectionType {}
-    public function hasType(): bool {}
-    public function hasDefaultValue(): bool {}
-    public function getDefaultValue(): mixed {}
-    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
-    public function hasHooks(): bool {}
-    public function getHooks(): array {}
-    public function hasHook(\PropertyHookType $type): bool {}
-    public function getHook(\PropertyHookType $type): ?\ReflectionMethod {}
-    public function isFinal(): bool {}
-}
-
-class ReflectionClassConstant implements \Stringable, \Reflector
-{
-    const IS_PUBLIC = null;
-    const IS_PROTECTED = null;
-    const IS_PRIVATE = null;
-    const IS_FINAL = null;
-    public string $name;
-    public string $class;
-    public function __construct(object|string $class, string $constant) {}
-    public function __toString(): string {}
-    public function getName(): string {}
-    public function getValue(): mixed {}
-    public function isPublic(): bool {}
-    public function isPrivate(): bool {}
-    public function isProtected(): bool {}
-    public function isFinal(): bool {}
-    public function getModifiers(): int {}
-    public function getDeclaringClass(): \ReflectionClass {}
-    public function getDocComment(): string|false {}
-    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
-    public function isEnumCase(): bool {}
-    public function isDeprecated(): bool {}
-    public function hasType(): bool {}
-    public function getType(): ?\ReflectionType {}
-}
-
-class ReflectionExtension implements \Stringable, \Reflector
-{
-    public string $name;
-    public function __construct(string $name) {}
-    public function __toString(): string {}
-    public function getName(): string {}
-    public function getVersion(): ?string {}
-    public function getFunctions(): array {}
-    public function getConstants(): array {}
-    public function getINIEntries(): array {}
-    public function getClasses(): array {}
-    public function getClassNames(): array {}
-    public function getDependencies(): array {}
-    public function info(): void {}
-    public function isPersistent(): bool {}
-    public function isTemporary(): bool {}
-}
-
-class ReflectionZendExtension implements \Stringable, \Reflector
-{
-    public string $name;
-    public function __construct(string $name) {}
-    public function __toString(): string {}
-    public function getName(): string {}
-    public function getVersion(): string {}
-    public function getAuthor(): string {}
-    public function getURL(): string {}
-    public function getCopyright(): string {}
-}
-
-final class ReflectionReference
-{
-    public static function fromArrayElement(array $array, string|int $key): ?\ReflectionReference {}
-    public function getId(): string {}
-}
-
-class ReflectionAttribute implements \Stringable, \Reflector
-{
-    const IS_INSTANCEOF = null;
-    public string $name;
-    public function getName(): string {}
-    public function getTarget(): int {}
-    public function isRepeated(): bool {}
-    public function getArguments(): array {}
-    public function newInstance(): object {}
-    public function __toString(): string {}
-}
-
-class ReflectionEnum extends \ReflectionClass
-{
-    public function __construct(object|string $objectOrClass) {}
-    public function hasCase(string $name): bool {}
-    public function getCase(string $name): \ReflectionEnumUnitCase {}
-    public function getCases(): array {}
-    public function isBacked(): bool {}
-    public function getBackingType(): ?\ReflectionNamedType {}
-}
-
-class ReflectionEnumUnitCase extends \ReflectionClassConstant
-{
-    public function __construct(object|string $class, string $constant) {}
-    public function getEnum(): \ReflectionEnum {}
-    public function getValue(): \UnitEnum {}
-}
-
-class ReflectionEnumBackedCase extends \ReflectionEnumUnitCase
-{
-    public function __construct(object|string $class, string $constant) {}
-    public function getBackingValue(): string|int {}
-}
-
-final class ReflectionFiber
-{
-    public function __construct(\Fiber $fiber) {}
-    public function getFiber(): \Fiber {}
-    public function getExecutingFile(): ?string {}
-    public function getExecutingLine(): ?int {}
-    public function getCallable(): callable {}
-    public function getTrace(int $options = \DEBUG_BACKTRACE_PROVIDE_OBJECT): array {}
-}
-
-final class ReflectionConstant implements \Stringable, \Reflector
-{
-    public string $name;
-    public function __construct(string $name) {}
-    public function getName(): string {}
-    public function getNamespaceName(): string {}
-    public function getShortName(): string {}
-    public function getValue(): mixed {}
-    public function isDeprecated(): bool {}
-    public function __toString(): string {}
-}
-
-enum PropertyHookType implements \BackedEnum, \UnitEnum
-{
-    case Get;
-    case Set;
-    public string $name;
-    public string $value;
-}
-
-function lcg_value(): float {}
-
-function mt_srand(?int $seed = NULL, int $mode = \MT_RAND_MT19937): void {}
-
-function srand(?int $seed = NULL, int $mode = \MT_RAND_MT19937): void {}
-
-function rand(int $min = null, int $max = null): int {}
-
-function mt_rand(int $min = null, int $max = null): int {}
-
-function mt_getrandmax(): int {}
-
-function getrandmax(): int {}
-
-function random_bytes(int $length): string {}
-
-function random_int(int $min, int $max): int {}
-
-const MT_RAND_MT19937 = 0;
-
-const MT_RAND_PHP = 1;
-
-function hash(string $algo, string $data, bool $binary = false, array $options = []): string {}
-
-function hash_file(string $algo, string $filename, bool $binary = false, array $options = []): string|false {}
-
-function hash_hmac(string $algo, string $data, string $key, bool $binary = false): string {}
-
-function hash_hmac_file(string $algo, string $filename, string $key, bool $binary = false): string|false {}
-
-function hash_init(string $algo, int $flags = 0, string $key = '', array $options = []): \HashContext {}
-
-function hash_update(\HashContext $context, string $data): true {}
-
-function hash_update_stream(\HashContext $context, $stream, int $length = -1): int {}
-
-function hash_update_file(\HashContext $context, string $filename, $stream_context = NULL): bool {}
-
-function hash_final(\HashContext $context, bool $binary = false): string {}
-
-function hash_copy(\HashContext $context): \HashContext {}
-
-function hash_algos(): array {}
-
-function hash_hmac_algos(): array {}
-
-function hash_pbkdf2(string $algo, string $password, string $salt, int $iterations, int $length = 0, bool $binary = false, array $options = []): string {}
-
-function hash_equals(string $known_string, string $user_string): bool {}
-
-function hash_hkdf(string $algo, string $key, int $length = 0, string $info = '', string $salt = ''): string {}
-
-const HASH_HMAC = 1;
-
-final class HashContext
-{
-    public function __serialize(): array {}
-    public function __unserialize(array $data): void {}
-    public function __debugInfo(): array {}
-}
-
-function filter_has_var(int $input_type, string $var_name): bool {}
-
-function filter_input(int $type, string $var_name, int $filter = \FILTER_DEFAULT, array|int $options = 0): mixed {}
-
-function filter_var(mixed $value, int $filter = \FILTER_DEFAULT, array|int $options = 0): mixed {}
-
-function filter_input_array(int $type, array|int $options = \FILTER_DEFAULT, bool $add_empty = true): array|false|null {}
-
-function filter_var_array(array $array, array|int $options = \FILTER_DEFAULT, bool $add_empty = true): array|false|null {}
-
-function filter_list(): array {}
-
-function filter_id(string $name): int|false {}
-
-const INPUT_POST = 0;
-
-const INPUT_GET = 1;
-
-const INPUT_COOKIE = 2;
-
-const INPUT_ENV = 4;
-
-const INPUT_SERVER = 5;
-
-const FILTER_FLAG_NONE = 0;
-
-const FILTER_REQUIRE_SCALAR = 33554432;
-
-const FILTER_REQUIRE_ARRAY = 16777216;
-
-const FILTER_FORCE_ARRAY = 67108864;
-
-const FILTER_NULL_ON_FAILURE = 134217728;
-
-const FILTER_VALIDATE_INT = 257;
-
-const FILTER_VALIDATE_BOOLEAN = 258;
-
-const FILTER_VALIDATE_BOOL = 258;
-
-const FILTER_VALIDATE_FLOAT = 259;
-
-const FILTER_VALIDATE_REGEXP = 272;
-
-const FILTER_VALIDATE_DOMAIN = 277;
-
-const FILTER_VALIDATE_URL = 273;
-
-const FILTER_VALIDATE_EMAIL = 274;
-
-const FILTER_VALIDATE_IP = 275;
-
-const FILTER_VALIDATE_MAC = 276;
-
-const FILTER_DEFAULT = 516;
-
-const FILTER_UNSAFE_RAW = 516;
-
-const FILTER_SANITIZE_STRING = 513;
-
-const FILTER_SANITIZE_STRIPPED = 513;
-
-const FILTER_SANITIZE_ENCODED = 514;
-
-const FILTER_SANITIZE_SPECIAL_CHARS = 515;
-
-const FILTER_SANITIZE_FULL_SPECIAL_CHARS = 522;
-
-const FILTER_SANITIZE_EMAIL = 517;
-
-const FILTER_SANITIZE_URL = 518;
-
-const FILTER_SANITIZE_NUMBER_INT = 519;
-
-const FILTER_SANITIZE_NUMBER_FLOAT = 520;
-
-const FILTER_SANITIZE_ADD_SLASHES = 523;
-
-const FILTER_CALLBACK = 1024;
-
-const FILTER_FLAG_ALLOW_OCTAL = 1;
-
-const FILTER_FLAG_ALLOW_HEX = 2;
-
-const FILTER_FLAG_STRIP_LOW = 4;
-
-const FILTER_FLAG_STRIP_HIGH = 8;
-
-const FILTER_FLAG_STRIP_BACKTICK = 512;
-
-const FILTER_FLAG_ENCODE_LOW = 16;
-
-const FILTER_FLAG_ENCODE_HIGH = 32;
-
-const FILTER_FLAG_ENCODE_AMP = 64;
-
-const FILTER_FLAG_NO_ENCODE_QUOTES = 128;
-
-const FILTER_FLAG_EMPTY_STRING_NULL = 256;
-
-const FILTER_FLAG_ALLOW_FRACTION = 4096;
-
-const FILTER_FLAG_ALLOW_THOUSAND = 8192;
-
-const FILTER_FLAG_ALLOW_SCIENTIFIC = 16384;
-
-const FILTER_FLAG_PATH_REQUIRED = 262144;
-
-const FILTER_FLAG_QUERY_REQUIRED = 524288;
-
-const FILTER_FLAG_IPV4 = 1048576;
-
-const FILTER_FLAG_IPV6 = 2097152;
-
-const FILTER_FLAG_NO_RES_RANGE = 4194304;
-
-const FILTER_FLAG_NO_PRIV_RANGE = 8388608;
-
-const FILTER_FLAG_GLOBAL_RANGE = 268435456;
-
-const FILTER_FLAG_HOSTNAME = 1048576;
-
-const FILTER_FLAG_EMAIL_UNICODE = 1048576;
-
-function pdo_drivers(): array {}
-
-class PDOException extends \RuntimeException
-{
-    protected $code;
-    public ?array $errorInfo;
-}
-
-class PDO
-{
-    const PARAM_NULL = null;
-    const PARAM_BOOL = null;
-    const PARAM_INT = null;
-    const PARAM_STR = null;
-    const PARAM_LOB = null;
-    const PARAM_STMT = null;
-    const PARAM_INPUT_OUTPUT = null;
-    const PARAM_STR_NATL = null;
-    const PARAM_STR_CHAR = null;
-    const PARAM_EVT_ALLOC = null;
-    const PARAM_EVT_FREE = null;
-    const PARAM_EVT_EXEC_PRE = null;
-    const PARAM_EVT_EXEC_POST = null;
-    const PARAM_EVT_FETCH_PRE = null;
-    const PARAM_EVT_FETCH_POST = null;
-    const PARAM_EVT_NORMALIZE = null;
-    const FETCH_DEFAULT = null;
-    const FETCH_LAZY = null;
-    const FETCH_ASSOC = null;
-    const FETCH_NUM = null;
-    const FETCH_BOTH = null;
-    const FETCH_OBJ = null;
-    const FETCH_BOUND = null;
-    const FETCH_COLUMN = null;
-    const FETCH_CLASS = null;
-    const FETCH_INTO = null;
-    const FETCH_FUNC = null;
-    const FETCH_GROUP = null;
-    const FETCH_UNIQUE = null;
-    const FETCH_KEY_PAIR = null;
-    const FETCH_CLASSTYPE = null;
-    const FETCH_SERIALIZE = null;
-    const FETCH_PROPS_LATE = null;
-    const FETCH_NAMED = null;
-    const ATTR_AUTOCOMMIT = null;
-    const ATTR_PREFETCH = null;
-    const ATTR_TIMEOUT = null;
-    const ATTR_ERRMODE = null;
-    const ATTR_SERVER_VERSION = null;
-    const ATTR_CLIENT_VERSION = null;
-    const ATTR_SERVER_INFO = null;
-    const ATTR_CONNECTION_STATUS = null;
-    const ATTR_CASE = null;
-    const ATTR_CURSOR_NAME = null;
-    const ATTR_CURSOR = null;
-    const ATTR_ORACLE_NULLS = null;
-    const ATTR_PERSISTENT = null;
-    const ATTR_STATEMENT_CLASS = null;
-    const ATTR_FETCH_TABLE_NAMES = null;
-    const ATTR_FETCH_CATALOG_NAMES = null;
-    const ATTR_DRIVER_NAME = null;
-    const ATTR_STRINGIFY_FETCHES = null;
-    const ATTR_MAX_COLUMN_LEN = null;
-    const ATTR_EMULATE_PREPARES = null;
-    const ATTR_DEFAULT_FETCH_MODE = null;
-    const ATTR_DEFAULT_STR_PARAM = null;
-    const ERRMODE_SILENT = null;
-    const ERRMODE_WARNING = null;
-    const ERRMODE_EXCEPTION = null;
-    const CASE_NATURAL = null;
-    const CASE_LOWER = null;
-    const CASE_UPPER = null;
-    const NULL_NATURAL = null;
-    const NULL_EMPTY_STRING = null;
-    const NULL_TO_STRING = null;
-    const ERR_NONE = null;
-    const FETCH_ORI_NEXT = null;
-    const FETCH_ORI_PRIOR = null;
-    const FETCH_ORI_FIRST = null;
-    const FETCH_ORI_LAST = null;
-    const FETCH_ORI_ABS = null;
-    const FETCH_ORI_REL = null;
-    const CURSOR_FWDONLY = null;
-    const CURSOR_SCROLL = null;
-    const MYSQL_ATTR_USE_BUFFERED_QUERY = null;
-    const MYSQL_ATTR_LOCAL_INFILE = null;
-    const MYSQL_ATTR_INIT_COMMAND = null;
-    const MYSQL_ATTR_COMPRESS = null;
-    const MYSQL_ATTR_DIRECT_QUERY = null;
-    const MYSQL_ATTR_FOUND_ROWS = null;
-    const MYSQL_ATTR_IGNORE_SPACE = null;
-    const MYSQL_ATTR_SSL_KEY = null;
-    const MYSQL_ATTR_SSL_CERT = null;
-    const MYSQL_ATTR_SSL_CA = null;
-    const MYSQL_ATTR_SSL_CAPATH = null;
-    const MYSQL_ATTR_SSL_CIPHER = null;
-    const MYSQL_ATTR_SERVER_PUBLIC_KEY = null;
-    const MYSQL_ATTR_MULTI_STATEMENTS = null;
-    const MYSQL_ATTR_SSL_VERIFY_SERVER_CERT = null;
-    const MYSQL_ATTR_LOCAL_INFILE_DIRECTORY = null;
-    const PGSQL_ATTR_DISABLE_PREPARES = null;
-    const PGSQL_TRANSACTION_IDLE = null;
-    const PGSQL_TRANSACTION_ACTIVE = null;
-    const PGSQL_TRANSACTION_INTRANS = null;
-    const PGSQL_TRANSACTION_INERROR = null;
-    const PGSQL_TRANSACTION_UNKNOWN = null;
-    const SQLITE_DETERMINISTIC = null;
-    const SQLITE_ATTR_OPEN_FLAGS = null;
-    const SQLITE_OPEN_READONLY = null;
-    const SQLITE_OPEN_READWRITE = null;
-    const SQLITE_OPEN_CREATE = null;
-    const SQLITE_ATTR_READONLY_STATEMENT = null;
-    const SQLITE_ATTR_EXTENDED_RESULT_CODES = null;
-    const SQLSRV_ATTR_ENCODING = null;
-    const SQLSRV_ATTR_QUERY_TIMEOUT = null;
-    const SQLSRV_ATTR_DIRECT_QUERY = null;
-    const SQLSRV_ATTR_CURSOR_SCROLL_TYPE = null;
-    const SQLSRV_ATTR_CLIENT_BUFFER_MAX_KB_SIZE = null;
-    const SQLSRV_ATTR_FETCHES_NUMERIC_TYPE = null;
-    const SQLSRV_ATTR_FETCHES_DATETIME_TYPE = null;
-    const SQLSRV_ATTR_FORMAT_DECIMALS = null;
-    const SQLSRV_ATTR_DECIMAL_PLACES = null;
-    const SQLSRV_ATTR_DATA_CLASSIFICATION = null;
-    const SQLSRV_PARAM_OUT_DEFAULT_SIZE = null;
-    const SQLSRV_ENCODING_DEFAULT = null;
-    const SQLSRV_ENCODING_SYSTEM = null;
-    const SQLSRV_ENCODING_BINARY = null;
-    const SQLSRV_ENCODING_UTF8 = null;
-    const SQLSRV_CURSOR_STATIC = null;
-    const SQLSRV_CURSOR_DYNAMIC = null;
-    const SQLSRV_CURSOR_KEYSET = null;
-    const SQLSRV_CURSOR_BUFFERED = null;
-    const SQLSRV_TXN_READ_UNCOMMITTED = null;
-    const SQLSRV_TXN_READ_COMMITTED = null;
-    const SQLSRV_TXN_REPEATABLE_READ = null;
-    const SQLSRV_TXN_SERIALIZABLE = null;
-    const SQLSRV_TXN_SNAPSHOT = null;
-    public function __construct(string $dsn, ?string $username = NULL, ?string $password = NULL, ?array $options = NULL) {}
-    public static function connect(string $dsn, ?string $username = NULL, ?string $password = NULL, ?array $options = NULL): static {}
-    public function beginTransaction(): bool {}
-    public function commit(): bool {}
-    public function errorCode(): ?string {}
-    public function errorInfo(): array {}
-    public function exec(string $statement): int|false {}
-    public function getAttribute(int $attribute): mixed {}
-    public static function getAvailableDrivers(): array {}
-    public function inTransaction(): bool {}
-    public function lastInsertId(?string $name = NULL): string|false {}
-    public function prepare(string $query, array $options = []): \PDOStatement|false {}
-    public function query(string $query, ?int $fetchMode = NULL, mixed ...$fetchModeArgs): \PDOStatement|false {}
-    public function quote(string $string, int $type = \PDO::PARAM_STR): string|false {}
-    public function rollBack(): bool {}
-    public function setAttribute(int $attribute, mixed $value): bool {}
-}
-
-class PDOStatement implements \IteratorAggregate, \Traversable
-{
-    public string $queryString;
-    public function bindColumn(string|int $column, mixed &$var, int $type = \PDO::PARAM_STR, int $maxLength = 0, mixed $driverOptions = NULL): bool {}
-    public function bindParam(string|int $param, mixed &$var, int $type = \PDO::PARAM_STR, int $maxLength = 0, mixed $driverOptions = NULL): bool {}
-    public function bindValue(string|int $param, mixed $value, int $type = \PDO::PARAM_STR): bool {}
-    public function closeCursor(): bool {}
-    public function columnCount(): int {}
-    public function debugDumpParams(): ?bool {}
-    public function errorCode(): ?string {}
-    public function errorInfo(): array {}
-    public function execute(?array $params = NULL): bool {}
-    public function fetch(int $mode = \PDO::FETCH_DEFAULT, int $cursorOrientation = \PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed {}
-    public function fetchAll(int $mode = \PDO::FETCH_DEFAULT, mixed ...$args): array {}
-    public function fetchColumn(int $column = 0): mixed {}
-    public function fetchObject(?string $class = 'stdClass', array $constructorArgs = []): object|false {}
-    public function getAttribute(int $name): mixed {}
-    public function getColumnMeta(int $column): array|false {}
-    public function nextRowset(): bool {}
-    public function rowCount(): int {}
-    public function setAttribute(int $attribute, mixed $value): bool {}
-    public function setFetchMode(int $mode, mixed ...$args): true {}
-    public function getIterator(): \Iterator {}
-}
-
-final class PDORow
-{
-    public string $queryString;
-}
-
-function token_get_all(string $code, int $flags = 0): array {}
-
-function token_name(int $id): string {}
-
-const T_LNUMBER = 260;
-
-const T_DNUMBER = 261;
-
-const T_STRING = 262;
-
-const T_NAME_FULLY_QUALIFIED = 263;
-
-const T_NAME_RELATIVE = 264;
-
-const T_NAME_QUALIFIED = 265;
-
-const T_VARIABLE = 266;
-
-const T_INLINE_HTML = 267;
-
-const T_ENCAPSED_AND_WHITESPACE = 268;
-
-const T_CONSTANT_ENCAPSED_STRING = 269;
-
-const T_STRING_VARNAME = 270;
-
-const T_NUM_STRING = 271;
-
-const T_INCLUDE = 272;
-
-const T_INCLUDE_ONCE = 273;
-
-const T_EVAL = 274;
-
-const T_REQUIRE = 275;
-
-const T_REQUIRE_ONCE = 276;
-
-const T_LOGICAL_OR = 277;
-
-const T_LOGICAL_XOR = 278;
-
-const T_LOGICAL_AND = 279;
-
-const T_PRINT = 280;
-
-const T_YIELD = 281;
-
-const T_YIELD_FROM = 282;
-
-const T_INSTANCEOF = 283;
-
-const T_NEW = 284;
-
-const T_CLONE = 285;
-
-const T_EXIT = 286;
-
-const T_IF = 287;
-
-const T_ELSEIF = 288;
-
-const T_ELSE = 289;
-
-const T_ENDIF = 290;
-
-const T_ECHO = 291;
-
-const T_DO = 292;
-
-const T_WHILE = 293;
-
-const T_ENDWHILE = 294;
-
-const T_FOR = 295;
-
-const T_ENDFOR = 296;
-
-const T_FOREACH = 297;
-
-const T_ENDFOREACH = 298;
-
-const T_DECLARE = 299;
-
-const T_ENDDECLARE = 300;
-
-const T_AS = 301;
-
-const T_SWITCH = 302;
-
-const T_ENDSWITCH = 303;
-
-const T_CASE = 304;
-
-const T_DEFAULT = 305;
-
-const T_MATCH = 306;
-
-const T_BREAK = 307;
-
-const T_CONTINUE = 308;
-
-const T_GOTO = 309;
-
-const T_FUNCTION = 310;
-
-const T_FN = 311;
-
-const T_CONST = 312;
-
-const T_RETURN = 313;
-
-const T_TRY = 314;
-
-const T_CATCH = 315;
-
-const T_FINALLY = 316;
-
-const T_THROW = 317;
-
-const T_USE = 318;
-
-const T_INSTEADOF = 319;
-
-const T_GLOBAL = 320;
-
-const T_STATIC = 321;
-
-const T_ABSTRACT = 322;
-
-const T_FINAL = 323;
-
-const T_PRIVATE = 324;
-
-const T_PROTECTED = 325;
-
-const T_PUBLIC = 326;
-
-const T_PRIVATE_SET = 327;
-
-const T_PROTECTED_SET = 328;
-
-const T_PUBLIC_SET = 329;
-
-const T_READONLY = 330;
-
-const T_VAR = 331;
-
-const T_UNSET = 332;
-
-const T_ISSET = 333;
-
-const T_EMPTY = 334;
-
-const T_HALT_COMPILER = 335;
-
-const T_CLASS = 336;
-
-const T_TRAIT = 337;
-
-const T_INTERFACE = 338;
-
-const T_ENUM = 339;
-
-const T_EXTENDS = 340;
-
-const T_IMPLEMENTS = 341;
-
-const T_NAMESPACE = 342;
-
-const T_LIST = 343;
-
-const T_ARRAY = 344;
-
-const T_CALLABLE = 345;
-
-const T_LINE = 346;
-
-const T_FILE = 347;
-
-const T_DIR = 348;
-
-const T_CLASS_C = 349;
-
-const T_TRAIT_C = 350;
-
-const T_METHOD_C = 351;
-
-const T_FUNC_C = 352;
-
-const T_PROPERTY_C = 353;
-
-const T_NS_C = 354;
-
-const T_ATTRIBUTE = 355;
-
-const T_PLUS_EQUAL = 356;
-
-const T_MINUS_EQUAL = 357;
-
-const T_MUL_EQUAL = 358;
-
-const T_DIV_EQUAL = 359;
-
-const T_CONCAT_EQUAL = 360;
-
-const T_MOD_EQUAL = 361;
-
-const T_AND_EQUAL = 362;
-
-const T_OR_EQUAL = 363;
-
-const T_XOR_EQUAL = 364;
-
-const T_SL_EQUAL = 365;
-
-const T_SR_EQUAL = 366;
-
-const T_COALESCE_EQUAL = 367;
-
-const T_BOOLEAN_OR = 368;
-
-const T_BOOLEAN_AND = 369;
-
-const T_IS_EQUAL = 370;
-
-const T_IS_NOT_EQUAL = 371;
-
-const T_IS_IDENTICAL = 372;
-
-const T_IS_NOT_IDENTICAL = 373;
-
-const T_IS_SMALLER_OR_EQUAL = 374;
-
-const T_IS_GREATER_OR_EQUAL = 375;
-
-const T_SPACESHIP = 376;
-
-const T_SL = 377;
-
-const T_SR = 378;
-
-const T_INC = 379;
-
-const T_DEC = 380;
-
-const T_INT_CAST = 381;
-
-const T_DOUBLE_CAST = 382;
-
-const T_STRING_CAST = 383;
-
-const T_ARRAY_CAST = 384;
-
-const T_OBJECT_CAST = 385;
-
-const T_BOOL_CAST = 386;
-
-const T_UNSET_CAST = 387;
-
-const T_OBJECT_OPERATOR = 388;
-
-const T_NULLSAFE_OBJECT_OPERATOR = 389;
-
-const T_DOUBLE_ARROW = 390;
-
-const T_COMMENT = 391;
-
-const T_DOC_COMMENT = 392;
-
-const T_OPEN_TAG = 393;
-
-const T_OPEN_TAG_WITH_ECHO = 394;
-
-const T_CLOSE_TAG = 395;
-
-const T_WHITESPACE = 396;
-
-const T_START_HEREDOC = 397;
-
-const T_END_HEREDOC = 398;
-
-const T_DOLLAR_OPEN_CURLY_BRACES = 399;
-
-const T_CURLY_OPEN = 400;
-
-const T_PAAMAYIM_NEKUDOTAYIM = 401;
-
-const T_NS_SEPARATOR = 402;
-
-const T_ELLIPSIS = 403;
-
-const T_COALESCE = 404;
-
-const T_POW = 405;
-
-const T_POW_EQUAL = 406;
-
-const T_AMPERSAND_FOLLOWED_BY_VAR_OR_VARARG = 407;
-
-const T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG = 408;
-
-const T_BAD_CHARACTER = 409;
-
-const T_DOUBLE_COLON = 401;
-
-const TOKEN_PARSE = 1;
-
-class PhpToken implements \Stringable
-{
-    public int $id;
-    public string $text;
-    public int $line;
-    public int $pos;
-    public static function tokenize(string $code, int $flags = 0): array {}
-    public function __construct(int $id, string $text, int $line = -1, int $pos = -1) {}
-    public function is($kind): bool {}
-    public function isIgnorable(): bool {}
-    public function getTokenName(): ?string {}
-    public function __toString(): string {}
-}
-
-function finfo_open(int $flags = \FILEINFO_NONE, ?string $magic_database = NULL): \finfo|false {}
-
-function finfo_close(\finfo $finfo): bool {}
-
-function finfo_set_flags(\finfo $finfo, int $flags): true {}
-
-function finfo_file(\finfo $finfo, string $filename, int $flags = \FILEINFO_NONE, $context = NULL): string|false {}
-
-function finfo_buffer(\finfo $finfo, string $string, int $flags = \FILEINFO_NONE, $context = NULL): string|false {}
-
-function mime_content_type($filename): string|false {}
-
-const FILEINFO_NONE = 0;
-
-const FILEINFO_SYMLINK = 2;
-
-const FILEINFO_MIME = 1040;
-
-const FILEINFO_MIME_TYPE = 16;
-
-const FILEINFO_MIME_ENCODING = 1024;
-
-const FILEINFO_DEVICES = 8;
-
-const FILEINFO_CONTINUE = 32;
-
-const FILEINFO_PRESERVE_ATIME = 128;
-
-const FILEINFO_RAW = 256;
-
-const FILEINFO_APPLE = 2048;
-
-const FILEINFO_EXTENSION = 16777216;
-
-class finfo
-{
-    public function __construct(int $flags = \FILEINFO_NONE, ?string $magic_database = NULL) {}
-    public function file(string $filename, int $flags = \FILEINFO_NONE, $context = NULL): string|false {}
-    public function buffer(string $string, int $flags = \FILEINFO_NONE, $context = NULL): string|false {}
-    public function set_flags(int $flags): true {}
-}
-
-function iconv_strlen(string $string, ?string $encoding = NULL): int|false {}
-
-function iconv_substr(string $string, int $offset, ?int $length = NULL, ?string $encoding = NULL): string|false {}
-
-function iconv_strpos(string $haystack, string $needle, int $offset = 0, ?string $encoding = NULL): int|false {}
-
-function iconv_strrpos(string $haystack, string $needle, ?string $encoding = NULL): int|false {}
-
-function iconv_mime_encode(string $field_name, string $field_value, array $options = []): string|false {}
-
-function iconv_mime_decode(string $string, int $mode = 0, ?string $encoding = NULL): string|false {}
-
-function iconv_mime_decode_headers(string $headers, int $mode = 0, ?string $encoding = NULL): array|false {}
-
-function iconv(string $from_encoding, string $to_encoding, string $string): string|false {}
-
-function iconv_set_encoding(string $type, string $encoding): bool {}
-
-function iconv_get_encoding(string $type = 'all'): array|string|false {}
-
-const ICONV_IMPL = 'libiconv';
-
-const ICONV_VERSION = '1.18';
-
-const ICONV_MIME_DECODE_STRICT = 1;
-
-const ICONV_MIME_DECODE_CONTINUE_ON_ERROR = 2;
-
-function libxml_set_streams_context($context): void {}
-
-function libxml_use_internal_errors(?bool $use_errors = NULL): bool {}
-
-function libxml_get_last_error(): \LibXMLError|false {}
-
-function libxml_get_errors(): array {}
-
-function libxml_clear_errors(): void {}
-
-function libxml_disable_entity_loader(bool $disable = true): bool {}
-
-function libxml_set_external_entity_loader(?callable $resolver_function): bool {}
-
-function libxml_get_external_entity_loader(): ?callable {}
-
-const LIBXML_VERSION = 21205;
-
-const LIBXML_DOTTED_VERSION = '2.12.5';
-
-const LIBXML_LOADED_VERSION = '21205';
-
-const LIBXML_RECOVER = 1;
-
-const LIBXML_NOENT = 2;
-
-const LIBXML_DTDLOAD = 4;
-
-const LIBXML_DTDATTR = 8;
-
-const LIBXML_DTDVALID = 16;
-
-const LIBXML_NOERROR = 32;
-
-const LIBXML_NOWARNING = 64;
-
-const LIBXML_NOBLANKS = 256;
-
-const LIBXML_XINCLUDE = 1024;
-
-const LIBXML_NSCLEAN = 8192;
-
-const LIBXML_NOCDATA = 16384;
-
-const LIBXML_NONET = 2048;
-
-const LIBXML_PEDANTIC = 128;
-
-const LIBXML_COMPACT = 65536;
-
-const LIBXML_NOXMLDECL = 2;
-
-const LIBXML_PARSEHUGE = 524288;
-
-const LIBXML_BIGLINES = 4194304;
-
-const LIBXML_NOEMPTYTAG = 4;
-
-const LIBXML_SCHEMA_CREATE = 1;
-
-const LIBXML_HTML_NOIMPLIED = 8192;
-
-const LIBXML_HTML_NODEFDTD = 4;
-
-const LIBXML_ERR_NONE = 0;
-
-const LIBXML_ERR_WARNING = 1;
-
-const LIBXML_ERR_ERROR = 2;
-
-const LIBXML_ERR_FATAL = 3;
-
-class LibXMLError
-{
-    public int $level;
-    public int $code;
-    public int $column;
-    public string $message;
-    public string $file;
-    public int $line;
-}
-
-function openssl_x509_export_to_file(\OpenSSLCertificate|string $certificate, string $output_filename, bool $no_text = true): bool {}
-
-function openssl_x509_export(\OpenSSLCertificate|string $certificate, &$output, bool $no_text = true): bool {}
-
-function openssl_x509_fingerprint(\OpenSSLCertificate|string $certificate, string $digest_algo = 'sha1', bool $binary = false): string|false {}
-
-function openssl_x509_check_private_key(\OpenSSLCertificate|string $certificate, $private_key): bool {}
-
-function openssl_x509_verify(\OpenSSLCertificate|string $certificate, $public_key): int {}
-
-function openssl_x509_parse(\OpenSSLCertificate|string $certificate, bool $short_names = true): array|false {}
-
-function openssl_x509_checkpurpose(\OpenSSLCertificate|string $certificate, int $purpose, array $ca_info = [], ?string $untrusted_certificates_file = NULL): int|bool {}
-
-function openssl_x509_read(\OpenSSLCertificate|string $certificate): \OpenSSLCertificate|false {}
-
-function openssl_x509_free(\OpenSSLCertificate $certificate): void {}
-
-function openssl_pkcs12_export_to_file(\OpenSSLCertificate|string $certificate, string $output_filename, $private_key, string $passphrase, array $options = []): bool {}
-
-function openssl_pkcs12_export(\OpenSSLCertificate|string $certificate, &$output, $private_key, string $passphrase, array $options = []): bool {}
-
-function openssl_pkcs12_read(string $pkcs12, &$certificates, string $passphrase): bool {}
-
-function openssl_csr_export_to_file(\OpenSSLCertificateSigningRequest|string $csr, string $output_filename, bool $no_text = true): bool {}
-
-function openssl_csr_export(\OpenSSLCertificateSigningRequest|string $csr, &$output, bool $no_text = true): bool {}
-
-function openssl_csr_sign(\OpenSSLCertificateSigningRequest|string $csr, \OpenSSLCertificate|string|null $ca_certificate, $private_key, int $days, ?array $options = NULL, int $serial = 0, ?string $serial_hex = NULL): \OpenSSLCertificate|false {}
-
-function openssl_csr_new(array $distinguished_names, &$private_key, ?array $options = NULL, ?array $extra_attributes = NULL): \OpenSSLCertificateSigningRequest|bool {}
-
-function openssl_csr_get_subject(\OpenSSLCertificateSigningRequest|string $csr, bool $short_names = true): array|false {}
-
-function openssl_csr_get_public_key(\OpenSSLCertificateSigningRequest|string $csr, bool $short_names = true): \OpenSSLAsymmetricKey|false {}
-
-function openssl_pkey_new(?array $options = NULL): \OpenSSLAsymmetricKey|false {}
-
-function openssl_pkey_export_to_file($key, string $output_filename, ?string $passphrase = NULL, ?array $options = NULL): bool {}
-
-function openssl_pkey_export($key, &$output, ?string $passphrase = NULL, ?array $options = NULL): bool {}
-
-function openssl_pkey_get_public($public_key): \OpenSSLAsymmetricKey|false {}
-
-function openssl_get_publickey($public_key): \OpenSSLAsymmetricKey|false {}
-
-function openssl_pkey_free(\OpenSSLAsymmetricKey $key): void {}
-
-function openssl_free_key(\OpenSSLAsymmetricKey $key): void {}
-
-function openssl_pkey_get_private($private_key, ?string $passphrase = NULL): \OpenSSLAsymmetricKey|false {}
-
-function openssl_get_privatekey($private_key, ?string $passphrase = NULL): \OpenSSLAsymmetricKey|false {}
-
-function openssl_pkey_get_details(\OpenSSLAsymmetricKey $key): array|false {}
-
-function openssl_pbkdf2(string $password, string $salt, int $key_length, int $iterations, string $digest_algo = 'sha1'): string|false {}
-
-function openssl_pkcs7_verify(string $input_filename, int $flags, ?string $signers_certificates_filename = NULL, array $ca_info = [], ?string $untrusted_certificates_filename = NULL, ?string $content = NULL, ?string $output_filename = NULL): int|bool {}
-
-function openssl_pkcs7_encrypt(string $input_filename, string $output_filename, $certificate, ?array $headers, int $flags = 0, int $cipher_algo = \OPENSSL_CIPHER_AES_128_CBC): bool {}
-
-function openssl_pkcs7_sign(string $input_filename, string $output_filename, \OpenSSLCertificate|string $certificate, $private_key, ?array $headers, int $flags = \PKCS7_DETACHED, ?string $untrusted_certificates_filename = NULL): bool {}
-
-function openssl_pkcs7_decrypt(string $input_filename, string $output_filename, $certificate, $private_key = NULL): bool {}
-
-function openssl_pkcs7_read(string $data, &$certificates): bool {}
-
-function openssl_cms_verify(string $input_filename, int $flags = 0, ?string $certificates = NULL, array $ca_info = [], ?string $untrusted_certificates_filename = NULL, ?string $content = NULL, ?string $pk7 = NULL, ?string $sigfile = NULL, int $encoding = \OPENSSL_ENCODING_SMIME): bool {}
-
-function openssl_cms_encrypt(string $input_filename, string $output_filename, $certificate, ?array $headers, int $flags = 0, int $encoding = \OPENSSL_ENCODING_SMIME, int $cipher_algo = \OPENSSL_CIPHER_AES_128_CBC): bool {}
-
-function openssl_cms_sign(string $input_filename, string $output_filename, \OpenSSLCertificate|string $certificate, $private_key, ?array $headers, int $flags = 0, int $encoding = \OPENSSL_ENCODING_SMIME, ?string $untrusted_certificates_filename = NULL): bool {}
-
-function openssl_cms_decrypt(string $input_filename, string $output_filename, $certificate, $private_key = NULL, int $encoding = \OPENSSL_ENCODING_SMIME): bool {}
-
-function openssl_cms_read(string $input_filename, &$certificates): bool {}
-
-function openssl_private_encrypt(string $data, &$encrypted_data, $private_key, int $padding = \OPENSSL_PKCS1_PADDING): bool {}
-
-function openssl_private_decrypt(string $data, &$decrypted_data, $private_key, int $padding = \OPENSSL_PKCS1_PADDING): bool {}
-
-function openssl_public_encrypt(string $data, &$encrypted_data, $public_key, int $padding = \OPENSSL_PKCS1_PADDING): bool {}
-
-function openssl_public_decrypt(string $data, &$decrypted_data, $public_key, int $padding = \OPENSSL_PKCS1_PADDING): bool {}
-
-function openssl_error_string(): string|false {}
-
-function openssl_sign(string $data, &$signature, $private_key, string|int $algorithm = \OPENSSL_ALGO_SHA1): bool {}
-
-function openssl_verify(string $data, string $signature, $public_key, string|int $algorithm = \OPENSSL_ALGO_SHA1): int|false {}
-
-function openssl_seal(string $data, &$sealed_data, &$encrypted_keys, array $public_key, string $cipher_algo, &$iv = NULL): int|false {}
-
-function openssl_open(string $data, &$output, string $encrypted_key, $private_key, string $cipher_algo, ?string $iv = NULL): bool {}
-
-function openssl_get_md_methods(bool $aliases = false): array {}
-
-function openssl_get_cipher_methods(bool $aliases = false): array {}
-
-function openssl_get_curve_names(): array|false {}
-
-function openssl_digest(string $data, string $digest_algo, bool $binary = false): string|false {}
-
-function openssl_encrypt(string $data, string $cipher_algo, string $passphrase, int $options = 0, string $iv = '', &$tag = NULL, string $aad = '', int $tag_length = 16): string|false {}
-
-function openssl_decrypt(string $data, string $cipher_algo, string $passphrase, int $options = 0, string $iv = '', ?string $tag = NULL, string $aad = ''): string|false {}
-
-function openssl_cipher_iv_length(string $cipher_algo): int|false {}
-
-function openssl_cipher_key_length(string $cipher_algo): int|false {}
-
-function openssl_dh_compute_key(string $public_key, \OpenSSLAsymmetricKey $private_key): string|false {}
-
-function openssl_pkey_derive($public_key, $private_key, int $key_length = 0): string|false {}
-
-function openssl_random_pseudo_bytes(int $length, &$strong_result = NULL): string {}
-
-function openssl_spki_new(\OpenSSLAsymmetricKey $private_key, string $challenge, int $digest_algo = \OPENSSL_ALGO_MD5): string|false {}
-
-function openssl_spki_verify(string $spki): bool {}
-
-function openssl_spki_export(string $spki): string|false {}
-
-function openssl_spki_export_challenge(string $spki): string|false {}
-
-function openssl_get_cert_locations(): array {}
-
-const OPENSSL_VERSION_TEXT = 'OpenSSL 3.4.1 11 Feb 2025';
-
-const OPENSSL_VERSION_NUMBER = 809500688;
-
-const X509_PURPOSE_SSL_CLIENT = 1;
-
-const X509_PURPOSE_SSL_SERVER = 2;
-
-const X509_PURPOSE_NS_SSL_SERVER = 3;
-
-const X509_PURPOSE_SMIME_SIGN = 4;
-
-const X509_PURPOSE_SMIME_ENCRYPT = 5;
-
-const X509_PURPOSE_CRL_SIGN = 6;
-
-const X509_PURPOSE_ANY = 7;
-
-const X509_PURPOSE_OCSP_HELPER = 8;
-
-const X509_PURPOSE_TIMESTAMP_SIGN = 9;
-
-const OPENSSL_ALGO_SHA1 = 1;
-
-const OPENSSL_ALGO_MD5 = 2;
-
-const OPENSSL_ALGO_MD4 = 3;
-
-const OPENSSL_ALGO_SHA224 = 6;
-
-const OPENSSL_ALGO_SHA256 = 7;
-
-const OPENSSL_ALGO_SHA384 = 8;
-
-const OPENSSL_ALGO_SHA512 = 9;
-
-const OPENSSL_ALGO_RMD160 = 10;
-
-const PKCS7_DETACHED = 64;
-
-const PKCS7_TEXT = 1;
-
-const PKCS7_NOINTERN = 16;
-
-const PKCS7_NOVERIFY = 32;
-
-const PKCS7_NOCHAIN = 8;
-
-const PKCS7_NOCERTS = 2;
-
-const PKCS7_NOATTR = 256;
-
-const PKCS7_BINARY = 128;
-
-const PKCS7_NOSIGS = 4;
-
-const PKCS7_NOOLDMIMETYPE = 1024;
-
-const OPENSSL_CMS_DETACHED = 64;
-
-const OPENSSL_CMS_TEXT = 1;
-
-const OPENSSL_CMS_NOINTERN = 16;
-
-const OPENSSL_CMS_NOVERIFY = 32;
-
-const OPENSSL_CMS_NOCERTS = 2;
-
-const OPENSSL_CMS_NOATTR = 256;
-
-const OPENSSL_CMS_BINARY = 128;
-
-const OPENSSL_CMS_NOSIGS = 12;
-
-const OPENSSL_CMS_OLDMIMETYPE = 1024;
-
-const OPENSSL_PKCS1_PADDING = 1;
-
-const OPENSSL_NO_PADDING = 3;
-
-const OPENSSL_PKCS1_OAEP_PADDING = 4;
-
-const OPENSSL_DEFAULT_STREAM_CIPHERS = 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-';
-
-const OPENSSL_CIPHER_RC2_40 = 0;
-
-const OPENSSL_CIPHER_RC2_128 = 1;
-
-const OPENSSL_CIPHER_RC2_64 = 2;
-
-const OPENSSL_CIPHER_DES = 3;
-
-const OPENSSL_CIPHER_3DES = 4;
-
-const OPENSSL_CIPHER_AES_128_CBC = 5;
-
-const OPENSSL_CIPHER_AES_192_CBC = 6;
-
-const OPENSSL_CIPHER_AES_256_CBC = 7;
-
-const OPENSSL_KEYTYPE_RSA = 0;
-
-const OPENSSL_KEYTYPE_DSA = 1;
-
-const OPENSSL_KEYTYPE_DH = 2;
-
-const OPENSSL_KEYTYPE_EC = 3;
-
-const OPENSSL_KEYTYPE_X25519 = 4;
-
-const OPENSSL_KEYTYPE_ED25519 = 5;
-
-const OPENSSL_KEYTYPE_X448 = 6;
-
-const OPENSSL_KEYTYPE_ED448 = 7;
-
-const OPENSSL_RAW_DATA = 1;
-
-const OPENSSL_ZERO_PADDING = 2;
-
-const OPENSSL_DONT_ZERO_PAD_KEY = 4;
-
-const OPENSSL_TLSEXT_SERVER_NAME = 1;
-
-const OPENSSL_ENCODING_DER = 0;
-
-const OPENSSL_ENCODING_SMIME = 1;
-
-const OPENSSL_ENCODING_PEM = 2;
-
-final class OpenSSLCertificate
-{
-
-}
-
-final class OpenSSLCertificateSigningRequest
-{
-
-}
-
-final class OpenSSLAsymmetricKey
-{
-
-}
-
-function session_name(?string $name = NULL): string|false {}
-
-function session_module_name(?string $module = NULL): string|false {}
-
-function session_save_path(?string $path = NULL): string|false {}
-
-function session_id(?string $id = NULL): string|false {}
-
-function session_create_id(string $prefix = ''): string|false {}
-
-function session_regenerate_id(bool $delete_old_session = false): bool {}
-
-function session_decode(string $data): bool {}
-
-function session_encode(): string|false {}
-
-function session_destroy(): bool {}
-
-function session_unset(): bool {}
-
-function session_gc(): int|false {}
-
-function session_get_cookie_params(): array {}
-
-function session_write_close(): bool {}
-
-function session_abort(): bool {}
-
-function session_reset(): bool {}
-
-function session_status(): int {}
-
-function session_register_shutdown(): void {}
-
-function session_commit(): bool {}
-
-function session_set_save_handler($open, $close = null, callable $read = null, callable $write = null, callable $destroy = null, callable $gc = null, ?callable $create_sid = NULL, ?callable $validate_sid = NULL, ?callable $update_timestamp = NULL): bool {}
-
-function session_cache_limiter(?string $value = NULL): string|false {}
-
-function session_cache_expire(?int $value = NULL): int|false {}
-
-function session_set_cookie_params(array|int $lifetime_or_options, ?string $path = NULL, ?string $domain = NULL, ?bool $secure = NULL, ?bool $httponly = NULL): bool {}
-
-function session_start(array $options = []): bool {}
-
-const PHP_SESSION_DISABLED = 0;
-
-const PHP_SESSION_NONE = 1;
-
-const PHP_SESSION_ACTIVE = 2;
-
-interface SessionHandlerInterface
-{
-    public function open(string $path, string $name): bool;
-    public function close(): bool;
-    public function read(string $id): string|false;
-    public function write(string $id, string $data): bool;
-    public function destroy(string $id): bool;
-    public function gc(int $max_lifetime): int|false;
-}
-
-interface SessionIdInterface
-{
-    public function create_sid(): string;
-}
-
-interface SessionUpdateTimestampHandlerInterface
-{
-    public function validateId(string $id): bool;
-    public function updateTimestamp(string $id, string $data): bool;
-}
-
-class SessionHandler implements \SessionHandlerInterface, \SessionIdInterface
-{
-    public function open(string $path, string $name): bool {}
-    public function close(): bool {}
-    public function read(string $id): string|false {}
-    public function write(string $id, string $data): bool {}
-    public function destroy(string $id): bool {}
-    public function gc(int $max_lifetime): int|false {}
-    public function create_sid(): string {}
-}
-
-function ob_gzhandler(string $data, int $flags): string|false {}
-
-function zlib_get_coding_type(): string|false {}
-
-function gzfile(string $filename, int $use_include_path = 0): array|false {}
-
-function gzopen(string $filename, string $mode, int $use_include_path = 0) {}
-
-function readgzfile(string $filename, int $use_include_path = 0): int|false {}
-
-function zlib_encode(string $data, int $encoding, int $level = -1): string|false {}
-
-function zlib_decode(string $data, int $max_length = 0): string|false {}
-
-function gzdeflate(string $data, int $level = -1, int $encoding = \ZLIB_ENCODING_RAW): string|false {}
-
-function gzencode(string $data, int $level = -1, int $encoding = \ZLIB_ENCODING_GZIP): string|false {}
-
-function gzcompress(string $data, int $level = -1, int $encoding = \ZLIB_ENCODING_DEFLATE): string|false {}
-
-function gzinflate(string $data, int $max_length = 0): string|false {}
-
-function gzdecode(string $data, int $max_length = 0): string|false {}
-
-function gzuncompress(string $data, int $max_length = 0): string|false {}
-
-function gzwrite($stream, string $data, ?int $length = NULL): int|false {}
-
-function gzputs($stream, string $data, ?int $length = NULL): int|false {}
-
-function gzrewind($stream): bool {}
-
-function gzclose($stream): bool {}
-
-function gzeof($stream): bool {}
-
-function gzgetc($stream): string|false {}
-
-function gzpassthru($stream): int {}
-
-function gzseek($stream, int $offset, int $whence = \SEEK_SET): int {}
-
-function gztell($stream): int|false {}
-
-function gzread($stream, int $length): string|false {}
-
-function gzgets($stream, ?int $length = NULL): string|false {}
-
-function deflate_init(int $encoding, object|array $options = []): \DeflateContext|false {}
-
-function deflate_add(\DeflateContext $context, string $data, int $flush_mode = \ZLIB_SYNC_FLUSH): string|false {}
-
-function inflate_init(int $encoding, object|array $options = []): \InflateContext|false {}
-
-function inflate_add(\InflateContext $context, string $data, int $flush_mode = \ZLIB_SYNC_FLUSH): string|false {}
-
-function inflate_get_status(\InflateContext $context): int {}
-
-function inflate_get_read_len(\InflateContext $context): int {}
-
-const FORCE_GZIP = 31;
-
-const FORCE_DEFLATE = 15;
-
-const ZLIB_ENCODING_RAW = -15;
-
-const ZLIB_ENCODING_GZIP = 31;
-
-const ZLIB_ENCODING_DEFLATE = 15;
-
-const ZLIB_NO_FLUSH = 0;
-
-const ZLIB_PARTIAL_FLUSH = 1;
-
-const ZLIB_SYNC_FLUSH = 2;
-
-const ZLIB_FULL_FLUSH = 3;
-
-const ZLIB_BLOCK = 5;
-
-const ZLIB_FINISH = 4;
-
-const ZLIB_FILTERED = 1;
-
-const ZLIB_HUFFMAN_ONLY = 2;
-
-const ZLIB_RLE = 3;
-
-const ZLIB_FIXED = 4;
-
-const ZLIB_DEFAULT_STRATEGY = 0;
-
-const ZLIB_VERSION = '1.3.1';
-
-const ZLIB_VERNUM = 4880;
-
-const ZLIB_OK = 0;
-
-const ZLIB_STREAM_END = 1;
-
-const ZLIB_NEED_DICT = 2;
-
-const ZLIB_ERRNO = -1;
-
-const ZLIB_STREAM_ERROR = -2;
-
-const ZLIB_DATA_ERROR = -3;
-
-const ZLIB_MEM_ERROR = -4;
-
-const ZLIB_BUF_ERROR = -5;
-
-const ZLIB_VERSION_ERROR = -6;
-
-final class InflateContext
-{
-
-}
-
-final class DeflateContext
-{
-
-}
-
-function curl_close(\CurlHandle $handle): void {}
-
-function curl_copy_handle(\CurlHandle $handle): \CurlHandle|false {}
-
-function curl_errno(\CurlHandle $handle): int {}
-
-function curl_error(\CurlHandle $handle): string {}
-
-function curl_escape(\CurlHandle $handle, string $string): string|false {}
-
-function curl_unescape(\CurlHandle $handle, string $string): string|false {}
-
-function curl_multi_setopt(\CurlMultiHandle $multi_handle, int $option, mixed $value): bool {}
-
-function curl_exec(\CurlHandle $handle): string|bool {}
-
-function curl_file_create(string $filename, ?string $mime_type = NULL, ?string $posted_filename = NULL): \CURLFile {}
-
-function curl_getinfo(\CurlHandle $handle, ?int $option = NULL): mixed {}
-
-function curl_init(?string $url = NULL): \CurlHandle|false {}
-
-function curl_upkeep(\CurlHandle $handle): bool {}
-
-function curl_multi_add_handle(\CurlMultiHandle $multi_handle, \CurlHandle $handle): int {}
-
-function curl_multi_close(\CurlMultiHandle $multi_handle): void {}
-
-function curl_multi_errno(\CurlMultiHandle $multi_handle): int {}
-
-function curl_multi_exec(\CurlMultiHandle $multi_handle, &$still_running): int {}
-
-function curl_multi_getcontent(\CurlHandle $handle): ?string {}
-
-function curl_multi_info_read(\CurlMultiHandle $multi_handle, &$queued_messages = NULL): array|false {}
-
-function curl_multi_init(): \CurlMultiHandle {}
-
-function curl_multi_remove_handle(\CurlMultiHandle $multi_handle, \CurlHandle $handle): int {}
-
-function curl_multi_select(\CurlMultiHandle $multi_handle, float $timeout = 1.0): int {}
-
-function curl_multi_strerror(int $error_code): ?string {}
-
-function curl_pause(\CurlHandle $handle, int $flags): int {}
-
-function curl_reset(\CurlHandle $handle): void {}
-
-function curl_setopt_array(\CurlHandle $handle, array $options): bool {}
-
-function curl_setopt(\CurlHandle $handle, int $option, mixed $value): bool {}
-
-function curl_share_close(\CurlShareHandle $share_handle): void {}
-
-function curl_share_errno(\CurlShareHandle $share_handle): int {}
-
-function curl_share_init(): \CurlShareHandle {}
-
-function curl_share_setopt(\CurlShareHandle $share_handle, int $option, mixed $value): bool {}
-
-function curl_share_strerror(int $error_code): ?string {}
-
-function curl_strerror(int $error_code): ?string {}
-
-function curl_version(): array|false {}
-
-const CURLOPT_AUTOREFERER = 58;
-
-const CURLOPT_BINARYTRANSFER = 19914;
-
-const CURLOPT_BUFFERSIZE = 98;
-
-const CURLOPT_CAINFO = 10065;
-
-const CURLOPT_CAPATH = 10097;
-
-const CURLOPT_CONNECTTIMEOUT = 78;
-
-const CURLOPT_COOKIE = 10022;
-
-const CURLOPT_COOKIEFILE = 10031;
-
-const CURLOPT_COOKIEJAR = 10082;
-
-const CURLOPT_COOKIESESSION = 96;
-
-const CURLOPT_CRLF = 27;
-
-const CURLOPT_CUSTOMREQUEST = 10036;
-
-const CURLOPT_DNS_CACHE_TIMEOUT = 92;
-
-const CURLOPT_DNS_USE_GLOBAL_CACHE = 91;
-
-const CURLOPT_EGDSOCKET = 10077;
-
-const CURLOPT_ENCODING = 10102;
-
-const CURLOPT_FAILONERROR = 45;
-
-const CURLOPT_FILE = 10001;
-
-const CURLOPT_FILETIME = 69;
-
-const CURLOPT_FOLLOWLOCATION = 52;
-
-const CURLOPT_FORBID_REUSE = 75;
-
-const CURLOPT_FRESH_CONNECT = 74;
-
-const CURLOPT_FTPAPPEND = 50;
-
-const CURLOPT_FTPLISTONLY = 48;
-
-const CURLOPT_FTPPORT = 10017;
-
-const CURLOPT_FTP_USE_EPRT = 106;
-
-const CURLOPT_FTP_USE_EPSV = 85;
-
-const CURLOPT_HEADER = 42;
-
-const CURLOPT_HEADERFUNCTION = 20079;
-
-const CURLOPT_HTTP200ALIASES = 10104;
-
-const CURLOPT_HTTPGET = 80;
-
-const CURLOPT_HTTPHEADER = 10023;
-
-const CURLOPT_HTTPPROXYTUNNEL = 61;
-
-const CURLOPT_HTTP_VERSION = 84;
-
-const CURLOPT_INFILE = 10009;
-
-const CURLOPT_INFILESIZE = 14;
-
-const CURLOPT_INTERFACE = 10062;
-
-const CURLOPT_KRB4LEVEL = 10063;
-
-const CURLOPT_LOW_SPEED_LIMIT = 19;
-
-const CURLOPT_LOW_SPEED_TIME = 20;
-
-const CURLOPT_MAXCONNECTS = 71;
-
-const CURLOPT_MAXREDIRS = 68;
-
-const CURLOPT_NETRC = 51;
-
-const CURLOPT_NOBODY = 44;
-
-const CURLOPT_NOPROGRESS = 43;
-
-const CURLOPT_NOSIGNAL = 99;
-
-const CURLOPT_PORT = 3;
-
-const CURLOPT_POST = 47;
-
-const CURLOPT_POSTFIELDS = 10015;
-
-const CURLOPT_POSTQUOTE = 10039;
-
-const CURLOPT_PREQUOTE = 10093;
-
-const CURLOPT_PRIVATE = 10103;
-
-const CURLOPT_PROGRESSFUNCTION = 20056;
-
-const CURLOPT_PROXY = 10004;
-
-const CURLOPT_PROXYPORT = 59;
-
-const CURLOPT_PROXYTYPE = 101;
-
-const CURLOPT_PROXYUSERPWD = 10006;
-
-const CURLOPT_PUT = 54;
-
-const CURLOPT_QUOTE = 10028;
-
-const CURLOPT_RANDOM_FILE = 10076;
-
-const CURLOPT_RANGE = 10007;
-
-const CURLOPT_READDATA = 10009;
-
-const CURLOPT_READFUNCTION = 20012;
-
-const CURLOPT_REFERER = 10016;
-
-const CURLOPT_RESUME_FROM = 21;
-
-const CURLOPT_RETURNTRANSFER = 19913;
-
-const CURLOPT_SHARE = 10100;
-
-const CURLOPT_SSLCERT = 10025;
-
-const CURLOPT_SSLCERTPASSWD = 10026;
-
-const CURLOPT_SSLCERTTYPE = 10086;
-
-const CURLOPT_SSLENGINE = 10089;
-
-const CURLOPT_SSLENGINE_DEFAULT = 90;
-
-const CURLOPT_SSLKEY = 10087;
-
-const CURLOPT_SSLKEYPASSWD = 10026;
-
-const CURLOPT_SSLKEYTYPE = 10088;
-
-const CURLOPT_SSLVERSION = 32;
-
-const CURLOPT_SSL_CIPHER_LIST = 10083;
-
-const CURLOPT_SSL_VERIFYHOST = 81;
-
-const CURLOPT_SSL_VERIFYPEER = 64;
-
-const CURLOPT_STDERR = 10037;
-
-const CURLOPT_TCP_KEEPCNT = 326;
-
-const CURLOPT_TELNETOPTIONS = 10070;
-
-const CURLOPT_TIMECONDITION = 33;
-
-const CURLOPT_TIMEOUT = 13;
-
-const CURLOPT_TIMEVALUE = 34;
-
-const CURLOPT_TRANSFERTEXT = 53;
-
-const CURLOPT_UNRESTRICTED_AUTH = 105;
-
-const CURLOPT_UPLOAD = 46;
-
-const CURLOPT_URL = 10002;
-
-const CURLOPT_USERAGENT = 10018;
-
-const CURLOPT_USERPWD = 10005;
-
-const CURLOPT_VERBOSE = 41;
-
-const CURLOPT_WRITEFUNCTION = 20011;
-
-const CURLOPT_WRITEHEADER = 10029;
-
-const CURLOPT_XFERINFOFUNCTION = 20219;
-
-const CURLOPT_DEBUGFUNCTION = 20094;
-
-const CURLINFO_TEXT = 0;
-
-const CURLINFO_HEADER_IN = 1;
-
-const CURLINFO_DATA_IN = 3;
-
-const CURLINFO_DATA_OUT = 4;
-
-const CURLINFO_SSL_DATA_OUT = 6;
-
-const CURLINFO_SSL_DATA_IN = 5;
-
-const CURLE_ABORTED_BY_CALLBACK = 42;
-
-const CURLE_BAD_CALLING_ORDER = 44;
-
-const CURLE_BAD_CONTENT_ENCODING = 61;
-
-const CURLE_BAD_DOWNLOAD_RESUME = 36;
-
-const CURLE_BAD_FUNCTION_ARGUMENT = 43;
-
-const CURLE_BAD_PASSWORD_ENTERED = 46;
-
-const CURLE_COULDNT_CONNECT = 7;
-
-const CURLE_COULDNT_RESOLVE_HOST = 6;
-
-const CURLE_COULDNT_RESOLVE_PROXY = 5;
-
-const CURLE_FAILED_INIT = 2;
-
-const CURLE_FILE_COULDNT_READ_FILE = 37;
-
-const CURLE_FTP_ACCESS_DENIED = 9;
-
-const CURLE_FTP_BAD_DOWNLOAD_RESUME = 36;
-
-const CURLE_FTP_CANT_GET_HOST = 15;
-
-const CURLE_FTP_CANT_RECONNECT = 16;
-
-const CURLE_FTP_COULDNT_GET_SIZE = 32;
-
-const CURLE_FTP_COULDNT_RETR_FILE = 19;
-
-const CURLE_FTP_COULDNT_SET_ASCII = 29;
-
-const CURLE_FTP_COULDNT_SET_BINARY = 17;
-
-const CURLE_FTP_COULDNT_STOR_FILE = 25;
-
-const CURLE_FTP_COULDNT_USE_REST = 31;
-
-const CURLE_FTP_PARTIAL_FILE = 18;
-
-const CURLE_FTP_PORT_FAILED = 30;
-
-const CURLE_FTP_QUOTE_ERROR = 21;
-
-const CURLE_FTP_USER_PASSWORD_INCORRECT = 10;
-
-const CURLE_FTP_WEIRD_227_FORMAT = 14;
-
-const CURLE_FTP_WEIRD_PASS_REPLY = 11;
-
-const CURLE_FTP_WEIRD_PASV_REPLY = 13;
-
-const CURLE_FTP_WEIRD_SERVER_REPLY = 8;
-
-const CURLE_FTP_WEIRD_USER_REPLY = 12;
-
-const CURLE_FTP_WRITE_ERROR = 20;
-
-const CURLE_FUNCTION_NOT_FOUND = 41;
-
-const CURLE_GOT_NOTHING = 52;
-
-const CURLE_HTTP_NOT_FOUND = 22;
-
-const CURLE_HTTP_PORT_FAILED = 45;
-
-const CURLE_HTTP_POST_ERROR = 34;
-
-const CURLE_HTTP_RANGE_ERROR = 33;
-
-const CURLE_HTTP_RETURNED_ERROR = 22;
-
-const CURLE_LDAP_CANNOT_BIND = 38;
-
-const CURLE_LDAP_SEARCH_FAILED = 39;
-
-const CURLE_LIBRARY_NOT_FOUND = 40;
-
-const CURLE_MALFORMAT_USER = 24;
-
-const CURLE_OBSOLETE = 50;
-
-const CURLE_OK = 0;
-
-const CURLE_OPERATION_TIMEDOUT = 28;
-
-const CURLE_OPERATION_TIMEOUTED = 28;
-
-const CURLE_OUT_OF_MEMORY = 27;
-
-const CURLE_PARTIAL_FILE = 18;
-
-const CURLE_READ_ERROR = 26;
-
-const CURLE_RECV_ERROR = 56;
-
-const CURLE_SEND_ERROR = 55;
-
-const CURLE_SHARE_IN_USE = 57;
-
-const CURLE_SSL_CACERT = 60;
-
-const CURLE_SSL_CERTPROBLEM = 58;
-
-const CURLE_SSL_CIPHER = 59;
-
-const CURLE_SSL_CONNECT_ERROR = 35;
-
-const CURLE_SSL_ENGINE_NOTFOUND = 53;
-
-const CURLE_SSL_ENGINE_SETFAILED = 54;
-
-const CURLE_SSL_PEER_CERTIFICATE = 60;
-
-const CURLE_SSL_PINNEDPUBKEYNOTMATCH = 90;
-
-const CURLE_TELNET_OPTION_SYNTAX = 49;
-
-const CURLE_TOO_MANY_REDIRECTS = 47;
-
-const CURLE_UNKNOWN_TELNET_OPTION = 48;
-
-const CURLE_UNSUPPORTED_PROTOCOL = 1;
-
-const CURLE_URL_MALFORMAT = 3;
-
-const CURLE_URL_MALFORMAT_USER = 4;
-
-const CURLE_WRITE_ERROR = 23;
-
-const CURLINFO_CONNECT_TIME = 3145733;
-
-const CURLINFO_CONTENT_LENGTH_DOWNLOAD = 3145743;
-
-const CURLINFO_CONTENT_LENGTH_UPLOAD = 3145744;
-
-const CURLINFO_CONTENT_TYPE = 1048594;
-
-const CURLINFO_EFFECTIVE_URL = 1048577;
-
-const CURLINFO_FILETIME = 2097166;
-
-const CURLINFO_HEADER_OUT = 2;
-
-const CURLINFO_HEADER_SIZE = 2097163;
-
-const CURLINFO_HTTP_CODE = 2097154;
-
-const CURLINFO_LASTONE = 70;
-
-const CURLINFO_NAMELOOKUP_TIME = 3145732;
-
-const CURLINFO_PRETRANSFER_TIME = 3145734;
-
-const CURLINFO_PRIVATE = 1048597;
-
-const CURLINFO_REDIRECT_COUNT = 2097172;
-
-const CURLINFO_REDIRECT_TIME = 3145747;
-
-const CURLINFO_REQUEST_SIZE = 2097164;
-
-const CURLINFO_SIZE_DOWNLOAD = 3145736;
-
-const CURLINFO_SIZE_UPLOAD = 3145735;
-
-const CURLINFO_SPEED_DOWNLOAD = 3145737;
-
-const CURLINFO_SPEED_UPLOAD = 3145738;
-
-const CURLINFO_SSL_VERIFYRESULT = 2097165;
-
-const CURLINFO_STARTTRANSFER_TIME = 3145745;
-
-const CURLINFO_TOTAL_TIME = 3145731;
-
-const CURLINFO_EFFECTIVE_METHOD = 1048634;
-
-const CURLINFO_CAPATH = 1048638;
-
-const CURLINFO_CAINFO = 1048637;
-
-const CURLMSG_DONE = 1;
-
-const CURLVERSION_NOW = 11;
-
-const CURLM_BAD_EASY_HANDLE = 2;
-
-const CURLM_BAD_HANDLE = 1;
-
-const CURLM_CALL_MULTI_PERFORM = -1;
-
-const CURLM_INTERNAL_ERROR = 4;
-
-const CURLM_OK = 0;
-
-const CURLM_OUT_OF_MEMORY = 3;
-
-const CURLM_ADDED_ALREADY = 7;
-
-const CURLPROXY_HTTP = 0;
-
-const CURLPROXY_SOCKS4 = 4;
-
-const CURLPROXY_SOCKS5 = 5;
-
-const CURLSHOPT_NONE = 0;
-
-const CURLSHOPT_SHARE = 1;
-
-const CURLSHOPT_UNSHARE = 2;
-
-const CURL_HTTP_VERSION_1_0 = 1;
-
-const CURL_HTTP_VERSION_1_1 = 2;
-
-const CURL_HTTP_VERSION_NONE = 0;
-
-const CURL_LOCK_DATA_COOKIE = 2;
-
-const CURL_LOCK_DATA_DNS = 3;
-
-const CURL_LOCK_DATA_SSL_SESSION = 4;
-
-const CURL_NETRC_IGNORED = 0;
-
-const CURL_NETRC_OPTIONAL = 1;
-
-const CURL_NETRC_REQUIRED = 2;
-
-const CURL_SSLVERSION_DEFAULT = 0;
-
-const CURL_SSLVERSION_SSLv2 = 2;
-
-const CURL_SSLVERSION_SSLv3 = 3;
-
-const CURL_SSLVERSION_TLSv1 = 1;
-
-const CURL_TIMECOND_IFMODSINCE = 1;
-
-const CURL_TIMECOND_IFUNMODSINCE = 2;
-
-const CURL_TIMECOND_LASTMOD = 3;
-
-const CURL_TIMECOND_NONE = 0;
-
-const CURL_VERSION_ASYNCHDNS = 128;
-
-const CURL_VERSION_CONV = 4096;
-
-const CURL_VERSION_DEBUG = 64;
-
-const CURL_VERSION_GSSNEGOTIATE = 32;
-
-const CURL_VERSION_IDN = 1024;
-
-const CURL_VERSION_IPV6 = 1;
-
-const CURL_VERSION_KERBEROS4 = 2;
-
-const CURL_VERSION_LARGEFILE = 512;
-
-const CURL_VERSION_LIBZ = 8;
-
-const CURL_VERSION_NTLM = 16;
-
-const CURL_VERSION_SPNEGO = 256;
-
-const CURL_VERSION_SSL = 4;
-
-const CURL_VERSION_SSPI = 2048;
-
-const CURLOPT_HTTPAUTH = 107;
-
-const CURLAUTH_ANY = -17;
-
-const CURLAUTH_ANYSAFE = -18;
-
-const CURLAUTH_BASIC = 1;
-
-const CURLAUTH_DIGEST = 2;
-
-const CURLAUTH_GSSNEGOTIATE = 4;
-
-const CURLAUTH_NONE = 0;
-
-const CURLAUTH_NTLM = 8;
-
-const CURLINFO_HTTP_CONNECTCODE = 2097174;
-
-const CURLOPT_FTP_CREATE_MISSING_DIRS = 110;
-
-const CURLOPT_PROXYAUTH = 111;
-
-const CURLE_FILESIZE_EXCEEDED = 63;
-
-const CURLE_LDAP_INVALID_URL = 62;
-
-const CURLINFO_HTTPAUTH_AVAIL = 2097175;
-
-const CURLINFO_RESPONSE_CODE = 2097154;
-
-const CURLINFO_PROXYAUTH_AVAIL = 2097176;
-
-const CURLOPT_FTP_RESPONSE_TIMEOUT = 112;
-
-const CURLOPT_SERVER_RESPONSE_TIMEOUT = 112;
-
-const CURLOPT_IPRESOLVE = 113;
-
-const CURLOPT_MAXFILESIZE = 114;
-
-const CURL_IPRESOLVE_V4 = 1;
-
-const CURL_IPRESOLVE_V6 = 2;
-
-const CURL_IPRESOLVE_WHATEVER = 0;
-
-const CURLE_FTP_SSL_FAILED = 64;
-
-const CURLFTPSSL_ALL = 3;
-
-const CURLFTPSSL_CONTROL = 2;
-
-const CURLFTPSSL_NONE = 0;
-
-const CURLFTPSSL_TRY = 1;
-
-const CURLOPT_FTP_SSL = 119;
-
-const CURLOPT_NETRC_FILE = 10118;
-
-const CURLOPT_MAXFILESIZE_LARGE = 30117;
-
-const CURLOPT_TCP_NODELAY = 121;
-
-const CURLFTPAUTH_DEFAULT = 0;
-
-const CURLFTPAUTH_SSL = 1;
-
-const CURLFTPAUTH_TLS = 2;
-
-const CURLOPT_FTPSSLAUTH = 129;
-
-const CURLOPT_FTP_ACCOUNT = 10134;
-
-const CURLINFO_OS_ERRNO = 2097177;
-
-const CURLINFO_NUM_CONNECTS = 2097178;
-
-const CURLINFO_SSL_ENGINES = 4194331;
-
-const CURLINFO_COOKIELIST = 4194332;
-
-const CURLOPT_COOKIELIST = 10135;
-
-const CURLOPT_IGNORE_CONTENT_LENGTH = 136;
-
-const CURLOPT_FTP_SKIP_PASV_IP = 137;
-
-const CURLOPT_FTP_FILEMETHOD = 138;
-
-const CURLOPT_CONNECT_ONLY = 141;
-
-const CURLOPT_LOCALPORT = 139;
-
-const CURLOPT_LOCALPORTRANGE = 140;
-
-const CURLFTPMETHOD_DEFAULT = 0;
-
-const CURLFTPMETHOD_MULTICWD = 1;
-
-const CURLFTPMETHOD_NOCWD = 2;
-
-const CURLFTPMETHOD_SINGLECWD = 3;
-
-const CURLINFO_FTP_ENTRY_PATH = 1048606;
-
-const CURLOPT_FTP_ALTERNATIVE_TO_USER = 10147;
-
-const CURLOPT_MAX_RECV_SPEED_LARGE = 30146;
-
-const CURLOPT_MAX_SEND_SPEED_LARGE = 30145;
-
-const CURLE_SSL_CACERT_BADFILE = 77;
-
-const CURLOPT_SSL_SESSIONID_CACHE = 150;
-
-const CURLMOPT_PIPELINING = 3;
-
-const CURLE_SSH = 79;
-
-const CURLOPT_FTP_SSL_CCC = 154;
-
-const CURLOPT_SSH_AUTH_TYPES = 151;
-
-const CURLOPT_SSH_PRIVATE_KEYFILE = 10153;
-
-const CURLOPT_SSH_PUBLIC_KEYFILE = 10152;
-
-const CURLFTPSSL_CCC_ACTIVE = 2;
-
-const CURLFTPSSL_CCC_NONE = 0;
-
-const CURLFTPSSL_CCC_PASSIVE = 1;
-
-const CURLOPT_CONNECTTIMEOUT_MS = 156;
-
-const CURLOPT_HTTP_CONTENT_DECODING = 158;
-
-const CURLOPT_HTTP_TRANSFER_DECODING = 157;
-
-const CURLOPT_TIMEOUT_MS = 155;
-
-const CURLMOPT_MAXCONNECTS = 6;
-
-const CURLOPT_KRBLEVEL = 10063;
-
-const CURLOPT_NEW_DIRECTORY_PERMS = 160;
-
-const CURLOPT_NEW_FILE_PERMS = 159;
-
-const CURLOPT_APPEND = 50;
-
-const CURLOPT_DIRLISTONLY = 48;
-
-const CURLOPT_USE_SSL = 119;
-
-const CURLUSESSL_ALL = 3;
-
-const CURLUSESSL_CONTROL = 2;
-
-const CURLUSESSL_NONE = 0;
-
-const CURLUSESSL_TRY = 1;
-
-const CURLOPT_SSH_HOST_PUBLIC_KEY_MD5 = 10162;
-
-const CURLOPT_PROXY_TRANSFER_MODE = 166;
-
-const CURLPAUSE_ALL = 5;
-
-const CURLPAUSE_CONT = 0;
-
-const CURLPAUSE_RECV = 1;
-
-const CURLPAUSE_RECV_CONT = 0;
-
-const CURLPAUSE_SEND = 4;
-
-const CURLPAUSE_SEND_CONT = 0;
-
-const CURL_READFUNC_PAUSE = 268435457;
-
-const CURL_WRITEFUNC_PAUSE = 268435457;
-
-const CURLPROXY_SOCKS4A = 6;
-
-const CURLPROXY_SOCKS5_HOSTNAME = 7;
-
-const CURLINFO_REDIRECT_URL = 1048607;
-
-const CURLINFO_APPCONNECT_TIME = 3145761;
-
-const CURLINFO_PRIMARY_IP = 1048608;
-
-const CURLOPT_ADDRESS_SCOPE = 171;
-
-const CURLOPT_CRLFILE = 10169;
-
-const CURLOPT_ISSUERCERT = 10170;
-
-const CURLOPT_KEYPASSWD = 10026;
-
-const CURLSSH_AUTH_ANY = -1;
-
-const CURLSSH_AUTH_DEFAULT = -1;
-
-const CURLSSH_AUTH_HOST = 4;
-
-const CURLSSH_AUTH_KEYBOARD = 8;
-
-const CURLSSH_AUTH_NONE = 0;
-
-const CURLSSH_AUTH_PASSWORD = 2;
-
-const CURLSSH_AUTH_PUBLICKEY = 1;
-
-const CURLINFO_CERTINFO = 4194338;
-
-const CURLOPT_CERTINFO = 172;
-
-const CURLOPT_PASSWORD = 10174;
-
-const CURLOPT_POSTREDIR = 161;
-
-const CURLOPT_PROXYPASSWORD = 10176;
-
-const CURLOPT_PROXYUSERNAME = 10175;
-
-const CURLOPT_USERNAME = 10173;
-
-const CURL_REDIR_POST_301 = 1;
-
-const CURL_REDIR_POST_302 = 2;
-
-const CURL_REDIR_POST_ALL = 7;
-
-const CURLAUTH_DIGEST_IE = 16;
-
-const CURLINFO_CONDITION_UNMET = 2097187;
-
-const CURLOPT_NOPROXY = 10177;
-
-const CURLOPT_PROTOCOLS = 181;
-
-const CURLOPT_REDIR_PROTOCOLS = 182;
-
-const CURLOPT_SOCKS5_GSSAPI_NEC = 180;
-
-const CURLOPT_SOCKS5_GSSAPI_SERVICE = 10179;
-
-const CURLOPT_TFTP_BLKSIZE = 178;
-
-const CURLPROTO_ALL = -1;
-
-const CURLPROTO_DICT = 512;
-
-const CURLPROTO_FILE = 1024;
-
-const CURLPROTO_FTP = 4;
-
-const CURLPROTO_FTPS = 8;
-
-const CURLPROTO_HTTP = 1;
-
-const CURLPROTO_HTTPS = 2;
-
-const CURLPROTO_LDAP = 128;
-
-const CURLPROTO_LDAPS = 256;
-
-const CURLPROTO_SCP = 16;
-
-const CURLPROTO_SFTP = 32;
-
-const CURLPROTO_TELNET = 64;
-
-const CURLPROTO_TFTP = 2048;
-
-const CURLPROXY_HTTP_1_0 = 1;
-
-const CURLFTP_CREATE_DIR = 1;
-
-const CURLFTP_CREATE_DIR_NONE = 0;
-
-const CURLFTP_CREATE_DIR_RETRY = 2;
-
-const CURL_VERSION_CURLDEBUG = 8192;
-
-const CURLOPT_SSH_KNOWNHOSTS = 10183;
-
-const CURLKHMATCH_OK = 0;
-
-const CURLKHMATCH_MISMATCH = 1;
-
-const CURLKHMATCH_MISSING = 2;
-
-const CURLKHMATCH_LAST = 3;
-
-const CURLINFO_RTSP_CLIENT_CSEQ = 2097189;
-
-const CURLINFO_RTSP_CSEQ_RECV = 2097191;
-
-const CURLINFO_RTSP_SERVER_CSEQ = 2097190;
-
-const CURLINFO_RTSP_SESSION_ID = 1048612;
-
-const CURLOPT_FTP_USE_PRET = 188;
-
-const CURLOPT_MAIL_FROM = 10186;
-
-const CURLOPT_MAIL_RCPT = 10187;
-
-const CURLOPT_RTSP_CLIENT_CSEQ = 193;
-
-const CURLOPT_RTSP_REQUEST = 189;
-
-const CURLOPT_RTSP_SERVER_CSEQ = 194;
-
-const CURLOPT_RTSP_SESSION_ID = 10190;
-
-const CURLOPT_RTSP_STREAM_URI = 10191;
-
-const CURLOPT_RTSP_TRANSPORT = 10192;
-
-const CURLPROTO_IMAP = 4096;
-
-const CURLPROTO_IMAPS = 8192;
-
-const CURLPROTO_POP3 = 16384;
-
-const CURLPROTO_POP3S = 32768;
-
-const CURLPROTO_RTSP = 262144;
-
-const CURLPROTO_SMTP = 65536;
-
-const CURLPROTO_SMTPS = 131072;
-
-const CURL_RTSPREQ_ANNOUNCE = 3;
-
-const CURL_RTSPREQ_DESCRIBE = 2;
-
-const CURL_RTSPREQ_GET_PARAMETER = 8;
-
-const CURL_RTSPREQ_OPTIONS = 1;
-
-const CURL_RTSPREQ_PAUSE = 6;
-
-const CURL_RTSPREQ_PLAY = 5;
-
-const CURL_RTSPREQ_RECEIVE = 11;
-
-const CURL_RTSPREQ_RECORD = 10;
-
-const CURL_RTSPREQ_SET_PARAMETER = 9;
-
-const CURL_RTSPREQ_SETUP = 4;
-
-const CURL_RTSPREQ_TEARDOWN = 7;
-
-const CURLINFO_LOCAL_IP = 1048617;
-
-const CURLINFO_LOCAL_PORT = 2097194;
-
-const CURLINFO_PRIMARY_PORT = 2097192;
-
-const CURLOPT_FNMATCH_FUNCTION = 20200;
-
-const CURLOPT_WILDCARDMATCH = 197;
-
-const CURLPROTO_RTMP = 524288;
-
-const CURLPROTO_RTMPE = 2097152;
-
-const CURLPROTO_RTMPS = 8388608;
-
-const CURLPROTO_RTMPT = 1048576;
-
-const CURLPROTO_RTMPTE = 4194304;
-
-const CURLPROTO_RTMPTS = 16777216;
-
-const CURL_FNMATCHFUNC_FAIL = 2;
-
-const CURL_FNMATCHFUNC_MATCH = 0;
-
-const CURL_FNMATCHFUNC_NOMATCH = 1;
-
-const CURLPROTO_GOPHER = 33554432;
-
-const CURLAUTH_ONLY = 2147483648;
-
-const CURLOPT_RESOLVE = 10203;
-
-const CURLOPT_TLSAUTH_PASSWORD = 10205;
-
-const CURLOPT_TLSAUTH_TYPE = 10206;
-
-const CURLOPT_TLSAUTH_USERNAME = 10204;
-
-const CURL_TLSAUTH_SRP = 1;
-
-const CURL_VERSION_TLSAUTH_SRP = 16384;
-
-const CURLOPT_ACCEPT_ENCODING = 10102;
-
-const CURLOPT_TRANSFER_ENCODING = 207;
-
-const CURLAUTH_NTLM_WB = 32;
-
-const CURLGSSAPI_DELEGATION_FLAG = 2;
-
-const CURLGSSAPI_DELEGATION_POLICY_FLAG = 1;
-
-const CURLOPT_GSSAPI_DELEGATION = 210;
-
-const CURL_VERSION_NTLM_WB = 32768;
-
-const CURLOPT_ACCEPTTIMEOUT_MS = 212;
-
-const CURLOPT_DNS_SERVERS = 10211;
-
-const CURLOPT_MAIL_AUTH = 10217;
-
-const CURLOPT_SSL_OPTIONS = 216;
-
-const CURLOPT_TCP_KEEPALIVE = 213;
-
-const CURLOPT_TCP_KEEPIDLE = 214;
-
-const CURLOPT_TCP_KEEPINTVL = 215;
-
-const CURLSSLOPT_ALLOW_BEAST = 1;
-
-const CURL_REDIR_POST_303 = 4;
-
-const CURLSSH_AUTH_AGENT = 16;
-
-const CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE = 30010;
-
-const CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE = 30009;
-
-const CURLMOPT_MAX_HOST_CONNECTIONS = 7;
-
-const CURLMOPT_MAX_PIPELINE_LENGTH = 8;
-
-const CURLMOPT_MAX_TOTAL_CONNECTIONS = 13;
-
-const CURLOPT_SASL_IR = 218;
-
-const CURLOPT_DNS_INTERFACE = 10221;
-
-const CURLOPT_DNS_LOCAL_IP4 = 10222;
-
-const CURLOPT_DNS_LOCAL_IP6 = 10223;
-
-const CURLOPT_XOAUTH2_BEARER = 10220;
-
-const CURL_HTTP_VERSION_2_0 = 3;
-
-const CURL_VERSION_HTTP2 = 65536;
-
-const CURLOPT_LOGIN_OPTIONS = 10224;
-
-const CURL_SSLVERSION_TLSv1_0 = 4;
-
-const CURL_SSLVERSION_TLSv1_1 = 5;
-
-const CURL_SSLVERSION_TLSv1_2 = 6;
-
-const CURLOPT_EXPECT_100_TIMEOUT_MS = 227;
-
-const CURLOPT_SSL_ENABLE_ALPN = 226;
-
-const CURLOPT_SSL_ENABLE_NPN = 225;
-
-const CURLHEADER_SEPARATE = 1;
-
-const CURLHEADER_UNIFIED = 0;
-
-const CURLOPT_HEADEROPT = 229;
-
-const CURLOPT_PROXYHEADER = 10228;
-
-const CURLAUTH_NEGOTIATE = 4;
-
-const CURL_VERSION_GSSAPI = 131072;
-
-const CURLOPT_PINNEDPUBLICKEY = 10230;
-
-const CURLOPT_UNIX_SOCKET_PATH = 10231;
-
-const CURLPROTO_SMB = 67108864;
-
-const CURLPROTO_SMBS = 134217728;
-
-const CURL_VERSION_KERBEROS5 = 262144;
-
-const CURL_VERSION_UNIX_SOCKETS = 524288;
-
-const CURLOPT_SSL_VERIFYSTATUS = 232;
-
-const CURLOPT_PATH_AS_IS = 234;
-
-const CURLOPT_SSL_FALSESTART = 233;
-
-const CURL_HTTP_VERSION_2 = 3;
-
-const CURLOPT_PIPEWAIT = 237;
-
-const CURLOPT_PROXY_SERVICE_NAME = 10235;
-
-const CURLOPT_SERVICE_NAME = 10236;
-
-const CURLPIPE_NOTHING = 0;
-
-const CURLPIPE_HTTP1 = 1;
-
-const CURLPIPE_MULTIPLEX = 2;
-
-const CURLSSLOPT_NO_REVOKE = 2;
-
-const CURLOPT_DEFAULT_PROTOCOL = 10238;
-
-const CURLOPT_STREAM_WEIGHT = 239;
-
-const CURLMOPT_PUSHFUNCTION = 20014;
-
-const CURL_PUSH_OK = 0;
-
-const CURL_PUSH_DENY = 1;
-
-const CURL_HTTP_VERSION_2TLS = 4;
-
-const CURL_VERSION_PSL = 1048576;
-
-const CURLOPT_TFTP_NO_OPTIONS = 242;
-
-const CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE = 5;
-
-const CURLOPT_CONNECT_TO = 10243;
-
-const CURLOPT_TCP_FASTOPEN = 244;
-
-const CURLINFO_HTTP_VERSION = 2097198;
-
-const CURLE_WEIRD_SERVER_REPLY = 8;
-
-const CURLOPT_KEEP_SENDING_ON_ERROR = 245;
-
-const CURL_SSLVERSION_TLSv1_3 = 7;
-
-const CURL_VERSION_HTTPS_PROXY = 2097152;
-
-const CURLINFO_PROTOCOL = 2097200;
-
-const CURLINFO_PROXY_SSL_VERIFYRESULT = 2097199;
-
-const CURLINFO_SCHEME = 1048625;
-
-const CURLOPT_PRE_PROXY = 10262;
-
-const CURLOPT_PROXY_CAINFO = 10246;
-
-const CURLOPT_PROXY_CAPATH = 10247;
-
-const CURLOPT_PROXY_CRLFILE = 10260;
-
-const CURLOPT_PROXY_KEYPASSWD = 10258;
-
-const CURLOPT_PROXY_PINNEDPUBLICKEY = 10263;
-
-const CURLOPT_PROXY_SSL_CIPHER_LIST = 10259;
-
-const CURLOPT_PROXY_SSL_OPTIONS = 261;
-
-const CURLOPT_PROXY_SSL_VERIFYHOST = 249;
-
-const CURLOPT_PROXY_SSL_VERIFYPEER = 248;
-
-const CURLOPT_PROXY_SSLCERT = 10254;
-
-const CURLOPT_PROXY_SSLCERTTYPE = 10255;
-
-const CURLOPT_PROXY_SSLKEY = 10256;
-
-const CURLOPT_PROXY_SSLKEYTYPE = 10257;
-
-const CURLOPT_PROXY_SSLVERSION = 250;
-
-const CURLOPT_PROXY_TLSAUTH_PASSWORD = 10252;
-
-const CURLOPT_PROXY_TLSAUTH_TYPE = 10253;
-
-const CURLOPT_PROXY_TLSAUTH_USERNAME = 10251;
-
-const CURLPROXY_HTTPS = 2;
-
-const CURL_MAX_READ_SIZE = 10485760;
-
-const CURLOPT_ABSTRACT_UNIX_SOCKET = 10264;
-
-const CURL_SSLVERSION_MAX_DEFAULT = 65536;
-
-const CURL_SSLVERSION_MAX_NONE = 0;
-
-const CURL_SSLVERSION_MAX_TLSv1_0 = 262144;
-
-const CURL_SSLVERSION_MAX_TLSv1_1 = 327680;
-
-const CURL_SSLVERSION_MAX_TLSv1_2 = 393216;
-
-const CURL_SSLVERSION_MAX_TLSv1_3 = 458752;
-
-const CURLOPT_SUPPRESS_CONNECT_HEADERS = 265;
-
-const CURLAUTH_GSSAPI = 4;
-
-const CURLINFO_CONTENT_LENGTH_DOWNLOAD_T = 6291471;
-
-const CURLINFO_CONTENT_LENGTH_UPLOAD_T = 6291472;
-
-const CURLINFO_SIZE_DOWNLOAD_T = 6291464;
-
-const CURLINFO_SIZE_UPLOAD_T = 6291463;
-
-const CURLINFO_SPEED_DOWNLOAD_T = 6291465;
-
-const CURLINFO_SPEED_UPLOAD_T = 6291466;
-
-const CURLOPT_REQUEST_TARGET = 10266;
-
-const CURLOPT_SOCKS5_AUTH = 267;
-
-const CURLOPT_SSH_COMPRESSION = 268;
-
-const CURL_VERSION_MULTI_SSL = 4194304;
-
-const CURL_VERSION_BROTLI = 8388608;
-
-const CURL_LOCK_DATA_CONNECT = 5;
-
-const CURLSSH_AUTH_GSSAPI = 32;
-
-const CURLINFO_FILETIME_T = 6291470;
-
-const CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS = 271;
-
-const CURLOPT_TIMEVALUE_LARGE = 30270;
-
-const CURLOPT_DNS_SHUFFLE_ADDRESSES = 275;
-
-const CURLOPT_HAPROXYPROTOCOL = 274;
-
-const CURL_LOCK_DATA_PSL = 6;
-
-const CURLAUTH_BEARER = 64;
-
-const CURLINFO_APPCONNECT_TIME_T = 6291512;
-
-const CURLINFO_CONNECT_TIME_T = 6291508;
-
-const CURLINFO_NAMELOOKUP_TIME_T = 6291507;
-
-const CURLINFO_PRETRANSFER_TIME_T = 6291509;
-
-const CURLINFO_REDIRECT_TIME_T = 6291511;
-
-const CURLINFO_STARTTRANSFER_TIME_T = 6291510;
-
-const CURLINFO_TOTAL_TIME_T = 6291506;
-
-const CURLINFO_POSTTRANSFER_TIME_T = 6291523;
-
-const CURLOPT_DISALLOW_USERNAME_IN_URL = 278;
-
-const CURLOPT_PROXY_TLS13_CIPHERS = 10277;
-
-const CURLOPT_TLS13_CIPHERS = 10276;
-
-const CURLOPT_DOH_URL = 10279;
-
-const CURLOPT_UPKEEP_INTERVAL_MS = 281;
-
-const CURLOPT_UPLOAD_BUFFERSIZE = 280;
-
-const CURLOPT_HTTP09_ALLOWED = 285;
-
-const CURLALTSVC_H1 = 8;
-
-const CURLALTSVC_H2 = 16;
-
-const CURLALTSVC_H3 = 32;
-
-const CURLALTSVC_READONLYFILE = 4;
-
-const CURLOPT_ALTSVC = 10287;
-
-const CURLOPT_ALTSVC_CTRL = 286;
-
-const CURL_VERSION_ALTSVC = 16777216;
-
-const CURLOPT_MAXAGE_CONN = 288;
-
-const CURLOPT_SASL_AUTHZID = 10289;
-
-const CURL_VERSION_HTTP3 = 33554432;
-
-const CURLINFO_RETRY_AFTER = 6291513;
-
-const CURL_HTTP_VERSION_3 = 30;
-
-const CURLMOPT_MAX_CONCURRENT_STREAMS = 16;
-
-const CURLSSLOPT_NO_PARTIALCHAIN = 4;
-
-const CURLOPT_MAIL_RCPT_ALLLOWFAILS = 290;
-
-const CURLSSLOPT_REVOKE_BEST_EFFORT = 8;
-
-const CURLOPT_ISSUERCERT_BLOB = 40295;
-
-const CURLOPT_PROXY_ISSUERCERT = 10296;
-
-const CURLOPT_PROXY_ISSUERCERT_BLOB = 40297;
-
-const CURLOPT_PROXY_SSLCERT_BLOB = 40293;
-
-const CURLOPT_PROXY_SSLKEY_BLOB = 40294;
-
-const CURLOPT_SSLCERT_BLOB = 40291;
-
-const CURLOPT_SSLKEY_BLOB = 40292;
-
-const CURLPROTO_MQTT = 268435456;
-
-const CURLSSLOPT_NATIVE_CA = 16;
-
-const CURL_VERSION_UNICODE = 134217728;
-
-const CURL_VERSION_ZSTD = 67108864;
-
-const CURLE_PROXY = 97;
-
-const CURLINFO_PROXY_ERROR = 2097211;
-
-const CURLOPT_SSL_EC_CURVES = 10298;
-
-const CURLPX_BAD_ADDRESS_TYPE = 1;
-
-const CURLPX_BAD_VERSION = 2;
-
-const CURLPX_CLOSED = 3;
-
-const CURLPX_GSSAPI = 4;
-
-const CURLPX_GSSAPI_PERMSG = 5;
-
-const CURLPX_GSSAPI_PROTECTION = 6;
-
-const CURLPX_IDENTD = 7;
-
-const CURLPX_IDENTD_DIFFER = 8;
-
-const CURLPX_LONG_HOSTNAME = 9;
-
-const CURLPX_LONG_PASSWD = 10;
-
-const CURLPX_LONG_USER = 11;
-
-const CURLPX_NO_AUTH = 12;
-
-const CURLPX_OK = 0;
-
-const CURLPX_RECV_ADDRESS = 13;
-
-const CURLPX_RECV_AUTH = 14;
-
-const CURLPX_RECV_CONNECT = 15;
-
-const CURLPX_RECV_REQACK = 16;
-
-const CURLPX_REPLY_ADDRESS_TYPE_NOT_SUPPORTED = 17;
-
-const CURLPX_REPLY_COMMAND_NOT_SUPPORTED = 18;
-
-const CURLPX_REPLY_CONNECTION_REFUSED = 19;
-
-const CURLPX_REPLY_GENERAL_SERVER_FAILURE = 20;
-
-const CURLPX_REPLY_HOST_UNREACHABLE = 21;
-
-const CURLPX_REPLY_NETWORK_UNREACHABLE = 22;
-
-const CURLPX_REPLY_NOT_ALLOWED = 23;
-
-const CURLPX_REPLY_TTL_EXPIRED = 24;
-
-const CURLPX_REPLY_UNASSIGNED = 25;
-
-const CURLPX_REQUEST_FAILED = 26;
-
-const CURLPX_RESOLVE_HOST = 27;
-
-const CURLPX_SEND_AUTH = 28;
-
-const CURLPX_SEND_CONNECT = 29;
-
-const CURLPX_SEND_REQUEST = 30;
-
-const CURLPX_UNKNOWN_FAIL = 31;
-
-const CURLPX_UNKNOWN_MODE = 32;
-
-const CURLPX_USER_REJECTED = 33;
-
-const CURLHSTS_ENABLE = 1;
-
-const CURLHSTS_READONLYFILE = 2;
-
-const CURLOPT_HSTS = 10300;
-
-const CURLOPT_HSTS_CTRL = 299;
-
-const CURL_VERSION_HSTS = 268435456;
-
-const CURLAUTH_AWS_SIGV4 = 128;
-
-const CURLOPT_AWS_SIGV4 = 10305;
-
-const CURLINFO_REFERER = 1048636;
-
-const CURLOPT_DOH_SSL_VERIFYHOST = 307;
-
-const CURLOPT_DOH_SSL_VERIFYPEER = 306;
-
-const CURLOPT_DOH_SSL_VERIFYSTATUS = 308;
-
-const CURL_VERSION_GSASL = 536870912;
-
-const CURLOPT_CAINFO_BLOB = 40309;
-
-const CURLOPT_PROXY_CAINFO_BLOB = 40310;
-
-const CURLSSLOPT_AUTO_CLIENT_CERT = 32;
-
-const CURLOPT_MAXLIFETIME_CONN = 314;
-
-const CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256 = 10311;
-
-const CURLOPT_PREREQFUNCTION = 20312;
-
-const CURL_PREREQFUNC_OK = 0;
-
-const CURL_PREREQFUNC_ABORT = 1;
-
-const CURLOPT_MIME_OPTIONS = 315;
-
-const CURLMIMEOPT_FORMESCAPE = 1;
-
-const CURLOPT_SSH_HOSTKEYFUNCTION = 20316;
-
-const CURLOPT_PROTOCOLS_STR = 10318;
-
-const CURLOPT_REDIR_PROTOCOLS_STR = 10319;
-
-const CURLOPT_WS_OPTIONS = 320;
-
-const CURLWS_RAW_MODE = 1;
-
-const CURLOPT_CA_CACHE_TIMEOUT = 321;
-
-const CURLOPT_QUICK_EXIT = 322;
-
-const CURL_HTTP_VERSION_3ONLY = 31;
-
-const CURLOPT_SAFE_UPLOAD = -1;
-
-final class CurlHandle
-{
-
-}
-
-final class CurlMultiHandle
-{
-
-}
-
-final class CurlShareHandle
-{
-
-}
-
-class CURLFile
-{
-    public string $name;
-    public string $mime;
-    public string $postname;
-    public function __construct(string $filename, ?string $mime_type = NULL, ?string $posted_filename = NULL) {}
+    public function count(int $mode = 0): int {}
+    public function getPixelIterator(): \ImagickPixelIterator {}
+    public function getPixelRegionIterator(int $x, int $y, int $columns, int $rows): \ImagickPixelIterator {}
+    public function readImage(string $filename): bool {}
+    public function readImages(array $filenames): bool {}
+    public function readImageBlob(string $image, ?string $filename = NULL): bool {}
+    public function setImageFormat(string $format): bool {}
+    public function scaleImage(int $columns, int $rows, bool $bestfit = false, bool $legacy = false): bool {}
+    public function writeImage(?string $filename = NULL): bool {}
+    public function writeImages(string $filename, bool $adjoin): bool {}
+    public function blurImage(float $radius, float $sigma, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function thumbnailImage(?int $columns, ?int $rows, bool $bestfit = false, bool $fill = false, bool $legacy = false): bool {}
+    public function cropThumbnailImage(int $width, int $height, bool $legacy = false): bool {}
+    public function getImageFilename(): string {}
+    public function setImageFilename(string $filename): bool {}
+    public function getImageFormat(): string {}
+    public function getImageMimeType(): string {}
+    public function removeImage(): bool {}
+    public function destroy(): bool {}
+    public function clear(): bool {}
+    public function clone(): \Imagick {}
+    public function getImageSize(): int {}
+    public function getImageBlob(): ?string {}
+    public function getImagesBlob(): string {}
+    public function setFirstIterator(): bool {}
+    public function setLastIterator(): bool {}
+    public function resetIterator(): void {}
+    public function previousImage(): bool {}
+    public function nextImage(): bool {}
+    public function hasPreviousImage(): bool {}
+    public function hasNextImage(): bool {}
+    public function setImageIndex(int $index): bool {}
+    public function getImageIndex(): int {}
+    public function commentImage(string $comment): bool {}
+    public function cropImage(int $width, int $height, int $x, int $y): bool {}
+    public function labelImage(string $label): bool {}
+    public function getImageGeometry(): array {}
+    public function drawImage(\ImagickDraw $drawing): bool {}
+    public function setImageCompressionQuality(int $quality): bool {}
+    public function getImageCompressionQuality(): int {}
+    public function setImageCompression(int $compression): bool {}
+    public function getImageCompression(): int {}
+    public function annotateImage(\ImagickDraw $settings, float $x, float $y, float $angle, string $text): bool {}
+    public function compositeImage(\Imagick $composite_image, int $composite, int $x, int $y, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function modulateImage(float $brightness, float $saturation, float $hue): bool {}
+    public function getImageColors(): int {}
+    public function montageImage(\ImagickDraw $settings, string $tile_geometry, string $thumbnail_geometry, int $monatgemode, string $frame): \Imagick {}
+    public function identifyImage(bool $append_raw_output = false): array {}
+    public function thresholdImage(float $threshold, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function adaptiveThresholdImage(int $width, int $height, int $offset): bool {}
+    public function blackThresholdImage(\ImagickPixel|string $threshold_color): bool {}
+    public function whiteThresholdImage(\ImagickPixel|string $threshold_color): bool {}
+    public function appendImages(bool $stack): \Imagick {}
+    public function charcoalImage(float $radius, float $sigma): bool {}
+    public function normalizeImage(int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function oilPaintImageWithSigma(float $radius, float $sigma): bool {}
+    public function oilPaintImage(float $radius): bool {}
+    public function posterizeImage(int $levels, bool $dither): bool {}
+    public function raiseImage(int $width, int $height, int $x, int $y, bool $raise): bool {}
+    public function resampleImage(float $x_resolution, float $y_resolution, int $filter, float $blur): bool {}
+    public function resizeImage(int $columns, int $rows, int $filter, float $blur, bool $bestfit = false, bool $legacy = false): bool {}
+    public function rollImage(int $x, int $y): bool {}
+    public function rotateImage(\ImagickPixel|string $background_color, float $degrees): bool {}
+    public function sampleImage(int $columns, int $rows): bool {}
+    public function solarizeImage(int $threshold): bool {}
+    public function shadowImage(float $opacity, float $sigma, int $x, int $y): bool {}
+    public function setImageBackgroundColor(\ImagickPixel|string $background_color): bool {}
+    public function setImageChannelMask(int $channel): int {}
+    public function setImageCompose(int $compose): bool {}
+    public function setImageDelay(int $delay): bool {}
+    public function setImageDepth(int $depth): bool {}
+    public function setImageGamma(float $gamma): bool {}
+    public function setImageIterations(int $iterations): bool {}
+    public function setImageMatteColor(\ImagickPixel|string $matte_color): bool {}
+    public function setImagePage(int $width, int $height, int $x, int $y): bool {}
+    public function setImageProgressMonitor(string $filename): bool {}
+    public function setProgressMonitor(callable $callback): bool {}
+    public function setImageResolution(float $x_resolution, float $y_resolution): bool {}
+    public function setImageScene(int $scene): bool {}
+    public function setImageTicksPerSecond(int $ticks_per_second): bool {}
+    public function setImageType(int $image_type): bool {}
+    public function setImageUnits(int $units): bool {}
+    public function sharpenImage(float $radius, float $sigma, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function shaveImage(int $columns, int $rows): bool {}
+    public function shearImage(\ImagickPixel|string $background_color, float $x_shear, float $y_shear): bool {}
+    public function spliceImage(int $width, int $height, int $x, int $y): bool {}
+    public function pingImage(string $filename): bool {}
+    public function readImageFile(mixed $filehandle, ?string $filename = NULL): bool {}
+    public function displayImage(string $servername): bool {}
+    public function displayImages(string $servername): bool {}
+    public function spreadImage(float $radius): bool {}
+    public function spreadImageWithMethod(float $radius, int $interpolate_method): bool {}
+    public function swirlImage(float $degrees): bool {}
+    public function swirlImageWithMethod(float $degrees, int $interpolate_method): bool {}
+    public function stripImage(): bool {}
+    public static function queryFormats(string $pattern = '*'): array {}
+    public static function queryFonts(string $pattern = '*'): array {}
+    public function queryFontMetrics(\ImagickDraw $settings, string $text, ?bool $multiline = NULL): array {}
+    public function steganoImage(\Imagick $watermark, int $offset): \Imagick {}
+    public function addNoiseImage(int $noise, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function addNoiseImageWithAttenuate(int $noise, float $attenuate, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function motionBlurImage(float $radius, float $sigma, float $angle, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function morphImages(int $number_frames): \Imagick {}
+    public function minifyImage(): bool {}
+    public function affineTransformImage(\ImagickDraw $settings): bool {}
+    public function averageImages(): \Imagick {}
+    public function borderImage(\ImagickPixel|string $border_color, int $width, int $height): bool {}
+    public function borderImageWithComposite(\ImagickPixel|string $border_color, int $width, int $height, int $composite): bool {}
+    public static function calculateCrop(int $original_width, int $original_height, int $desired_width, int $desired_height, bool $legacy = false): array {}
+    public function chopImage(int $width, int $height, int $x, int $y): bool {}
+    public function clipImage(): bool {}
+    public function clipPathImage(string $pathname, bool $inside): bool {}
+    public function clipImagePath(string $pathname, bool $inside): void {}
+    public function coalesceImages(): \Imagick {}
+    public function colorizeImage(\ImagickPixel|string $colorize_color, \ImagickPixel|string|false $opacity_color, ?bool $legacy = false): bool {}
+    public function compareImageChannels(\Imagick $reference, int $channel, int $metric): array {}
+    public function compareImages(\Imagick $reference, int $metric): array {}
+    public function contrastImage(bool $sharpen): bool {}
+    public function combineImages(int $colorspace): \Imagick {}
+    public function convolveImage(\ImagickKernel $kernel, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function cycleColormapImage(int $displace): bool {}
+    public function deconstructImages(): \Imagick {}
+    public function despeckleImage(): bool {}
+    public function edgeImage(float $radius): bool {}
+    public function embossImage(float $radius, float $sigma): bool {}
+    public function enhanceImage(): bool {}
+    public function equalizeImage(): bool {}
+    public function evaluateImage(int $evaluate, float $constant, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function evaluateImages(int $evaluate): \Imagick {}
+    public function flattenImages(): \Imagick {}
+    public function flipImage(): bool {}
+    public function flopImage(): bool {}
+    public function forwardFourierTransformImage(bool $magnitude): bool {}
+    public function frameImage(\ImagickPixel|string $matte_color, int $width, int $height, int $inner_bevel, int $outer_bevel): bool {}
+    public function frameImageWithComposite(\ImagickPixel|string $matte_color, int $width, int $height, int $inner_bevel, int $outer_bevel, int $composite): bool {}
+    public function fxImage(string $expression, int $channel = \Imagick::CHANNEL_DEFAULT): \Imagick {}
+    public function gammaImage(float $gamma, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function gaussianBlurImage(float $radius, float $sigma, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function getImageBackgroundColor(): \ImagickPixel {}
+    public function getImageBluePrimary(): array {}
+    public function getImageBorderColor(): \ImagickPixel {}
+    public function getImageChannelDepth(int $channel): int {}
+    public function getImageChannelDistortion(\Imagick $reference, int $channel, int $metric): float {}
+    public function getImageChannelMean(int $channel): array {}
+    public function getImageChannelStatistics(): array {}
+    public function getImageColormapColor(int $index): \ImagickPixel {}
+    public function getImageColorspace(): int {}
+    public function getImageCompose(): int {}
+    public function getImageDelay(): int {}
+    public function getImageDepth(): int {}
+    public function getImageDistortion(\Imagick $reference, int $metric): float {}
+    public function getImageDispose(): int {}
+    public function getImageGamma(): float {}
+    public function getImageGreenPrimary(): array {}
+    public function getImageHeight(): int {}
+    public function getImageHistogram(): array {}
+    public function getImageInterlaceScheme(): int {}
+    public function getImageIterations(): int {}
+    public function getImagePage(): array {}
+    public function getImagePixelColor(int $x, int $y): \ImagickPixel {}
+    public function setImagePixelColor(int $x, int $y, \ImagickPixel|string $color): \ImagickPixel {}
+    public function getImageProfile(string $name): string {}
+    public function getImageRedPrimary(): array {}
+    public function getImageRenderingIntent(): int {}
+    public function getImageResolution(): array {}
+    public function getImageScene(): int {}
+    public function getImageSignature(): string {}
+    public function getImageTicksPerSecond(): int {}
+    public function getImageType(): int {}
+    public function getImageUnits(): int {}
+    public function getImageVirtualPixelMethod(): int {}
+    public function getImageWhitePoint(): array {}
+    public function getImageWidth(): int {}
+    public function getNumberImages(): int {}
+    public function getImageTotalInkDensity(): float {}
+    public function getImageRegion(int $width, int $height, int $x, int $y): \Imagick {}
+    public function implodeImage(float $radius): bool {}
+    public function implodeImageWithMethod(float $radius, int $pixel_interpolate_method): bool {}
+    public function inverseFourierTransformImage(\Imagick $complement, bool $magnitude): bool {}
+    public function levelImage(float $black_point, float $gamma, float $white_point, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function magnifyImage(): bool {}
+    public function negateImage(bool $gray, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function previewImages(int $preview): bool {}
+    public function profileImage(string $name, ?string $profile): bool {}
+    public function quantizeImage(int $number_colors, int $colorspace, int $tree_depth, bool $dither, bool $measure_error): bool {}
+    public function quantizeImages(int $number_colors, int $colorspace, int $tree_depth, bool $dither, bool $measure_error): bool {}
+    public function removeImageProfile(string $name): string {}
+    public function separateImageChannel(int $channel): bool {}
+    public function sepiaToneImage(float $threshold): bool {}
+    public function setImageBluePrimary(float $x, float $y, float $z): bool {}
+    public function setImageBorderColor(\ImagickPixel|string $border_color): bool {}
+    public function setImageChannelDepth(int $channel, int $depth): bool {}
+    public function setImageColormapColor(int $index, \ImagickPixel|string $color): bool {}
+    public function setImageColorspace(int $colorspace): bool {}
+    public function setImageDispose(int $dispose): bool {}
+    public function setImageExtent(int $columns, int $rows): bool {}
+    public function setImageGreenPrimary(float $x, float $y, float $z): bool {}
+    public function setImageInterlaceScheme(int $interlace): bool {}
+    public function setImageProfile(string $name, string $profile): bool {}
+    public function setImageRedPrimary(float $x, float $y, float $z): bool {}
+    public function setImageRenderingIntent(int $rendering_intent): bool {}
+    public function setImageVirtualPixelMethod(int $method): bool {}
+    public function setImageWhitePoint(float $x, float $y, float $z): bool {}
+    public function sigmoidalContrastImage(bool $sharpen, float $alpha, float $beta, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function stereoImage(\Imagick $offset_image): bool {}
+    public function textureImage(\Imagick $texture): \Imagick {}
+    public function tintImage(\ImagickPixel|string $tint_color, \ImagickPixel|string $opacity_color, bool $legacy = false): bool {}
+    public function unsharpMaskImage(float $radius, float $sigma, float $amount, float $threshold, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function getImage(): \Imagick {}
+    public function addImage(\Imagick $image): bool {}
+    public function setImage(\Imagick $image): bool {}
+    public function newImage(int $columns, int $rows, \ImagickPixel|string $background_color, ?string $format = NULL): bool {}
+    public function newPseudoImage(int $columns, int $rows, string $pseudo_format): bool {}
+    public function getCompression(): int {}
+    public function getCompressionQuality(): int {}
+    public static function getCopyright(): string {}
+    public static function getConfigureOptions(string $pattern = '*'): array {}
+    public static function getFeatures(): string {}
     public function getFilename(): string {}
-    public function getMimeType(): string {}
-    public function getPostFilename(): string {}
-    public function setMimeType(string $mime_type): void {}
-    public function setPostFilename(string $posted_filename): void {}
-}
-
-class CURLStringFile
-{
-    public string $data;
-    public string $postname;
-    public string $mime;
-    public function __construct(string $data, string $postname, string $mime = 'application/octet-stream') {}
-}
-
-function dom_import_simplexml(object $node): \DOMAttr|\DOMElement {}
-
-const XML_ELEMENT_NODE = 1;
-
-const XML_ATTRIBUTE_NODE = 2;
-
-const XML_TEXT_NODE = 3;
-
-const XML_CDATA_SECTION_NODE = 4;
-
-const XML_ENTITY_REF_NODE = 5;
-
-const XML_ENTITY_NODE = 6;
-
-const XML_PI_NODE = 7;
-
-const XML_COMMENT_NODE = 8;
-
-const XML_DOCUMENT_NODE = 9;
-
-const XML_DOCUMENT_TYPE_NODE = 10;
-
-const XML_DOCUMENT_FRAG_NODE = 11;
-
-const XML_NOTATION_NODE = 12;
-
-const XML_HTML_DOCUMENT_NODE = 13;
-
-const XML_DTD_NODE = 14;
-
-const XML_ELEMENT_DECL_NODE = 15;
-
-const XML_ATTRIBUTE_DECL_NODE = 16;
-
-const XML_ENTITY_DECL_NODE = 17;
-
-const XML_NAMESPACE_DECL_NODE = 18;
-
-const XML_LOCAL_NAMESPACE = 18;
-
-const XML_ATTRIBUTE_CDATA = 1;
-
-const XML_ATTRIBUTE_ID = 2;
-
-const XML_ATTRIBUTE_IDREF = 3;
-
-const XML_ATTRIBUTE_IDREFS = 4;
-
-const XML_ATTRIBUTE_ENTITY = 6;
-
-const XML_ATTRIBUTE_NMTOKEN = 7;
-
-const XML_ATTRIBUTE_NMTOKENS = 8;
-
-const XML_ATTRIBUTE_ENUMERATION = 9;
-
-const XML_ATTRIBUTE_NOTATION = 10;
-
-const DOM_PHP_ERR = 0;
-
-const DOM_INDEX_SIZE_ERR = 1;
-
-const DOMSTRING_SIZE_ERR = 2;
-
-const DOM_HIERARCHY_REQUEST_ERR = 3;
-
-const DOM_WRONG_DOCUMENT_ERR = 4;
-
-const DOM_INVALID_CHARACTER_ERR = 5;
-
-const DOM_NO_DATA_ALLOWED_ERR = 6;
-
-const DOM_NO_MODIFICATION_ALLOWED_ERR = 7;
-
-const DOM_NOT_FOUND_ERR = 8;
-
-const DOM_NOT_SUPPORTED_ERR = 9;
-
-const DOM_INUSE_ATTRIBUTE_ERR = 10;
-
-const DOM_INVALID_STATE_ERR = 11;
-
-const DOM_SYNTAX_ERR = 12;
-
-const DOM_INVALID_MODIFICATION_ERR = 13;
-
-const DOM_NAMESPACE_ERR = 14;
-
-const DOM_INVALID_ACCESS_ERR = 15;
-
-const DOM_VALIDATION_ERR = 16;
-
-final class DOMException extends \Exception
-{
-    public $code;
-}
-
-final class DOMException extends \Exception
-{
-    public $code;
-}
-
-interface DOMParentNode
-{
-    public function append(...$nodes): void;
-    public function prepend(...$nodes): void;
-    public function replaceChildren(...$nodes): void;
-}
-
-interface DOMChildNode
-{
-    public function remove(): void;
-    public function before(...$nodes): void;
-    public function after(...$nodes): void;
-    public function replaceWith(...$nodes): void;
-}
-
-class DOMImplementation
-{
-    public function hasFeature(string $feature, string $version): bool {}
-    public function createDocumentType(string $qualifiedName, string $publicId = '', string $systemId = '') {}
-    public function createDocument(?string $namespace = NULL, string $qualifiedName = '', ?\DOMDocumentType $doctype = NULL): \DOMDocument {}
-}
-
-class DOMNode
-{
-    const DOCUMENT_POSITION_DISCONNECTED = null;
-    const DOCUMENT_POSITION_PRECEDING = null;
-    const DOCUMENT_POSITION_FOLLOWING = null;
-    const DOCUMENT_POSITION_CONTAINS = null;
-    const DOCUMENT_POSITION_CONTAINED_BY = null;
-    const DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC = null;
-    public string $nodeName;
-    public ?string $nodeValue;
-    public int $nodeType;
-    public ?\DOMNode $parentNode;
-    public ?\DOMElement $parentElement;
-    public \DOMNodeList $childNodes;
-    public ?\DOMNode $firstChild;
-    public ?\DOMNode $lastChild;
-    public ?\DOMNode $previousSibling;
-    public ?\DOMNode $nextSibling;
-    public ?\DOMNamedNodeMap $attributes;
-    public bool $isConnected;
-    public ?\DOMDocument $ownerDocument;
-    public ?string $namespaceURI;
-    public string $prefix;
-    public ?string $localName;
-    public ?string $baseURI;
-    public string $textContent;
-    public function appendChild(\DOMNode $node) {}
-    public function C14N(bool $exclusive = false, bool $withComments = false, ?array $xpath = NULL, ?array $nsPrefixes = NULL): string|false {}
-    public function C14NFile(string $uri, bool $exclusive = false, bool $withComments = false, ?array $xpath = NULL, ?array $nsPrefixes = NULL): int|false {}
-    public function cloneNode(bool $deep = false) {}
-    public function getLineNo(): int {}
-    public function getNodePath(): ?string {}
-    public function hasAttributes(): bool {}
-    public function hasChildNodes(): bool {}
-    public function insertBefore(\DOMNode $node, ?\DOMNode $child = NULL) {}
-    public function isDefaultNamespace(string $namespace): bool {}
-    public function isSameNode(\DOMNode $otherNode): bool {}
-    public function isEqualNode(?\DOMNode $otherNode): bool {}
-    public function isSupported(string $feature, string $version): bool {}
-    public function lookupNamespaceURI(?string $prefix): ?string {}
-    public function lookupPrefix(string $namespace): ?string {}
-    public function normalize(): void {}
-    public function removeChild(\DOMNode $child) {}
-    public function replaceChild(\DOMNode $node, \DOMNode $child) {}
-    public function contains(\DOMNode|\DOMNameSpaceNode|null $other): bool {}
-    public function getRootNode(?array $options = NULL): \DOMNode {}
-    public function compareDocumentPosition(\DOMNode $other): int {}
-    public function __sleep(): array {}
-    public function __wakeup(): void {}
-}
-
-class DOMNameSpaceNode
-{
-    public string $nodeName;
-    public ?string $nodeValue;
-    public int $nodeType;
-    public string $prefix;
-    public ?string $localName;
-    public ?string $namespaceURI;
-    public bool $isConnected;
-    public ?\DOMDocument $ownerDocument;
-    public ?\DOMNode $parentNode;
-    public ?\DOMElement $parentElement;
-    public function __sleep(): array {}
-    public function __wakeup(): void {}
-}
-
-class DOMDocumentFragment extends \DOMNode implements \DOMParentNode
-{
-    public ?\DOMElement $firstElementChild;
-    public ?\DOMElement $lastElementChild;
-    public int $childElementCount;
-    public function __construct() {}
-    public function appendXML(string $data): bool {}
-    public function append(...$nodes): void {}
-    public function prepend(...$nodes): void {}
-    public function replaceChildren(...$nodes): void {}
-}
-
-class DOMDocument extends \DOMNode implements \DOMParentNode
-{
-    public ?\DOMDocumentType $doctype;
-    public \DOMImplementation $implementation;
-    public ?\DOMElement $documentElement;
-    public ?string $actualEncoding;
-    public ?string $encoding;
-    public ?string $xmlEncoding;
-    public bool $standalone;
-    public bool $xmlStandalone;
-    public ?string $version;
-    public ?string $xmlVersion;
-    public bool $strictErrorChecking;
-    public ?string $documentURI;
-    public mixed $config;
-    public bool $formatOutput;
-    public bool $validateOnParse;
-    public bool $resolveExternals;
-    public bool $preserveWhiteSpace;
-    public bool $recover;
-    public bool $substituteEntities;
-    public ?\DOMElement $firstElementChild;
-    public ?\DOMElement $lastElementChild;
-    public int $childElementCount;
-    public function __construct(string $version = '1.0', string $encoding = '') {}
-    public function createAttribute(string $localName) {}
-    public function createAttributeNS(?string $namespace, string $qualifiedName) {}
-    public function createCDATASection(string $data) {}
-    public function createComment(string $data): \DOMComment {}
-    public function createDocumentFragment(): \DOMDocumentFragment {}
-    public function createElement(string $localName, string $value = '') {}
-    public function createElementNS(?string $namespace, string $qualifiedName, string $value = '') {}
-    public function createEntityReference(string $name) {}
-    public function createProcessingInstruction(string $target, string $data = '') {}
-    public function createTextNode(string $data): \DOMText {}
-    public function getElementById(string $elementId): ?\DOMElement {}
-    public function getElementsByTagName(string $qualifiedName): \DOMNodeList {}
-    public function getElementsByTagNameNS(?string $namespace, string $localName): \DOMNodeList {}
-    public function importNode(\DOMNode $node, bool $deep = false) {}
-    public function load(string $filename, int $options = 0): bool {}
-    public function loadXML(string $source, int $options = 0): bool {}
-    public function normalizeDocument(): void {}
-    public function registerNodeClass(string $baseClass, ?string $extendedClass): true {}
-    public function save(string $filename, int $options = 0): int|false {}
-    public function loadHTML(string $source, int $options = 0): bool {}
-    public function loadHTMLFile(string $filename, int $options = 0): bool {}
-    public function saveHTML(?\DOMNode $node = NULL): string|false {}
-    public function saveHTMLFile(string $filename): int|false {}
-    public function saveXML(?\DOMNode $node = NULL, int $options = 0): string|false {}
-    public function schemaValidate(string $filename, int $flags = 0): bool {}
-    public function schemaValidateSource(string $source, int $flags = 0): bool {}
-    public function relaxNGValidate(string $filename): bool {}
-    public function relaxNGValidateSource(string $source): bool {}
-    public function validate(): bool {}
-    public function xinclude(int $options = 0): int|false {}
-    public function adoptNode(\DOMNode $node): \DOMNode|false {}
-    public function append(...$nodes): void {}
-    public function prepend(...$nodes): void {}
-    public function replaceChildren(...$nodes): void {}
-}
-
-class DOMNodeList implements \IteratorAggregate, \Traversable, \Countable
-{
-    public int $length;
-    public function count(): int {}
-    public function getIterator(): \Iterator {}
-    public function item(int $index) {}
-}
-
-class DOMNamedNodeMap implements \IteratorAggregate, \Traversable, \Countable
-{
-    public int $length;
-    public function getNamedItem(string $qualifiedName): ?\DOMNode {}
-    public function getNamedItemNS(?string $namespace, string $localName): ?\DOMNode {}
-    public function item(int $index): ?\DOMNode {}
-    public function count(): int {}
-    public function getIterator(): \Iterator {}
-}
-
-class DOMCharacterData extends \DOMNode implements \DOMChildNode
-{
-    public string $data;
-    public int $length;
-    public ?\DOMElement $previousElementSibling;
-    public ?\DOMElement $nextElementSibling;
-    public function appendData(string $data): true {}
-    public function substringData(int $offset, int $count) {}
-    public function insertData(int $offset, string $data): bool {}
-    public function deleteData(int $offset, int $count): bool {}
-    public function replaceData(int $offset, int $count, string $data): bool {}
-    public function replaceWith(...$nodes): void {}
-    public function remove(): void {}
-    public function before(...$nodes): void {}
-    public function after(...$nodes): void {}
-}
-
-class DOMAttr extends \DOMNode
-{
-    public string $name;
-    public bool $specified;
-    public string $value;
-    public ?\DOMElement $ownerElement;
-    public mixed $schemaTypeInfo;
-    public function __construct(string $name, string $value = '') {}
-    public function isId(): bool {}
-}
-
-class DOMElement extends \DOMNode implements \DOMParentNode, \DOMChildNode
-{
-    public string $tagName;
-    public string $className;
-    public string $id;
-    public mixed $schemaTypeInfo;
-    public ?\DOMElement $firstElementChild;
-    public ?\DOMElement $lastElementChild;
-    public int $childElementCount;
-    public ?\DOMElement $previousElementSibling;
-    public ?\DOMElement $nextElementSibling;
-    public function __construct(string $qualifiedName, ?string $value = NULL, string $namespace = '') {}
-    public function getAttribute(string $qualifiedName): string {}
-    public function getAttributeNames(): array {}
-    public function getAttributeNS(?string $namespace, string $localName): string {}
-    public function getAttributeNode(string $qualifiedName) {}
-    public function getAttributeNodeNS(?string $namespace, string $localName) {}
-    public function getElementsByTagName(string $qualifiedName): \DOMNodeList {}
-    public function getElementsByTagNameNS(?string $namespace, string $localName): \DOMNodeList {}
-    public function hasAttribute(string $qualifiedName): bool {}
-    public function hasAttributeNS(?string $namespace, string $localName): bool {}
-    public function removeAttribute(string $qualifiedName): bool {}
-    public function removeAttributeNS(?string $namespace, string $localName): void {}
-    public function removeAttributeNode(\DOMAttr $attr) {}
-    public function setAttribute(string $qualifiedName, string $value) {}
-    public function setAttributeNS(?string $namespace, string $qualifiedName, string $value): void {}
-    public function setAttributeNode(\DOMAttr $attr) {}
-    public function setAttributeNodeNS(\DOMAttr $attr) {}
-    public function setIdAttribute(string $qualifiedName, bool $isId): void {}
-    public function setIdAttributeNS(string $namespace, string $qualifiedName, bool $isId): void {}
-    public function setIdAttributeNode(\DOMAttr $attr, bool $isId): void {}
-    public function toggleAttribute(string $qualifiedName, ?bool $force = NULL): bool {}
-    public function remove(): void {}
-    public function before(...$nodes): void {}
-    public function after(...$nodes): void {}
-    public function replaceWith(...$nodes): void {}
-    public function append(...$nodes): void {}
-    public function prepend(...$nodes): void {}
-    public function replaceChildren(...$nodes): void {}
-    public function insertAdjacentElement(string $where, \DOMElement $element): ?\DOMElement {}
-    public function insertAdjacentText(string $where, string $data): void {}
-}
-
-class DOMText extends \DOMCharacterData
-{
-    public string $wholeText;
-    public function __construct(string $data = '') {}
-    public function isWhitespaceInElementContent(): bool {}
-    public function isElementContentWhitespace(): bool {}
-    public function splitText(int $offset) {}
-}
-
-class DOMComment extends \DOMCharacterData
-{
-    public function __construct(string $data = '') {}
-}
-
-class DOMCdataSection extends \DOMText
-{
-    public function __construct(string $data) {}
-}
-
-class DOMDocumentType extends \DOMNode
-{
-    public string $name;
-    public \DOMNamedNodeMap $entities;
-    public \DOMNamedNodeMap $notations;
-    public string $publicId;
-    public string $systemId;
-    public ?string $internalSubset;
-}
-
-class DOMNotation extends \DOMNode
-{
-    public string $publicId;
-    public string $systemId;
-}
-
-class DOMEntity extends \DOMNode
-{
-    public ?string $publicId;
-    public ?string $systemId;
-    public ?string $notationName;
-    public ?string $actualEncoding;
-    public ?string $encoding;
-    public ?string $version;
-}
-
-class DOMEntityReference extends \DOMNode
-{
-    public function __construct(string $name) {}
-}
-
-class DOMProcessingInstruction extends \DOMNode
-{
-    public string $target;
-    public string $data;
-    public function __construct(string $name, string $value = '') {}
-}
-
-class DOMXPath
-{
-    public \DOMDocument $document;
-    public bool $registerNodeNamespaces;
-    public function __construct(\DOMDocument $document, bool $registerNodeNS = true) {}
-    public function evaluate(string $expression, ?\DOMNode $contextNode = NULL, bool $registerNodeNS = true): mixed {}
-    public function query(string $expression, ?\DOMNode $contextNode = NULL, bool $registerNodeNS = true): mixed {}
-    public function registerNamespace(string $prefix, string $namespace): bool {}
-    public function registerPhpFunctions(array|string|null $restrict = NULL): void {}
-    public function registerPhpFunctionNS(string $namespaceURI, string $name, callable $callable): void {}
-    public static function quote(string $str): string {}
-}
-
-function simplexml_load_file(string $filename, ?string $class_name = 'SimpleXMLElement', int $options = 0, string $namespace_or_prefix = '', bool $is_prefix = false): \SimpleXMLElement|false {}
-
-function simplexml_load_string(string $data, ?string $class_name = 'SimpleXMLElement', int $options = 0, string $namespace_or_prefix = '', bool $is_prefix = false): \SimpleXMLElement|false {}
-
-function simplexml_import_dom(object $node, ?string $class_name = 'SimpleXMLElement'): ?\SimpleXMLElement {}
-
-class SimpleXMLElement implements \Stringable, \Countable, \RecursiveIterator, \Traversable, \Iterator
-{
-    public function xpath(string $expression): array|false|null {}
-    public function registerXPathNamespace(string $prefix, string $namespace): bool {}
-    public function asXML(?string $filename = NULL): string|bool {}
-    public function saveXML(?string $filename = NULL): string|bool {}
-    public function getNamespaces(bool $recursive = false): array {}
-    public function getDocNamespaces(bool $recursive = false, bool $fromRoot = true): array|false {}
-    public function children(?string $namespaceOrPrefix = NULL, bool $isPrefix = false): ?\SimpleXMLElement {}
-    public function attributes(?string $namespaceOrPrefix = NULL, bool $isPrefix = false): ?\SimpleXMLElement {}
-    public function __construct(string $data, int $options = 0, bool $dataIsURL = false, string $namespaceOrPrefix = '', bool $isPrefix = false) {}
-    public function addChild(string $qualifiedName, ?string $value = NULL, ?string $namespace = NULL): ?\SimpleXMLElement {}
-    public function addAttribute(string $qualifiedName, string $value, ?string $namespace = NULL): void {}
-    public function getName(): string {}
-    public function __toString(): string {}
-    public function count(): int {}
+    public function getFormat(): string {}
+    public static function getHomeURL(): string {}
+    public function getInterlaceScheme(): int {}
+    public function getOption(string $key): string {}
+    public static function getPackageName(): string {}
+    public function getPage(): array {}
+    public static function getQuantum(): int {}
+    public static function getHdriEnabled(): bool {}
+    public static function getQuantumDepth(): array {}
+    public static function getQuantumRange(): array {}
+    public static function getReleaseDate(): string {}
+    public static function getResource(int $type): int {}
+    public static function getResourceLimit(int $type): float {}
+    public function getSamplingFactors(): array {}
+    public function getSize(): array {}
+    public static function getVersion(): array {}
+    public function setBackgroundColor(\ImagickPixel|string $background_color): bool {}
+    public function setCompression(int $compression): bool {}
+    public function setCompressionQuality(int $quality): bool {}
+    public function setFilename(string $filename): bool {}
+    public function setFormat(string $format): bool {}
+    public function setInterlaceScheme(int $interlace): bool {}
+    public function setOption(string $key, string $value): bool {}
+    public function setPage(int $width, int $height, int $x, int $y): bool {}
+    public static function setResourceLimit(int $type, int $limit): bool {}
+    public function setResolution(float $x_resolution, float $y_resolution): bool {}
+    public function setSamplingFactors(array $factors): bool {}
+    public function setSize(int $columns, int $rows): bool {}
+    public function setType(int $imgtype): bool {}
+    public function key(): int {}
+    public function next(): void {}
     public function rewind(): void {}
     public function valid(): bool {}
-    public function current(): \SimpleXMLElement {}
-    public function key(): string {}
+    public function current(): \Imagick {}
+    public function brightnessContrastImage(float $brightness, float $contrast, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function colorMatrixImage(array $color_matrix): bool {}
+    public function selectiveBlurImage(float $radius, float $sigma, float $threshold, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function rotationalBlurImage(float $angle, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function statisticImage(int $type, int $width, int $height, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function subimageMatch(\Imagick $image, &$offset = NULL, &$similarity = NULL, float $threshold = 0.0, int $metric = 0): \Imagick {}
+    public function similarityImage(\Imagick $image, &$offset = NULL, &$similarity = NULL, float $threshold = 0.0, int $metric = 0): \Imagick {}
+    public static function setRegistry(string $key, string $value): bool {}
+    public static function getRegistry(string $key): string|false {}
+    public static function listRegistry(): array {}
+    public function morphology(int $morphology, int $iterations, \ImagickKernel $kernel, int $channel = \Imagick::CHANNEL_DEFAULT): bool {}
+    public function setAntialias(bool $antialias): void {}
+    public function getAntialias(): bool {}
+    public function colorDecisionListImage(string $color_correction_collection): bool {}
+    public function optimizeImageTransparency(): void {}
+    public function autoGammaImage(?int $channel = \Imagick::CHANNEL_ALL): void {}
+    public function autoOrient(): void {}
+    public function autoOrientate(): void {}
+    public function compositeImageGravity(\Imagick $image, int $composite_constant, int $gravity): bool {}
+    public function localContrastImage(float $radius, float $strength): bool {}
+    public function identifyImageType(): int {}
+    public function getImageMask(int $pixelmask): ?\Imagick {}
+    public function setImageMask(\Imagick $clip_mask, int $pixelmask): void {}
+    public function cannyEdgeImage(float $radius, float $sigma, float $lower_percent, float $upper_percent): bool {}
+    public static function setSeed(int $seed): void {}
+    public function waveletDenoiseImage(float $threshold, float $softness): bool {}
+    public function meanShiftImage(int $width, int $height, float $color_distance): bool {}
+    public function kmeansImage(int $number_colors, int $max_iterations, float $tolerance): bool {}
+    public function rangeThresholdImage(float $low_black, float $low_white, float $high_white, float $high_black): bool {}
+    public function autoThresholdImage(int $auto_threshold_method): bool {}
+    public function bilateralBlurImage(float $radius, float $sigma, float $intensity_sigma, float $spatial_sigma): bool {}
+    public function claheImage(int $width, int $height, int $number_bins, float $clip_limit): bool {}
+    public function channelFxImage(string $expression): \Imagick {}
+    public function colorThresholdImage(\ImagickPixel|string $start_color, \ImagickPixel|string $stop_color): bool {}
+    public function complexImages(int $complex_operator): \Imagick {}
+    public function interpolativeResizeImage(int $columns, int $rows, int $interpolate): bool {}
+    public function levelImageColors(\ImagickPixel|string $black_color, \ImagickPixel|string $white_color, bool $invert): bool {}
+    public function levelizeImage(float $black_point, float $gamma, float $white_point): bool {}
+    public function orderedDitherImage(string $dither_format): bool {}
+    public function whiteBalanceImage(): bool {}
+    public function deleteOption(string $option): bool {}
+    public function getBackgroundColor(): \ImagickPixel {}
+    public function getImageArtifacts(string $pattern = '*'): array {}
+    public function getImageKurtosis(): array {}
+    public function getImageMean(): array {}
+    public function getImageRange(): array {}
+    public function getInterpolateMethod(): int {}
+    public function getOptions(string $pattern = '*'): array {}
+    public function getOrientation(): int {}
+    public function getResolution(): array {}
+    public function getType(): int {}
+    public function polynomialImage(array $terms): bool {}
+    public function setDepth(int $depth): bool {}
+    public function setExtract(string $geometry): bool {}
+    public function setInterpolateMethod(int $method): bool {}
+    public function setOrientation(int $orientation): bool {}
+}
+
+class ImagickDraw
+{
+    public function resetVectorGraphics(): bool {}
+    public function getTextKerning(): float {}
+    public function setTextKerning(float $kerning): bool {}
+    public function getTextInterwordSpacing(): float {}
+    public function setTextInterwordSpacing(float $spacing): bool {}
+    public function getTextInterlineSpacing(): float {}
+    public function setTextInterlineSpacing(float $spacing): bool {}
+    public function __construct() {}
+    public function setFillColor(\ImagickPixel|string $fill_color): bool {}
+    public function setFillAlpha(float $alpha): bool {}
+    public function setResolution(float $resolution_x, float $resolution_y): bool {}
+    public function setStrokeColor(\ImagickPixel|string $color): bool {}
+    public function setStrokeAlpha(float $alpha): bool {}
+    public function setStrokeWidth(float $width): bool {}
+    public function clear(): bool {}
+    public function circle(float $origin_x, float $origin_y, float $perimeter_x, float $perimeter_y): bool {}
+    public function annotation(float $x, float $y, string $text): bool {}
+    public function setTextAntialias(bool $antialias): bool {}
+    public function setTextEncoding(string $encoding): bool {}
+    public function setFont(string $font_name): bool {}
+    public function setFontFamily(string $font_family): bool {}
+    public function setFontSize(float $point_size): bool {}
+    public function setFontStyle(int $style): bool {}
+    public function setFontWeight(int $weight): bool {}
+    public function getFont(): string {}
+    public function getFontFamily(): string {}
+    public function getFontSize(): float {}
+    public function getFontStyle(): int {}
+    public function getFontWeight(): int {}
+    public function destroy(): bool {}
+    public function rectangle(float $top_left_x, float $top_left_y, float $bottom_right_x, float $bottom_right_y): bool {}
+    public function roundRectangle(float $top_left_x, float $top_left_y, float $bottom_right_x, float $bottom_right_y, float $rounding_x, float $rounding_y): bool {}
+    public function ellipse(float $origin_x, float $origin_y, float $radius_x, float $radius_y, float $angle_start, float $angle_end): bool {}
+    public function skewX(float $degrees): bool {}
+    public function skewY(float $degrees): bool {}
+    public function translate(float $x, float $y): bool {}
+    public function line(float $start_x, float $start_y, float $end_x, float $end_y): bool {}
+    public function arc(float $start_x, float $start_y, float $end_x, float $end_y, float $start_angle, float $end_angle): bool {}
+    public function alpha(float $x, float $y, int $paint): bool {}
+    public function polygon(array $coordinates): bool {}
+    public function point(float $x, float $y): bool {}
+    public function getTextDecoration(): int {}
+    public function getTextEncoding(): string|false {}
+    public function getFontStretch(): int {}
+    public function setFontStretch(int $stretch): bool {}
+    public function setStrokeAntialias(bool $enabled): bool {}
+    public function setTextAlignment(int $align): bool {}
+    public function setTextDecoration(int $decoration): bool {}
+    public function setTextUnderColor(\ImagickPixel|string $under_color): bool {}
+    public function setViewbox(int $left_x, int $top_y, int $right_x, int $bottom_y): bool {}
+    public function clone(): \ImagickDraw {}
+    public function affine(array $affine): bool {}
+    public function bezier(array $coordinates): bool {}
+    public function composite(int $composite, float $x, float $y, float $width, float $height, \Imagick $image): bool {}
+    public function color(float $x, float $y, int $paint): bool {}
+    public function comment(string $comment): bool {}
+    public function getClipPath(): string|false {}
+    public function getClipRule(): int {}
+    public function getClipUnits(): int {}
+    public function getFillColor(): \ImagickPixel {}
+    public function getFillOpacity(): float {}
+    public function getFillRule(): int {}
+    public function getGravity(): int {}
+    public function getStrokeAntialias(): bool {}
+    public function getStrokeColor(): \ImagickPixel {}
+    public function getStrokeDashArray(): array {}
+    public function getStrokeDashOffset(): float {}
+    public function getStrokeLineCap(): int {}
+    public function getStrokeLineJoin(): int {}
+    public function getStrokeMiterLimit(): int {}
+    public function getStrokeOpacity(): float {}
+    public function getStrokeWidth(): float {}
+    public function getTextAlignment(): int {}
+    public function getTextAntialias(): bool {}
+    public function getVectorGraphics(): string {}
+    public function getTextUnderColor(): \ImagickPixel {}
+    public function pathClose(): bool {}
+    public function pathCurveToAbsolute(float $x1, float $y1, float $x2, float $y2, float $x, float $y): bool {}
+    public function pathCurveToRelative(float $x1, float $y1, float $x2, float $y2, float $x, float $y): bool {}
+    public function pathCurveToQuadraticBezierAbsolute(float $x1, float $y1, float $x_end, float $y): bool {}
+    public function pathCurveToQuadraticBezierRelative(float $x1, float $y1, float $x_end, float $y): bool {}
+    public function pathCurveToQuadraticBezierSmoothAbsolute(float $x, float $y): bool {}
+    public function pathCurveToQuadraticBezierSmoothRelative(float $x, float $y): bool {}
+    public function pathCurveToSmoothAbsolute(float $x2, float $y2, float $x, float $y): bool {}
+    public function pathCurveToSmoothRelative(float $x2, float $y2, float $x, float $y): bool {}
+    public function pathEllipticArcAbsolute(float $rx, float $ry, float $x_axis_rotation, bool $large_arc, bool $sweep, float $x, float $y): bool {}
+    public function pathEllipticArcRelative(float $rx, float $ry, float $x_axis_rotation, bool $large_arc, bool $sweep, float $x, float $y): bool {}
+    public function pathFinish(): bool {}
+    public function pathLineToAbsolute(float $x, float $y): bool {}
+    public function pathLineToRelative(float $x, float $y): bool {}
+    public function pathLineToHorizontalAbsolute(float $x): bool {}
+    public function pathLineToHorizontalRelative(float $x): bool {}
+    public function pathLineToVerticalAbsolute(float $y): bool {}
+    public function pathLineToVerticalRelative(float $y): bool {}
+    public function pathMoveToAbsolute(float $x, float $y): bool {}
+    public function pathMoveToRelative(float $x, float $y): bool {}
+    public function pathStart(): bool {}
+    public function polyline(array $coordinates): bool {}
+    public function popClipPath(): bool {}
+    public function popDefs(): bool {}
+    public function popPattern(): bool {}
+    public function pushClipPath(string $clip_mask_id): bool {}
+    public function pushDefs(): bool {}
+    public function pushPattern(string $pattern_id, float $x, float $y, float $width, float $height): bool {}
+    public function render(): bool {}
+    public function rotate(float $degrees): bool {}
+    public function scale(float $x, float $y): bool {}
+    public function setClipPath(string $clip_mask): bool {}
+    public function setClipRule(int $fillrule): bool {}
+    public function setClipUnits(int $pathunits): bool {}
+    public function setFillOpacity(float $opacity): bool {}
+    public function setFillPatternUrl(string $fill_url): bool {}
+    public function setFillRule(int $fillrule): bool {}
+    public function setGravity(int $gravity): bool {}
+    public function setStrokePatternUrl(string $stroke_url): bool {}
+    public function setStrokeDashOffset(float $dash_offset): bool {}
+    public function setStrokeLineCap(int $linecap): bool {}
+    public function setStrokeLineJoin(int $linejoin): bool {}
+    public function setStrokeMiterLimit(int $miterlimit): bool {}
+    public function setStrokeOpacity(float $opacity): bool {}
+    public function setVectorGraphics(string $xml): bool {}
+    public function pop(): bool {}
+    public function push(): bool {}
+    public function setStrokeDashArray(?array $dashes): bool {}
+    public function getOpacity(): float {}
+    public function setOpacity(float $opacity): bool {}
+    public function getFontResolution(): array {}
+    public function setFontResolution(float $x, float $y): bool {}
+    public function getBorderColor(): \ImagickPixel {}
+    public function setBorderColor(\ImagickPixel|string $color): bool {}
+    public function setDensity(string $density): bool {}
+    public function getDensity(): ?string {}
+    public function getTextDirection(): int {}
+    public function setTextDirection(int $direction): bool {}
+}
+
+class ImagickPixelIterator implements \Iterator, \Traversable
+{
+    public function __construct(\Imagick $imagick) {}
+    public function clear(): bool {}
+    public static function getPixelIterator(\Imagick $imagick): \ImagickPixelIterator {}
+    public static function getPixelRegionIterator(\Imagick $imagick, int $x, int $y, int $columns, int $rows): \ImagickPixelIterator {}
+    public function destroy(): bool {}
+    public function getCurrentIteratorRow(): ?array {}
+    public function getIteratorRow(): int {}
+    public function getNextIteratorRow(): ?array {}
+    public function getPreviousIteratorRow(): array {}
+    public function key(): int {}
     public function next(): void {}
-    public function hasChildren(): bool {}
-    public function getChildren(): ?\SimpleXMLElement {}
+    public function rewind(): void {}
+    public function current(): ?array {}
+    public function newPixelIterator(\Imagick $imagick): bool {}
+    public function newPixelRegionIterator(\Imagick $imagick, int $x, int $y, int $columns, int $rows): bool {}
+    public function resetIterator(): bool {}
+    public function setIteratorFirstRow(): bool {}
+    public function setIteratorLastRow(): bool {}
+    public function setIteratorRow(int $row): bool {}
+    public function syncIterator(): bool {}
+    public function valid(): bool {}
 }
 
-class SimpleXMLIterator extends \SimpleXMLElement
+class ImagickPixel
 {
-
+    public function __construct(?string $color = NULL) {}
+    public function clear(): bool {}
+    public function destroy(): bool {}
+    public function getColor(int $normalized = 0): array {}
+    public function getColorAsString(): string {}
+    public function getColorCount(): int {}
+    public function getColorQuantum(): array {}
+    public function getColorValue(int $color): float {}
+    public function getColorValueQuantum(int $color): float {}
+    public function getHSL(): array {}
+    public function getIndex(): int {}
+    public function isPixelSimilar(\ImagickPixel|string $color, float $fuzz): ?bool {}
+    public function isPixelSimilarQuantum(\ImagickPixel|string $color, float $fuzz_quantum_range_scaled_by_square_root_of_three): ?bool {}
+    public function isSimilar(\ImagickPixel|string $color, float $fuzz_quantum_range_scaled_by_square_root_of_three): ?bool {}
+    public function setColor(string $color): bool {}
+    public function setColorCount(int $color_count): bool {}
+    public function setColorValue(int $color, float $value): bool {}
+    public function setColorValueQuantum(int $color, float $value): bool {}
+    public function setHSL(float $hue, float $saturation, float $luminosity): bool {}
+    public function setIndex(float $index): bool {}
+    public function setColorFromPixel(\ImagickPixel $pixel): bool {}
 }
 
-function xml_parser_create(?string $encoding = NULL): \XMLParser {}
-
-function xml_parser_create_ns(?string $encoding = NULL, string $separator = ':'): \XMLParser {}
-
-function xml_set_object(\XMLParser $parser, object $object): true {}
-
-function xml_set_element_handler(\XMLParser $parser, callable|string|null $start_handler, callable|string|null $end_handler): true {}
-
-function xml_set_character_data_handler(\XMLParser $parser, callable|string|null $handler): true {}
-
-function xml_set_processing_instruction_handler(\XMLParser $parser, callable|string|null $handler): true {}
-
-function xml_set_default_handler(\XMLParser $parser, callable|string|null $handler): true {}
-
-function xml_set_unparsed_entity_decl_handler(\XMLParser $parser, callable|string|null $handler): true {}
-
-function xml_set_notation_decl_handler(\XMLParser $parser, callable|string|null $handler): true {}
-
-function xml_set_external_entity_ref_handler(\XMLParser $parser, callable|string|null $handler): true {}
-
-function xml_set_start_namespace_decl_handler(\XMLParser $parser, callable|string|null $handler): true {}
-
-function xml_set_end_namespace_decl_handler(\XMLParser $parser, callable|string|null $handler): true {}
-
-function xml_parse(\XMLParser $parser, string $data, bool $is_final = false): int {}
-
-function xml_parse_into_struct(\XMLParser $parser, string $data, &$values, &$index = NULL): int|false {}
-
-function xml_get_error_code(\XMLParser $parser): int {}
-
-function xml_error_string(int $error_code): ?string {}
-
-function xml_get_current_line_number(\XMLParser $parser): int {}
-
-function xml_get_current_column_number(\XMLParser $parser): int {}
-
-function xml_get_current_byte_index(\XMLParser $parser): int {}
-
-function xml_parser_free(\XMLParser $parser): bool {}
-
-function xml_parser_set_option(\XMLParser $parser, int $option, $value): bool {}
-
-function xml_parser_get_option(\XMLParser $parser, int $option): string|int|bool {}
-
-const XML_ERROR_NONE = 0;
-
-const XML_ERROR_NO_MEMORY = 1;
-
-const XML_ERROR_SYNTAX = 2;
-
-const XML_ERROR_NO_ELEMENTS = 3;
-
-const XML_ERROR_INVALID_TOKEN = 4;
-
-const XML_ERROR_UNCLOSED_TOKEN = 5;
-
-const XML_ERROR_PARTIAL_CHAR = 6;
-
-const XML_ERROR_TAG_MISMATCH = 7;
-
-const XML_ERROR_DUPLICATE_ATTRIBUTE = 8;
-
-const XML_ERROR_JUNK_AFTER_DOC_ELEMENT = 9;
-
-const XML_ERROR_PARAM_ENTITY_REF = 10;
-
-const XML_ERROR_UNDEFINED_ENTITY = 11;
-
-const XML_ERROR_RECURSIVE_ENTITY_REF = 12;
-
-const XML_ERROR_ASYNC_ENTITY = 13;
-
-const XML_ERROR_BAD_CHAR_REF = 14;
-
-const XML_ERROR_BINARY_ENTITY_REF = 15;
-
-const XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF = 16;
-
-const XML_ERROR_MISPLACED_XML_PI = 17;
-
-const XML_ERROR_UNKNOWN_ENCODING = 18;
-
-const XML_ERROR_INCORRECT_ENCODING = 19;
-
-const XML_ERROR_UNCLOSED_CDATA_SECTION = 20;
-
-const XML_ERROR_EXTERNAL_ENTITY_HANDLING = 21;
-
-const XML_OPTION_CASE_FOLDING = 1;
-
-const XML_OPTION_TARGET_ENCODING = 2;
-
-const XML_OPTION_SKIP_TAGSTART = 3;
-
-const XML_OPTION_SKIP_WHITE = 4;
-
-const XML_OPTION_PARSE_HUGE = 5;
-
-const XML_SAX_IMPL = 'libxml';
-
-final class XMLParser
+class ImagickKernel
 {
-
+    public function addKernel(\ImagickKernel $kernel): void {}
+    public function addUnityKernel(float $scale): void {}
+    public static function fromBuiltin(int $kernel, string $shape): \ImagickKernel {}
+    public static function fromMatrix(array $matrix, ?array $origin = NULL): \ImagickKernel {}
+    public function getMatrix(): array {}
+    public function scale(float $scale, ?int $normalize_kernel = NULL): void {}
+    public function separate(): array {}
 }
+
+function imap_open(string $mailbox, string $user, string $password, int $flags = 0, int $retries = 0, array $options = []): \IMAP\Connection|false {}
+
+function imap_reopen(\IMAP\Connection $imap, string $mailbox, int $flags = 0, int $retries = 0): bool {}
+
+function imap_close(\IMAP\Connection $imap, int $flags = 0): true {}
+
+function imap_is_open(\IMAP\Connection $imap): bool {}
+
+function imap_num_msg(\IMAP\Connection $imap): int|false {}
+
+function imap_num_recent(\IMAP\Connection $imap): int {}
+
+function imap_headers(\IMAP\Connection $imap): array|false {}
+
+function imap_headerinfo(\IMAP\Connection $imap, int $message_num, int $from_length = 0, int $subject_length = 0): \stdClass|false {}
+
+function imap_rfc822_parse_headers(string $headers, string $default_hostname = 'UNKNOWN'): \stdClass {}
+
+function imap_rfc822_write_address(string $mailbox, string $hostname, string $personal): string|false {}
+
+function imap_rfc822_parse_adrlist(string $string, string $default_hostname): array {}
+
+function imap_body(\IMAP\Connection $imap, int $message_num, int $flags = 0): string|false {}
+
+function imap_fetchtext(\IMAP\Connection $imap, int $message_num, int $flags = 0): string|false {}
+
+function imap_bodystruct(\IMAP\Connection $imap, int $message_num, string $section): \stdClass|false {}
+
+function imap_fetchbody(\IMAP\Connection $imap, int $message_num, string $section, int $flags = 0): string|false {}
+
+function imap_fetchmime(\IMAP\Connection $imap, int $message_num, string $section, int $flags = 0): string|false {}
+
+function imap_savebody(\IMAP\Connection $imap, $file, int $message_num, string $section = '', int $flags = 0): bool {}
+
+function imap_fetchheader(\IMAP\Connection $imap, int $message_num, int $flags = 0): string|false {}
+
+function imap_fetchstructure(\IMAP\Connection $imap, int $message_num, int $flags = 0): \stdClass|false {}
+
+function imap_gc(\IMAP\Connection $imap, int $flags): true {}
+
+function imap_expunge(\IMAP\Connection $imap): true {}
+
+function imap_delete(\IMAP\Connection $imap, string $message_nums, int $flags = 0): true {}
+
+function imap_undelete(\IMAP\Connection $imap, string $message_nums, int $flags = 0): true {}
+
+function imap_check(\IMAP\Connection $imap): \stdClass|false {}
+
+function imap_listscan(\IMAP\Connection $imap, string $reference, string $pattern, string $content): array|false {}
+
+function imap_scan(\IMAP\Connection $imap, string $reference, string $pattern, string $content): array|false {}
+
+function imap_scanmailbox(\IMAP\Connection $imap, string $reference, string $pattern, string $content): array|false {}
+
+function imap_mail_copy(\IMAP\Connection $imap, string $message_nums, string $mailbox, int $flags = 0): bool {}
+
+function imap_mail_move(\IMAP\Connection $imap, string $message_nums, string $mailbox, int $flags = 0): bool {}
+
+function imap_mail_compose(array $envelope, array $bodies): string|false {}
+
+function imap_createmailbox(\IMAP\Connection $imap, string $mailbox): bool {}
+
+function imap_create(\IMAP\Connection $imap, string $mailbox): bool {}
+
+function imap_renamemailbox(\IMAP\Connection $imap, string $from, string $to): bool {}
+
+function imap_rename(\IMAP\Connection $imap, string $from, string $to): bool {}
+
+function imap_deletemailbox(\IMAP\Connection $imap, string $mailbox): bool {}
+
+function imap_subscribe(\IMAP\Connection $imap, string $mailbox): bool {}
+
+function imap_unsubscribe(\IMAP\Connection $imap, string $mailbox): bool {}
+
+function imap_append(\IMAP\Connection $imap, string $folder, string $message, ?string $options = NULL, ?string $internal_date = NULL): bool {}
+
+function imap_ping(\IMAP\Connection $imap): bool {}
+
+function imap_base64(string $string): string|false {}
+
+function imap_qprint(string $string): string|false {}
+
+function imap_8bit(string $string): string|false {}
+
+function imap_binary(string $string): string|false {}
+
+function imap_utf8(string $mime_encoded_text): string {}
+
+function imap_status(\IMAP\Connection $imap, string $mailbox, int $flags): \stdClass|false {}
+
+function imap_mailboxmsginfo(\IMAP\Connection $imap): \stdClass {}
+
+function imap_setflag_full(\IMAP\Connection $imap, string $sequence, string $flag, int $options = 0): true {}
+
+function imap_clearflag_full(\IMAP\Connection $imap, string $sequence, string $flag, int $options = 0): true {}
+
+function imap_sort(\IMAP\Connection $imap, int $criteria, bool $reverse, int $flags = 0, ?string $search_criteria = NULL, ?string $charset = NULL): array|false {}
+
+function imap_uid(\IMAP\Connection $imap, int $message_num): int|false {}
+
+function imap_msgno(\IMAP\Connection $imap, int $message_uid): int {}
+
+function imap_list(\IMAP\Connection $imap, string $reference, string $pattern): array|false {}
+
+function imap_listmailbox(\IMAP\Connection $imap, string $reference, string $pattern): array|false {}
+
+function imap_lsub(\IMAP\Connection $imap, string $reference, string $pattern): array|false {}
+
+function imap_listsubscribed(\IMAP\Connection $imap, string $reference, string $pattern): array|false {}
+
+function imap_getsubscribed(\IMAP\Connection $imap, string $reference, string $pattern): array|false {}
+
+function imap_getmailboxes(\IMAP\Connection $imap, string $reference, string $pattern): array|false {}
+
+function imap_fetch_overview(\IMAP\Connection $imap, string $sequence, int $flags = 0): array|false {}
+
+function imap_alerts(): array|false {}
+
+function imap_errors(): array|false {}
+
+function imap_last_error(): string|false {}
+
+function imap_search(\IMAP\Connection $imap, string $criteria, int $flags = \SE_FREE, string $charset = ''): array|false {}
+
+function imap_utf7_decode(string $string): string|false {}
+
+function imap_utf7_encode(string $string): string {}
+
+function imap_utf8_to_mutf7(string $string): string|false {}
+
+function imap_mutf7_to_utf8(string $string): string|false {}
+
+function imap_mime_header_decode(string $string): array|false {}
+
+function imap_thread(\IMAP\Connection $imap, int $flags = \SE_FREE): array|false {}
+
+function imap_timeout(int $timeout_type, int $timeout = -1): int|bool {}
+
+function imap_get_quota(\IMAP\Connection $imap, string $quota_root): array|false {}
+
+function imap_get_quotaroot(\IMAP\Connection $imap, string $mailbox): array|false {}
+
+function imap_set_quota(\IMAP\Connection $imap, string $quota_root, int $mailbox_size): bool {}
+
+function imap_setacl(\IMAP\Connection $imap, string $mailbox, string $user_id, string $rights): bool {}
+
+function imap_getacl(\IMAP\Connection $imap, string $mailbox): array|false {}
+
+function imap_mail(string $to, string $subject, string $message, ?string $additional_headers = NULL, ?string $cc = NULL, ?string $bcc = NULL, ?string $return_path = NULL): bool {}
+
+const NIL = 0;
+
+const IMAP_OPENTIMEOUT = 1;
+
+const IMAP_READTIMEOUT = 2;
+
+const IMAP_WRITETIMEOUT = 3;
+
+const IMAP_CLOSETIMEOUT = 4;
+
+const OP_DEBUG = 1;
+
+const OP_READONLY = 2;
+
+const OP_ANONYMOUS = 4;
+
+const OP_SHORTCACHE = 8;
+
+const OP_SILENT = 16;
+
+const OP_PROTOTYPE = 32;
+
+const OP_HALFOPEN = 64;
+
+const OP_EXPUNGE = 128;
+
+const OP_SECURE = 256;
+
+const CL_EXPUNGE = 32768;
+
+const FT_UID = 1;
+
+const FT_PEEK = 2;
+
+const FT_NOT = 4;
+
+const FT_INTERNAL = 8;
+
+const FT_PREFETCHTEXT = 32;
+
+const ST_UID = 1;
+
+const ST_SILENT = 2;
+
+const ST_SET = 4;
+
+const CP_UID = 1;
+
+const CP_MOVE = 2;
+
+const SE_UID = 1;
+
+const SE_FREE = 2;
+
+const SE_NOPREFETCH = 4;
+
+const SO_FREE = 8;
+
+const SO_NOSERVER = 8;
+
+const SA_MESSAGES = 1;
+
+const SA_RECENT = 2;
+
+const SA_UNSEEN = 4;
+
+const SA_UIDNEXT = 8;
+
+const SA_UIDVALIDITY = 16;
+
+const SA_ALL = 31;
+
+const LATT_NOINFERIORS = 1;
+
+const LATT_NOSELECT = 2;
+
+const LATT_MARKED = 4;
+
+const LATT_UNMARKED = 8;
+
+const LATT_REFERRAL = 16;
+
+const LATT_HASCHILDREN = 32;
+
+const LATT_HASNOCHILDREN = 64;
+
+const SORTDATE = 0;
+
+const SORTARRIVAL = 1;
+
+const SORTFROM = 2;
+
+const SORTSUBJECT = 3;
+
+const SORTTO = 4;
+
+const SORTCC = 5;
+
+const SORTSIZE = 6;
+
+const TYPETEXT = 0;
+
+const TYPEMULTIPART = 1;
+
+const TYPEMESSAGE = 2;
+
+const TYPEAPPLICATION = 3;
+
+const TYPEAUDIO = 4;
+
+const TYPEIMAGE = 5;
+
+const TYPEVIDEO = 6;
+
+const TYPEMODEL = 7;
+
+const TYPEOTHER = 8;
+
+const ENC7BIT = 0;
+
+const ENC8BIT = 1;
+
+const ENCBINARY = 2;
+
+const ENCBASE64 = 3;
+
+const ENCQUOTEDPRINTABLE = 4;
+
+const ENCOTHER = 5;
+
+const IMAP_GC_ELT = 1;
+
+const IMAP_GC_ENV = 2;
+
+const IMAP_GC_TEXTS = 4;
 
 function intlcal_create_instance($timezone = NULL, ?string $locale = NULL): ?\IntlCalendar {}
 
@@ -9570,33 +10960,3721 @@ class IntlChar
     public static function toupper(string|int $codepoint): string|int|null {}
 }
 
-function bcadd(string $num1, string $num2, ?int $scale = NULL): string {}
+function ldap_connect(?string $uri = NULL, int $port = 389): \LDAP\Connection|false {}
 
-function bcsub(string $num1, string $num2, ?int $scale = NULL): string {}
+function ldap_unbind(\LDAP\Connection $ldap): bool {}
 
-function bcmul(string $num1, string $num2, ?int $scale = NULL): string {}
+function ldap_close(\LDAP\Connection $ldap): bool {}
 
-function bcdiv(string $num1, string $num2, ?int $scale = NULL): string {}
+function ldap_bind(\LDAP\Connection $ldap, ?string $dn = NULL, ?string $password = NULL): bool {}
 
-function bcmod(string $num1, string $num2, ?int $scale = NULL): string {}
+function ldap_bind_ext(\LDAP\Connection $ldap, ?string $dn = NULL, ?string $password = NULL, ?array $controls = NULL): \LDAP\Result|false {}
 
-function bcdivmod(string $num1, string $num2, ?int $scale = NULL): array {}
+function ldap_read($ldap, array|string $base, array|string $filter, array $attributes = [], int $attributes_only = 0, int $sizelimit = -1, int $timelimit = -1, int $deref = \LDAP_DEREF_NEVER, ?array $controls = NULL): \LDAP\Result|array|false {}
 
-function bcpowmod(string $num, string $exponent, string $modulus, ?int $scale = NULL): string {}
+function ldap_list($ldap, array|string $base, array|string $filter, array $attributes = [], int $attributes_only = 0, int $sizelimit = -1, int $timelimit = -1, int $deref = \LDAP_DEREF_NEVER, ?array $controls = NULL): \LDAP\Result|array|false {}
 
-function bcpow(string $num, string $exponent, ?int $scale = NULL): string {}
+function ldap_search($ldap, array|string $base, array|string $filter, array $attributes = [], int $attributes_only = 0, int $sizelimit = -1, int $timelimit = -1, int $deref = \LDAP_DEREF_NEVER, ?array $controls = NULL): \LDAP\Result|array|false {}
 
-function bcsqrt(string $num, ?int $scale = NULL): string {}
+function ldap_free_result(\LDAP\Result $result): bool {}
 
-function bccomp(string $num1, string $num2, ?int $scale = NULL): int {}
+function ldap_count_entries(\LDAP\Connection $ldap, \LDAP\Result $result): int {}
 
-function bcscale(?int $scale = NULL): int {}
+function ldap_first_entry(\LDAP\Connection $ldap, \LDAP\Result $result): \LDAP\ResultEntry|false {}
 
-function bcfloor(string $num): string {}
+function ldap_next_entry(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry): \LDAP\ResultEntry|false {}
 
-function bcceil(string $num): string {}
+function ldap_get_entries(\LDAP\Connection $ldap, \LDAP\Result $result): array|false {}
 
-function bcround(string $num, int $precision = 0, \RoundingMode $mode = \RoundingMode::HalfAwayFromZero): string {}
+function ldap_first_attribute(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry): string|false {}
+
+function ldap_next_attribute(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry): string|false {}
+
+function ldap_get_attributes(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry): array {}
+
+function ldap_get_values_len(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry, string $attribute): array|false {}
+
+function ldap_get_values(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry, string $attribute): array|false {}
+
+function ldap_get_dn(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry): string|false {}
+
+function ldap_explode_dn(string $dn, int $with_attrib): array|false {}
+
+function ldap_dn2ufn(string $dn): string|false {}
+
+function ldap_add(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): bool {}
+
+function ldap_add_ext(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): \LDAP\Result|false {}
+
+function ldap_delete(\LDAP\Connection $ldap, string $dn, ?array $controls = NULL): bool {}
+
+function ldap_delete_ext(\LDAP\Connection $ldap, string $dn, ?array $controls = NULL): \LDAP\Result|false {}
+
+function ldap_modify_batch(\LDAP\Connection $ldap, string $dn, array $modifications_info, ?array $controls = NULL): bool {}
+
+function ldap_mod_add(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): bool {}
+
+function ldap_mod_add_ext(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): \LDAP\Result|false {}
+
+function ldap_mod_replace(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): bool {}
+
+function ldap_modify(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): bool {}
+
+function ldap_mod_replace_ext(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): \LDAP\Result|false {}
+
+function ldap_mod_del(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): bool {}
+
+function ldap_mod_del_ext(\LDAP\Connection $ldap, string $dn, array $entry, ?array $controls = NULL): \LDAP\Result|false {}
+
+function ldap_errno(\LDAP\Connection $ldap): int {}
+
+function ldap_error(\LDAP\Connection $ldap): string {}
+
+function ldap_err2str(int $errno): string {}
+
+function ldap_compare(\LDAP\Connection $ldap, string $dn, string $attribute, string $value, ?array $controls = NULL): int|bool {}
+
+function ldap_rename(\LDAP\Connection $ldap, string $dn, string $new_rdn, string $new_parent, bool $delete_old_rdn, ?array $controls = NULL): bool {}
+
+function ldap_rename_ext(\LDAP\Connection $ldap, string $dn, string $new_rdn, string $new_parent, bool $delete_old_rdn, ?array $controls = NULL): \LDAP\Result|false {}
+
+function ldap_get_option(\LDAP\Connection $ldap, int $option, &$value = NULL): bool {}
+
+function ldap_set_option(?\LDAP\Connection $ldap, int $option, $value): bool {}
+
+function ldap_count_references(\LDAP\Connection $ldap, \LDAP\Result $result): int {}
+
+function ldap_first_reference(\LDAP\Connection $ldap, \LDAP\Result $result): \LDAP\ResultEntry|false {}
+
+function ldap_next_reference(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry): \LDAP\ResultEntry|false {}
+
+function ldap_parse_reference(\LDAP\Connection $ldap, \LDAP\ResultEntry $entry, &$referrals): bool {}
+
+function ldap_parse_result(\LDAP\Connection $ldap, \LDAP\Result $result, &$error_code, &$matched_dn = NULL, &$error_message = NULL, &$referrals = NULL, &$controls = NULL): bool {}
+
+function ldap_set_rebind_proc(\LDAP\Connection $ldap, ?callable $callback): bool {}
+
+function ldap_start_tls(\LDAP\Connection $ldap): bool {}
+
+function ldap_escape(string $value, string $ignore = '', int $flags = 0): string {}
+
+function ldap_exop(\LDAP\Connection $ldap, string $request_oid, ?string $request_data = NULL, ?array $controls = NULL, &$response_data = null, &$response_oid = NULL): \LDAP\Result|bool {}
+
+function ldap_exop_sync(\LDAP\Connection $ldap, string $request_oid, ?string $request_data = NULL, ?array $controls = NULL, &$response_data = NULL, &$response_oid = NULL): \LDAP\Result|bool {}
+
+function ldap_exop_passwd(\LDAP\Connection $ldap, string $user = '', string $old_password = '', string $new_password = '', &$controls = NULL): string|bool {}
+
+function ldap_exop_whoami(\LDAP\Connection $ldap): string|false {}
+
+function ldap_exop_refresh(\LDAP\Connection $ldap, string $dn, int $ttl): int|false {}
+
+function ldap_parse_exop(\LDAP\Connection $ldap, \LDAP\Result $result, &$response_data = NULL, &$response_oid = NULL): bool {}
+
+const LDAP_DEREF_NEVER = 0;
+
+const LDAP_DEREF_SEARCHING = 1;
+
+const LDAP_DEREF_FINDING = 2;
+
+const LDAP_DEREF_ALWAYS = 3;
+
+const LDAP_MODIFY_BATCH_ADD = 1;
+
+const LDAP_MODIFY_BATCH_REMOVE = 2;
+
+const LDAP_MODIFY_BATCH_REMOVE_ALL = 18;
+
+const LDAP_MODIFY_BATCH_REPLACE = 3;
+
+const LDAP_MODIFY_BATCH_ATTRIB = 'attrib';
+
+const LDAP_MODIFY_BATCH_MODTYPE = 'modtype';
+
+const LDAP_MODIFY_BATCH_VALUES = 'values';
+
+const LDAP_OPT_DEREF = 2;
+
+const LDAP_OPT_SIZELIMIT = 3;
+
+const LDAP_OPT_TIMELIMIT = 4;
+
+const LDAP_OPT_NETWORK_TIMEOUT = 20485;
+
+const LDAP_OPT_TIMEOUT = 20482;
+
+const LDAP_OPT_PROTOCOL_VERSION = 17;
+
+const LDAP_OPT_ERROR_NUMBER = 49;
+
+const LDAP_OPT_REFERRALS = 8;
+
+const LDAP_OPT_RESTART = 9;
+
+const LDAP_OPT_HOST_NAME = 48;
+
+const LDAP_OPT_ERROR_STRING = 50;
+
+const LDAP_OPT_MATCHED_DN = 51;
+
+const LDAP_OPT_SERVER_CONTROLS = 18;
+
+const LDAP_OPT_CLIENT_CONTROLS = 19;
+
+const LDAP_OPT_DEBUG_LEVEL = 20481;
+
+const LDAP_OPT_DIAGNOSTIC_MESSAGE = 50;
+
+const LDAP_OPT_X_SASL_NOCANON = 24843;
+
+const LDAP_OPT_X_SASL_USERNAME = 24844;
+
+const LDAP_OPT_X_TLS_REQUIRE_CERT = 24582;
+
+const LDAP_OPT_X_TLS_NEVER = 0;
+
+const LDAP_OPT_X_TLS_HARD = 1;
+
+const LDAP_OPT_X_TLS_DEMAND = 2;
+
+const LDAP_OPT_X_TLS_ALLOW = 3;
+
+const LDAP_OPT_X_TLS_TRY = 4;
+
+const LDAP_OPT_X_TLS_CACERTDIR = 24579;
+
+const LDAP_OPT_X_TLS_CACERTFILE = 24578;
+
+const LDAP_OPT_X_TLS_CERTFILE = 24580;
+
+const LDAP_OPT_X_TLS_CIPHER_SUITE = 24584;
+
+const LDAP_OPT_X_TLS_KEYFILE = 24581;
+
+const LDAP_OPT_X_TLS_RANDOM_FILE = 24585;
+
+const LDAP_OPT_X_TLS_CRLCHECK = 24587;
+
+const LDAP_OPT_X_TLS_CRL_NONE = 0;
+
+const LDAP_OPT_X_TLS_CRL_PEER = 1;
+
+const LDAP_OPT_X_TLS_CRL_ALL = 2;
+
+const LDAP_OPT_X_TLS_DHFILE = 24590;
+
+const LDAP_OPT_X_TLS_CRLFILE = 24592;
+
+const LDAP_OPT_X_TLS_PROTOCOL_MIN = 24583;
+
+const LDAP_OPT_X_TLS_PROTOCOL_SSL2 = 512;
+
+const LDAP_OPT_X_TLS_PROTOCOL_SSL3 = 768;
+
+const LDAP_OPT_X_TLS_PROTOCOL_TLS1_0 = 769;
+
+const LDAP_OPT_X_TLS_PROTOCOL_TLS1_1 = 770;
+
+const LDAP_OPT_X_TLS_PROTOCOL_TLS1_2 = 771;
+
+const LDAP_OPT_X_TLS_PROTOCOL_TLS1_3 = 772;
+
+const LDAP_OPT_X_TLS_PROTOCOL_MAX = 24603;
+
+const LDAP_OPT_X_TLS_PACKAGE = 24593;
+
+const LDAP_OPT_X_KEEPALIVE_IDLE = 25344;
+
+const LDAP_OPT_X_KEEPALIVE_PROBES = 25345;
+
+const LDAP_OPT_X_KEEPALIVE_INTERVAL = 25346;
+
+const LDAP_ESCAPE_FILTER = 1;
+
+const LDAP_ESCAPE_DN = 2;
+
+const LDAP_EXOP_START_TLS = '1.3.6.1.4.1.1466.20037';
+
+const LDAP_EXOP_MODIFY_PASSWD = '1.3.6.1.4.1.4203.1.11.1';
+
+const LDAP_EXOP_REFRESH = '1.3.6.1.4.1.1466.101.119.1';
+
+const LDAP_EXOP_WHO_AM_I = '1.3.6.1.4.1.4203.1.11.3';
+
+const LDAP_EXOP_TURN = '1.3.6.1.1.19';
+
+const LDAP_CONTROL_MANAGEDSAIT = '2.16.840.1.113730.3.4.2';
+
+const LDAP_CONTROL_PROXY_AUTHZ = '2.16.840.1.113730.3.4.18';
+
+const LDAP_CONTROL_SUBENTRIES = '1.3.6.1.4.1.4203.1.10.1';
+
+const LDAP_CONTROL_VALUESRETURNFILTER = '1.2.826.0.1.3344810.2.3';
+
+const LDAP_CONTROL_ASSERT = '1.3.6.1.1.12';
+
+const LDAP_CONTROL_PRE_READ = '1.3.6.1.1.13.1';
+
+const LDAP_CONTROL_POST_READ = '1.3.6.1.1.13.2';
+
+const LDAP_CONTROL_SORTREQUEST = '1.2.840.113556.1.4.473';
+
+const LDAP_CONTROL_SORTRESPONSE = '1.2.840.113556.1.4.474';
+
+const LDAP_CONTROL_PAGEDRESULTS = '1.2.840.113556.1.4.319';
+
+const LDAP_CONTROL_AUTHZID_REQUEST = '2.16.840.1.113730.3.4.16';
+
+const LDAP_CONTROL_AUTHZID_RESPONSE = '2.16.840.1.113730.3.4.15';
+
+const LDAP_CONTROL_SYNC = '1.3.6.1.4.1.4203.1.9.1.1';
+
+const LDAP_CONTROL_SYNC_STATE = '1.3.6.1.4.1.4203.1.9.1.2';
+
+const LDAP_CONTROL_SYNC_DONE = '1.3.6.1.4.1.4203.1.9.1.3';
+
+const LDAP_CONTROL_DONTUSECOPY = '1.3.6.1.1.22';
+
+const LDAP_CONTROL_PASSWORDPOLICYREQUEST = '1.3.6.1.4.1.42.2.27.8.5.1';
+
+const LDAP_CONTROL_PASSWORDPOLICYRESPONSE = '1.3.6.1.4.1.42.2.27.8.5.1';
+
+const LDAP_CONTROL_X_INCREMENTAL_VALUES = '1.2.840.113556.1.4.802';
+
+const LDAP_CONTROL_X_DOMAIN_SCOPE = '1.2.840.113556.1.4.1339';
+
+const LDAP_CONTROL_X_PERMISSIVE_MODIFY = '1.2.840.113556.1.4.1413';
+
+const LDAP_CONTROL_X_SEARCH_OPTIONS = '1.2.840.113556.1.4.1340';
+
+const LDAP_CONTROL_X_TREE_DELETE = '1.2.840.113556.1.4.805';
+
+const LDAP_CONTROL_X_EXTENDED_DN = '1.2.840.113556.1.4.529';
+
+const LDAP_CONTROL_VLVREQUEST = '2.16.840.1.113730.3.4.9';
+
+const LDAP_CONTROL_VLVRESPONSE = '2.16.840.1.113730.3.4.10';
+
+function exif_tagname(int $index): string|false {}
+
+function exif_read_data($file, ?string $required_sections = NULL, bool $as_arrays = false, bool $read_thumbnail = false): array|false {}
+
+function exif_thumbnail($file, &$width = NULL, &$height = NULL, &$image_type = NULL): string|false {}
+
+function exif_imagetype(string $filename): int|false {}
+
+const EXIF_USE_MBSTRING = 1;
+
+const MONGODB_VERSION = '1.21.0';
+
+const MONGODB_STABILITY = 'stable';
+
+function mysqli_affected_rows(\mysqli $mysql): string|int {}
+
+function mysqli_autocommit(\mysqli $mysql, bool $enable): bool {}
+
+function mysqli_begin_transaction(\mysqli $mysql, int $flags = 0, ?string $name = NULL): bool {}
+
+function mysqli_change_user(\mysqli $mysql, string $username, string $password, ?string $database): bool {}
+
+function mysqli_character_set_name(\mysqli $mysql): string {}
+
+function mysqli_close(\mysqli $mysql): true {}
+
+function mysqli_commit(\mysqli $mysql, int $flags = 0, ?string $name = NULL): bool {}
+
+function mysqli_connect(?string $hostname = NULL, ?string $username = NULL, ?string $password = NULL, ?string $database = NULL, ?int $port = NULL, ?string $socket = NULL): \mysqli|false {}
+
+function mysqli_connect_errno(): int {}
+
+function mysqli_connect_error(): ?string {}
+
+function mysqli_data_seek(\mysqli_result $result, int $offset): bool {}
+
+function mysqli_dump_debug_info(\mysqli $mysql): bool {}
+
+function mysqli_debug(string $options): true {}
+
+function mysqli_errno(\mysqli $mysql): int {}
+
+function mysqli_error(\mysqli $mysql): string {}
+
+function mysqli_error_list(\mysqli $mysql): array {}
+
+function mysqli_stmt_execute(\mysqli_stmt $statement, ?array $params = NULL): bool {}
+
+function mysqli_execute(\mysqli_stmt $statement, ?array $params = NULL): bool {}
+
+function mysqli_execute_query(\mysqli $mysql, string $query, ?array $params = NULL): \mysqli_result|bool {}
+
+function mysqli_fetch_field(\mysqli_result $result): object|false {}
+
+function mysqli_fetch_fields(\mysqli_result $result): array {}
+
+function mysqli_fetch_field_direct(\mysqli_result $result, int $index): object|false {}
+
+function mysqli_fetch_lengths(\mysqli_result $result): array|false {}
+
+function mysqli_fetch_all(\mysqli_result $result, int $mode = \MYSQLI_NUM): array {}
+
+function mysqli_fetch_array(\mysqli_result $result, int $mode = \MYSQLI_BOTH): array|false|null {}
+
+function mysqli_fetch_assoc(\mysqli_result $result): array|false|null {}
+
+function mysqli_fetch_object(\mysqli_result $result, string $class = 'stdClass', array $constructor_args = []): object|false|null {}
+
+function mysqli_fetch_row(\mysqli_result $result): array|false|null {}
+
+function mysqli_fetch_column(\mysqli_result $result, int $column = 0): string|int|float|false|null {}
+
+function mysqli_field_count(\mysqli $mysql): int {}
+
+function mysqli_field_seek(\mysqli_result $result, int $index): true {}
+
+function mysqli_field_tell(\mysqli_result $result): int {}
+
+function mysqli_free_result(\mysqli_result $result): void {}
+
+function mysqli_get_connection_stats(\mysqli $mysql): array {}
+
+function mysqli_get_client_stats(): array {}
+
+function mysqli_get_charset(\mysqli $mysql): ?object {}
+
+function mysqli_get_client_info(?\mysqli $mysql = NULL): string {}
+
+function mysqli_get_client_version(): int {}
+
+function mysqli_get_links_stats(): array {}
+
+function mysqli_get_host_info(\mysqli $mysql): string {}
+
+function mysqli_get_proto_info(\mysqli $mysql): int {}
+
+function mysqli_get_server_info(\mysqli $mysql): string {}
+
+function mysqli_get_server_version(\mysqli $mysql): int {}
+
+function mysqli_get_warnings(\mysqli $mysql): \mysqli_warning|false {}
+
+function mysqli_init(): \mysqli|false {}
+
+function mysqli_info(\mysqli $mysql): ?string {}
+
+function mysqli_insert_id(\mysqli $mysql): string|int {}
+
+function mysqli_kill(\mysqli $mysql, int $process_id): bool {}
+
+function mysqli_more_results(\mysqli $mysql): bool {}
+
+function mysqli_multi_query(\mysqli $mysql, string $query): bool {}
+
+function mysqli_next_result(\mysqli $mysql): bool {}
+
+function mysqli_num_fields(\mysqli_result $result): int {}
+
+function mysqli_num_rows(\mysqli_result $result): string|int {}
+
+function mysqli_options(\mysqli $mysql, int $option, $value): bool {}
+
+function mysqli_set_opt(\mysqli $mysql, int $option, $value): bool {}
+
+function mysqli_ping(\mysqli $mysql): bool {}
+
+function mysqli_poll(?array &$read, ?array &$error, array &$reject, int $seconds, int $microseconds = 0): int|false {}
+
+function mysqli_prepare(\mysqli $mysql, string $query): \mysqli_stmt|false {}
+
+function mysqli_report(int $flags): true {}
+
+function mysqli_query(\mysqli $mysql, string $query, int $result_mode = \MYSQLI_STORE_RESULT): \mysqli_result|bool {}
+
+function mysqli_real_connect(\mysqli $mysql, ?string $hostname = NULL, ?string $username = NULL, ?string $password = NULL, ?string $database = NULL, ?int $port = NULL, ?string $socket = NULL, int $flags = 0): bool {}
+
+function mysqli_real_escape_string(\mysqli $mysql, string $string): string {}
+
+function mysqli_escape_string(\mysqli $mysql, string $string): string {}
+
+function mysqli_real_query(\mysqli $mysql, string $query): bool {}
+
+function mysqli_reap_async_query(\mysqli $mysql): \mysqli_result|bool {}
+
+function mysqli_release_savepoint(\mysqli $mysql, string $name): bool {}
+
+function mysqli_rollback(\mysqli $mysql, int $flags = 0, ?string $name = NULL): bool {}
+
+function mysqli_savepoint(\mysqli $mysql, string $name): bool {}
+
+function mysqli_select_db(\mysqli $mysql, string $database): bool {}
+
+function mysqli_set_charset(\mysqli $mysql, string $charset): bool {}
+
+function mysqli_stmt_affected_rows(\mysqli_stmt $statement): string|int {}
+
+function mysqli_stmt_attr_get(\mysqli_stmt $statement, int $attribute): int {}
+
+function mysqli_stmt_attr_set(\mysqli_stmt $statement, int $attribute, int $value): bool {}
+
+function mysqli_stmt_bind_param(\mysqli_stmt $statement, string $types, mixed &...$vars): bool {}
+
+function mysqli_stmt_bind_result(\mysqli_stmt $statement, mixed &...$vars): bool {}
+
+function mysqli_stmt_close(\mysqli_stmt $statement): true {}
+
+function mysqli_stmt_data_seek(\mysqli_stmt $statement, int $offset): void {}
+
+function mysqli_stmt_errno(\mysqli_stmt $statement): int {}
+
+function mysqli_stmt_error(\mysqli_stmt $statement): string {}
+
+function mysqli_stmt_error_list(\mysqli_stmt $statement): array {}
+
+function mysqli_stmt_fetch(\mysqli_stmt $statement): ?bool {}
+
+function mysqli_stmt_field_count(\mysqli_stmt $statement): int {}
+
+function mysqli_stmt_free_result(\mysqli_stmt $statement): void {}
+
+function mysqli_stmt_get_result(\mysqli_stmt $statement): \mysqli_result|false {}
+
+function mysqli_stmt_get_warnings(\mysqli_stmt $statement): \mysqli_warning|false {}
+
+function mysqli_stmt_init(\mysqli $mysql): \mysqli_stmt|false {}
+
+function mysqli_stmt_insert_id(\mysqli_stmt $statement): string|int {}
+
+function mysqli_stmt_more_results(\mysqli_stmt $statement): bool {}
+
+function mysqli_stmt_next_result(\mysqli_stmt $statement): bool {}
+
+function mysqli_stmt_num_rows(\mysqli_stmt $statement): string|int {}
+
+function mysqli_stmt_param_count(\mysqli_stmt $statement): int {}
+
+function mysqli_stmt_prepare(\mysqli_stmt $statement, string $query): bool {}
+
+function mysqli_stmt_reset(\mysqli_stmt $statement): bool {}
+
+function mysqli_stmt_result_metadata(\mysqli_stmt $statement): \mysqli_result|false {}
+
+function mysqli_stmt_send_long_data(\mysqli_stmt $statement, int $param_num, string $data): bool {}
+
+function mysqli_stmt_store_result(\mysqli_stmt $statement): bool {}
+
+function mysqli_stmt_sqlstate(\mysqli_stmt $statement): string {}
+
+function mysqli_sqlstate(\mysqli $mysql): string {}
+
+function mysqli_ssl_set(\mysqli $mysql, ?string $key, ?string $certificate, ?string $ca_certificate, ?string $ca_path, ?string $cipher_algos): true {}
+
+function mysqli_stat(\mysqli $mysql): string|false {}
+
+function mysqli_store_result(\mysqli $mysql, int $mode = 0): \mysqli_result|false {}
+
+function mysqli_thread_id(\mysqli $mysql): int {}
+
+function mysqli_thread_safe(): bool {}
+
+function mysqli_use_result(\mysqli $mysql): \mysqli_result|false {}
+
+function mysqli_warning_count(\mysqli $mysql): int {}
+
+function mysqli_refresh(\mysqli $mysql, int $flags): bool {}
+
+const MYSQLI_READ_DEFAULT_GROUP = 5;
+
+const MYSQLI_READ_DEFAULT_FILE = 4;
+
+const MYSQLI_OPT_CONNECT_TIMEOUT = 0;
+
+const MYSQLI_OPT_LOCAL_INFILE = 8;
+
+const MYSQLI_OPT_LOAD_DATA_LOCAL_DIR = 43;
+
+const MYSQLI_INIT_COMMAND = 3;
+
+const MYSQLI_OPT_READ_TIMEOUT = 11;
+
+const MYSQLI_OPT_NET_CMD_BUFFER_SIZE = 202;
+
+const MYSQLI_OPT_NET_READ_BUFFER_SIZE = 203;
+
+const MYSQLI_OPT_INT_AND_FLOAT_NATIVE = 201;
+
+const MYSQLI_OPT_SSL_VERIFY_SERVER_CERT = 21;
+
+const MYSQLI_SERVER_PUBLIC_KEY = 35;
+
+const MYSQLI_CLIENT_SSL = 2048;
+
+const MYSQLI_CLIENT_COMPRESS = 32;
+
+const MYSQLI_CLIENT_INTERACTIVE = 1024;
+
+const MYSQLI_CLIENT_IGNORE_SPACE = 256;
+
+const MYSQLI_CLIENT_NO_SCHEMA = 16;
+
+const MYSQLI_CLIENT_FOUND_ROWS = 2;
+
+const MYSQLI_CLIENT_SSL_VERIFY_SERVER_CERT = 1073741824;
+
+const MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT = 64;
+
+const MYSQLI_CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS = 4194304;
+
+const MYSQLI_OPT_CAN_HANDLE_EXPIRED_PASSWORDS = 37;
+
+const MYSQLI_STORE_RESULT = 0;
+
+const MYSQLI_USE_RESULT = 1;
+
+const MYSQLI_ASYNC = 8;
+
+const MYSQLI_STORE_RESULT_COPY_DATA = 16;
+
+const MYSQLI_ASSOC = 1;
+
+const MYSQLI_NUM = 2;
+
+const MYSQLI_BOTH = 3;
+
+const MYSQLI_STMT_ATTR_UPDATE_MAX_LENGTH = 0;
+
+const MYSQLI_STMT_ATTR_CURSOR_TYPE = 1;
+
+const MYSQLI_CURSOR_TYPE_NO_CURSOR = 0;
+
+const MYSQLI_CURSOR_TYPE_READ_ONLY = 1;
+
+const MYSQLI_NOT_NULL_FLAG = 1;
+
+const MYSQLI_PRI_KEY_FLAG = 2;
+
+const MYSQLI_UNIQUE_KEY_FLAG = 4;
+
+const MYSQLI_MULTIPLE_KEY_FLAG = 8;
+
+const MYSQLI_BLOB_FLAG = 16;
+
+const MYSQLI_UNSIGNED_FLAG = 32;
+
+const MYSQLI_ZEROFILL_FLAG = 64;
+
+const MYSQLI_AUTO_INCREMENT_FLAG = 512;
+
+const MYSQLI_TIMESTAMP_FLAG = 1024;
+
+const MYSQLI_SET_FLAG = 2048;
+
+const MYSQLI_NUM_FLAG = 32768;
+
+const MYSQLI_PART_KEY_FLAG = 16384;
+
+const MYSQLI_GROUP_FLAG = 32768;
+
+const MYSQLI_ENUM_FLAG = 256;
+
+const MYSQLI_BINARY_FLAG = 128;
+
+const MYSQLI_NO_DEFAULT_VALUE_FLAG = 4096;
+
+const MYSQLI_ON_UPDATE_NOW_FLAG = 8192;
+
+const MYSQLI_TYPE_DECIMAL = 0;
+
+const MYSQLI_TYPE_TINY = 1;
+
+const MYSQLI_TYPE_SHORT = 2;
+
+const MYSQLI_TYPE_LONG = 3;
+
+const MYSQLI_TYPE_FLOAT = 4;
+
+const MYSQLI_TYPE_DOUBLE = 5;
+
+const MYSQLI_TYPE_NULL = 6;
+
+const MYSQLI_TYPE_TIMESTAMP = 7;
+
+const MYSQLI_TYPE_LONGLONG = 8;
+
+const MYSQLI_TYPE_INT24 = 9;
+
+const MYSQLI_TYPE_DATE = 10;
+
+const MYSQLI_TYPE_TIME = 11;
+
+const MYSQLI_TYPE_DATETIME = 12;
+
+const MYSQLI_TYPE_YEAR = 13;
+
+const MYSQLI_TYPE_NEWDATE = 14;
+
+const MYSQLI_TYPE_ENUM = 247;
+
+const MYSQLI_TYPE_SET = 248;
+
+const MYSQLI_TYPE_TINY_BLOB = 249;
+
+const MYSQLI_TYPE_MEDIUM_BLOB = 250;
+
+const MYSQLI_TYPE_LONG_BLOB = 251;
+
+const MYSQLI_TYPE_BLOB = 252;
+
+const MYSQLI_TYPE_VAR_STRING = 253;
+
+const MYSQLI_TYPE_STRING = 254;
+
+const MYSQLI_TYPE_CHAR = 1;
+
+const MYSQLI_TYPE_GEOMETRY = 255;
+
+const MYSQLI_TYPE_VECTOR = 242;
+
+const MYSQLI_TYPE_JSON = 245;
+
+const MYSQLI_TYPE_NEWDECIMAL = 246;
+
+const MYSQLI_TYPE_BIT = 16;
+
+const MYSQLI_SET_CHARSET_NAME = 7;
+
+const MYSQLI_NO_DATA = 100;
+
+const MYSQLI_DATA_TRUNCATED = 101;
+
+const MYSQLI_REPORT_INDEX = 4;
+
+const MYSQLI_REPORT_ERROR = 1;
+
+const MYSQLI_REPORT_STRICT = 2;
+
+const MYSQLI_REPORT_ALL = 255;
+
+const MYSQLI_REPORT_OFF = 0;
+
+const MYSQLI_DEBUG_TRACE_ENABLED = 0;
+
+const MYSQLI_SERVER_QUERY_NO_GOOD_INDEX_USED = 16;
+
+const MYSQLI_SERVER_QUERY_NO_INDEX_USED = 32;
+
+const MYSQLI_SERVER_QUERY_WAS_SLOW = 2048;
+
+const MYSQLI_SERVER_PS_OUT_PARAMS = 4096;
+
+const MYSQLI_REFRESH_GRANT = 1;
+
+const MYSQLI_REFRESH_LOG = 2;
+
+const MYSQLI_REFRESH_TABLES = 4;
+
+const MYSQLI_REFRESH_HOSTS = 8;
+
+const MYSQLI_REFRESH_STATUS = 16;
+
+const MYSQLI_REFRESH_THREADS = 32;
+
+const MYSQLI_REFRESH_REPLICA = 64;
+
+const MYSQLI_REFRESH_SLAVE = 64;
+
+const MYSQLI_REFRESH_MASTER = 128;
+
+const MYSQLI_REFRESH_BACKUP_LOG = 2097152;
+
+const MYSQLI_TRANS_START_WITH_CONSISTENT_SNAPSHOT = 1;
+
+const MYSQLI_TRANS_START_READ_WRITE = 2;
+
+const MYSQLI_TRANS_START_READ_ONLY = 4;
+
+const MYSQLI_TRANS_COR_AND_CHAIN = 1;
+
+const MYSQLI_TRANS_COR_AND_NO_CHAIN = 2;
+
+const MYSQLI_TRANS_COR_RELEASE = 4;
+
+const MYSQLI_TRANS_COR_NO_RELEASE = 8;
+
+const MYSQLI_IS_MARIADB = false;
+
+final class mysqli_sql_exception extends \RuntimeException
+{
+    protected string $sqlstate;
+    public function getSqlState(): string {}
+}
+
+final class mysqli_driver
+{
+    public string $client_info;
+    public int $client_version;
+    public int $driver_version;
+    public int $report_mode;
+}
+
+class mysqli
+{
+    public string|int $affected_rows;
+    public string $client_info;
+    public int $client_version;
+    public int $connect_errno;
+    public ?string $connect_error;
+    public int $errno;
+    public string $error;
+    public array $error_list;
+    public int $field_count;
+    public string $host_info;
+    public ?string $info;
+    public string|int $insert_id;
+    public string $server_info;
+    public int $server_version;
+    public string $sqlstate;
+    public int $protocol_version;
+    public int $thread_id;
+    public int $warning_count;
+    public function __construct(?string $hostname = NULL, ?string $username = NULL, ?string $password = NULL, ?string $database = NULL, ?int $port = NULL, ?string $socket = NULL) {}
+    public function autocommit(bool $enable): bool {}
+    public function begin_transaction(int $flags = 0, ?string $name = NULL): bool {}
+    public function change_user(string $username, string $password, ?string $database): bool {}
+    public function character_set_name(): string {}
+    public function close(): true {}
+    public function commit(int $flags = 0, ?string $name = NULL): bool {}
+    public function connect(?string $hostname = NULL, ?string $username = NULL, ?string $password = NULL, ?string $database = NULL, ?int $port = NULL, ?string $socket = NULL): bool {}
+    public function dump_debug_info(): bool {}
+    public function debug(string $options): true {}
+    public function get_charset(): ?object {}
+    public function execute_query(string $query, ?array $params = NULL): \mysqli_result|bool {}
+    public function get_client_info(): string {}
+    public function get_connection_stats(): array {}
+    public function get_server_info(): string {}
+    public function get_warnings(): \mysqli_warning|false {}
+    public function init() {}
+    public function kill(int $process_id): bool {}
+    public function multi_query(string $query): bool {}
+    public function more_results(): bool {}
+    public function next_result(): bool {}
+    public function ping(): bool {}
+    public static function poll(?array &$read, ?array &$error, array &$reject, int $seconds, int $microseconds = 0): int|false {}
+    public function prepare(string $query): \mysqli_stmt|false {}
+    public function query(string $query, int $result_mode = \MYSQLI_STORE_RESULT): \mysqli_result|bool {}
+    public function real_connect(?string $hostname = NULL, ?string $username = NULL, ?string $password = NULL, ?string $database = NULL, ?int $port = NULL, ?string $socket = NULL, int $flags = 0): bool {}
+    public function real_escape_string(string $string): string {}
+    public function reap_async_query(): \mysqli_result|bool {}
+    public function escape_string(string $string): string {}
+    public function real_query(string $query): bool {}
+    public function release_savepoint(string $name): bool {}
+    public function rollback(int $flags = 0, ?string $name = NULL): bool {}
+    public function savepoint(string $name): bool {}
+    public function select_db(string $database): bool {}
+    public function set_charset(string $charset): bool {}
+    public function options(int $option, $value): bool {}
+    public function set_opt(int $option, $value): bool {}
+    public function ssl_set(?string $key, ?string $certificate, ?string $ca_certificate, ?string $ca_path, ?string $cipher_algos): true {}
+    public function stat(): string|false {}
+    public function stmt_init(): \mysqli_stmt|false {}
+    public function store_result(int $mode = 0): \mysqli_result|false {}
+    public function thread_safe(): bool {}
+    public function use_result(): \mysqli_result|false {}
+    public function refresh(int $flags): bool {}
+}
+
+final class mysqli_warning
+{
+    public string $message;
+    public string $sqlstate;
+    public int $errno;
+    public function next(): bool {}
+}
+
+class mysqli_result implements \IteratorAggregate, \Traversable
+{
+    public int $current_field;
+    public int $field_count;
+    public ?array $lengths;
+    public string|int $num_rows;
+    public int $type;
+    public function __construct(\mysqli $mysql, int $result_mode = \MYSQLI_STORE_RESULT) {}
+    public function close(): void {}
+    public function free(): void {}
+    public function data_seek(int $offset): bool {}
+    public function fetch_field(): object|false {}
+    public function fetch_fields(): array {}
+    public function fetch_field_direct(int $index): object|false {}
+    public function fetch_all(int $mode = \MYSQLI_NUM): array {}
+    public function fetch_array(int $mode = \MYSQLI_BOTH): array|false|null {}
+    public function fetch_assoc(): array|false|null {}
+    public function fetch_object(string $class = 'stdClass', array $constructor_args = []): object|false|null {}
+    public function fetch_row(): array|false|null {}
+    public function fetch_column(int $column = 0): string|int|float|false|null {}
+    public function field_seek(int $index): true {}
+    public function free_result(): void {}
+    public function getIterator(): \Iterator {}
+}
+
+class mysqli_stmt
+{
+    public string|int $affected_rows;
+    public string|int $insert_id;
+    public string|int $num_rows;
+    public int $param_count;
+    public int $field_count;
+    public int $errno;
+    public string $error;
+    public array $error_list;
+    public string $sqlstate;
+    public int $id;
+    public function __construct(\mysqli $mysql, ?string $query = NULL) {}
+    public function attr_get(int $attribute): int {}
+    public function attr_set(int $attribute, int $value): bool {}
+    public function bind_param(string $types, mixed &...$vars): bool {}
+    public function bind_result(mixed &...$vars): bool {}
+    public function close(): true {}
+    public function data_seek(int $offset): void {}
+    public function execute(?array $params = NULL): bool {}
+    public function fetch(): ?bool {}
+    public function get_warnings(): \mysqli_warning|false {}
+    public function result_metadata(): \mysqli_result|false {}
+    public function more_results(): bool {}
+    public function next_result(): bool {}
+    public function num_rows(): string|int {}
+    public function send_long_data(int $param_num, string $data): bool {}
+    public function free_result(): void {}
+    public function reset(): bool {}
+    public function prepare(string $query): bool {}
+    public function store_result(): bool {}
+    public function get_result(): \mysqli_result|false {}
+}
+
+function pcntl_fork(): int {}
+
+function pcntl_waitpid(int $process_id, &$status, int $flags = 0, &$resource_usage = []): int {}
+
+function pcntl_waitid(int $idtype = \P_ALL, ?int $id = NULL, &$info = [], int $flags = \WEXITED): bool {}
+
+function pcntl_wait(&$status, int $flags = 0, &$resource_usage = []): int {}
+
+function pcntl_signal(int $signal, $handler, bool $restart_syscalls = true): bool {}
+
+function pcntl_signal_get_handler(int $signal) {}
+
+function pcntl_signal_dispatch(): bool {}
+
+function pcntl_sigprocmask(int $mode, array $signals, &$old_signals = NULL): bool {}
+
+function pcntl_wifexited(int $status): bool {}
+
+function pcntl_wifstopped(int $status): bool {}
+
+function pcntl_wifcontinued(int $status): bool {}
+
+function pcntl_wifsignaled(int $status): bool {}
+
+function pcntl_wexitstatus(int $status): int|false {}
+
+function pcntl_wtermsig(int $status): int|false {}
+
+function pcntl_wstopsig(int $status): int|false {}
+
+function pcntl_exec(string $path, array $args = [], array $env_vars = []): bool {}
+
+function pcntl_alarm(int $seconds): int {}
+
+function pcntl_get_last_error(): int {}
+
+function pcntl_errno(): int {}
+
+function pcntl_getpriority(?int $process_id = NULL, int $mode = \PRIO_PROCESS): int|false {}
+
+function pcntl_setpriority(int $priority, ?int $process_id = NULL, int $mode = \PRIO_PROCESS): bool {}
+
+function pcntl_strerror(int $error_code): string {}
+
+function pcntl_async_signals(?bool $enable = NULL): bool {}
+
+function pcntl_getqos_class(): \Pcntl\QosClass {}
+
+function pcntl_setqos_class(\Pcntl\QosClass $qos_class = \Pcntl\QosClass::Default): void {}
+
+const WNOHANG = 1;
+
+const WUNTRACED = 2;
+
+const WCONTINUED = 16;
+
+const WEXITED = 4;
+
+const WSTOPPED = 8;
+
+const WNOWAIT = 32;
+
+const P_ALL = 0;
+
+const P_PID = 1;
+
+const P_PGID = 2;
+
+const SIG_IGN = 1;
+
+const SIG_DFL = 0;
+
+const SIG_ERR = -1;
+
+const SIGHUP = 1;
+
+const SIGINT = 2;
+
+const SIGQUIT = 3;
+
+const SIGILL = 4;
+
+const SIGTRAP = 5;
+
+const SIGABRT = 6;
+
+const SIGIOT = 6;
+
+const SIGBUS = 10;
+
+const SIGFPE = 8;
+
+const SIGKILL = 9;
+
+const SIGUSR1 = 30;
+
+const SIGSEGV = 11;
+
+const SIGUSR2 = 31;
+
+const SIGPIPE = 13;
+
+const SIGALRM = 14;
+
+const SIGTERM = 15;
+
+const SIGCHLD = 20;
+
+const SIGCONT = 19;
+
+const SIGSTOP = 17;
+
+const SIGTSTP = 18;
+
+const SIGTTIN = 21;
+
+const SIGTTOU = 22;
+
+const SIGURG = 16;
+
+const SIGXCPU = 24;
+
+const SIGXFSZ = 25;
+
+const SIGVTALRM = 26;
+
+const SIGPROF = 27;
+
+const SIGWINCH = 28;
+
+const SIGIO = 23;
+
+const SIGINFO = 29;
+
+const SIGSYS = 12;
+
+const SIGBABY = 12;
+
+const PRIO_PGRP = 1;
+
+const PRIO_USER = 2;
+
+const PRIO_PROCESS = 0;
+
+const PRIO_DARWIN_BG = 4096;
+
+const PRIO_DARWIN_THREAD = 3;
+
+const SIG_BLOCK = 1;
+
+const SIG_UNBLOCK = 2;
+
+const SIG_SETMASK = 3;
+
+const PCNTL_EINTR = 4;
+
+const PCNTL_ECHILD = 10;
+
+const PCNTL_EINVAL = 22;
+
+const PCNTL_EAGAIN = 35;
+
+const PCNTL_ESRCH = 3;
+
+const PCNTL_EACCES = 13;
+
+const PCNTL_EPERM = 1;
+
+const PCNTL_ENOMEM = 12;
+
+const PCNTL_E2BIG = 7;
+
+const PCNTL_EFAULT = 14;
+
+const PCNTL_EIO = 5;
+
+const PCNTL_EISDIR = 21;
+
+const PCNTL_ELOOP = 62;
+
+const PCNTL_EMFILE = 24;
+
+const PCNTL_ENAMETOOLONG = 63;
+
+const PCNTL_ENFILE = 23;
+
+const PCNTL_ENOENT = 2;
+
+const PCNTL_ENOEXEC = 8;
+
+const PCNTL_ENOTDIR = 20;
+
+const PCNTL_ETXTBSY = 26;
+
+const PCNTL_ENOSPC = 28;
+
+const PCNTL_EUSERS = 68;
+
+function pdo_drivers(): array {}
+
+class PDOException extends \RuntimeException
+{
+    protected $code;
+    public ?array $errorInfo;
+}
+
+class PDO
+{
+    const PARAM_NULL = null;
+    const PARAM_BOOL = null;
+    const PARAM_INT = null;
+    const PARAM_STR = null;
+    const PARAM_LOB = null;
+    const PARAM_STMT = null;
+    const PARAM_INPUT_OUTPUT = null;
+    const PARAM_STR_NATL = null;
+    const PARAM_STR_CHAR = null;
+    const PARAM_EVT_ALLOC = null;
+    const PARAM_EVT_FREE = null;
+    const PARAM_EVT_EXEC_PRE = null;
+    const PARAM_EVT_EXEC_POST = null;
+    const PARAM_EVT_FETCH_PRE = null;
+    const PARAM_EVT_FETCH_POST = null;
+    const PARAM_EVT_NORMALIZE = null;
+    const FETCH_DEFAULT = null;
+    const FETCH_LAZY = null;
+    const FETCH_ASSOC = null;
+    const FETCH_NUM = null;
+    const FETCH_BOTH = null;
+    const FETCH_OBJ = null;
+    const FETCH_BOUND = null;
+    const FETCH_COLUMN = null;
+    const FETCH_CLASS = null;
+    const FETCH_INTO = null;
+    const FETCH_FUNC = null;
+    const FETCH_GROUP = null;
+    const FETCH_UNIQUE = null;
+    const FETCH_KEY_PAIR = null;
+    const FETCH_CLASSTYPE = null;
+    const FETCH_SERIALIZE = null;
+    const FETCH_PROPS_LATE = null;
+    const FETCH_NAMED = null;
+    const ATTR_AUTOCOMMIT = null;
+    const ATTR_PREFETCH = null;
+    const ATTR_TIMEOUT = null;
+    const ATTR_ERRMODE = null;
+    const ATTR_SERVER_VERSION = null;
+    const ATTR_CLIENT_VERSION = null;
+    const ATTR_SERVER_INFO = null;
+    const ATTR_CONNECTION_STATUS = null;
+    const ATTR_CASE = null;
+    const ATTR_CURSOR_NAME = null;
+    const ATTR_CURSOR = null;
+    const ATTR_ORACLE_NULLS = null;
+    const ATTR_PERSISTENT = null;
+    const ATTR_STATEMENT_CLASS = null;
+    const ATTR_FETCH_TABLE_NAMES = null;
+    const ATTR_FETCH_CATALOG_NAMES = null;
+    const ATTR_DRIVER_NAME = null;
+    const ATTR_STRINGIFY_FETCHES = null;
+    const ATTR_MAX_COLUMN_LEN = null;
+    const ATTR_EMULATE_PREPARES = null;
+    const ATTR_DEFAULT_FETCH_MODE = null;
+    const ATTR_DEFAULT_STR_PARAM = null;
+    const ERRMODE_SILENT = null;
+    const ERRMODE_WARNING = null;
+    const ERRMODE_EXCEPTION = null;
+    const CASE_NATURAL = null;
+    const CASE_LOWER = null;
+    const CASE_UPPER = null;
+    const NULL_NATURAL = null;
+    const NULL_EMPTY_STRING = null;
+    const NULL_TO_STRING = null;
+    const ERR_NONE = null;
+    const FETCH_ORI_NEXT = null;
+    const FETCH_ORI_PRIOR = null;
+    const FETCH_ORI_FIRST = null;
+    const FETCH_ORI_LAST = null;
+    const FETCH_ORI_ABS = null;
+    const FETCH_ORI_REL = null;
+    const CURSOR_FWDONLY = null;
+    const CURSOR_SCROLL = null;
+    const MYSQL_ATTR_USE_BUFFERED_QUERY = null;
+    const MYSQL_ATTR_LOCAL_INFILE = null;
+    const MYSQL_ATTR_INIT_COMMAND = null;
+    const MYSQL_ATTR_COMPRESS = null;
+    const MYSQL_ATTR_DIRECT_QUERY = null;
+    const MYSQL_ATTR_FOUND_ROWS = null;
+    const MYSQL_ATTR_IGNORE_SPACE = null;
+    const MYSQL_ATTR_SSL_KEY = null;
+    const MYSQL_ATTR_SSL_CERT = null;
+    const MYSQL_ATTR_SSL_CA = null;
+    const MYSQL_ATTR_SSL_CAPATH = null;
+    const MYSQL_ATTR_SSL_CIPHER = null;
+    const MYSQL_ATTR_SERVER_PUBLIC_KEY = null;
+    const MYSQL_ATTR_MULTI_STATEMENTS = null;
+    const MYSQL_ATTR_SSL_VERIFY_SERVER_CERT = null;
+    const MYSQL_ATTR_LOCAL_INFILE_DIRECTORY = null;
+    const PGSQL_ATTR_DISABLE_PREPARES = null;
+    const PGSQL_TRANSACTION_IDLE = null;
+    const PGSQL_TRANSACTION_ACTIVE = null;
+    const PGSQL_TRANSACTION_INTRANS = null;
+    const PGSQL_TRANSACTION_INERROR = null;
+    const PGSQL_TRANSACTION_UNKNOWN = null;
+    const SQLITE_DETERMINISTIC = null;
+    const SQLITE_ATTR_OPEN_FLAGS = null;
+    const SQLITE_OPEN_READONLY = null;
+    const SQLITE_OPEN_READWRITE = null;
+    const SQLITE_OPEN_CREATE = null;
+    const SQLITE_ATTR_READONLY_STATEMENT = null;
+    const SQLITE_ATTR_EXTENDED_RESULT_CODES = null;
+    const SQLSRV_ATTR_ENCODING = null;
+    const SQLSRV_ATTR_QUERY_TIMEOUT = null;
+    const SQLSRV_ATTR_DIRECT_QUERY = null;
+    const SQLSRV_ATTR_CURSOR_SCROLL_TYPE = null;
+    const SQLSRV_ATTR_CLIENT_BUFFER_MAX_KB_SIZE = null;
+    const SQLSRV_ATTR_FETCHES_NUMERIC_TYPE = null;
+    const SQLSRV_ATTR_FETCHES_DATETIME_TYPE = null;
+    const SQLSRV_ATTR_FORMAT_DECIMALS = null;
+    const SQLSRV_ATTR_DECIMAL_PLACES = null;
+    const SQLSRV_ATTR_DATA_CLASSIFICATION = null;
+    const SQLSRV_PARAM_OUT_DEFAULT_SIZE = null;
+    const SQLSRV_ENCODING_DEFAULT = null;
+    const SQLSRV_ENCODING_SYSTEM = null;
+    const SQLSRV_ENCODING_BINARY = null;
+    const SQLSRV_ENCODING_UTF8 = null;
+    const SQLSRV_CURSOR_STATIC = null;
+    const SQLSRV_CURSOR_DYNAMIC = null;
+    const SQLSRV_CURSOR_KEYSET = null;
+    const SQLSRV_CURSOR_BUFFERED = null;
+    const SQLSRV_TXN_READ_UNCOMMITTED = null;
+    const SQLSRV_TXN_READ_COMMITTED = null;
+    const SQLSRV_TXN_REPEATABLE_READ = null;
+    const SQLSRV_TXN_SERIALIZABLE = null;
+    const SQLSRV_TXN_SNAPSHOT = null;
+    public function __construct(string $dsn, ?string $username = NULL, ?string $password = NULL, ?array $options = NULL) {}
+    public static function connect(string $dsn, ?string $username = NULL, ?string $password = NULL, ?array $options = NULL): static {}
+    public function beginTransaction(): bool {}
+    public function commit(): bool {}
+    public function errorCode(): ?string {}
+    public function errorInfo(): array {}
+    public function exec(string $statement): int|false {}
+    public function getAttribute(int $attribute): mixed {}
+    public static function getAvailableDrivers(): array {}
+    public function inTransaction(): bool {}
+    public function lastInsertId(?string $name = NULL): string|false {}
+    public function prepare(string $query, array $options = []): \PDOStatement|false {}
+    public function query(string $query, ?int $fetchMode = NULL, mixed ...$fetchModeArgs): \PDOStatement|false {}
+    public function quote(string $string, int $type = \PDO::PARAM_STR): string|false {}
+    public function rollBack(): bool {}
+    public function setAttribute(int $attribute, mixed $value): bool {}
+}
+
+class PDOStatement implements \IteratorAggregate, \Traversable
+{
+    public string $queryString;
+    public function bindColumn(string|int $column, mixed &$var, int $type = \PDO::PARAM_STR, int $maxLength = 0, mixed $driverOptions = NULL): bool {}
+    public function bindParam(string|int $param, mixed &$var, int $type = \PDO::PARAM_STR, int $maxLength = 0, mixed $driverOptions = NULL): bool {}
+    public function bindValue(string|int $param, mixed $value, int $type = \PDO::PARAM_STR): bool {}
+    public function closeCursor(): bool {}
+    public function columnCount(): int {}
+    public function debugDumpParams(): ?bool {}
+    public function errorCode(): ?string {}
+    public function errorInfo(): array {}
+    public function execute(?array $params = NULL): bool {}
+    public function fetch(int $mode = \PDO::FETCH_DEFAULT, int $cursorOrientation = \PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed {}
+    public function fetchAll(int $mode = \PDO::FETCH_DEFAULT, mixed ...$args): array {}
+    public function fetchColumn(int $column = 0): mixed {}
+    public function fetchObject(?string $class = 'stdClass', array $constructorArgs = []): object|false {}
+    public function getAttribute(int $name): mixed {}
+    public function getColumnMeta(int $column): array|false {}
+    public function nextRowset(): bool {}
+    public function rowCount(): int {}
+    public function setAttribute(int $attribute, mixed $value): bool {}
+    public function setFetchMode(int $mode, mixed ...$args): true {}
+    public function getIterator(): \Iterator {}
+}
+
+final class PDORow
+{
+    public string $queryString;
+}
+
+function pg_connect(string $connection_string, int $flags = 0): \PgSql\Connection|false {}
+
+function pg_pconnect(string $connection_string, int $flags = 0): \PgSql\Connection|false {}
+
+function pg_connect_poll(\PgSql\Connection $connection): int {}
+
+function pg_close(?\PgSql\Connection $connection = NULL): true {}
+
+function pg_dbname(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_last_error(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_errormessage(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_options(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_port(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_tty(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_host(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_version(?\PgSql\Connection $connection = NULL): array {}
+
+function pg_jit(?\PgSql\Connection $connection = NULL): array {}
+
+function pg_parameter_status($connection, string $name = null): string|false {}
+
+function pg_ping(?\PgSql\Connection $connection = NULL): bool {}
+
+function pg_query($connection, string $query = null): \PgSql\Result|false {}
+
+function pg_exec($connection, string $query = null): \PgSql\Result|false {}
+
+function pg_query_params($connection, $query, array $params = null): \PgSql\Result|false {}
+
+function pg_prepare($connection, string $statement_name, string $query = null): \PgSql\Result|false {}
+
+function pg_execute($connection, $statement_name, array $params = null): \PgSql\Result|false {}
+
+function pg_num_rows(\PgSql\Result $result): int {}
+
+function pg_numrows(\PgSql\Result $result): int {}
+
+function pg_num_fields(\PgSql\Result $result): int {}
+
+function pg_numfields(\PgSql\Result $result): int {}
+
+function pg_affected_rows(\PgSql\Result $result): int {}
+
+function pg_cmdtuples(\PgSql\Result $result): int {}
+
+function pg_last_notice(\PgSql\Connection $connection, int $mode = \PGSQL_NOTICE_LAST): array|string|bool {}
+
+function pg_field_table(\PgSql\Result $result, int $field, bool $oid_only = false): string|int|false {}
+
+function pg_field_name(\PgSql\Result $result, int $field): string {}
+
+function pg_fieldname(\PgSql\Result $result, int $field): string {}
+
+function pg_field_size(\PgSql\Result $result, int $field): int {}
+
+function pg_fieldsize(\PgSql\Result $result, int $field): int {}
+
+function pg_field_type(\PgSql\Result $result, int $field): string {}
+
+function pg_fieldtype(\PgSql\Result $result, int $field): string {}
+
+function pg_field_type_oid(\PgSql\Result $result, int $field): string|int {}
+
+function pg_field_num(\PgSql\Result $result, string $field): int {}
+
+function pg_fieldnum(\PgSql\Result $result, string $field): int {}
+
+function pg_fetch_result(\PgSql\Result $result, $row, string|int $field = null): string|false|null {}
+
+function pg_result(\PgSql\Result $result, $row, string|int $field = null): string|false|null {}
+
+function pg_fetch_row(\PgSql\Result $result, ?int $row = NULL, int $mode = \PGSQL_NUM): array|false {}
+
+function pg_fetch_assoc(\PgSql\Result $result, ?int $row = NULL): array|false {}
+
+function pg_fetch_array(\PgSql\Result $result, ?int $row = NULL, int $mode = \PGSQL_BOTH): array|false {}
+
+function pg_fetch_object(\PgSql\Result $result, ?int $row = NULL, string $class = 'stdClass', array $constructor_args = []): object|false {}
+
+function pg_fetch_all(\PgSql\Result $result, int $mode = \PGSQL_ASSOC): array {}
+
+function pg_fetch_all_columns(\PgSql\Result $result, int $field = 0): array {}
+
+function pg_result_seek(\PgSql\Result $result, int $row): bool {}
+
+function pg_field_prtlen(\PgSql\Result $result, $row, string|int $field = null): int|false {}
+
+function pg_fieldprtlen(\PgSql\Result $result, $row, string|int $field = null): int|false {}
+
+function pg_field_is_null(\PgSql\Result $result, $row, string|int $field = null): int|false {}
+
+function pg_fieldisnull(\PgSql\Result $result, $row, string|int $field = null): int|false {}
+
+function pg_free_result(\PgSql\Result $result): bool {}
+
+function pg_freeresult(\PgSql\Result $result): bool {}
+
+function pg_last_oid(\PgSql\Result $result): string|int|false {}
+
+function pg_getlastoid(\PgSql\Result $result): string|int|false {}
+
+function pg_trace(string $filename, string $mode = 'w', ?\PgSql\Connection $connection = NULL, int $trace_mode = 0): bool {}
+
+function pg_untrace(?\PgSql\Connection $connection = NULL): true {}
+
+function pg_lo_create($connection = null, $oid = null): string|int|false {}
+
+function pg_locreate($connection = null, $oid = null): string|int|false {}
+
+function pg_lo_unlink($connection, $oid = null): bool {}
+
+function pg_lounlink($connection, $oid = null): bool {}
+
+function pg_lo_open($connection, $oid = null, string $mode = null): \PgSql\Lob|false {}
+
+function pg_loopen($connection, $oid = null, string $mode = null): \PgSql\Lob|false {}
+
+function pg_lo_close(\PgSql\Lob $lob): bool {}
+
+function pg_loclose(\PgSql\Lob $lob): bool {}
+
+function pg_lo_read(\PgSql\Lob $lob, int $length = 8192): string|false {}
+
+function pg_loread(\PgSql\Lob $lob, int $length = 8192): string|false {}
+
+function pg_lo_write(\PgSql\Lob $lob, string $data, ?int $length = NULL): int|false {}
+
+function pg_lowrite(\PgSql\Lob $lob, string $data, ?int $length = NULL): int|false {}
+
+function pg_lo_read_all(\PgSql\Lob $lob): int {}
+
+function pg_loreadall(\PgSql\Lob $lob): int {}
+
+function pg_lo_import($connection, $filename = null, $oid = null): string|int|false {}
+
+function pg_loimport($connection, $filename = null, $oid = null): string|int|false {}
+
+function pg_lo_export($connection, $oid = null, $filename = null): bool {}
+
+function pg_loexport($connection, $oid = null, $filename = null): bool {}
+
+function pg_lo_seek(\PgSql\Lob $lob, int $offset, int $whence = \SEEK_CUR): bool {}
+
+function pg_lo_tell(\PgSql\Lob $lob): int {}
+
+function pg_lo_truncate(\PgSql\Lob $lob, int $size): bool {}
+
+function pg_set_error_verbosity($connection, int $verbosity = null): int|false {}
+
+function pg_set_client_encoding($connection, string $encoding = null): int {}
+
+function pg_setclientencoding($connection, string $encoding = null): int {}
+
+function pg_client_encoding(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_clientencoding(?\PgSql\Connection $connection = NULL): string {}
+
+function pg_end_copy(?\PgSql\Connection $connection = NULL): bool {}
+
+function pg_put_line($connection, string $query = null): bool {}
+
+function pg_copy_to(\PgSql\Connection $connection, string $table_name, string $separator = '	', string $null_as = '\\\\N'): array|false {}
+
+function pg_copy_from(\PgSql\Connection $connection, string $table_name, array $rows, string $separator = '	', string $null_as = '\\\\N'): bool {}
+
+function pg_escape_string($connection, string $string = null): string {}
+
+function pg_escape_bytea($connection, string $string = null): string {}
+
+function pg_unescape_bytea(string $string): string {}
+
+function pg_escape_literal($connection, string $string = null): string|false {}
+
+function pg_escape_identifier($connection, string $string = null): string|false {}
+
+function pg_result_error(\PgSql\Result $result): string|false {}
+
+function pg_result_error_field(\PgSql\Result $result, int $field_code): string|false|null {}
+
+function pg_connection_status(\PgSql\Connection $connection): int {}
+
+function pg_transaction_status(\PgSql\Connection $connection): int {}
+
+function pg_connection_reset(\PgSql\Connection $connection): bool {}
+
+function pg_cancel_query(\PgSql\Connection $connection): bool {}
+
+function pg_connection_busy(\PgSql\Connection $connection): bool {}
+
+function pg_send_query(\PgSql\Connection $connection, string $query): int|bool {}
+
+function pg_send_query_params(\PgSql\Connection $connection, string $query, array $params): int|bool {}
+
+function pg_send_prepare(\PgSql\Connection $connection, string $statement_name, string $query): int|bool {}
+
+function pg_send_execute(\PgSql\Connection $connection, string $statement_name, array $params): int|bool {}
+
+function pg_get_result(\PgSql\Connection $connection): \PgSql\Result|false {}
+
+function pg_result_status(\PgSql\Result $result, int $mode = \PGSQL_STATUS_LONG): string|int {}
+
+function pg_get_notify(\PgSql\Connection $connection, int $mode = \PGSQL_ASSOC): array|false {}
+
+function pg_get_pid(\PgSql\Connection $connection): int {}
+
+function pg_socket(\PgSql\Connection $connection) {}
+
+function pg_consume_input(\PgSql\Connection $connection): bool {}
+
+function pg_flush(\PgSql\Connection $connection): int|bool {}
+
+function pg_meta_data(\PgSql\Connection $connection, string $table_name, bool $extended = false): array|false {}
+
+function pg_convert(\PgSql\Connection $connection, string $table_name, array $values, int $flags = 0): array|false {}
+
+function pg_insert(\PgSql\Connection $connection, string $table_name, array $values, int $flags = \PGSQL_DML_EXEC): \PgSql\Result|string|bool {}
+
+function pg_update(\PgSql\Connection $connection, string $table_name, array $values, array $conditions, int $flags = \PGSQL_DML_EXEC): string|bool {}
+
+function pg_delete(\PgSql\Connection $connection, string $table_name, array $conditions, int $flags = \PGSQL_DML_EXEC): string|bool {}
+
+function pg_select(\PgSql\Connection $connection, string $table_name, array $conditions = [], int $flags = \PGSQL_DML_EXEC, int $mode = \PGSQL_ASSOC): array|string|false {}
+
+function pg_set_error_context_visibility(\PgSql\Connection $connection, int $visibility): int {}
+
+function pg_result_memory_size(\PgSql\Result $result): int {}
+
+function pg_change_password(\PgSql\Connection $connection, string $user, string $password): bool {}
+
+function pg_put_copy_data(\PgSql\Connection $connection, string $cmd): int {}
+
+function pg_put_copy_end(\PgSql\Connection $connection, ?string $error = NULL): int {}
+
+function pg_socket_poll($socket, int $read, int $write, int $timeout = -1): int {}
+
+const PGSQL_LIBPQ_VERSION = '16.2';
+
+const PGSQL_LIBPQ_VERSION_STR = '16.2';
+
+const PGSQL_CONNECT_FORCE_NEW = 2;
+
+const PGSQL_CONNECT_ASYNC = 4;
+
+const PGSQL_ASSOC = 1;
+
+const PGSQL_NUM = 2;
+
+const PGSQL_BOTH = 3;
+
+const PGSQL_NOTICE_LAST = 1;
+
+const PGSQL_NOTICE_ALL = 2;
+
+const PGSQL_NOTICE_CLEAR = 3;
+
+const PGSQL_CONNECTION_BAD = 1;
+
+const PGSQL_CONNECTION_OK = 0;
+
+const PGSQL_CONNECTION_STARTED = 2;
+
+const PGSQL_CONNECTION_MADE = 3;
+
+const PGSQL_CONNECTION_AWAITING_RESPONSE = 4;
+
+const PGSQL_CONNECTION_AUTH_OK = 5;
+
+const PGSQL_CONNECTION_SETENV = 6;
+
+const PGSQL_POLLING_FAILED = 0;
+
+const PGSQL_POLLING_READING = 1;
+
+const PGSQL_POLLING_WRITING = 2;
+
+const PGSQL_POLLING_OK = 3;
+
+const PGSQL_POLLING_ACTIVE = 4;
+
+const PGSQL_TRANSACTION_IDLE = 0;
+
+const PGSQL_TRANSACTION_ACTIVE = 1;
+
+const PGSQL_TRANSACTION_INTRANS = 2;
+
+const PGSQL_TRANSACTION_INERROR = 3;
+
+const PGSQL_TRANSACTION_UNKNOWN = 4;
+
+const PGSQL_ERRORS_TERSE = 0;
+
+const PGSQL_ERRORS_DEFAULT = 1;
+
+const PGSQL_ERRORS_VERBOSE = 2;
+
+const PGSQL_ERRORS_SQLSTATE = 3;
+
+const PGSQL_SEEK_SET = 0;
+
+const PGSQL_SEEK_CUR = 1;
+
+const PGSQL_SEEK_END = 2;
+
+const PGSQL_STATUS_LONG = 1;
+
+const PGSQL_STATUS_STRING = 2;
+
+const PGSQL_EMPTY_QUERY = 0;
+
+const PGSQL_COMMAND_OK = 1;
+
+const PGSQL_TUPLES_OK = 2;
+
+const PGSQL_COPY_OUT = 3;
+
+const PGSQL_COPY_IN = 4;
+
+const PGSQL_BAD_RESPONSE = 5;
+
+const PGSQL_NONFATAL_ERROR = 6;
+
+const PGSQL_FATAL_ERROR = 7;
+
+const PGSQL_DIAG_SEVERITY = 83;
+
+const PGSQL_DIAG_SQLSTATE = 67;
+
+const PGSQL_DIAG_MESSAGE_PRIMARY = 77;
+
+const PGSQL_DIAG_MESSAGE_DETAIL = 68;
+
+const PGSQL_DIAG_MESSAGE_HINT = 72;
+
+const PGSQL_DIAG_STATEMENT_POSITION = 80;
+
+const PGSQL_DIAG_INTERNAL_POSITION = 112;
+
+const PGSQL_DIAG_INTERNAL_QUERY = 113;
+
+const PGSQL_DIAG_CONTEXT = 87;
+
+const PGSQL_DIAG_SOURCE_FILE = 70;
+
+const PGSQL_DIAG_SOURCE_LINE = 76;
+
+const PGSQL_DIAG_SOURCE_FUNCTION = 82;
+
+const PGSQL_DIAG_SCHEMA_NAME = 115;
+
+const PGSQL_DIAG_TABLE_NAME = 116;
+
+const PGSQL_DIAG_COLUMN_NAME = 99;
+
+const PGSQL_DIAG_DATATYPE_NAME = 100;
+
+const PGSQL_DIAG_CONSTRAINT_NAME = 110;
+
+const PGSQL_DIAG_SEVERITY_NONLOCALIZED = 86;
+
+const PGSQL_CONV_IGNORE_DEFAULT = 2;
+
+const PGSQL_CONV_FORCE_NULL = 4;
+
+const PGSQL_CONV_IGNORE_NOT_NULL = 8;
+
+const PGSQL_DML_ESCAPE = 4096;
+
+const PGSQL_DML_NO_CONV = 256;
+
+const PGSQL_DML_EXEC = 512;
+
+const PGSQL_DML_ASYNC = 1024;
+
+const PGSQL_DML_STRING = 2048;
+
+const PGSQL_TRACE_REGRESS_MODE = 2;
+
+const PGSQL_SHOW_CONTEXT_NEVER = 0;
+
+const PGSQL_SHOW_CONTEXT_ERRORS = 1;
+
+const PGSQL_SHOW_CONTEXT_ALWAYS = 2;
+
+class PharException extends \Exception
+{
+
+}
+
+class Phar extends \RecursiveDirectoryIterator implements \Countable, \ArrayAccess
+{
+    const BZ2 = null;
+    const GZ = null;
+    const NONE = null;
+    const PHAR = null;
+    const TAR = null;
+    const ZIP = null;
+    const COMPRESSED = null;
+    const PHP = null;
+    const PHPS = null;
+    const MD5 = null;
+    const OPENSSL = null;
+    const OPENSSL_SHA256 = null;
+    const OPENSSL_SHA512 = null;
+    const SHA1 = null;
+    const SHA256 = null;
+    const SHA512 = null;
+    public function __construct(string $filename, int $flags = 12288, ?string $alias = NULL) {}
+    public function __destruct() {}
+    public function addEmptyDir(string $directory): void {}
+    public function addFile(string $filename, ?string $localName = NULL): void {}
+    public function addFromString(string $localName, string $contents): void {}
+    public function buildFromDirectory(string $directory, string $pattern = ''): array {}
+    public function buildFromIterator(\Traversable $iterator, ?string $baseDirectory = NULL): array {}
+    public function compressFiles(int $compression): void {}
+    public function decompressFiles(): true {}
+    public function compress(int $compression, ?string $extension = NULL): ?\Phar {}
+    public function decompress(?string $extension = NULL): ?\Phar {}
+    public function convertToExecutable(?int $format = NULL, ?int $compression = NULL, ?string $extension = NULL): ?\Phar {}
+    public function convertToData(?int $format = NULL, ?int $compression = NULL, ?string $extension = NULL): ?\PharData {}
+    public function copy(string $from, string $to): true {}
+    public function count(int $mode = \COUNT_NORMAL): int {}
+    public function delete(string $localName): true {}
+    public function delMetadata(): true {}
+    public function extractTo(string $directory, array|string|null $files = NULL, bool $overwrite = false): bool {}
+    public function getAlias(): ?string {}
+    public function getPath(): string {}
+    public function getMetadata(array $unserializeOptions = []): mixed {}
+    public function getModified(): bool {}
+    public function getSignature(): array|false {}
+    public function getStub(): string {}
+    public function getVersion(): string {}
+    public function hasMetadata(): bool {}
+    public function isBuffering(): bool {}
+    public function isCompressed(): int|false {}
+    public function isFileFormat(int $format): bool {}
+    public function isWritable(): bool {}
+    public function offsetExists($localName): bool {}
+    public function offsetGet($localName): \SplFileInfo {}
+    public function offsetSet($localName, $value): void {}
+    public function offsetUnset($localName): void {}
+    public function setAlias(string $alias): true {}
+    public function setDefaultStub(?string $index = NULL, ?string $webIndex = NULL): true {}
+    public function setMetadata(mixed $metadata): void {}
+    public function setSignatureAlgorithm(int $algo, ?string $privateKey = NULL): void {}
+    public function setStub($stub, int $length = null): true {}
+    public function startBuffering(): void {}
+    public function stopBuffering(): void {}
+    public static function apiVersion(): string {}
+    public static function canCompress(int $compression = 0): bool {}
+    public static function canWrite(): bool {}
+    public static function createDefaultStub(?string $index = NULL, ?string $webIndex = NULL): string {}
+    public static function getSupportedCompression(): array {}
+    public static function getSupportedSignatures(): array {}
+    public static function interceptFileFuncs(): void {}
+    public static function isValidPharFilename(string $filename, bool $executable = true): bool {}
+    public static function loadPhar(string $filename, ?string $alias = NULL): bool {}
+    public static function mapPhar(?string $alias = NULL, int $offset = 0): bool {}
+    public static function running(bool $returnPhar = true): string {}
+    public static function mount(string $pharPath, string $externalPath): void {}
+    public static function mungServer(array $variables): void {}
+    public static function unlinkArchive(string $filename): true {}
+    public static function webPhar(?string $alias = NULL, ?string $index = NULL, ?string $fileNotFoundScript = NULL, array $mimeTypes = [], ?callable $rewrite = NULL): void {}
+}
+
+class PharData extends \RecursiveDirectoryIterator implements \Countable, \ArrayAccess
+{
+    public function __construct(string $filename, int $flags = 12288, ?string $alias = NULL, int $format = 0) {}
+    public function __destruct() {}
+    public function addEmptyDir(string $directory): void {}
+    public function addFile(string $filename, ?string $localName = NULL): void {}
+    public function addFromString(string $localName, string $contents): void {}
+    public function buildFromDirectory(string $directory, string $pattern = ''): array {}
+    public function buildFromIterator(\Traversable $iterator, ?string $baseDirectory = NULL): array {}
+    public function compressFiles(int $compression): void {}
+    public function decompressFiles(): true {}
+    public function compress(int $compression, ?string $extension = NULL): ?\PharData {}
+    public function decompress(?string $extension = NULL): ?\PharData {}
+    public function convertToExecutable(?int $format = NULL, ?int $compression = NULL, ?string $extension = NULL): ?\Phar {}
+    public function convertToData(?int $format = NULL, ?int $compression = NULL, ?string $extension = NULL): ?\PharData {}
+    public function copy(string $from, string $to): true {}
+    public function count(int $mode = \COUNT_NORMAL): int {}
+    public function delete(string $localName): true {}
+    public function delMetadata(): true {}
+    public function extractTo(string $directory, array|string|null $files = NULL, bool $overwrite = false): bool {}
+    public function getAlias(): ?string {}
+    public function getPath(): string {}
+    public function getMetadata(array $unserializeOptions = []): mixed {}
+    public function getModified(): bool {}
+    public function getSignature(): array|false {}
+    public function getStub(): string {}
+    public function getVersion(): string {}
+    public function hasMetadata(): bool {}
+    public function isBuffering(): bool {}
+    public function isCompressed(): int|false {}
+    public function isFileFormat(int $format): bool {}
+    public function isWritable(): bool {}
+    public function offsetExists($localName): bool {}
+    public function offsetGet($localName): \SplFileInfo {}
+    public function offsetSet($localName, $value): void {}
+    public function offsetUnset($localName): void {}
+    public function setAlias(string $alias): bool {}
+    public function setDefaultStub(?string $index = NULL, ?string $webIndex = NULL): bool {}
+    public function setMetadata(mixed $metadata): void {}
+    public function setSignatureAlgorithm(int $algo, ?string $privateKey = NULL): void {}
+    public function setStub($stub, int $length = null): true {}
+    public function startBuffering(): void {}
+    public function stopBuffering(): void {}
+    public static function apiVersion(): string {}
+    public static function canCompress(int $compression = 0): bool {}
+    public static function canWrite(): bool {}
+    public static function createDefaultStub(?string $index = NULL, ?string $webIndex = NULL): string {}
+    public static function getSupportedCompression(): array {}
+    public static function getSupportedSignatures(): array {}
+    public static function interceptFileFuncs(): void {}
+    public static function isValidPharFilename(string $filename, bool $executable = true): bool {}
+    public static function loadPhar(string $filename, ?string $alias = NULL): bool {}
+    public static function mapPhar(?string $alias = NULL, int $offset = 0): bool {}
+    public static function running(bool $returnPhar = true): string {}
+    public static function mount(string $pharPath, string $externalPath): void {}
+    public static function mungServer(array $variables): void {}
+    public static function unlinkArchive(string $filename): true {}
+    public static function webPhar(?string $alias = NULL, ?string $index = NULL, ?string $fileNotFoundScript = NULL, array $mimeTypes = [], ?callable $rewrite = NULL): void {}
+}
+
+class PharFileInfo extends \SplFileInfo
+{
+    public function __construct(string $filename) {}
+    public function __destruct() {}
+    public function chmod(int $perms): void {}
+    public function compress(int $compression): true {}
+    public function decompress(): true {}
+    public function delMetadata(): true {}
+    public function getCompressedSize(): int {}
+    public function getCRC32(): int {}
+    public function getContent(): string {}
+    public function getMetadata(array $unserializeOptions = []): mixed {}
+    public function getPharFlags(): int {}
+    public function hasMetadata(): bool {}
+    public function isCompressed(?int $compression = NULL): bool {}
+    public function isCRCChecked(): bool {}
+    public function setMetadata(mixed $metadata): void {}
+}
+
+function posix_kill(int $process_id, int $signal): bool {}
+
+function posix_getpid(): int {}
+
+function posix_getppid(): int {}
+
+function posix_getuid(): int {}
+
+function posix_setuid(int $user_id): bool {}
+
+function posix_geteuid(): int {}
+
+function posix_seteuid(int $user_id): bool {}
+
+function posix_getgid(): int {}
+
+function posix_setgid(int $group_id): bool {}
+
+function posix_getegid(): int {}
+
+function posix_setegid(int $group_id): bool {}
+
+function posix_getgroups(): array|false {}
+
+function posix_getlogin(): string|false {}
+
+function posix_getpgrp(): int {}
+
+function posix_setsid(): int {}
+
+function posix_setpgid(int $process_id, int $process_group_id): bool {}
+
+function posix_getpgid(int $process_id): int|false {}
+
+function posix_getsid(int $process_id): int|false {}
+
+function posix_uname(): array|false {}
+
+function posix_times(): array|false {}
+
+function posix_ctermid(): string|false {}
+
+function posix_ttyname($file_descriptor): string|false {}
+
+function posix_isatty($file_descriptor): bool {}
+
+function posix_getcwd(): string|false {}
+
+function posix_mkfifo(string $filename, int $permissions): bool {}
+
+function posix_mknod(string $filename, int $flags, int $major = 0, int $minor = 0): bool {}
+
+function posix_access(string $filename, int $flags = 0): bool {}
+
+function posix_getgrnam(string $name): array|false {}
+
+function posix_getgrgid(int $group_id): array|false {}
+
+function posix_getpwnam(string $username): array|false {}
+
+function posix_getpwuid(int $user_id): array|false {}
+
+function posix_getrlimit(?int $resource = NULL): array|false {}
+
+function posix_setrlimit(int $resource, int $soft_limit, int $hard_limit): bool {}
+
+function posix_get_last_error(): int {}
+
+function posix_errno(): int {}
+
+function posix_strerror(int $error_code): string {}
+
+function posix_initgroups(string $username, int $group_id): bool {}
+
+function posix_sysconf(int $conf_id): int {}
+
+function posix_pathconf(string $path, int $name): int|false {}
+
+function posix_fpathconf($file_descriptor, int $name): int|false {}
+
+const POSIX_F_OK = 0;
+
+const POSIX_X_OK = 1;
+
+const POSIX_W_OK = 2;
+
+const POSIX_R_OK = 4;
+
+const POSIX_S_IFREG = 32768;
+
+const POSIX_S_IFCHR = 8192;
+
+const POSIX_S_IFBLK = 24576;
+
+const POSIX_S_IFIFO = 4096;
+
+const POSIX_S_IFSOCK = 49152;
+
+const POSIX_RLIMIT_AS = 5;
+
+const POSIX_RLIMIT_CORE = 4;
+
+const POSIX_RLIMIT_CPU = 0;
+
+const POSIX_RLIMIT_DATA = 2;
+
+const POSIX_RLIMIT_FSIZE = 1;
+
+const POSIX_RLIMIT_MEMLOCK = 6;
+
+const POSIX_RLIMIT_NOFILE = 8;
+
+const POSIX_RLIMIT_NPROC = 7;
+
+const POSIX_RLIMIT_RSS = 5;
+
+const POSIX_RLIMIT_STACK = 3;
+
+const POSIX_RLIMIT_INFINITY = 9223372036854775807;
+
+const POSIX_SC_ARG_MAX = 1;
+
+const POSIX_SC_CHILD_MAX = 2;
+
+const POSIX_SC_CLK_TCK = 3;
+
+const POSIX_SC_PAGESIZE = 29;
+
+const POSIX_SC_NPROCESSORS_CONF = 57;
+
+const POSIX_SC_NPROCESSORS_ONLN = 58;
+
+const POSIX_PC_LINK_MAX = 1;
+
+const POSIX_PC_MAX_CANON = 2;
+
+const POSIX_PC_MAX_INPUT = 3;
+
+const POSIX_PC_NAME_MAX = 4;
+
+const POSIX_PC_PATH_MAX = 5;
+
+const POSIX_PC_PIPE_BUF = 6;
+
+const POSIX_PC_CHOWN_RESTRICTED = 7;
+
+const POSIX_PC_NO_TRUNC = 8;
+
+const POSIX_PC_ALLOC_SIZE_MIN = 16;
+
+const POSIX_PC_SYMLINK_MAX = 24;
+
+function lcg_value(): float {}
+
+function mt_srand(?int $seed = NULL, int $mode = \MT_RAND_MT19937): void {}
+
+function srand(?int $seed = NULL, int $mode = \MT_RAND_MT19937): void {}
+
+function rand(int $min = null, int $max = null): int {}
+
+function mt_rand(int $min = null, int $max = null): int {}
+
+function mt_getrandmax(): int {}
+
+function getrandmax(): int {}
+
+function random_bytes(int $length): string {}
+
+function random_int(int $min, int $max): int {}
+
+const MT_RAND_MT19937 = 0;
+
+const MT_RAND_PHP = 1;
+
+function readline(?string $prompt = NULL): string|false {}
+
+function readline_info(?string $var_name = NULL, $value = NULL): mixed {}
+
+function readline_add_history(string $prompt): bool {}
+
+function readline_clear_history(): bool {}
+
+function readline_list_history(): array {}
+
+function readline_read_history(?string $filename = NULL): bool {}
+
+function readline_write_history(?string $filename = NULL): bool {}
+
+function readline_completion_function(callable $callback): bool {}
+
+function readline_callback_handler_install(string $prompt, callable $callback): bool {}
+
+function readline_callback_read_char(): void {}
+
+function readline_callback_handler_remove(): bool {}
+
+function readline_redisplay(): void {}
+
+function readline_on_new_line(): void {}
+
+const READLINE_LIB = 'readline';
+
+class Redis
+{
+    const REDIS_NOT_FOUND = null;
+    const REDIS_STRING = null;
+    const REDIS_SET = null;
+    const REDIS_LIST = null;
+    const REDIS_ZSET = null;
+    const REDIS_HASH = null;
+    const REDIS_STREAM = null;
+    const ATOMIC = null;
+    const MULTI = null;
+    const PIPELINE = null;
+    const OPT_SERIALIZER = null;
+    const OPT_PREFIX = null;
+    const OPT_READ_TIMEOUT = null;
+    const OPT_TCP_KEEPALIVE = null;
+    const OPT_COMPRESSION = null;
+    const OPT_REPLY_LITERAL = null;
+    const OPT_COMPRESSION_LEVEL = null;
+    const OPT_NULL_MULTIBULK_AS_NULL = null;
+    const SERIALIZER_NONE = null;
+    const SERIALIZER_PHP = null;
+    const SERIALIZER_IGBINARY = null;
+    const SERIALIZER_JSON = null;
+    const COMPRESSION_NONE = null;
+    const COMPRESSION_ZSTD = null;
+    const COMPRESSION_ZSTD_DEFAULT = null;
+    const COMPRESSION_ZSTD_MIN = null;
+    const COMPRESSION_ZSTD_MAX = null;
+    const COMPRESSION_LZ4 = null;
+    const OPT_SCAN = null;
+    const SCAN_RETRY = null;
+    const SCAN_NORETRY = null;
+    const SCAN_PREFIX = null;
+    const SCAN_NOPREFIX = null;
+    const BEFORE = null;
+    const AFTER = null;
+    const LEFT = null;
+    const RIGHT = null;
+    const OPT_MAX_RETRIES = null;
+    const OPT_BACKOFF_ALGORITHM = null;
+    const BACKOFF_ALGORITHM_DEFAULT = null;
+    const BACKOFF_ALGORITHM_CONSTANT = null;
+    const BACKOFF_ALGORITHM_UNIFORM = null;
+    const BACKOFF_ALGORITHM_EXPONENTIAL = null;
+    const BACKOFF_ALGORITHM_FULL_JITTER = null;
+    const BACKOFF_ALGORITHM_EQUAL_JITTER = null;
+    const BACKOFF_ALGORITHM_DECORRELATED_JITTER = null;
+    const OPT_BACKOFF_BASE = null;
+    const OPT_BACKOFF_CAP = null;
+    public function __construct(?array $options = NULL) {}
+    public function __destruct() {}
+    public function _compress(string $value): string {}
+    public function _uncompress(string $value): string {}
+    public function _prefix(string $key): string {}
+    public function _serialize(mixed $value): string {}
+    public function _unserialize(string $value): mixed {}
+    public function _pack(mixed $value): string {}
+    public function _unpack(string $value): mixed {}
+    public function acl(string $subcmd, string ...$args): mixed {}
+    public function append(string $key, mixed $value): \Redis|int|false {}
+    public function auth(mixed $credentials): \Redis|bool {}
+    public function bgSave(): \Redis|bool {}
+    public function bgrewriteaof(): \Redis|bool {}
+    public function waitaof(int $numlocal, int $numreplicas, int $timeout): \Redis|array|false {}
+    public function bitcount(string $key, int $start = 0, int $end = -1, bool $bybit = false): \Redis|int|false {}
+    public function bitop(string $operation, string $deskey, string $srckey, string ...$other_keys): \Redis|int|false {}
+    public function bitpos(string $key, bool $bit, int $start = 0, int $end = -1, bool $bybit = false): \Redis|int|false {}
+    public function blPop(array|string $key_or_keys, string|int|float $timeout_or_key, mixed ...$extra_args): \Redis|array|false|null {}
+    public function brPop(array|string $key_or_keys, string|int|float $timeout_or_key, mixed ...$extra_args): \Redis|array|false|null {}
+    public function brpoplpush(string $src, string $dst, int|float $timeout): \Redis|string|false {}
+    public function bzPopMax(array|string $key, string|int $timeout_or_key, mixed ...$extra_args): \Redis|array|false {}
+    public function bzPopMin(array|string $key, string|int $timeout_or_key, mixed ...$extra_args): \Redis|array|false {}
+    public function bzmpop(float $timeout, array $keys, string $from, int $count = 1): \Redis|array|false|null {}
+    public function zmpop(array $keys, string $from, int $count = 1): \Redis|array|false|null {}
+    public function blmpop(float $timeout, array $keys, string $from, int $count = 1): \Redis|array|false|null {}
+    public function lmpop(array $keys, string $from, int $count = 1): \Redis|array|false|null {}
+    public function clearLastError(): bool {}
+    public function client(string $opt, mixed ...$args): mixed {}
+    public function close(): bool {}
+    public function command(?string $opt = NULL, mixed ...$args): mixed {}
+    public function config(string $operation, array|string|null $key_or_settings = NULL, ?string $value = NULL): mixed {}
+    public function connect(string $host, int $port = 6379, float $timeout = 0, ?string $persistent_id = NULL, int $retry_interval = 0, float $read_timeout = 0, ?array $context = NULL): bool {}
+    public function copy(string $src, string $dst, ?array $options = NULL): \Redis|bool {}
+    public function dbSize(): \Redis|int|false {}
+    public function debug(string $key): \Redis|string {}
+    public function decr(string $key, int $by = 1): \Redis|int|false {}
+    public function decrBy(string $key, int $value): \Redis|int|false {}
+    public function del(array|string $key, string ...$other_keys): \Redis|int|false {}
+    public function delete(array|string $key, string ...$other_keys): \Redis|int|false {}
+    public function discard(): \Redis|bool {}
+    public function dump(string $key): \Redis|string|false {}
+    public function echo(string $str): \Redis|string|false {}
+    public function eval(string $script, array $args = [], int $num_keys = 0): mixed {}
+    public function eval_ro(string $script_sha, array $args = [], int $num_keys = 0): mixed {}
+    public function evalsha(string $sha1, array $args = [], int $num_keys = 0): mixed {}
+    public function evalsha_ro(string $sha1, array $args = [], int $num_keys = 0): mixed {}
+    public function exec(): \Redis|array|false {}
+    public function exists(mixed $key, mixed ...$other_keys): \Redis|int|bool {}
+    public function expire(string $key, int $timeout, ?string $mode = NULL): \Redis|bool {}
+    public function expireAt(string $key, int $timestamp, ?string $mode = NULL): \Redis|bool {}
+    public function failover(?array $to = NULL, bool $abort = false, int $timeout = 0): \Redis|bool {}
+    public function expiretime(string $key): \Redis|int|false {}
+    public function pexpiretime(string $key): \Redis|int|false {}
+    public function fcall(string $fn, array $keys = [], array $args = []): mixed {}
+    public function fcall_ro(string $fn, array $keys = [], array $args = []): mixed {}
+    public function flushAll(?bool $sync = NULL): \Redis|bool {}
+    public function flushDB(?bool $sync = NULL): \Redis|bool {}
+    public function function(string $operation, mixed ...$args): \Redis|array|string|bool {}
+    public function geoadd(string $key, float $lng, float $lat, string $member, mixed ...$other_triples_and_options): \Redis|int|false {}
+    public function geodist(string $key, string $src, string $dst, ?string $unit = NULL): \Redis|float|false {}
+    public function geohash(string $key, string $member, string ...$other_members): \Redis|array|false {}
+    public function geopos(string $key, string $member, string ...$other_members): \Redis|array|false {}
+    public function georadius(string $key, float $lng, float $lat, float $radius, string $unit, array $options = []): mixed {}
+    public function georadius_ro(string $key, float $lng, float $lat, float $radius, string $unit, array $options = []): mixed {}
+    public function georadiusbymember(string $key, string $member, float $radius, string $unit, array $options = []): mixed {}
+    public function georadiusbymember_ro(string $key, string $member, float $radius, string $unit, array $options = []): mixed {}
+    public function geosearch(string $key, array|string $position, array|int|float $shape, string $unit, array $options = []): array {}
+    public function geosearchstore(string $dst, string $src, array|string $position, array|int|float $shape, string $unit, array $options = []): \Redis|array|int|false {}
+    public function get(string $key): mixed {}
+    public function getAuth(): mixed {}
+    public function getBit(string $key, int $idx): \Redis|int|false {}
+    public function getEx(string $key, array $options = []): \Redis|string|bool {}
+    public function getDBNum(): int {}
+    public function getDel(string $key): \Redis|string|bool {}
+    public function getHost(): string {}
+    public function getLastError(): ?string {}
+    public function getMode(): int {}
+    public function getOption(int $option): mixed {}
+    public function getPersistentID(): ?string {}
+    public function getPort(): int {}
+    public function getRange(string $key, int $start, int $end): \Redis|string|false {}
+    public function lcs(string $key1, string $key2, ?array $options = NULL): \Redis|array|string|int|false {}
+    public function getReadTimeout(): float {}
+    public function getset(string $key, mixed $value): \Redis|string|false {}
+    public function getTimeout(): float|false {}
+    public function getTransferredBytes(): array {}
+    public function clearTransferredBytes(): void {}
+    public function hDel(string $key, string $field, string ...$other_fields): \Redis|int|false {}
+    public function hExists(string $key, string $field): \Redis|bool {}
+    public function hGet(string $key, string $member): mixed {}
+    public function hGetAll(string $key): \Redis|array|false {}
+    public function hIncrBy(string $key, string $field, int $value): \Redis|int|false {}
+    public function hIncrByFloat(string $key, string $field, float $value): \Redis|float|false {}
+    public function hKeys(string $key): \Redis|array|false {}
+    public function hLen(string $key): \Redis|int|false {}
+    public function hMget(string $key, array $fields): \Redis|array|false {}
+    public function hMset(string $key, array $fieldvals): \Redis|bool {}
+    public function hRandField(string $key, ?array $options = NULL): \Redis|array|string|false {}
+    public function hSet(string $key, mixed ...$fields_and_vals): \Redis|int|false {}
+    public function hSetNx(string $key, string $field, mixed $value): \Redis|bool {}
+    public function hStrLen(string $key, string $field): \Redis|int|false {}
+    public function hVals(string $key): \Redis|array|false {}
+    public function hscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): \Redis|array|bool {}
+    public function incr(string $key, int $by = 1): \Redis|int|false {}
+    public function incrBy(string $key, int $value): \Redis|int|false {}
+    public function incrByFloat(string $key, float $value): \Redis|float|false {}
+    public function info(string ...$sections): \Redis|array|false {}
+    public function isConnected(): bool {}
+    public function keys(string $pattern) {}
+    public function lInsert(string $key, string $pos, mixed $pivot, mixed $value) {}
+    public function lLen(string $key): \Redis|int|false {}
+    public function lMove(string $src, string $dst, string $wherefrom, string $whereto): \Redis|string|false {}
+    public function blmove(string $src, string $dst, string $wherefrom, string $whereto, float $timeout): \Redis|string|false {}
+    public function lPop(string $key, int $count = 0): \Redis|array|string|bool {}
+    public function lPos(string $key, mixed $value, ?array $options = NULL): \Redis|array|int|bool|null {}
+    public function lPush(string $key, mixed ...$elements): \Redis|int|false {}
+    public function rPush(string $key, mixed ...$elements): \Redis|int|false {}
+    public function lPushx(string $key, mixed $value): \Redis|int|false {}
+    public function rPushx(string $key, mixed $value): \Redis|int|false {}
+    public function lSet(string $key, int $index, mixed $value): \Redis|bool {}
+    public function lastSave(): int {}
+    public function lindex(string $key, int $index): mixed {}
+    public function lrange(string $key, int $start, int $end): \Redis|array|false {}
+    public function lrem(string $key, mixed $value, int $count = 0): \Redis|int|false {}
+    public function ltrim(string $key, int $start, int $end): \Redis|bool {}
+    public function mget(array $keys): \Redis|array|false {}
+    public function migrate(string $host, int $port, array|string $key, int $dstdb, int $timeout, bool $copy = false, bool $replace = false, mixed $credentials = NULL): \Redis|bool {}
+    public function move(string $key, int $index): \Redis|bool {}
+    public function mset(array $key_values): \Redis|bool {}
+    public function msetnx(array $key_values): \Redis|bool {}
+    public function multi(int $value = \Redis::MULTI): \Redis|bool {}
+    public function object(string $subcommand, string $key): \Redis|string|int|false {}
+    public function open(string $host, int $port = 6379, float $timeout = 0, ?string $persistent_id = NULL, int $retry_interval = 0, float $read_timeout = 0, ?array $context = NULL): bool {}
+    public function pconnect(string $host, int $port = 6379, float $timeout = 0, ?string $persistent_id = NULL, int $retry_interval = 0, float $read_timeout = 0, ?array $context = NULL): bool {}
+    public function persist(string $key): \Redis|bool {}
+    public function pexpire(string $key, int $timeout, ?string $mode = NULL): bool {}
+    public function pexpireAt(string $key, int $timestamp, ?string $mode = NULL): \Redis|bool {}
+    public function pfadd(string $key, array $elements): \Redis|int {}
+    public function pfcount(array|string $key_or_keys): \Redis|int|false {}
+    public function pfmerge(string $dst, array $srckeys): \Redis|bool {}
+    public function ping(?string $message = NULL): \Redis|string|bool {}
+    public function pipeline(): \Redis|bool {}
+    public function popen(string $host, int $port = 6379, float $timeout = 0, ?string $persistent_id = NULL, int $retry_interval = 0, float $read_timeout = 0, ?array $context = NULL): bool {}
+    public function psetex(string $key, int $expire, mixed $value): \Redis|bool {}
+    public function psubscribe(array $patterns, callable $cb): bool {}
+    public function pttl(string $key): \Redis|int|false {}
+    public function publish(string $channel, string $message): \Redis|int|false {}
+    public function pubsub(string $command, mixed $arg = NULL): mixed {}
+    public function punsubscribe(array $patterns): \Redis|array|bool {}
+    public function rPop(string $key, int $count = 0): \Redis|array|string|bool {}
+    public function randomKey(): \Redis|string|false {}
+    public function rawcommand(string $command, mixed ...$args): mixed {}
+    public function rename(string $old_name, string $new_name): \Redis|bool {}
+    public function renameNx(string $key_src, string $key_dst): \Redis|bool {}
+    public function reset(): \Redis|bool {}
+    public function restore(string $key, int $ttl, string $value, ?array $options = NULL): \Redis|bool {}
+    public function role(): mixed {}
+    public function rpoplpush(string $srckey, string $dstkey): \Redis|string|false {}
+    public function sAdd(string $key, mixed $value, mixed ...$other_values): \Redis|int|false {}
+    public function sAddArray(string $key, array $values): int {}
+    public function sDiff(string $key, string ...$other_keys): \Redis|array|false {}
+    public function sDiffStore(string $dst, string $key, string ...$other_keys): \Redis|int|false {}
+    public function sInter(array|string $key, string ...$other_keys): \Redis|array|false {}
+    public function sintercard(array $keys, int $limit = -1): \Redis|int|false {}
+    public function sInterStore(array|string $key, string ...$other_keys): \Redis|int|false {}
+    public function sMembers(string $key): \Redis|array|false {}
+    public function sMisMember(string $key, string $member, string ...$other_members): \Redis|array|false {}
+    public function sMove(string $src, string $dst, mixed $value): \Redis|bool {}
+    public function sPop(string $key, int $count = 0): \Redis|array|string|false {}
+    public function sRandMember(string $key, int $count = 0): mixed {}
+    public function sUnion(string $key, string ...$other_keys): \Redis|array|false {}
+    public function sUnionStore(string $dst, string $key, string ...$other_keys): \Redis|int|false {}
+    public function save(): \Redis|bool {}
+    public function scan(string|int|null &$iterator, ?string $pattern = NULL, int $count = 0, ?string $type = NULL): array|false {}
+    public function scard(string $key): \Redis|int|false {}
+    public function script(string $command, mixed ...$args): mixed {}
+    public function select(int $db): \Redis|bool {}
+    public function set(string $key, mixed $value, mixed $options = NULL): \Redis|string|bool {}
+    public function setBit(string $key, int $idx, bool $value): \Redis|int|false {}
+    public function setRange(string $key, int $index, string $value): \Redis|int|false {}
+    public function setOption(int $option, mixed $value): bool {}
+    public function setex(string $key, int $expire, mixed $value) {}
+    public function setnx(string $key, mixed $value): \Redis|bool {}
+    public function sismember(string $key, mixed $value): \Redis|bool {}
+    public function slaveof(?string $host = NULL, int $port = 6379): \Redis|bool {}
+    public function replicaof(?string $host = NULL, int $port = 6379): \Redis|bool {}
+    public function touch(array|string $key_or_array, string ...$more_keys): \Redis|int|false {}
+    public function slowlog(string $operation, int $length = 0): mixed {}
+    public function sort(string $key, ?array $options = NULL): mixed {}
+    public function sort_ro(string $key, ?array $options = NULL): mixed {}
+    public function sortAsc(string $key, ?string $pattern = NULL, mixed $get = NULL, int $offset = -1, int $count = -1, ?string $store = NULL): array {}
+    public function sortAscAlpha(string $key, ?string $pattern = NULL, mixed $get = NULL, int $offset = -1, int $count = -1, ?string $store = NULL): array {}
+    public function sortDesc(string $key, ?string $pattern = NULL, mixed $get = NULL, int $offset = -1, int $count = -1, ?string $store = NULL): array {}
+    public function sortDescAlpha(string $key, ?string $pattern = NULL, mixed $get = NULL, int $offset = -1, int $count = -1, ?string $store = NULL): array {}
+    public function srem(string $key, mixed $value, mixed ...$other_values): \Redis|int|false {}
+    public function sscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): array|false {}
+    public function ssubscribe(array $channels, callable $cb): bool {}
+    public function strlen(string $key): \Redis|int|false {}
+    public function subscribe(array $channels, callable $cb): bool {}
+    public function sunsubscribe(array $channels): \Redis|array|bool {}
+    public function swapdb(int $src, int $dst): \Redis|bool {}
+    public function time(): \Redis|array {}
+    public function ttl(string $key): \Redis|int|false {}
+    public function type(string $key): \Redis|int|false {}
+    public function unlink(array|string $key, string ...$other_keys): \Redis|int|false {}
+    public function unsubscribe(array $channels): \Redis|array|bool {}
+    public function unwatch(): \Redis|bool {}
+    public function watch(array|string $key, string ...$other_keys): \Redis|bool {}
+    public function wait(int $numreplicas, int $timeout): int|false {}
+    public function xack(string $key, string $group, array $ids): int|false {}
+    public function xadd(string $key, string $id, array $values, int $maxlen = 0, bool $approx = false, bool $nomkstream = false): \Redis|string|false {}
+    public function xautoclaim(string $key, string $group, string $consumer, int $min_idle, string $start, int $count = -1, bool $justid = false): \Redis|array|bool {}
+    public function xclaim(string $key, string $group, string $consumer, int $min_idle, array $ids, array $options): \Redis|array|bool {}
+    public function xdel(string $key, array $ids): \Redis|int|false {}
+    public function xgroup(string $operation, ?string $key = NULL, ?string $group = NULL, ?string $id_or_consumer = NULL, bool $mkstream = false, int $entries_read = -2): mixed {}
+    public function xinfo(string $operation, ?string $arg1 = NULL, ?string $arg2 = NULL, int $count = -1): mixed {}
+    public function xlen(string $key): \Redis|int|false {}
+    public function xpending(string $key, string $group, ?string $start = NULL, ?string $end = NULL, int $count = -1, ?string $consumer = NULL): \Redis|array|false {}
+    public function xrange(string $key, string $start, string $end, int $count = -1): \Redis|array|bool {}
+    public function xread(array $streams, int $count = -1, int $block = -1): \Redis|array|bool {}
+    public function xreadgroup(string $group, string $consumer, array $streams, int $count = 1, int $block = 1): \Redis|array|bool {}
+    public function xrevrange(string $key, string $end, string $start, int $count = -1): \Redis|array|bool {}
+    public function xtrim(string $key, string $threshold, bool $approx = false, bool $minid = false, int $limit = -1): \Redis|int|false {}
+    public function zAdd(string $key, array|float $score_or_options, mixed ...$more_scores_and_mems): \Redis|int|float|false {}
+    public function zCard(string $key): \Redis|int|false {}
+    public function zCount(string $key, string|int $start, string|int $end): \Redis|int|false {}
+    public function zIncrBy(string $key, float $value, mixed $member): \Redis|float|false {}
+    public function zLexCount(string $key, string $min, string $max): \Redis|int|false {}
+    public function zMscore(string $key, mixed $member, mixed ...$other_members): \Redis|array|false {}
+    public function zPopMax(string $key, ?int $count = NULL): \Redis|array|false {}
+    public function zPopMin(string $key, ?int $count = NULL): \Redis|array|false {}
+    public function zRange(string $key, string|int $start, string|int $end, array|bool|null $options = NULL): \Redis|array|false {}
+    public function zRangeByLex(string $key, string $min, string $max, int $offset = -1, int $count = -1): \Redis|array|false {}
+    public function zRangeByScore(string $key, string $start, string $end, array $options = []): \Redis|array|false {}
+    public function zrangestore(string $dstkey, string $srckey, string $start, string $end, array|bool|null $options = NULL): \Redis|int|false {}
+    public function zRandMember(string $key, ?array $options = NULL): \Redis|array|string {}
+    public function zRank(string $key, mixed $member): \Redis|int|false {}
+    public function zRem(mixed $key, mixed $member, mixed ...$other_members): \Redis|int|false {}
+    public function zRemRangeByLex(string $key, string $min, string $max): \Redis|int|false {}
+    public function zRemRangeByRank(string $key, int $start, int $end): \Redis|int|false {}
+    public function zRemRangeByScore(string $key, string $start, string $end): \Redis|int|false {}
+    public function zRevRange(string $key, int $start, int $end, mixed $scores = NULL): \Redis|array|false {}
+    public function zRevRangeByLex(string $key, string $max, string $min, int $offset = -1, int $count = -1): \Redis|array|false {}
+    public function zRevRangeByScore(string $key, string $max, string $min, array|bool $options = []): \Redis|array|false {}
+    public function zRevRank(string $key, mixed $member): \Redis|int|false {}
+    public function zScore(string $key, mixed $member): \Redis|float|false {}
+    public function zdiff(array $keys, ?array $options = NULL): \Redis|array|false {}
+    public function zdiffstore(string $dst, array $keys): \Redis|int|false {}
+    public function zinter(array $keys, ?array $weights = NULL, ?array $options = NULL): \Redis|array|false {}
+    public function zintercard(array $keys, int $limit = -1): \Redis|int|false {}
+    public function zinterstore(string $dst, array $keys, ?array $weights = NULL, ?string $aggregate = NULL): \Redis|int|false {}
+    public function zscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): \Redis|array|false {}
+    public function zunion(array $keys, ?array $weights = NULL, ?array $options = NULL): \Redis|array|false {}
+    public function zunionstore(string $dst, array $keys, ?array $weights = NULL, ?string $aggregate = NULL): \Redis|int|false {}
+}
+
+class RedisArray
+{
+    public function __call(string $function_name, array $arguments): mixed {}
+    public function __construct(array|string $name_or_hosts, ?array $options = NULL) {}
+    public function _continuum(): array|bool {}
+    public function _distributor(): callable|bool {}
+    public function _function(): callable|bool {}
+    public function _hosts(): array|bool {}
+    public function _instance(string $host): \Redis|bool|null {}
+    public function _rehash(?callable $fn = NULL): ?bool {}
+    public function _target(string $key): string|bool|null {}
+    public function bgsave(): array {}
+    public function del(array|string $key, string ...$otherkeys): int|bool {}
+    public function discard(): ?bool {}
+    public function exec(): array|bool|null {}
+    public function flushall(): array|bool {}
+    public function flushdb(): array|bool {}
+    public function getOption(int $opt): array|bool {}
+    public function hscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): array|bool {}
+    public function info(): array|bool {}
+    public function keys(string $pattern): array|bool {}
+    public function mget(array $keys): array|bool {}
+    public function mset(array $pairs): bool {}
+    public function multi(string $host, ?int $mode = NULL): \RedisArray|bool {}
+    public function ping(): array|bool {}
+    public function save(): array|bool {}
+    public function scan(string|int|null &$iterator, string $node, ?string $pattern = NULL, int $count = 0): array|bool {}
+    public function select(int $index): array|bool {}
+    public function setOption(int $opt, string $value): array|bool {}
+    public function sscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): array|bool {}
+    public function unlink(array|string $key, string ...$otherkeys): int|bool {}
+    public function unwatch(): ?bool {}
+    public function zscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): array|bool {}
+}
+
+class RedisCluster
+{
+    const OPT_SLAVE_FAILOVER = null;
+    const FAILOVER_NONE = null;
+    const FAILOVER_ERROR = null;
+    const FAILOVER_DISTRIBUTE = null;
+    const FAILOVER_DISTRIBUTE_SLAVES = null;
+    public function __construct(?string $name, ?array $seeds = NULL, int|float $timeout = 0, int|float $read_timeout = 0, bool $persistent = false, mixed $auth = NULL, ?array $context = NULL) {}
+    public function _compress(string $value): string {}
+    public function _uncompress(string $value): string {}
+    public function _serialize(mixed $value): string|bool {}
+    public function _unserialize(string $value): mixed {}
+    public function _pack(mixed $value): string {}
+    public function _unpack(string $value): mixed {}
+    public function _prefix(string $key): string|bool {}
+    public function _masters(): array {}
+    public function _redir(): ?string {}
+    public function acl(array|string $key_or_address, string $subcmd, string ...$args): mixed {}
+    public function append(string $key, mixed $value): \RedisCluster|int|bool {}
+    public function bgrewriteaof(array|string $key_or_address): \RedisCluster|bool {}
+    public function waitaof(array|string $key_or_address, int $numlocal, int $numreplicas, int $timeout): \RedisCluster|array|false {}
+    public function bgsave(array|string $key_or_address): \RedisCluster|bool {}
+    public function bitcount(string $key, int $start = 0, int $end = -1, bool $bybit = false): \RedisCluster|int|bool {}
+    public function bitop(string $operation, string $deskey, string $srckey, string ...$otherkeys): \RedisCluster|int|bool {}
+    public function bitpos(string $key, bool $bit, int $start = 0, int $end = -1, bool $bybit = false): \RedisCluster|int|false {}
+    public function blpop(array|string $key, string|int|float $timeout_or_key, mixed ...$extra_args): \RedisCluster|array|false|null {}
+    public function brpop(array|string $key, string|int|float $timeout_or_key, mixed ...$extra_args): \RedisCluster|array|false|null {}
+    public function brpoplpush(string $srckey, string $deskey, int $timeout): mixed {}
+    public function lmove(string $src, string $dst, string $wherefrom, string $whereto): \Redis|string|false {}
+    public function blmove(string $src, string $dst, string $wherefrom, string $whereto, float $timeout): \Redis|string|false {}
+    public function bzpopmax(array|string $key, string|int $timeout_or_key, mixed ...$extra_args): array {}
+    public function bzpopmin(array|string $key, string|int $timeout_or_key, mixed ...$extra_args): array {}
+    public function bzmpop(float $timeout, array $keys, string $from, int $count = 1): \RedisCluster|array|false|null {}
+    public function zmpop(array $keys, string $from, int $count = 1): \RedisCluster|array|false|null {}
+    public function blmpop(float $timeout, array $keys, string $from, int $count = 1): \RedisCluster|array|false|null {}
+    public function lmpop(array $keys, string $from, int $count = 1): \RedisCluster|array|false|null {}
+    public function clearlasterror(): bool {}
+    public function client(array|string $key_or_address, string $subcommand, ?string $arg = NULL): array|string|bool {}
+    public function close(): bool {}
+    public function cluster(array|string $key_or_address, string $command, mixed ...$extra_args): mixed {}
+    public function command(mixed ...$extra_args): mixed {}
+    public function config(array|string $key_or_address, string $subcommand, mixed ...$extra_args): mixed {}
+    public function dbsize(array|string $key_or_address): \RedisCluster|int {}
+    public function copy(string $src, string $dst, ?array $options = NULL): \RedisCluster|bool {}
+    public function decr(string $key, int $by = 1): \RedisCluster|int|false {}
+    public function decrby(string $key, int $value): \RedisCluster|int|false {}
+    public function decrbyfloat(string $key, float $value): float {}
+    public function del(array|string $key, string ...$other_keys): \RedisCluster|int|false {}
+    public function discard(): bool {}
+    public function dump(string $key): \RedisCluster|string|false {}
+    public function echo(array|string $key_or_address, string $msg): \RedisCluster|string|false {}
+    public function eval(string $script, array $args = [], int $num_keys = 0): mixed {}
+    public function eval_ro(string $script, array $args = [], int $num_keys = 0): mixed {}
+    public function evalsha(string $script_sha, array $args = [], int $num_keys = 0): mixed {}
+    public function evalsha_ro(string $script_sha, array $args = [], int $num_keys = 0): mixed {}
+    public function exec(): array|false {}
+    public function exists(mixed $key, mixed ...$other_keys): \RedisCluster|int|bool {}
+    public function touch(mixed $key, mixed ...$other_keys): \RedisCluster|int|bool {}
+    public function expire(string $key, int $timeout, ?string $mode = NULL): \RedisCluster|bool {}
+    public function expireat(string $key, int $timestamp, ?string $mode = NULL): \RedisCluster|bool {}
+    public function expiretime(string $key): \RedisCluster|int|false {}
+    public function pexpiretime(string $key): \RedisCluster|int|false {}
+    public function flushall(array|string $key_or_address, bool $async = false): \RedisCluster|bool {}
+    public function flushdb(array|string $key_or_address, bool $async = false): \RedisCluster|bool {}
+    public function geoadd(string $key, float $lng, float $lat, string $member, mixed ...$other_triples_and_options): \RedisCluster|int|false {}
+    public function geodist(string $key, string $src, string $dest, ?string $unit = NULL): \RedisCluster|float|false {}
+    public function geohash(string $key, string $member, string ...$other_members): \RedisCluster|array|false {}
+    public function geopos(string $key, string $member, string ...$other_members): \RedisCluster|array|false {}
+    public function georadius(string $key, float $lng, float $lat, float $radius, string $unit, array $options = []): mixed {}
+    public function georadius_ro(string $key, float $lng, float $lat, float $radius, string $unit, array $options = []): mixed {}
+    public function georadiusbymember(string $key, string $member, float $radius, string $unit, array $options = []): mixed {}
+    public function georadiusbymember_ro(string $key, string $member, float $radius, string $unit, array $options = []): mixed {}
+    public function geosearch(string $key, array|string $position, array|int|float $shape, string $unit, array $options = []): \RedisCluster|array {}
+    public function geosearchstore(string $dst, string $src, array|string $position, array|int|float $shape, string $unit, array $options = []): \RedisCluster|array|int|false {}
+    public function get(string $key): mixed {}
+    public function getex(string $key, array $options = []): \RedisCluster|string|false {}
+    public function getbit(string $key, int $value): \RedisCluster|int|false {}
+    public function getlasterror(): ?string {}
+    public function getmode(): int {}
+    public function getoption(int $option): mixed {}
+    public function getrange(string $key, int $start, int $end): \RedisCluster|string|false {}
+    public function lcs(string $key1, string $key2, ?array $options = NULL): \RedisCluster|array|string|int|false {}
+    public function getset(string $key, mixed $value): \RedisCluster|string|bool {}
+    public function gettransferredbytes(): array|false {}
+    public function cleartransferredbytes(): void {}
+    public function hdel(string $key, string $member, string ...$other_members): \RedisCluster|int|false {}
+    public function hexists(string $key, string $member): \RedisCluster|bool {}
+    public function hget(string $key, string $member): mixed {}
+    public function hgetall(string $key): \RedisCluster|array|false {}
+    public function hincrby(string $key, string $member, int $value): \RedisCluster|int|false {}
+    public function hincrbyfloat(string $key, string $member, float $value): \RedisCluster|float|false {}
+    public function hkeys(string $key): \RedisCluster|array|false {}
+    public function hlen(string $key): \RedisCluster|int|false {}
+    public function hmget(string $key, array $keys): \RedisCluster|array|false {}
+    public function hmset(string $key, array $key_values): \RedisCluster|bool {}
+    public function hscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): array|bool {}
+    public function hrandfield(string $key, ?array $options = NULL): \RedisCluster|array|string {}
+    public function hset(string $key, string $member, mixed $value): \RedisCluster|int|false {}
+    public function hsetnx(string $key, string $member, mixed $value): \RedisCluster|bool {}
+    public function hstrlen(string $key, string $field): \RedisCluster|int|false {}
+    public function hvals(string $key): \RedisCluster|array|false {}
+    public function incr(string $key, int $by = 1): \RedisCluster|int|false {}
+    public function incrby(string $key, int $value): \RedisCluster|int|false {}
+    public function incrbyfloat(string $key, float $value): \RedisCluster|float|false {}
+    public function info(array|string $key_or_address, string ...$sections): \RedisCluster|array|false {}
+    public function keys(string $pattern): \RedisCluster|array|false {}
+    public function lastsave(array|string $key_or_address): \RedisCluster|int|false {}
+    public function lget(string $key, int $index): \RedisCluster|string|bool {}
+    public function lindex(string $key, int $index): mixed {}
+    public function linsert(string $key, string $pos, mixed $pivot, mixed $value): \RedisCluster|int|false {}
+    public function llen(string $key): \RedisCluster|int|bool {}
+    public function lpop(string $key, int $count = 0): \RedisCluster|array|string|bool {}
+    public function lpos(string $key, mixed $value, ?array $options = NULL): \Redis|array|int|bool|null {}
+    public function lpush(string $key, mixed $value, mixed ...$other_values): \RedisCluster|int|bool {}
+    public function lpushx(string $key, mixed $value): \RedisCluster|int|bool {}
+    public function lrange(string $key, int $start, int $end): \RedisCluster|array|false {}
+    public function lrem(string $key, mixed $value, int $count = 0): \RedisCluster|int|bool {}
+    public function lset(string $key, int $index, mixed $value): \RedisCluster|bool {}
+    public function ltrim(string $key, int $start, int $end): \RedisCluster|bool {}
+    public function mget(array $keys): \RedisCluster|array|false {}
+    public function mset(array $key_values): \RedisCluster|bool {}
+    public function msetnx(array $key_values): \RedisCluster|array|false {}
+    public function multi(int $value = \Redis::MULTI): \RedisCluster|bool {}
+    public function object(string $subcommand, string $key): \RedisCluster|string|int|false {}
+    public function persist(string $key): \RedisCluster|bool {}
+    public function pexpire(string $key, int $timeout, ?string $mode = NULL): \RedisCluster|bool {}
+    public function pexpireat(string $key, int $timestamp, ?string $mode = NULL): \RedisCluster|bool {}
+    public function pfadd(string $key, array $elements): \RedisCluster|bool {}
+    public function pfcount(string $key): \RedisCluster|int|false {}
+    public function pfmerge(string $key, array $keys): \RedisCluster|bool {}
+    public function ping(array|string $key_or_address, ?string $message = NULL): mixed {}
+    public function psetex(string $key, int $timeout, string $value): \RedisCluster|bool {}
+    public function psubscribe(array $patterns, callable $callback): void {}
+    public function pttl(string $key): \RedisCluster|int|false {}
+    public function publish(string $channel, string $message): \RedisCluster|int|bool {}
+    public function pubsub(array|string $key_or_address, string ...$values): mixed {}
+    public function punsubscribe(string $pattern, string ...$other_patterns): array|bool {}
+    public function randomkey(array|string $key_or_address): \RedisCluster|string|bool {}
+    public function rawcommand(array|string $key_or_address, string $command, mixed ...$args): mixed {}
+    public function rename(string $key_src, string $key_dst): \RedisCluster|bool {}
+    public function renamenx(string $key, string $newkey): \RedisCluster|bool {}
+    public function restore(string $key, int $timeout, string $value, ?array $options = NULL): \RedisCluster|bool {}
+    public function role(array|string $key_or_address): mixed {}
+    public function rpop(string $key, int $count = 0): \RedisCluster|array|string|bool {}
+    public function rpoplpush(string $src, string $dst): \RedisCluster|string|bool {}
+    public function rpush(string $key, mixed ...$elements): \RedisCluster|int|false {}
+    public function rpushx(string $key, string $value): \RedisCluster|int|bool {}
+    public function sadd(string $key, mixed $value, mixed ...$other_values): \RedisCluster|int|false {}
+    public function saddarray(string $key, array $values): \RedisCluster|int|bool {}
+    public function save(array|string $key_or_address): \RedisCluster|bool {}
+    public function scan(string|int|null &$iterator, array|string $key_or_address, ?string $pattern = NULL, int $count = 0): array|bool {}
+    public function scard(string $key): \RedisCluster|int|false {}
+    public function script(array|string $key_or_address, mixed ...$args): mixed {}
+    public function sdiff(string $key, string ...$other_keys): \RedisCluster|array|false {}
+    public function sdiffstore(string $dst, string $key, string ...$other_keys): \RedisCluster|int|false {}
+    public function set(string $key, mixed $value, mixed $options = NULL): \RedisCluster|string|bool {}
+    public function setbit(string $key, int $offset, bool $onoff): \RedisCluster|int|false {}
+    public function setex(string $key, int $expire, mixed $value): \RedisCluster|bool {}
+    public function setnx(string $key, mixed $value): \RedisCluster|bool {}
+    public function setoption(int $option, mixed $value): bool {}
+    public function setrange(string $key, int $offset, string $value): \RedisCluster|int|false {}
+    public function sinter(array|string $key, string ...$other_keys): \RedisCluster|array|false {}
+    public function sintercard(array $keys, int $limit = -1): \RedisCluster|int|false {}
+    public function sinterstore(array|string $key, string ...$other_keys): \RedisCluster|int|false {}
+    public function sismember(string $key, mixed $value): \RedisCluster|bool {}
+    public function smismember(string $key, string $member, string ...$other_members): \RedisCluster|array|false {}
+    public function slowlog(array|string $key_or_address, mixed ...$args): mixed {}
+    public function smembers(string $key): \RedisCluster|array|false {}
+    public function smove(string $src, string $dst, string $member): \RedisCluster|bool {}
+    public function sort(string $key, ?array $options = NULL): \RedisCluster|array|string|int|bool {}
+    public function sort_ro(string $key, ?array $options = NULL): \RedisCluster|array|string|int|bool {}
+    public function spop(string $key, int $count = 0): \RedisCluster|array|string|false {}
+    public function srandmember(string $key, int $count = 0): \RedisCluster|array|string|false {}
+    public function srem(string $key, mixed $value, mixed ...$other_values): \RedisCluster|int|false {}
+    public function sscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): array|false {}
+    public function strlen(string $key): \RedisCluster|int|false {}
+    public function subscribe(array $channels, callable $cb): void {}
+    public function sunion(string $key, string ...$other_keys): \RedisCluster|array|bool {}
+    public function sunionstore(string $dst, string $key, string ...$other_keys): \RedisCluster|int|false {}
+    public function time(array|string $key_or_address): \RedisCluster|array|bool {}
+    public function ttl(string $key): \RedisCluster|int|false {}
+    public function type(string $key): \RedisCluster|int|false {}
+    public function unsubscribe(array $channels): array|bool {}
+    public function unlink(array|string $key, string ...$other_keys): \RedisCluster|int|false {}
+    public function unwatch(): bool {}
+    public function watch(string $key, string ...$other_keys): \RedisCluster|bool {}
+    public function xack(string $key, string $group, array $ids): \RedisCluster|int|false {}
+    public function xadd(string $key, string $id, array $values, int $maxlen = 0, bool $approx = false): \RedisCluster|string|false {}
+    public function xclaim(string $key, string $group, string $consumer, int $min_iddle, array $ids, array $options): \RedisCluster|array|string|false {}
+    public function xdel(string $key, array $ids): \RedisCluster|int|false {}
+    public function xgroup(string $operation, ?string $key = NULL, ?string $group = NULL, ?string $id_or_consumer = NULL, bool $mkstream = false, int $entries_read = -2): mixed {}
+    public function xautoclaim(string $key, string $group, string $consumer, int $min_idle, string $start, int $count = -1, bool $justid = false): \RedisCluster|array|bool {}
+    public function xinfo(string $operation, ?string $arg1 = NULL, ?string $arg2 = NULL, int $count = -1): mixed {}
+    public function xlen(string $key): \RedisCluster|int|false {}
+    public function xpending(string $key, string $group, ?string $start = NULL, ?string $end = NULL, int $count = -1, ?string $consumer = NULL): \RedisCluster|array|false {}
+    public function xrange(string $key, string $start, string $end, int $count = -1): \RedisCluster|array|bool {}
+    public function xread(array $streams, int $count = -1, int $block = -1): \RedisCluster|array|bool {}
+    public function xreadgroup(string $group, string $consumer, array $streams, int $count = 1, int $block = 1): \RedisCluster|array|bool {}
+    public function xrevrange(string $key, string $start, string $end, int $count = -1): \RedisCluster|array|bool {}
+    public function xtrim(string $key, int $maxlen, bool $approx = false, bool $minid = false, int $limit = -1): \RedisCluster|int|false {}
+    public function zadd(string $key, array|float $score_or_options, mixed ...$more_scores_and_mems): \RedisCluster|int|float|false {}
+    public function zcard(string $key): \RedisCluster|int|false {}
+    public function zcount(string $key, string $start, string $end): \RedisCluster|int|false {}
+    public function zincrby(string $key, float $value, string $member): \RedisCluster|float|false {}
+    public function zinterstore(string $dst, array $keys, ?array $weights = NULL, ?string $aggregate = NULL): \RedisCluster|int|false {}
+    public function zintercard(array $keys, int $limit = -1): \RedisCluster|int|false {}
+    public function zlexcount(string $key, string $min, string $max): \RedisCluster|int|false {}
+    public function zpopmax(string $key, ?int $value = NULL): \RedisCluster|array|bool {}
+    public function zpopmin(string $key, ?int $value = NULL): \RedisCluster|array|bool {}
+    public function zrange(string $key, mixed $start, mixed $end, array|bool|null $options = NULL): \RedisCluster|array|bool {}
+    public function zrangestore(string $dstkey, string $srckey, int $start, int $end, array|bool|null $options = NULL): \RedisCluster|int|false {}
+    public function zrandmember(string $key, ?array $options = NULL): \RedisCluster|array|string {}
+    public function zrangebylex(string $key, string $min, string $max, int $offset = -1, int $count = -1): \RedisCluster|array|false {}
+    public function zrangebyscore(string $key, string $start, string $end, array $options = []): \RedisCluster|array|false {}
+    public function zrank(string $key, mixed $member): \RedisCluster|int|false {}
+    public function zrem(string $key, string $value, string ...$other_values): \RedisCluster|int|false {}
+    public function zremrangebylex(string $key, string $min, string $max): \RedisCluster|int|false {}
+    public function zremrangebyrank(string $key, string $min, string $max): \RedisCluster|int|false {}
+    public function zremrangebyscore(string $key, string $min, string $max): \RedisCluster|int|false {}
+    public function zrevrange(string $key, string $min, string $max, ?array $options = NULL): \RedisCluster|array|bool {}
+    public function zrevrangebylex(string $key, string $min, string $max, ?array $options = NULL): \RedisCluster|array|bool {}
+    public function zrevrangebyscore(string $key, string $min, string $max, ?array $options = NULL): \RedisCluster|array|bool {}
+    public function zrevrank(string $key, mixed $member): \RedisCluster|int|false {}
+    public function zscan(string $key, string|int|null &$iterator, ?string $pattern = NULL, int $count = 0): \RedisCluster|array|bool {}
+    public function zscore(string $key, mixed $member): \RedisCluster|float|false {}
+    public function zmscore(string $key, mixed $member, mixed ...$other_members): \Redis|array|false {}
+    public function zunionstore(string $dst, array $keys, ?array $weights = NULL, ?string $aggregate = NULL): \RedisCluster|int|false {}
+    public function zinter(array $keys, ?array $weights = NULL, ?array $options = NULL): \RedisCluster|array|false {}
+    public function zdiffstore(string $dst, array $keys): \RedisCluster|int|false {}
+    public function zunion(array $keys, ?array $weights = NULL, ?array $options = NULL): \RedisCluster|array|false {}
+    public function zdiff(array $keys, ?array $options = NULL): \RedisCluster|array|false {}
+}
+
+class RedisClusterException extends \RuntimeException
+{
+
+}
+
+class RedisSentinel
+{
+    public function __construct(?array $options = NULL) {}
+    public function ckquorum(string $master) {}
+    public function failover(string $master) {}
+    public function flushconfig() {}
+    public function getMasterAddrByName(string $master) {}
+    public function master(string $master) {}
+    public function masters() {}
+    public function myid(): string {}
+    public function ping() {}
+    public function reset(string $pattern) {}
+    public function sentinels(string $master) {}
+    public function slaves(string $master) {}
+}
+
+class RedisException extends \RuntimeException
+{
+
+}
+
+class ReflectionException extends \Exception
+{
+
+}
+
+class Reflection
+{
+    public static function getModifierNames(int $modifiers): array {}
+}
+
+interface Reflector extends \Stringable
+{
+
+}
+
+abstract class ReflectionFunctionAbstract implements \Reflector, \Stringable
+{
+    public string $name;
+    public function inNamespace(): bool {}
+    public function isClosure(): bool {}
+    public function isDeprecated(): bool {}
+    public function isInternal(): bool {}
+    public function isUserDefined(): bool {}
+    public function isGenerator(): bool {}
+    public function isVariadic(): bool {}
+    public function isStatic(): bool {}
+    public function getClosureThis(): ?object {}
+    public function getClosureScopeClass(): ?\ReflectionClass {}
+    public function getClosureCalledClass(): ?\ReflectionClass {}
+    public function getClosureUsedVariables(): array {}
+    public function getDocComment(): string|false {}
+    public function getEndLine(): int|false {}
+    public function getExtension(): ?\ReflectionExtension {}
+    public function getExtensionName(): string|false {}
+    public function getFileName(): string|false {}
+    public function getName(): string {}
+    public function getNamespaceName(): string {}
+    public function getNumberOfParameters(): int {}
+    public function getNumberOfRequiredParameters(): int {}
+    public function getParameters(): array {}
+    public function getShortName(): string {}
+    public function getStartLine(): int|false {}
+    public function getStaticVariables(): array {}
+    public function returnsReference(): bool {}
+    public function hasReturnType(): bool {}
+    public function getReturnType(): ?\ReflectionType {}
+    public function hasTentativeReturnType(): bool {}
+    public function getTentativeReturnType(): ?\ReflectionType {}
+    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
+}
+
+class ReflectionFunction extends \ReflectionFunctionAbstract
+{
+    const IS_DEPRECATED = null;
+    public function __construct(\Closure|string $function) {}
+    public function __toString(): string {}
+    public function isAnonymous(): bool {}
+    public function isDisabled(): bool {}
+    public function invoke(mixed ...$args): mixed {}
+    public function invokeArgs(array $args): mixed {}
+    public function getClosure(): \Closure {}
+}
+
+final class ReflectionGenerator
+{
+    public function __construct(\Generator $generator) {}
+    public function getExecutingLine(): int {}
+    public function getExecutingFile(): string {}
+    public function getTrace(int $options = \DEBUG_BACKTRACE_PROVIDE_OBJECT): array {}
+    public function getFunction(): \ReflectionFunctionAbstract {}
+    public function getThis(): ?object {}
+    public function getExecutingGenerator(): \Generator {}
+    public function isClosed(): bool {}
+}
+
+class ReflectionParameter implements \Stringable, \Reflector
+{
+    public string $name;
+    public function __construct($function, string|int $param) {}
+    public function __toString(): string {}
+    public function getName(): string {}
+    public function isPassedByReference(): bool {}
+    public function canBePassedByValue(): bool {}
+    public function getDeclaringFunction(): \ReflectionFunctionAbstract {}
+    public function getDeclaringClass(): ?\ReflectionClass {}
+    public function getClass(): ?\ReflectionClass {}
+    public function hasType(): bool {}
+    public function getType(): ?\ReflectionType {}
+    public function isArray(): bool {}
+    public function isCallable(): bool {}
+    public function allowsNull(): bool {}
+    public function getPosition(): int {}
+    public function isOptional(): bool {}
+    public function isDefaultValueAvailable(): bool {}
+    public function getDefaultValue(): mixed {}
+    public function isDefaultValueConstant(): bool {}
+    public function getDefaultValueConstantName(): ?string {}
+    public function isVariadic(): bool {}
+    public function isPromoted(): bool {}
+    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
+}
+
+abstract class ReflectionType implements \Stringable
+{
+    public function allowsNull(): bool {}
+    public function __toString(): string {}
+}
+
+class ReflectionNamedType extends \ReflectionType
+{
+    public function getName(): string {}
+    public function isBuiltin(): bool {}
+}
+
+class ReflectionUnionType extends \ReflectionType
+{
+    public function getTypes(): array {}
+}
+
+class ReflectionIntersectionType extends \ReflectionType
+{
+    public function getTypes(): array {}
+}
+
+class ReflectionMethod extends \ReflectionFunctionAbstract
+{
+    const IS_STATIC = null;
+    const IS_PUBLIC = null;
+    const IS_PROTECTED = null;
+    const IS_PRIVATE = null;
+    const IS_ABSTRACT = null;
+    const IS_FINAL = null;
+    public string $class;
+    public function __construct(object|string $objectOrMethod, ?string $method = NULL) {}
+    public static function createFromMethodName(string $method): static {}
+    public function __toString(): string {}
+    public function isPublic(): bool {}
+    public function isPrivate(): bool {}
+    public function isProtected(): bool {}
+    public function isAbstract(): bool {}
+    public function isFinal(): bool {}
+    public function isConstructor(): bool {}
+    public function isDestructor(): bool {}
+    public function getClosure(?object $object = NULL): \Closure {}
+    public function getModifiers(): int {}
+    public function invoke(?object $object, mixed ...$args): mixed {}
+    public function invokeArgs(?object $object, array $args): mixed {}
+    public function getDeclaringClass(): \ReflectionClass {}
+    public function getPrototype(): \ReflectionMethod {}
+    public function hasPrototype(): bool {}
+    public function setAccessible(bool $accessible): void {}
+}
+
+class ReflectionClass implements \Stringable, \Reflector
+{
+    const IS_IMPLICIT_ABSTRACT = null;
+    const IS_EXPLICIT_ABSTRACT = null;
+    const IS_FINAL = null;
+    const IS_READONLY = null;
+    const SKIP_INITIALIZATION_ON_SERIALIZE = null;
+    const SKIP_DESTRUCTOR = null;
+    public string $name;
+    public function __construct(object|string $objectOrClass) {}
+    public function __toString(): string {}
+    public function getName(): string {}
+    public function isInternal(): bool {}
+    public function isUserDefined(): bool {}
+    public function isAnonymous(): bool {}
+    public function isInstantiable(): bool {}
+    public function isCloneable(): bool {}
+    public function getFileName(): string|false {}
+    public function getStartLine(): int|false {}
+    public function getEndLine(): int|false {}
+    public function getDocComment(): string|false {}
+    public function getConstructor(): ?\ReflectionMethod {}
+    public function hasMethod(string $name): bool {}
+    public function getMethod(string $name): \ReflectionMethod {}
+    public function getMethods(?int $filter = NULL): array {}
+    public function hasProperty(string $name): bool {}
+    public function getProperty(string $name): \ReflectionProperty {}
+    public function getProperties(?int $filter = NULL): array {}
+    public function hasConstant(string $name): bool {}
+    public function getConstants(?int $filter = NULL): array {}
+    public function getReflectionConstants(?int $filter = NULL): array {}
+    public function getConstant(string $name): mixed {}
+    public function getReflectionConstant(string $name): \ReflectionClassConstant|false {}
+    public function getInterfaces(): array {}
+    public function getInterfaceNames(): array {}
+    public function isInterface(): bool {}
+    public function getTraits(): array {}
+    public function getTraitNames(): array {}
+    public function getTraitAliases(): array {}
+    public function isTrait(): bool {}
+    public function isEnum(): bool {}
+    public function isAbstract(): bool {}
+    public function isFinal(): bool {}
+    public function isReadOnly(): bool {}
+    public function getModifiers(): int {}
+    public function isInstance(object $object): bool {}
+    public function newInstance(mixed ...$args): object {}
+    public function newInstanceWithoutConstructor(): object {}
+    public function newInstanceArgs(array $args = []): ?object {}
+    public function newLazyGhost(callable $initializer, int $options = 0): object {}
+    public function newLazyProxy(callable $factory, int $options = 0): object {}
+    public function resetAsLazyGhost(object $object, callable $initializer, int $options = 0): void {}
+    public function resetAsLazyProxy(object $object, callable $factory, int $options = 0): void {}
+    public function initializeLazyObject(object $object): object {}
+    public function isUninitializedLazyObject(object $object): bool {}
+    public function markLazyObjectAsInitialized(object $object): object {}
+    public function getLazyInitializer(object $object): ?callable {}
+    public function getParentClass(): \ReflectionClass|false {}
+    public function isSubclassOf(\ReflectionClass|string $class): bool {}
+    public function getStaticProperties(): array {}
+    public function getStaticPropertyValue(string $name, mixed $default = null): mixed {}
+    public function setStaticPropertyValue(string $name, mixed $value): void {}
+    public function getDefaultProperties(): array {}
+    public function isIterable(): bool {}
+    public function isIterateable(): bool {}
+    public function implementsInterface(\ReflectionClass|string $interface): bool {}
+    public function getExtension(): ?\ReflectionExtension {}
+    public function getExtensionName(): string|false {}
+    public function inNamespace(): bool {}
+    public function getNamespaceName(): string {}
+    public function getShortName(): string {}
+    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
+}
+
+class ReflectionObject extends \ReflectionClass
+{
+    public function __construct(object $object) {}
+}
+
+class ReflectionProperty implements \Stringable, \Reflector
+{
+    const IS_STATIC = null;
+    const IS_READONLY = null;
+    const IS_PUBLIC = null;
+    const IS_PROTECTED = null;
+    const IS_PRIVATE = null;
+    const IS_ABSTRACT = null;
+    const IS_PROTECTED_SET = null;
+    const IS_PRIVATE_SET = null;
+    const IS_VIRTUAL = null;
+    const IS_FINAL = null;
+    public string $name;
+    public string $class;
+    public function __construct(object|string $class, string $property) {}
+    public function __toString(): string {}
+    public function getName(): string {}
+    public function getValue(?object $object = NULL): mixed {}
+    public function setValue(mixed $objectOrValue, mixed $value = null): void {}
+    public function getRawValue(object $object): mixed {}
+    public function setRawValue(object $object, mixed $value): void {}
+    public function setRawValueWithoutLazyInitialization(object $object, mixed $value): void {}
+    public function skipLazyInitialization(object $object): void {}
+    public function isLazy(object $object): bool {}
+    public function isInitialized(?object $object = NULL): bool {}
+    public function isPublic(): bool {}
+    public function isPrivate(): bool {}
+    public function isProtected(): bool {}
+    public function isPrivateSet(): bool {}
+    public function isProtectedSet(): bool {}
+    public function isStatic(): bool {}
+    public function isReadOnly(): bool {}
+    public function isDefault(): bool {}
+    public function isDynamic(): bool {}
+    public function isAbstract(): bool {}
+    public function isVirtual(): bool {}
+    public function isPromoted(): bool {}
+    public function getModifiers(): int {}
+    public function getDeclaringClass(): \ReflectionClass {}
+    public function getDocComment(): string|false {}
+    public function setAccessible(bool $accessible): void {}
+    public function getType(): ?\ReflectionType {}
+    public function getSettableType(): ?\ReflectionType {}
+    public function hasType(): bool {}
+    public function hasDefaultValue(): bool {}
+    public function getDefaultValue(): mixed {}
+    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
+    public function hasHooks(): bool {}
+    public function getHooks(): array {}
+    public function hasHook(\PropertyHookType $type): bool {}
+    public function getHook(\PropertyHookType $type): ?\ReflectionMethod {}
+    public function isFinal(): bool {}
+}
+
+class ReflectionClassConstant implements \Stringable, \Reflector
+{
+    const IS_PUBLIC = null;
+    const IS_PROTECTED = null;
+    const IS_PRIVATE = null;
+    const IS_FINAL = null;
+    public string $name;
+    public string $class;
+    public function __construct(object|string $class, string $constant) {}
+    public function __toString(): string {}
+    public function getName(): string {}
+    public function getValue(): mixed {}
+    public function isPublic(): bool {}
+    public function isPrivate(): bool {}
+    public function isProtected(): bool {}
+    public function isFinal(): bool {}
+    public function getModifiers(): int {}
+    public function getDeclaringClass(): \ReflectionClass {}
+    public function getDocComment(): string|false {}
+    public function getAttributes(?string $name = NULL, int $flags = 0): array {}
+    public function isEnumCase(): bool {}
+    public function isDeprecated(): bool {}
+    public function hasType(): bool {}
+    public function getType(): ?\ReflectionType {}
+}
+
+class ReflectionExtension implements \Stringable, \Reflector
+{
+    public string $name;
+    public function __construct(string $name) {}
+    public function __toString(): string {}
+    public function getName(): string {}
+    public function getVersion(): ?string {}
+    public function getFunctions(): array {}
+    public function getConstants(): array {}
+    public function getINIEntries(): array {}
+    public function getClasses(): array {}
+    public function getClassNames(): array {}
+    public function getDependencies(): array {}
+    public function info(): void {}
+    public function isPersistent(): bool {}
+    public function isTemporary(): bool {}
+}
+
+class ReflectionZendExtension implements \Stringable, \Reflector
+{
+    public string $name;
+    public function __construct(string $name) {}
+    public function __toString(): string {}
+    public function getName(): string {}
+    public function getVersion(): string {}
+    public function getAuthor(): string {}
+    public function getURL(): string {}
+    public function getCopyright(): string {}
+}
+
+final class ReflectionReference
+{
+    public static function fromArrayElement(array $array, string|int $key): ?\ReflectionReference {}
+    public function getId(): string {}
+}
+
+class ReflectionAttribute implements \Stringable, \Reflector
+{
+    const IS_INSTANCEOF = null;
+    public string $name;
+    public function getName(): string {}
+    public function getTarget(): int {}
+    public function isRepeated(): bool {}
+    public function getArguments(): array {}
+    public function newInstance(): object {}
+    public function __toString(): string {}
+}
+
+class ReflectionEnum extends \ReflectionClass
+{
+    public function __construct(object|string $objectOrClass) {}
+    public function hasCase(string $name): bool {}
+    public function getCase(string $name): \ReflectionEnumUnitCase {}
+    public function getCases(): array {}
+    public function isBacked(): bool {}
+    public function getBackingType(): ?\ReflectionNamedType {}
+}
+
+class ReflectionEnumUnitCase extends \ReflectionClassConstant
+{
+    public function __construct(object|string $class, string $constant) {}
+    public function getEnum(): \ReflectionEnum {}
+    public function getValue(): \UnitEnum {}
+}
+
+class ReflectionEnumBackedCase extends \ReflectionEnumUnitCase
+{
+    public function __construct(object|string $class, string $constant) {}
+    public function getBackingValue(): string|int {}
+}
+
+final class ReflectionFiber
+{
+    public function __construct(\Fiber $fiber) {}
+    public function getFiber(): \Fiber {}
+    public function getExecutingFile(): ?string {}
+    public function getExecutingLine(): ?int {}
+    public function getCallable(): callable {}
+    public function getTrace(int $options = \DEBUG_BACKTRACE_PROVIDE_OBJECT): array {}
+}
+
+final class ReflectionConstant implements \Stringable, \Reflector
+{
+    public string $name;
+    public function __construct(string $name) {}
+    public function getName(): string {}
+    public function getNamespaceName(): string {}
+    public function getShortName(): string {}
+    public function getValue(): mixed {}
+    public function isDeprecated(): bool {}
+    public function __toString(): string {}
+}
+
+enum PropertyHookType implements \BackedEnum, \UnitEnum
+{
+    case Get;
+    case Set;
+}
+
+function shmop_open(int $key, string $mode, int $permissions, int $size): \Shmop|false {}
+
+function shmop_read(\Shmop $shmop, int $offset, int $size): string {}
+
+function shmop_close(\Shmop $shmop): void {}
+
+function shmop_size(\Shmop $shmop): int {}
+
+function shmop_write(\Shmop $shmop, string $data, int $offset): int {}
+
+function shmop_delete(\Shmop $shmop): bool {}
+
+final class Shmop
+{
+
+}
+
+function simplexml_load_file(string $filename, ?string $class_name = 'SimpleXMLElement', int $options = 0, string $namespace_or_prefix = '', bool $is_prefix = false): \SimpleXMLElement|false {}
+
+function simplexml_load_string(string $data, ?string $class_name = 'SimpleXMLElement', int $options = 0, string $namespace_or_prefix = '', bool $is_prefix = false): \SimpleXMLElement|false {}
+
+function simplexml_import_dom(object $node, ?string $class_name = 'SimpleXMLElement'): ?\SimpleXMLElement {}
+
+class SimpleXMLElement implements \Stringable, \Countable, \RecursiveIterator, \Traversable, \Iterator
+{
+    public function xpath(string $expression): array|false|null {}
+    public function registerXPathNamespace(string $prefix, string $namespace): bool {}
+    public function asXML(?string $filename = NULL): string|bool {}
+    public function saveXML(?string $filename = NULL): string|bool {}
+    public function getNamespaces(bool $recursive = false): array {}
+    public function getDocNamespaces(bool $recursive = false, bool $fromRoot = true): array|false {}
+    public function children(?string $namespaceOrPrefix = NULL, bool $isPrefix = false): ?\SimpleXMLElement {}
+    public function attributes(?string $namespaceOrPrefix = NULL, bool $isPrefix = false): ?\SimpleXMLElement {}
+    public function __construct(string $data, int $options = 0, bool $dataIsURL = false, string $namespaceOrPrefix = '', bool $isPrefix = false) {}
+    public function addChild(string $qualifiedName, ?string $value = NULL, ?string $namespace = NULL): ?\SimpleXMLElement {}
+    public function addAttribute(string $qualifiedName, string $value, ?string $namespace = NULL): void {}
+    public function getName(): string {}
+    public function __toString(): string {}
+    public function count(): int {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+    public function current(): \SimpleXMLElement {}
+    public function key(): string {}
+    public function next(): void {}
+    public function hasChildren(): bool {}
+    public function getChildren(): ?\SimpleXMLElement {}
+}
+
+class SimpleXMLIterator extends \SimpleXMLElement
+{
+
+}
+
+function use_soap_error_handler(bool $enable = true): bool {}
+
+function is_soap_fault(mixed $object): bool {}
+
+const SOAP_1_1 = 1;
+
+const SOAP_1_2 = 2;
+
+const SOAP_PERSISTENCE_SESSION = 1;
+
+const SOAP_PERSISTENCE_REQUEST = 2;
+
+const SOAP_FUNCTIONS_ALL = 999;
+
+const SOAP_ENCODED = 1;
+
+const SOAP_LITERAL = 2;
+
+const SOAP_RPC = 1;
+
+const SOAP_DOCUMENT = 2;
+
+const SOAP_ACTOR_NEXT = 1;
+
+const SOAP_ACTOR_NONE = 2;
+
+const SOAP_ACTOR_UNLIMATERECEIVER = 3;
+
+const SOAP_COMPRESSION_ACCEPT = 32;
+
+const SOAP_COMPRESSION_GZIP = 0;
+
+const SOAP_COMPRESSION_DEFLATE = 16;
+
+const SOAP_AUTHENTICATION_BASIC = 0;
+
+const SOAP_AUTHENTICATION_DIGEST = 1;
+
+const UNKNOWN_TYPE = 999998;
+
+const XSD_STRING = 101;
+
+const XSD_BOOLEAN = 102;
+
+const XSD_DECIMAL = 103;
+
+const XSD_FLOAT = 104;
+
+const XSD_DOUBLE = 105;
+
+const XSD_DURATION = 106;
+
+const XSD_DATETIME = 107;
+
+const XSD_TIME = 108;
+
+const XSD_DATE = 109;
+
+const XSD_GYEARMONTH = 110;
+
+const XSD_GYEAR = 111;
+
+const XSD_GMONTHDAY = 112;
+
+const XSD_GDAY = 113;
+
+const XSD_GMONTH = 114;
+
+const XSD_HEXBINARY = 115;
+
+const XSD_BASE64BINARY = 116;
+
+const XSD_ANYURI = 117;
+
+const XSD_QNAME = 118;
+
+const XSD_NOTATION = 119;
+
+const XSD_NORMALIZEDSTRING = 120;
+
+const XSD_TOKEN = 121;
+
+const XSD_LANGUAGE = 122;
+
+const XSD_NMTOKEN = 123;
+
+const XSD_NAME = 124;
+
+const XSD_NCNAME = 125;
+
+const XSD_ID = 126;
+
+const XSD_IDREF = 127;
+
+const XSD_IDREFS = 128;
+
+const XSD_ENTITY = 129;
+
+const XSD_ENTITIES = 130;
+
+const XSD_INTEGER = 131;
+
+const XSD_NONPOSITIVEINTEGER = 132;
+
+const XSD_NEGATIVEINTEGER = 133;
+
+const XSD_LONG = 134;
+
+const XSD_INT = 135;
+
+const XSD_SHORT = 136;
+
+const XSD_BYTE = 137;
+
+const XSD_NONNEGATIVEINTEGER = 138;
+
+const XSD_UNSIGNEDLONG = 139;
+
+const XSD_UNSIGNEDINT = 140;
+
+const XSD_UNSIGNEDSHORT = 141;
+
+const XSD_UNSIGNEDBYTE = 142;
+
+const XSD_POSITIVEINTEGER = 143;
+
+const XSD_NMTOKENS = 144;
+
+const XSD_ANYTYPE = 145;
+
+const XSD_ANYXML = 147;
+
+const APACHE_MAP = 200;
+
+const SOAP_ENC_OBJECT = 301;
+
+const SOAP_ENC_ARRAY = 300;
+
+const XSD_1999_TIMEINSTANT = 401;
+
+const XSD_NAMESPACE = 'http://www.w3.org/2001/XMLSchema';
+
+const XSD_1999_NAMESPACE = 'http://www.w3.org/1999/XMLSchema';
+
+const SOAP_SINGLE_ELEMENT_ARRAYS = 1;
+
+const SOAP_WAIT_ONE_WAY_CALLS = 2;
+
+const SOAP_USE_XSI_ARRAY_TYPE = 4;
+
+const WSDL_CACHE_NONE = 0;
+
+const WSDL_CACHE_DISK = 1;
+
+const WSDL_CACHE_MEMORY = 2;
+
+const WSDL_CACHE_BOTH = 3;
+
+const SOAP_SSL_METHOD_TLS = 0;
+
+const SOAP_SSL_METHOD_SSLv2 = 1;
+
+const SOAP_SSL_METHOD_SSLv3 = 2;
+
+const SOAP_SSL_METHOD_SSLv23 = 3;
+
+class SoapClient
+{
+    public function __construct(?string $wsdl, array $options = []) {}
+    public function __call(string $name, array $args): mixed {}
+    public function __soapCall(string $name, array $args, ?array $options = NULL, $inputHeaders = NULL, &$outputHeaders = NULL): mixed {}
+    public function __getFunctions(): ?array {}
+    public function __getTypes(): ?array {}
+    public function __getLastRequest(): ?string {}
+    public function __getLastResponse(): ?string {}
+    public function __getLastRequestHeaders(): ?string {}
+    public function __getLastResponseHeaders(): ?string {}
+    public function __doRequest(string $request, string $location, string $action, int $version, bool $oneWay = false): ?string {}
+    public function __setCookie(string $name, ?string $value = NULL): void {}
+    public function __getCookies(): array {}
+    public function __setSoapHeaders($headers = NULL): bool {}
+    public function __setLocation(?string $location = NULL): ?string {}
+}
+
+class SoapVar
+{
+    public int $enc_type;
+    public mixed $enc_value;
+    public ?string $enc_stype;
+    public ?string $enc_ns;
+    public ?string $enc_name;
+    public ?string $enc_namens;
+    public function __construct(mixed $data, ?int $encoding, ?string $typeName = NULL, ?string $typeNamespace = NULL, ?string $nodeName = NULL, ?string $nodeNamespace = NULL) {}
+}
+
+class SoapServer
+{
+    public function __construct(?string $wsdl, array $options = []) {}
+    public function fault(string $code, string $string, string $actor = '', mixed $details = NULL, string $name = ''): void {}
+    public function addSoapHeader(\SoapHeader $header): void {}
+    public function setPersistence(int $mode): void {}
+    public function setClass(string $class, mixed ...$args): void {}
+    public function setObject(object $object): void {}
+    public function getFunctions(): array {}
+    public function addFunction($functions): void {}
+    public function handle(?string $request = NULL): void {}
+    public function __getLastResponse(): ?string {}
+}
+
+class SoapFault extends \Exception
+{
+    public string $faultstring;
+    public ?string $faultcode;
+    public ?string $faultcodens;
+    public ?string $faultactor;
+    public mixed $detail;
+    public ?string $_name;
+    public mixed $headerfault;
+    public function __construct(array|string|null $code, string $string, ?string $actor = NULL, mixed $details = NULL, ?string $name = NULL, mixed $headerFault = NULL) {}
+    public function __toString(): string {}
+}
+
+class SoapParam
+{
+    public string $param_name;
+    public mixed $param_data;
+    public function __construct(mixed $data, string $name) {}
+}
+
+class SoapHeader
+{
+    public string $namespace;
+    public string $name;
+    public mixed $data;
+    public bool $mustUnderstand;
+    public string|int|null $actor;
+    public function __construct(string $namespace, string $name, mixed $data = null, bool $mustUnderstand = false, string|int|null $actor = NULL) {}
+}
+
+function socket_select(?array &$read, ?array &$write, ?array &$except, ?int $seconds, int $microseconds = 0): int|false {}
+
+function socket_create_listen(int $port, int $backlog = \SOMAXCONN): \Socket|false {}
+
+function socket_accept(\Socket $socket): \Socket|false {}
+
+function socket_set_nonblock(\Socket $socket): bool {}
+
+function socket_set_block(\Socket $socket): bool {}
+
+function socket_listen(\Socket $socket, int $backlog = 0): bool {}
+
+function socket_close(\Socket $socket): void {}
+
+function socket_write(\Socket $socket, string $data, ?int $length = NULL): int|false {}
+
+function socket_read(\Socket $socket, int $length, int $mode = \PHP_BINARY_READ): string|false {}
+
+function socket_getsockname(\Socket $socket, &$address, &$port = NULL): bool {}
+
+function socket_getpeername(\Socket $socket, &$address, &$port = NULL): bool {}
+
+function socket_create(int $domain, int $type, int $protocol): \Socket|false {}
+
+function socket_connect(\Socket $socket, string $address, ?int $port = NULL): bool {}
+
+function socket_strerror(int $error_code): string {}
+
+function socket_bind(\Socket $socket, string $address, int $port = 0): bool {}
+
+function socket_recv(\Socket $socket, &$data, int $length, int $flags): int|false {}
+
+function socket_send(\Socket $socket, string $data, int $length, int $flags): int|false {}
+
+function socket_recvfrom(\Socket $socket, &$data, int $length, int $flags, &$address, &$port = NULL): int|false {}
+
+function socket_sendto(\Socket $socket, string $data, int $length, int $flags, string $address, ?int $port = NULL): int|false {}
+
+function socket_get_option(\Socket $socket, int $level, int $option): array|int|false {}
+
+function socket_getopt(\Socket $socket, int $level, int $option): array|int|false {}
+
+function socket_set_option(\Socket $socket, int $level, int $option, $value): bool {}
+
+function socket_setopt(\Socket $socket, int $level, int $option, $value): bool {}
+
+function socket_create_pair(int $domain, int $type, int $protocol, &$pair): bool {}
+
+function socket_shutdown(\Socket $socket, int $mode = 2): bool {}
+
+function socket_atmark(\Socket $socket): bool {}
+
+function socket_last_error(?\Socket $socket = NULL): int {}
+
+function socket_clear_error(?\Socket $socket = NULL): void {}
+
+function socket_import_stream($stream): \Socket|false {}
+
+function socket_export_stream(\Socket $socket) {}
+
+function socket_sendmsg(\Socket $socket, array $message, int $flags = 0): int|false {}
+
+function socket_recvmsg(\Socket $socket, array &$message, int $flags = 0): int|false {}
+
+function socket_cmsg_space(int $level, int $type, int $num = 0): ?int {}
+
+function socket_addrinfo_lookup(string $host, ?string $service = NULL, array $hints = []): array|false {}
+
+function socket_addrinfo_connect(\AddressInfo $address): \Socket|false {}
+
+function socket_addrinfo_bind(\AddressInfo $address): \Socket|false {}
+
+function socket_addrinfo_explain(\AddressInfo $address): array {}
+
+const AF_UNIX = 1;
+
+const AF_INET = 2;
+
+const AF_INET6 = 30;
+
+const SOCK_STREAM = 1;
+
+const SOCK_DGRAM = 2;
+
+const SOCK_RAW = 3;
+
+const SOCK_SEQPACKET = 5;
+
+const SOCK_RDM = 4;
+
+const MSG_OOB = 1;
+
+const MSG_WAITALL = 64;
+
+const MSG_CTRUNC = 32;
+
+const MSG_TRUNC = 16;
+
+const MSG_PEEK = 2;
+
+const MSG_DONTROUTE = 4;
+
+const MSG_EOR = 8;
+
+const MSG_EOF = 256;
+
+const MSG_NOSIGNAL = 524288;
+
+const MSG_DONTWAIT = 128;
+
+const SO_DEBUG = 1;
+
+const SO_REUSEADDR = 4;
+
+const SO_REUSEPORT = 512;
+
+const SO_KEEPALIVE = 8;
+
+const SO_DONTROUTE = 16;
+
+const SO_LINGER = 128;
+
+const SO_LINGER_SEC = 4224;
+
+const SO_BROADCAST = 32;
+
+const SO_OOBINLINE = 256;
+
+const SO_SNDBUF = 4097;
+
+const SO_RCVBUF = 4098;
+
+const SO_SNDLOWAT = 4099;
+
+const SO_RCVLOWAT = 4100;
+
+const SO_SNDTIMEO = 4101;
+
+const SO_RCVTIMEO = 4102;
+
+const SO_TYPE = 4104;
+
+const SO_ERROR = 4103;
+
+const SO_DONTTRUNC = 8192;
+
+const SO_WANTMORE = 16384;
+
+const SOL_SOCKET = 65535;
+
+const SOMAXCONN = 128;
+
+const TCP_NODELAY = 1;
+
+const TCP_NOTSENT_LOWAT = 513;
+
+const TCP_KEEPALIVE = 16;
+
+const PHP_NORMAL_READ = 1;
+
+const PHP_BINARY_READ = 2;
+
+const MCAST_JOIN_GROUP = 12;
+
+const MCAST_LEAVE_GROUP = 13;
+
+const IP_MULTICAST_IF = 9;
+
+const IP_MULTICAST_TTL = 10;
+
+const IP_MULTICAST_LOOP = 11;
+
+const IPV6_MULTICAST_IF = 9;
+
+const IPV6_MULTICAST_HOPS = 10;
+
+const IPV6_MULTICAST_LOOP = 11;
+
+const IPV6_V6ONLY = 27;
+
+const IP_PORTRANGE = 19;
+
+const IP_PORTRANGE_DEFAULT = 0;
+
+const IP_PORTRANGE_HIGH = 1;
+
+const IP_PORTRANGE_LOW = 2;
+
+const SOCKET_EPERM = 1;
+
+const SOCKET_ENOENT = 2;
+
+const SOCKET_EINTR = 4;
+
+const SOCKET_EIO = 5;
+
+const SOCKET_ENXIO = 6;
+
+const SOCKET_E2BIG = 7;
+
+const SOCKET_EBADF = 9;
+
+const SOCKET_EAGAIN = 35;
+
+const SOCKET_ENOMEM = 12;
+
+const SOCKET_EACCES = 13;
+
+const SOCKET_EFAULT = 14;
+
+const SOCKET_ENOTBLK = 15;
+
+const SOCKET_EBUSY = 16;
+
+const SOCKET_EEXIST = 17;
+
+const SOCKET_EXDEV = 18;
+
+const SOCKET_ENODEV = 19;
+
+const SOCKET_ENOTDIR = 20;
+
+const SOCKET_EISDIR = 21;
+
+const SOCKET_EINVAL = 22;
+
+const SOCKET_ENFILE = 23;
+
+const SOCKET_EMFILE = 24;
+
+const SOCKET_ENOTTY = 25;
+
+const SOCKET_ENOSPC = 28;
+
+const SOCKET_ESPIPE = 29;
+
+const SOCKET_EROFS = 30;
+
+const SOCKET_EMLINK = 31;
+
+const SOCKET_EPIPE = 32;
+
+const SOCKET_ENAMETOOLONG = 63;
+
+const SOCKET_ENOLCK = 77;
+
+const SOCKET_ENOSYS = 78;
+
+const SOCKET_ENOTEMPTY = 66;
+
+const SOCKET_ELOOP = 62;
+
+const SOCKET_EWOULDBLOCK = 35;
+
+const SOCKET_ENOMSG = 91;
+
+const SOCKET_EIDRM = 90;
+
+const SOCKET_ENOSTR = 99;
+
+const SOCKET_ENODATA = 96;
+
+const SOCKET_ETIME = 101;
+
+const SOCKET_ENOSR = 98;
+
+const SOCKET_EREMOTE = 71;
+
+const SOCKET_ENOLINK = 97;
+
+const SOCKET_EPROTO = 100;
+
+const SOCKET_EMULTIHOP = 95;
+
+const SOCKET_EBADMSG = 94;
+
+const SOCKET_EUSERS = 68;
+
+const SOCKET_ENOTSOCK = 38;
+
+const SOCKET_EDESTADDRREQ = 39;
+
+const SOCKET_EMSGSIZE = 40;
+
+const SOCKET_EPROTOTYPE = 41;
+
+const SOCKET_ENOPROTOOPT = 42;
+
+const SOCKET_EPROTONOSUPPORT = 43;
+
+const SOCKET_ESOCKTNOSUPPORT = 44;
+
+const SOCKET_EOPNOTSUPP = 102;
+
+const SOCKET_EPFNOSUPPORT = 46;
+
+const SOCKET_EAFNOSUPPORT = 47;
+
+const SOCKET_EADDRINUSE = 48;
+
+const SOCKET_EADDRNOTAVAIL = 49;
+
+const SOCKET_ENETDOWN = 50;
+
+const SOCKET_ENETUNREACH = 51;
+
+const SOCKET_ENETRESET = 52;
+
+const SOCKET_ECONNABORTED = 53;
+
+const SOCKET_ECONNRESET = 54;
+
+const SOCKET_ENOBUFS = 55;
+
+const SOCKET_EISCONN = 56;
+
+const SOCKET_ENOTCONN = 57;
+
+const SOCKET_ESHUTDOWN = 58;
+
+const SOCKET_ETOOMANYREFS = 59;
+
+const SOCKET_ETIMEDOUT = 60;
+
+const SOCKET_ECONNREFUSED = 61;
+
+const SOCKET_EHOSTDOWN = 64;
+
+const SOCKET_EHOSTUNREACH = 65;
+
+const SOCKET_EALREADY = 37;
+
+const SOCKET_EINPROGRESS = 36;
+
+const SOCKET_EDQUOT = 69;
+
+const IPPROTO_IP = 0;
+
+const IPPROTO_IPV6 = 41;
+
+const SOL_TCP = 6;
+
+const SOL_UDP = 17;
+
+const IPV6_UNICAST_HOPS = 4;
+
+const AI_PASSIVE = 1;
+
+const AI_CANONNAME = 2;
+
+const AI_NUMERICHOST = 4;
+
+const AI_V4MAPPED = 2048;
+
+const AI_ALL = 256;
+
+const AI_ADDRCONFIG = 1024;
+
+const AI_NUMERICSERV = 4096;
+
+const SOL_LOCAL = 0;
+
+const IPV6_RECVPKTINFO = 61;
+
+const IPV6_PKTINFO = 46;
+
+const IPV6_RECVHOPLIMIT = 37;
+
+const IPV6_HOPLIMIT = 47;
+
+const IPV6_RECVTCLASS = 35;
+
+const IPV6_TCLASS = 36;
+
+const SCM_RIGHTS = 1;
+
+const SO_NOSIGPIPE = 4130;
+
+const IP_DONTFRAG = 28;
+
+final class Socket
+{
+
+}
+
+final class AddressInfo
+{
+
+}
 
 function sodium_crypto_aead_aes256gcm_is_available(): bool {}
 
@@ -10027,6 +15105,1190 @@ class SodiumException extends \Exception
 
 }
 
+function sqlsrv_connect($server_name, array $connection_info = null) {}
+
+function sqlsrv_close($conn) {}
+
+function sqlsrv_commit($conn) {}
+
+function sqlsrv_begin_transaction($conn) {}
+
+function sqlsrv_rollback($conn) {}
+
+function sqlsrv_errors($errors_and_or_warnings = null) {}
+
+function sqlsrv_configure($setting, $value) {}
+
+function sqlsrv_get_config($setting) {}
+
+function sqlsrv_prepare($conn, $tsql, $params = null, $options = null) {}
+
+function sqlsrv_execute($stmt) {}
+
+function sqlsrv_query($conn, $tsql, $params = null, $options = null) {}
+
+function sqlsrv_fetch($stmt, $row = null, $offset = null) {}
+
+function sqlsrv_get_field($stmt, $field_index, $get_as_type = null) {}
+
+function sqlsrv_fetch_array($stmt, $fetch_type = null, $row = null, $offset = null) {}
+
+function sqlsrv_fetch_object($stmt, $class_name = null, $ctor_params = null, $row = null, $offset = null) {}
+
+function sqlsrv_has_rows($stmt) {}
+
+function sqlsrv_num_fields($stmt) {}
+
+function sqlsrv_next_result($stmt) {}
+
+function sqlsrv_num_rows($stmt) {}
+
+function sqlsrv_rows_affected($stmt) {}
+
+function SQLSRV_PHPTYPE_STREAM($encoding) {}
+
+function SQLSRV_PHPTYPE_STRING($encoding) {}
+
+function sqlsrv_client_info($conn) {}
+
+function sqlsrv_server_info($stmt) {}
+
+function sqlsrv_cancel($stmt) {}
+
+function sqlsrv_free_stmt($stmt) {}
+
+function sqlsrv_field_metadata($stmt) {}
+
+function sqlsrv_send_stream_data($stmt) {}
+
+function SQLSRV_SQLTYPE_BINARY($size) {}
+
+function SQLSRV_SQLTYPE_CHAR($size) {}
+
+function SQLSRV_SQLTYPE_DECIMAL($precision, $scale) {}
+
+function SQLSRV_SQLTYPE_NCHAR($size) {}
+
+function SQLSRV_SQLTYPE_NUMERIC($precision, $scale) {}
+
+function SQLSRV_SQLTYPE_NVARCHAR($size) {}
+
+function SQLSRV_SQLTYPE_VARBINARY($size) {}
+
+function SQLSRV_SQLTYPE_VARCHAR($size) {}
+
+const SQLSRV_ERR_ERRORS = 0;
+
+const SQLSRV_ERR_WARNINGS = 1;
+
+const SQLSRV_ERR_ALL = 2;
+
+const SQLSRV_LOG_SYSTEM_OFF = 0;
+
+const SQLSRV_LOG_SYSTEM_INIT = 1;
+
+const SQLSRV_LOG_SYSTEM_CONN = 2;
+
+const SQLSRV_LOG_SYSTEM_STMT = 4;
+
+const SQLSRV_LOG_SYSTEM_UTIL = 8;
+
+const SQLSRV_LOG_SYSTEM_ALL = -1;
+
+const SQLSRV_LOG_SEVERITY_ERROR = 1;
+
+const SQLSRV_LOG_SEVERITY_WARNING = 2;
+
+const SQLSRV_LOG_SEVERITY_NOTICE = 4;
+
+const SQLSRV_LOG_SEVERITY_ALL = -1;
+
+const SQLSRV_FETCH_NUMERIC = 1;
+
+const SQLSRV_FETCH_ASSOC = 2;
+
+const SQLSRV_FETCH_BOTH = 3;
+
+const SQLSRV_PHPTYPE_NULL = 1;
+
+const SQLSRV_PHPTYPE_INT = 2;
+
+const SQLSRV_PHPTYPE_FLOAT = 3;
+
+const SQLSRV_PHPTYPE_DATETIME = 5;
+
+const SQLSRV_PHPTYPE_TABLE = 7;
+
+const SQLSRV_ENC_BINARY = 'binary';
+
+const SQLSRV_ENC_CHAR = 'char';
+
+const SQLSRV_NULLABLE_NO = 0;
+
+const SQLSRV_NULLABLE_YES = 1;
+
+const SQLSRV_NULLABLE_UNKNOWN = 2;
+
+const SQLSRV_SQLTYPE_BIGINT = -5;
+
+const SQLSRV_SQLTYPE_BIT = -7;
+
+const SQLSRV_SQLTYPE_DATETIME = 25177693;
+
+const SQLSRV_SQLTYPE_FLOAT = 6;
+
+const SQLSRV_SQLTYPE_IMAGE = -4;
+
+const SQLSRV_SQLTYPE_INT = 4;
+
+const SQLSRV_SQLTYPE_MONEY = 33564163;
+
+const SQLSRV_SQLTYPE_NTEXT = -10;
+
+const SQLSRV_SQLTYPE_TEXT = -1;
+
+const SQLSRV_SQLTYPE_REAL = 7;
+
+const SQLSRV_SQLTYPE_SMALLDATETIME = 8285;
+
+const SQLSRV_SQLTYPE_SMALLINT = 5;
+
+const SQLSRV_SQLTYPE_SMALLMONEY = 33559555;
+
+const SQLSRV_SQLTYPE_TIMESTAMP = 4606;
+
+const SQLSRV_SQLTYPE_TINYINT = -6;
+
+const SQLSRV_SQLTYPE_UDT = -151;
+
+const SQLSRV_SQLTYPE_TABLE = -153;
+
+const SQLSRV_SQLTYPE_UNIQUEIDENTIFIER = -11;
+
+const SQLSRV_SQLTYPE_XML = -152;
+
+const SQLSRV_SQLTYPE_DATE = 5211;
+
+const SQLSRV_SQLTYPE_TIME = 58728806;
+
+const SQLSRV_SQLTYPE_DATETIMEOFFSET = 58738021;
+
+const SQLSRV_SQLTYPE_DATETIME2 = 58734173;
+
+const SQLSRV_SQLTYPE_DECIMAL = 3;
+
+const SQLSRV_SQLTYPE_NUMERIC = 2;
+
+const SQLSRV_SQLTYPE_CHAR = 1;
+
+const SQLSRV_SQLTYPE_NCHAR = -8;
+
+const SQLSRV_SQLTYPE_VARCHAR = 12;
+
+const SQLSRV_SQLTYPE_NVARCHAR = -9;
+
+const SQLSRV_SQLTYPE_BINARY = -2;
+
+const SQLSRV_SQLTYPE_VARBINARY = -3;
+
+const SQLSRV_PARAM_IN = 1;
+
+const SQLSRV_PARAM_OUT = 4;
+
+const SQLSRV_PARAM_INOUT = 2;
+
+const SQLSRV_TXN_READ_UNCOMMITTED = 1;
+
+const SQLSRV_TXN_READ_COMMITTED = 2;
+
+const SQLSRV_TXN_REPEATABLE_READ = 4;
+
+const SQLSRV_TXN_SERIALIZABLE = 8;
+
+const SQLSRV_TXN_SNAPSHOT = 32;
+
+const SQLSRV_SCROLL_NEXT = 1;
+
+const SQLSRV_SCROLL_PRIOR = 4;
+
+const SQLSRV_SCROLL_FIRST = 2;
+
+const SQLSRV_SCROLL_LAST = 3;
+
+const SQLSRV_SCROLL_ABSOLUTE = 5;
+
+const SQLSRV_SCROLL_RELATIVE = 6;
+
+const SQLSRV_CURSOR_FORWARD = 'forward';
+
+const SQLSRV_CURSOR_STATIC = 'static';
+
+const SQLSRV_CURSOR_DYNAMIC = 'dynamic';
+
+const SQLSRV_CURSOR_KEYSET = 'keyset';
+
+const SQLSRV_CURSOR_CLIENT_BUFFERED = 'buffered';
+
+function msg_get_queue(int $key, int $permissions = 438): \SysvMessageQueue|false {}
+
+function msg_send(\SysvMessageQueue $queue, int $message_type, $message, bool $serialize = true, bool $blocking = true, &$error_code = NULL): bool {}
+
+function msg_receive(\SysvMessageQueue $queue, int $desired_message_type, &$received_message_type, int $max_message_size, mixed &$message, bool $unserialize = true, int $flags = 0, &$error_code = NULL): bool {}
+
+function msg_remove_queue(\SysvMessageQueue $queue): bool {}
+
+function msg_stat_queue(\SysvMessageQueue $queue): array|false {}
+
+function msg_set_queue(\SysvMessageQueue $queue, array $data): bool {}
+
+function msg_queue_exists(int $key): bool {}
+
+const MSG_IPC_NOWAIT = 1;
+
+const MSG_EAGAIN = 35;
+
+const MSG_ENOMSG = 91;
+
+const MSG_NOERROR = 2;
+
+const MSG_EXCEPT = 4;
+
+final class SysvMessageQueue
+{
+
+}
+
+function sem_get(int $key, int $max_acquire = 1, int $permissions = 438, bool $auto_release = true): \SysvSemaphore|false {}
+
+function sem_acquire(\SysvSemaphore $semaphore, bool $non_blocking = false): bool {}
+
+function sem_release(\SysvSemaphore $semaphore): bool {}
+
+function sem_remove(\SysvSemaphore $semaphore): bool {}
+
+final class SysvSemaphore
+{
+
+}
+
+function shm_attach(int $key, ?int $size = NULL, int $permissions = 438): \SysvSharedMemory|false {}
+
+function shm_detach(\SysvSharedMemory $shm): bool {}
+
+function shm_has_var(\SysvSharedMemory $shm, int $key): bool {}
+
+function shm_remove(\SysvSharedMemory $shm): bool {}
+
+function shm_put_var(\SysvSharedMemory $shm, int $key, mixed $value): bool {}
+
+function shm_get_var(\SysvSharedMemory $shm, int $key): mixed {}
+
+function shm_remove_var(\SysvSharedMemory $shm, int $key): bool {}
+
+final class SysvSharedMemory
+{
+
+}
+
+function token_get_all(string $code, int $flags = 0): array {}
+
+function token_name(int $id): string {}
+
+const T_LNUMBER = 260;
+
+const T_DNUMBER = 261;
+
+const T_STRING = 262;
+
+const T_NAME_FULLY_QUALIFIED = 263;
+
+const T_NAME_RELATIVE = 264;
+
+const T_NAME_QUALIFIED = 265;
+
+const T_VARIABLE = 266;
+
+const T_INLINE_HTML = 267;
+
+const T_ENCAPSED_AND_WHITESPACE = 268;
+
+const T_CONSTANT_ENCAPSED_STRING = 269;
+
+const T_STRING_VARNAME = 270;
+
+const T_NUM_STRING = 271;
+
+const T_INCLUDE = 272;
+
+const T_INCLUDE_ONCE = 273;
+
+const T_EVAL = 274;
+
+const T_REQUIRE = 275;
+
+const T_REQUIRE_ONCE = 276;
+
+const T_LOGICAL_OR = 277;
+
+const T_LOGICAL_XOR = 278;
+
+const T_LOGICAL_AND = 279;
+
+const T_PRINT = 280;
+
+const T_YIELD = 281;
+
+const T_YIELD_FROM = 282;
+
+const T_INSTANCEOF = 283;
+
+const T_NEW = 284;
+
+const T_CLONE = 285;
+
+const T_EXIT = 286;
+
+const T_IF = 287;
+
+const T_ELSEIF = 288;
+
+const T_ELSE = 289;
+
+const T_ENDIF = 290;
+
+const T_ECHO = 291;
+
+const T_DO = 292;
+
+const T_WHILE = 293;
+
+const T_ENDWHILE = 294;
+
+const T_FOR = 295;
+
+const T_ENDFOR = 296;
+
+const T_FOREACH = 297;
+
+const T_ENDFOREACH = 298;
+
+const T_DECLARE = 299;
+
+const T_ENDDECLARE = 300;
+
+const T_AS = 301;
+
+const T_SWITCH = 302;
+
+const T_ENDSWITCH = 303;
+
+const T_CASE = 304;
+
+const T_DEFAULT = 305;
+
+const T_MATCH = 306;
+
+const T_BREAK = 307;
+
+const T_CONTINUE = 308;
+
+const T_GOTO = 309;
+
+const T_FUNCTION = 310;
+
+const T_FN = 311;
+
+const T_CONST = 312;
+
+const T_RETURN = 313;
+
+const T_TRY = 314;
+
+const T_CATCH = 315;
+
+const T_FINALLY = 316;
+
+const T_THROW = 317;
+
+const T_USE = 318;
+
+const T_INSTEADOF = 319;
+
+const T_GLOBAL = 320;
+
+const T_STATIC = 321;
+
+const T_ABSTRACT = 322;
+
+const T_FINAL = 323;
+
+const T_PRIVATE = 324;
+
+const T_PROTECTED = 325;
+
+const T_PUBLIC = 326;
+
+const T_PRIVATE_SET = 327;
+
+const T_PROTECTED_SET = 328;
+
+const T_PUBLIC_SET = 329;
+
+const T_READONLY = 330;
+
+const T_VAR = 331;
+
+const T_UNSET = 332;
+
+const T_ISSET = 333;
+
+const T_EMPTY = 334;
+
+const T_HALT_COMPILER = 335;
+
+const T_CLASS = 336;
+
+const T_TRAIT = 337;
+
+const T_INTERFACE = 338;
+
+const T_ENUM = 339;
+
+const T_EXTENDS = 340;
+
+const T_IMPLEMENTS = 341;
+
+const T_NAMESPACE = 342;
+
+const T_LIST = 343;
+
+const T_ARRAY = 344;
+
+const T_CALLABLE = 345;
+
+const T_LINE = 346;
+
+const T_FILE = 347;
+
+const T_DIR = 348;
+
+const T_CLASS_C = 349;
+
+const T_TRAIT_C = 350;
+
+const T_METHOD_C = 351;
+
+const T_FUNC_C = 352;
+
+const T_PROPERTY_C = 353;
+
+const T_NS_C = 354;
+
+const T_ATTRIBUTE = 355;
+
+const T_PLUS_EQUAL = 356;
+
+const T_MINUS_EQUAL = 357;
+
+const T_MUL_EQUAL = 358;
+
+const T_DIV_EQUAL = 359;
+
+const T_CONCAT_EQUAL = 360;
+
+const T_MOD_EQUAL = 361;
+
+const T_AND_EQUAL = 362;
+
+const T_OR_EQUAL = 363;
+
+const T_XOR_EQUAL = 364;
+
+const T_SL_EQUAL = 365;
+
+const T_SR_EQUAL = 366;
+
+const T_COALESCE_EQUAL = 367;
+
+const T_BOOLEAN_OR = 368;
+
+const T_BOOLEAN_AND = 369;
+
+const T_IS_EQUAL = 370;
+
+const T_IS_NOT_EQUAL = 371;
+
+const T_IS_IDENTICAL = 372;
+
+const T_IS_NOT_IDENTICAL = 373;
+
+const T_IS_SMALLER_OR_EQUAL = 374;
+
+const T_IS_GREATER_OR_EQUAL = 375;
+
+const T_SPACESHIP = 376;
+
+const T_SL = 377;
+
+const T_SR = 378;
+
+const T_INC = 379;
+
+const T_DEC = 380;
+
+const T_INT_CAST = 381;
+
+const T_DOUBLE_CAST = 382;
+
+const T_STRING_CAST = 383;
+
+const T_ARRAY_CAST = 384;
+
+const T_OBJECT_CAST = 385;
+
+const T_BOOL_CAST = 386;
+
+const T_UNSET_CAST = 387;
+
+const T_OBJECT_OPERATOR = 388;
+
+const T_NULLSAFE_OBJECT_OPERATOR = 389;
+
+const T_DOUBLE_ARROW = 390;
+
+const T_COMMENT = 391;
+
+const T_DOC_COMMENT = 392;
+
+const T_OPEN_TAG = 393;
+
+const T_OPEN_TAG_WITH_ECHO = 394;
+
+const T_CLOSE_TAG = 395;
+
+const T_WHITESPACE = 396;
+
+const T_START_HEREDOC = 397;
+
+const T_END_HEREDOC = 398;
+
+const T_DOLLAR_OPEN_CURLY_BRACES = 399;
+
+const T_CURLY_OPEN = 400;
+
+const T_PAAMAYIM_NEKUDOTAYIM = 401;
+
+const T_NS_SEPARATOR = 402;
+
+const T_ELLIPSIS = 403;
+
+const T_COALESCE = 404;
+
+const T_POW = 405;
+
+const T_POW_EQUAL = 406;
+
+const T_AMPERSAND_FOLLOWED_BY_VAR_OR_VARARG = 407;
+
+const T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG = 408;
+
+const T_BAD_CHARACTER = 409;
+
+const T_DOUBLE_COLON = 401;
+
+const TOKEN_PARSE = 1;
+
+class PhpToken implements \Stringable
+{
+    public int $id;
+    public string $text;
+    public int $line;
+    public int $pos;
+    public static function tokenize(string $code, int $flags = 0): array {}
+    public function __construct(int $id, string $text, int $line = -1, int $pos = -1) {}
+    public function is($kind): bool {}
+    public function isIgnorable(): bool {}
+    public function getTokenName(): ?string {}
+    public function __toString(): string {}
+}
+
+function xml_parser_create(?string $encoding = NULL): \XMLParser {}
+
+function xml_parser_create_ns(?string $encoding = NULL, string $separator = ':'): \XMLParser {}
+
+function xml_set_object(\XMLParser $parser, object $object): true {}
+
+function xml_set_element_handler(\XMLParser $parser, callable|string|null $start_handler, callable|string|null $end_handler): true {}
+
+function xml_set_character_data_handler(\XMLParser $parser, callable|string|null $handler): true {}
+
+function xml_set_processing_instruction_handler(\XMLParser $parser, callable|string|null $handler): true {}
+
+function xml_set_default_handler(\XMLParser $parser, callable|string|null $handler): true {}
+
+function xml_set_unparsed_entity_decl_handler(\XMLParser $parser, callable|string|null $handler): true {}
+
+function xml_set_notation_decl_handler(\XMLParser $parser, callable|string|null $handler): true {}
+
+function xml_set_external_entity_ref_handler(\XMLParser $parser, callable|string|null $handler): true {}
+
+function xml_set_start_namespace_decl_handler(\XMLParser $parser, callable|string|null $handler): true {}
+
+function xml_set_end_namespace_decl_handler(\XMLParser $parser, callable|string|null $handler): true {}
+
+function xml_parse(\XMLParser $parser, string $data, bool $is_final = false): int {}
+
+function xml_parse_into_struct(\XMLParser $parser, string $data, &$values, &$index = NULL): int|false {}
+
+function xml_get_error_code(\XMLParser $parser): int {}
+
+function xml_error_string(int $error_code): ?string {}
+
+function xml_get_current_line_number(\XMLParser $parser): int {}
+
+function xml_get_current_column_number(\XMLParser $parser): int {}
+
+function xml_get_current_byte_index(\XMLParser $parser): int {}
+
+function xml_parser_free(\XMLParser $parser): bool {}
+
+function xml_parser_set_option(\XMLParser $parser, int $option, $value): bool {}
+
+function xml_parser_get_option(\XMLParser $parser, int $option): string|int|bool {}
+
+const XML_ERROR_NONE = 0;
+
+const XML_ERROR_NO_MEMORY = 1;
+
+const XML_ERROR_SYNTAX = 2;
+
+const XML_ERROR_NO_ELEMENTS = 3;
+
+const XML_ERROR_INVALID_TOKEN = 4;
+
+const XML_ERROR_UNCLOSED_TOKEN = 5;
+
+const XML_ERROR_PARTIAL_CHAR = 6;
+
+const XML_ERROR_TAG_MISMATCH = 7;
+
+const XML_ERROR_DUPLICATE_ATTRIBUTE = 8;
+
+const XML_ERROR_JUNK_AFTER_DOC_ELEMENT = 9;
+
+const XML_ERROR_PARAM_ENTITY_REF = 10;
+
+const XML_ERROR_UNDEFINED_ENTITY = 11;
+
+const XML_ERROR_RECURSIVE_ENTITY_REF = 12;
+
+const XML_ERROR_ASYNC_ENTITY = 13;
+
+const XML_ERROR_BAD_CHAR_REF = 14;
+
+const XML_ERROR_BINARY_ENTITY_REF = 15;
+
+const XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF = 16;
+
+const XML_ERROR_MISPLACED_XML_PI = 17;
+
+const XML_ERROR_UNKNOWN_ENCODING = 18;
+
+const XML_ERROR_INCORRECT_ENCODING = 19;
+
+const XML_ERROR_UNCLOSED_CDATA_SECTION = 20;
+
+const XML_ERROR_EXTERNAL_ENTITY_HANDLING = 21;
+
+const XML_OPTION_CASE_FOLDING = 1;
+
+const XML_OPTION_TARGET_ENCODING = 2;
+
+const XML_OPTION_SKIP_TAGSTART = 3;
+
+const XML_OPTION_SKIP_WHITE = 4;
+
+const XML_OPTION_PARSE_HUGE = 5;
+
+const XML_SAX_IMPL = 'libxml';
+
+final class XMLParser
+{
+
+}
+
+class XMLReader
+{
+    const NONE = null;
+    const ELEMENT = null;
+    const ATTRIBUTE = null;
+    const TEXT = null;
+    const CDATA = null;
+    const ENTITY_REF = null;
+    const ENTITY = null;
+    const PI = null;
+    const COMMENT = null;
+    const DOC = null;
+    const DOC_TYPE = null;
+    const DOC_FRAGMENT = null;
+    const NOTATION = null;
+    const WHITESPACE = null;
+    const SIGNIFICANT_WHITESPACE = null;
+    const END_ELEMENT = null;
+    const END_ENTITY = null;
+    const XML_DECLARATION = null;
+    const LOADDTD = null;
+    const DEFAULTATTRS = null;
+    const VALIDATE = null;
+    const SUBST_ENTITIES = null;
+    public int $attributeCount;
+    public string $baseURI;
+    public int $depth;
+    public bool $hasAttributes;
+    public bool $hasValue;
+    public bool $isDefault;
+    public bool $isEmptyElement;
+    public string $localName;
+    public string $name;
+    public string $namespaceURI;
+    public int $nodeType;
+    public string $prefix;
+    public string $value;
+    public string $xmlLang;
+    public function close(): true {}
+    public function getAttribute(string $name): ?string {}
+    public function getAttributeNo(int $index): ?string {}
+    public function getAttributeNs(string $name, string $namespace): ?string {}
+    public function getParserProperty(int $property): bool {}
+    public function isValid(): bool {}
+    public function lookupNamespace(string $prefix): ?string {}
+    public function moveToAttribute(string $name): bool {}
+    public function moveToAttributeNo(int $index): bool {}
+    public function moveToAttributeNs(string $name, string $namespace): bool {}
+    public function moveToElement(): bool {}
+    public function moveToFirstAttribute(): bool {}
+    public function moveToNextAttribute(): bool {}
+    public function read(): bool {}
+    public function next(?string $name = NULL): bool {}
+    public static function open(string $uri, ?string $encoding = NULL, int $flags = 0) {}
+    public static function fromUri(string $uri, ?string $encoding = NULL, int $flags = 0): static {}
+    public static function fromStream($stream, ?string $encoding = NULL, int $flags = 0, ?string $documentUri = NULL): static {}
+    public function readInnerXml(): string {}
+    public function readOuterXml(): string {}
+    public function readString(): string {}
+    public function setSchema(?string $filename): bool {}
+    public function setParserProperty(int $property, bool $value): bool {}
+    public function setRelaxNGSchema(?string $filename): bool {}
+    public function setRelaxNGSchemaSource(?string $source): bool {}
+    public static function XML(string $source, ?string $encoding = NULL, int $flags = 0) {}
+    public static function fromString(string $source, ?string $encoding = NULL, int $flags = 0): static {}
+    public function expand(?\DOMNode $baseNode = NULL): \DOMNode|false {}
+}
+
+function xmlwriter_open_uri(string $uri): \XMLWriter|false {}
+
+function xmlwriter_open_memory(): \XMLWriter|false {}
+
+function xmlwriter_set_indent(\XMLWriter $writer, bool $enable): bool {}
+
+function xmlwriter_set_indent_string(\XMLWriter $writer, string $indentation): bool {}
+
+function xmlwriter_start_comment(\XMLWriter $writer): bool {}
+
+function xmlwriter_end_comment(\XMLWriter $writer): bool {}
+
+function xmlwriter_start_attribute(\XMLWriter $writer, string $name): bool {}
+
+function xmlwriter_end_attribute(\XMLWriter $writer): bool {}
+
+function xmlwriter_write_attribute(\XMLWriter $writer, string $name, string $value): bool {}
+
+function xmlwriter_start_attribute_ns(\XMLWriter $writer, ?string $prefix, string $name, ?string $namespace): bool {}
+
+function xmlwriter_write_attribute_ns(\XMLWriter $writer, ?string $prefix, string $name, ?string $namespace, string $value): bool {}
+
+function xmlwriter_start_element(\XMLWriter $writer, string $name): bool {}
+
+function xmlwriter_end_element(\XMLWriter $writer): bool {}
+
+function xmlwriter_full_end_element(\XMLWriter $writer): bool {}
+
+function xmlwriter_start_element_ns(\XMLWriter $writer, ?string $prefix, string $name, ?string $namespace): bool {}
+
+function xmlwriter_write_element(\XMLWriter $writer, string $name, ?string $content = NULL): bool {}
+
+function xmlwriter_write_element_ns(\XMLWriter $writer, ?string $prefix, string $name, ?string $namespace, ?string $content = NULL): bool {}
+
+function xmlwriter_start_pi(\XMLWriter $writer, string $target): bool {}
+
+function xmlwriter_end_pi(\XMLWriter $writer): bool {}
+
+function xmlwriter_write_pi(\XMLWriter $writer, string $target, string $content): bool {}
+
+function xmlwriter_start_cdata(\XMLWriter $writer): bool {}
+
+function xmlwriter_end_cdata(\XMLWriter $writer): bool {}
+
+function xmlwriter_write_cdata(\XMLWriter $writer, string $content): bool {}
+
+function xmlwriter_text(\XMLWriter $writer, string $content): bool {}
+
+function xmlwriter_write_raw(\XMLWriter $writer, string $content): bool {}
+
+function xmlwriter_start_document(\XMLWriter $writer, ?string $version = '1.0', ?string $encoding = NULL, ?string $standalone = NULL): bool {}
+
+function xmlwriter_end_document(\XMLWriter $writer): bool {}
+
+function xmlwriter_write_comment(\XMLWriter $writer, string $content): bool {}
+
+function xmlwriter_start_dtd(\XMLWriter $writer, string $qualifiedName, ?string $publicId = NULL, ?string $systemId = NULL): bool {}
+
+function xmlwriter_end_dtd(\XMLWriter $writer): bool {}
+
+function xmlwriter_write_dtd(\XMLWriter $writer, string $name, ?string $publicId = NULL, ?string $systemId = NULL, ?string $content = NULL): bool {}
+
+function xmlwriter_start_dtd_element(\XMLWriter $writer, string $qualifiedName): bool {}
+
+function xmlwriter_end_dtd_element(\XMLWriter $writer): bool {}
+
+function xmlwriter_write_dtd_element(\XMLWriter $writer, string $name, string $content): bool {}
+
+function xmlwriter_start_dtd_attlist(\XMLWriter $writer, string $name): bool {}
+
+function xmlwriter_end_dtd_attlist(\XMLWriter $writer): bool {}
+
+function xmlwriter_write_dtd_attlist(\XMLWriter $writer, string $name, string $content): bool {}
+
+function xmlwriter_start_dtd_entity(\XMLWriter $writer, string $name, bool $isParam): bool {}
+
+function xmlwriter_end_dtd_entity(\XMLWriter $writer): bool {}
+
+function xmlwriter_write_dtd_entity(\XMLWriter $writer, string $name, string $content, bool $isParam = false, ?string $publicId = NULL, ?string $systemId = NULL, ?string $notationData = NULL): bool {}
+
+function xmlwriter_output_memory(\XMLWriter $writer, bool $flush = true): string {}
+
+function xmlwriter_flush(\XMLWriter $writer, bool $empty = true): string|int {}
+
+class XMLWriter
+{
+    public function openUri(string $uri): bool {}
+    public static function toUri(string $uri): static {}
+    public function openMemory(): bool {}
+    public static function toMemory(): static {}
+    public static function toStream($stream): static {}
+    public function setIndent(bool $enable): bool {}
+    public function setIndentString(string $indentation): bool {}
+    public function startComment(): bool {}
+    public function endComment(): bool {}
+    public function startAttribute(string $name): bool {}
+    public function endAttribute(): bool {}
+    public function writeAttribute(string $name, string $value): bool {}
+    public function startAttributeNs(?string $prefix, string $name, ?string $namespace): bool {}
+    public function writeAttributeNs(?string $prefix, string $name, ?string $namespace, string $value): bool {}
+    public function startElement(string $name): bool {}
+    public function endElement(): bool {}
+    public function fullEndElement(): bool {}
+    public function startElementNs(?string $prefix, string $name, ?string $namespace): bool {}
+    public function writeElement(string $name, ?string $content = NULL): bool {}
+    public function writeElementNs(?string $prefix, string $name, ?string $namespace, ?string $content = NULL): bool {}
+    public function startPi(string $target): bool {}
+    public function endPi(): bool {}
+    public function writePi(string $target, string $content): bool {}
+    public function startCdata(): bool {}
+    public function endCdata(): bool {}
+    public function writeCdata(string $content): bool {}
+    public function text(string $content): bool {}
+    public function writeRaw(string $content): bool {}
+    public function startDocument(?string $version = '1.0', ?string $encoding = NULL, ?string $standalone = NULL): bool {}
+    public function endDocument(): bool {}
+    public function writeComment(string $content): bool {}
+    public function startDtd(string $qualifiedName, ?string $publicId = NULL, ?string $systemId = NULL): bool {}
+    public function endDtd(): bool {}
+    public function writeDtd(string $name, ?string $publicId = NULL, ?string $systemId = NULL, ?string $content = NULL): bool {}
+    public function startDtdElement(string $qualifiedName): bool {}
+    public function endDtdElement(): bool {}
+    public function writeDtdElement(string $name, string $content): bool {}
+    public function startDtdAttlist(string $name): bool {}
+    public function endDtdAttlist(): bool {}
+    public function writeDtdAttlist(string $name, string $content): bool {}
+    public function startDtdEntity(string $name, bool $isParam): bool {}
+    public function endDtdEntity(): bool {}
+    public function writeDtdEntity(string $name, string $content, bool $isParam = false, ?string $publicId = NULL, ?string $systemId = NULL, ?string $notationData = NULL): bool {}
+    public function outputMemory(bool $flush = true): string {}
+    public function flush(bool $empty = true): string|int {}
+}
+
+const XSL_CLONE_AUTO = 0;
+
+const XSL_CLONE_NEVER = -1;
+
+const XSL_CLONE_ALWAYS = 1;
+
+const XSL_SECPREF_NONE = 0;
+
+const XSL_SECPREF_READ_FILE = 2;
+
+const XSL_SECPREF_WRITE_FILE = 4;
+
+const XSL_SECPREF_CREATE_DIRECTORY = 8;
+
+const XSL_SECPREF_READ_NETWORK = 16;
+
+const XSL_SECPREF_WRITE_NETWORK = 32;
+
+const XSL_SECPREF_DEFAULT = 44;
+
+const LIBXSLT_VERSION = 10143;
+
+const LIBXSLT_DOTTED_VERSION = '1.1.43';
+
+const LIBEXSLT_VERSION = 824;
+
+const LIBEXSLT_DOTTED_VERSION = '0.8.24';
+
+class XSLTProcessor
+{
+    public bool $doXInclude;
+    public bool $cloneDocument;
+    public int $maxTemplateDepth;
+    public int $maxTemplateVars;
+    public function importStylesheet(object $stylesheet): bool {}
+    public function transformToDoc(object $document, ?string $returnClass = NULL): object|false {}
+    public function transformToUri(object $document, string $uri): int {}
+    public function transformToXml(object $document): string|false|null {}
+    public function setParameter(string $namespace, array|string $name, ?string $value = NULL): bool {}
+    public function getParameter(string $namespace, string $name): string|false {}
+    public function removeParameter(string $namespace, string $name): bool {}
+    public function hasExsltSupport(): bool {}
+    public function registerPHPFunctions(array|string|null $functions = NULL): void {}
+    public function registerPHPFunctionNS(string $namespaceURI, string $name, callable $callable): void {}
+    public function setProfiling(?string $filename): true {}
+    public function setSecurityPrefs(int $preferences): int {}
+    public function getSecurityPrefs(): int {}
+}
+
+function zip_open(string $filename) {}
+
+function zip_close($zip): void {}
+
+function zip_read($zip) {}
+
+function zip_entry_open($zip_dp, $zip_entry, string $mode = 'rb'): bool {}
+
+function zip_entry_close($zip_entry): bool {}
+
+function zip_entry_read($zip_entry, int $len = 1024): string|false {}
+
+function zip_entry_name($zip_entry): string|false {}
+
+function zip_entry_compressedsize($zip_entry): int|false {}
+
+function zip_entry_filesize($zip_entry): int|false {}
+
+function zip_entry_compressionmethod($zip_entry): string|false {}
+
+class ZipArchive implements \Countable
+{
+    const CREATE = null;
+    const EXCL = null;
+    const CHECKCONS = null;
+    const OVERWRITE = null;
+    const RDONLY = null;
+    const FL_NOCASE = null;
+    const FL_NODIR = null;
+    const FL_COMPRESSED = null;
+    const FL_UNCHANGED = null;
+    const FL_RECOMPRESS = null;
+    const FL_ENCRYPTED = null;
+    const FL_OVERWRITE = null;
+    const FL_LOCAL = null;
+    const FL_CENTRAL = null;
+    const FL_ENC_GUESS = null;
+    const FL_ENC_RAW = null;
+    const FL_ENC_STRICT = null;
+    const FL_ENC_UTF_8 = null;
+    const FL_ENC_CP437 = null;
+    const FL_OPEN_FILE_NOW = null;
+    const CM_DEFAULT = null;
+    const CM_STORE = null;
+    const CM_SHRINK = null;
+    const CM_REDUCE_1 = null;
+    const CM_REDUCE_2 = null;
+    const CM_REDUCE_3 = null;
+    const CM_REDUCE_4 = null;
+    const CM_IMPLODE = null;
+    const CM_DEFLATE = null;
+    const CM_DEFLATE64 = null;
+    const CM_PKWARE_IMPLODE = null;
+    const CM_BZIP2 = null;
+    const CM_LZMA = null;
+    const CM_LZMA2 = null;
+    const CM_ZSTD = null;
+    const CM_XZ = null;
+    const CM_TERSE = null;
+    const CM_LZ77 = null;
+    const CM_WAVPACK = null;
+    const CM_PPMD = null;
+    const ER_OK = null;
+    const ER_MULTIDISK = null;
+    const ER_RENAME = null;
+    const ER_CLOSE = null;
+    const ER_SEEK = null;
+    const ER_READ = null;
+    const ER_WRITE = null;
+    const ER_CRC = null;
+    const ER_ZIPCLOSED = null;
+    const ER_NOENT = null;
+    const ER_EXISTS = null;
+    const ER_OPEN = null;
+    const ER_TMPOPEN = null;
+    const ER_ZLIB = null;
+    const ER_MEMORY = null;
+    const ER_CHANGED = null;
+    const ER_COMPNOTSUPP = null;
+    const ER_EOF = null;
+    const ER_INVAL = null;
+    const ER_NOZIP = null;
+    const ER_INTERNAL = null;
+    const ER_INCONS = null;
+    const ER_REMOVE = null;
+    const ER_DELETED = null;
+    const ER_ENCRNOTSUPP = null;
+    const ER_RDONLY = null;
+    const ER_NOPASSWD = null;
+    const ER_WRONGPASSWD = null;
+    const ER_OPNOTSUPP = null;
+    const ER_INUSE = null;
+    const ER_TELL = null;
+    const ER_COMPRESSED_DATA = null;
+    const ER_CANCELLED = null;
+    const ER_DATA_LENGTH = null;
+    const ER_NOT_ALLOWED = null;
+    const ER_TRUNCATED_ZIP = null;
+    const AFL_RDONLY = null;
+    const AFL_IS_TORRENTZIP = null;
+    const AFL_WANT_TORRENTZIP = null;
+    const AFL_CREATE_OR_KEEP_FILE_FOR_EMPTY_ARCHIVE = null;
+    const OPSYS_DOS = null;
+    const OPSYS_AMIGA = null;
+    const OPSYS_OPENVMS = null;
+    const OPSYS_UNIX = null;
+    const OPSYS_VM_CMS = null;
+    const OPSYS_ATARI_ST = null;
+    const OPSYS_OS_2 = null;
+    const OPSYS_MACINTOSH = null;
+    const OPSYS_Z_SYSTEM = null;
+    const OPSYS_CPM = null;
+    const OPSYS_WINDOWS_NTFS = null;
+    const OPSYS_MVS = null;
+    const OPSYS_VSE = null;
+    const OPSYS_ACORN_RISC = null;
+    const OPSYS_VFAT = null;
+    const OPSYS_ALTERNATE_MVS = null;
+    const OPSYS_BEOS = null;
+    const OPSYS_TANDEM = null;
+    const OPSYS_OS_400 = null;
+    const OPSYS_OS_X = null;
+    const OPSYS_DEFAULT = null;
+    const EM_NONE = null;
+    const EM_TRAD_PKWARE = null;
+    const EM_AES_128 = null;
+    const EM_AES_192 = null;
+    const EM_AES_256 = null;
+    const EM_UNKNOWN = null;
+    const LIBZIP_VERSION = null;
+    const LENGTH_TO_END = null;
+    const LENGTH_UNCHECKED = null;
+    public int $lastId;
+    public int $status;
+    public int $statusSys;
+    public int $numFiles;
+    public string $filename;
+    public string $comment;
+    public function open(string $filename, int $flags = 0): int|bool {}
+    public function setPassword(string $password): bool {}
+    public function close(): bool {}
+    public function count(): int {}
+    public function getStatusString(): string {}
+    public function clearError(): void {}
+    public function addEmptyDir(string $dirname, int $flags = 0): bool {}
+    public function addFromString(string $name, string $content, int $flags = \ZipArchive::FL_OVERWRITE): bool {}
+    public function addFile(string $filepath, string $entryname = '', int $start = 0, int $length = \ZipArchive::LENGTH_TO_END, int $flags = \ZipArchive::FL_OVERWRITE): bool {}
+    public function replaceFile(string $filepath, int $index, int $start = 0, int $length = \ZipArchive::LENGTH_TO_END, int $flags = 0): bool {}
+    public function addGlob(string $pattern, int $flags = 0, array $options = []): array|false {}
+    public function addPattern(string $pattern, string $path = '.', array $options = []): array|false {}
+    public function renameIndex(int $index, string $new_name): bool {}
+    public function renameName(string $name, string $new_name): bool {}
+    public function setArchiveComment(string $comment): bool {}
+    public function getArchiveComment(int $flags = 0): string|false {}
+    public function setArchiveFlag(int $flag, int $value): bool {}
+    public function getArchiveFlag(int $flag, int $flags = 0): int {}
+    public function setCommentIndex(int $index, string $comment): bool {}
+    public function setCommentName(string $name, string $comment): bool {}
+    public function setMtimeIndex(int $index, int $timestamp, int $flags = 0): bool {}
+    public function setMtimeName(string $name, int $timestamp, int $flags = 0): bool {}
+    public function getCommentIndex(int $index, int $flags = 0): string|false {}
+    public function getCommentName(string $name, int $flags = 0): string|false {}
+    public function deleteIndex(int $index): bool {}
+    public function deleteName(string $name): bool {}
+    public function statName(string $name, int $flags = 0): array|false {}
+    public function statIndex(int $index, int $flags = 0): array|false {}
+    public function locateName(string $name, int $flags = 0): int|false {}
+    public function getNameIndex(int $index, int $flags = 0): string|false {}
+    public function unchangeArchive(): bool {}
+    public function unchangeAll(): bool {}
+    public function unchangeIndex(int $index): bool {}
+    public function unchangeName(string $name): bool {}
+    public function extractTo(string $pathto, array|string|null $files = NULL): bool {}
+    public function getFromName(string $name, int $len = 0, int $flags = 0): string|false {}
+    public function getFromIndex(int $index, int $len = 0, int $flags = 0): string|false {}
+    public function getStreamIndex(int $index, int $flags = 0) {}
+    public function getStreamName(string $name, int $flags = 0) {}
+    public function getStream(string $name) {}
+    public function setExternalAttributesName(string $name, int $opsys, int $attr, int $flags = 0): bool {}
+    public function setExternalAttributesIndex(int $index, int $opsys, int $attr, int $flags = 0): bool {}
+    public function getExternalAttributesName(string $name, &$opsys, &$attr, int $flags = 0): bool {}
+    public function getExternalAttributesIndex(int $index, &$opsys, &$attr, int $flags = 0): bool {}
+    public function setCompressionName(string $name, int $method, int $compflags = 0): bool {}
+    public function setCompressionIndex(int $index, int $method, int $compflags = 0): bool {}
+    public function setEncryptionName(string $name, int $method, ?string $password = NULL): bool {}
+    public function setEncryptionIndex(int $index, int $method, ?string $password = NULL): bool {}
+    public function registerProgressCallback(float $rate, callable $callback): bool {}
+    public function registerCancelCallback(callable $callback): bool {}
+    public static function isCompressionMethodSupported(int $method, bool $enc = true): bool {}
+    public static function isEncryptionMethodSupported(int $method, bool $enc = true): bool {}
+}
+
+function zstd_compress($data, $level = null) {}
+
+function zstd_uncompress($data) {}
+
+function zstd_decompress($data) {}
+
+function zstd_compress_dict($data, $dictBuffer, $level = null) {}
+
+function zstd_uncompress_dict($data, $dictBuffer) {}
+
+function zstd_compress_usingcdict($data, $dictBuffer, $level = null) {}
+
+function zstd_decompress_dict($data, $dictBuffer) {}
+
+function zstd_uncompress_usingcdict($data, $dictBuffer) {}
+
+function zstd_decompress_usingcdict($data, $dictBuffer) {}
+
+function ob_zstd_handler(string $data, int $flags): string|false {}
+
+const ZSTD_COMPRESS_LEVEL_MIN = 1;
+
+const ZSTD_COMPRESS_LEVEL_MAX = 22;
+
+const ZSTD_COMPRESS_LEVEL_DEFAULT = 3;
+
+const LIBZSTD_VERSION_NUMBER = 10507;
+
+const LIBZSTD_VERSION_STRING = '1.5.7';
+
 }
 
 namespace BcMath {
@@ -10056,6 +16318,15 @@ final class Number implements \Stringable
 
 }
 
+namespace Dba {
+
+final class Connection
+{
+
+}
+
+}
+
 namespace Dom {
 
 function import_simplexml(object $node): \Dom\Attr|\Dom\Element {}
@@ -10066,8 +16337,6 @@ enum AdjacentPosition implements \BackedEnum, \UnitEnum
     case AfterBegin;
     case BeforeEnd;
     case AfterEnd;
-    public string $name;
-    public string $value;
 }
 
 interface ParentNode
@@ -10440,6 +16709,1063 @@ final class TokenList implements \IteratorAggregate, \Traversable, \Countable
 
 }
 
+namespace FFI {
+
+class Exception extends \Error
+{
+
+}
+
+final class ParserException extends \FFI\Exception
+{
+
+}
+
+final class CData
+{
+
+}
+
+final class CType
+{
+    const TYPE_VOID = null;
+    const TYPE_FLOAT = null;
+    const TYPE_DOUBLE = null;
+    const TYPE_LONGDOUBLE = null;
+    const TYPE_UINT8 = null;
+    const TYPE_SINT8 = null;
+    const TYPE_UINT16 = null;
+    const TYPE_SINT16 = null;
+    const TYPE_UINT32 = null;
+    const TYPE_SINT32 = null;
+    const TYPE_UINT64 = null;
+    const TYPE_SINT64 = null;
+    const TYPE_ENUM = null;
+    const TYPE_BOOL = null;
+    const TYPE_CHAR = null;
+    const TYPE_POINTER = null;
+    const TYPE_FUNC = null;
+    const TYPE_ARRAY = null;
+    const TYPE_STRUCT = null;
+    const ATTR_CONST = null;
+    const ATTR_INCOMPLETE_TAG = null;
+    const ATTR_VARIADIC = null;
+    const ATTR_INCOMPLETE_ARRAY = null;
+    const ATTR_VLA = null;
+    const ATTR_UNION = null;
+    const ATTR_PACKED = null;
+    const ATTR_MS_STRUCT = null;
+    const ATTR_GCC_STRUCT = null;
+    const ABI_DEFAULT = null;
+    const ABI_CDECL = null;
+    const ABI_FASTCALL = null;
+    const ABI_THISCALL = null;
+    const ABI_STDCALL = null;
+    const ABI_PASCAL = null;
+    const ABI_REGISTER = null;
+    const ABI_MS = null;
+    const ABI_SYSV = null;
+    const ABI_VECTORCALL = null;
+    public function getName(): string {}
+    public function getKind(): int {}
+    public function getSize(): int {}
+    public function getAlignment(): int {}
+    public function getAttributes(): int {}
+    public function getEnumKind(): int {}
+    public function getArrayElementType(): \FFI\CType {}
+    public function getArrayLength(): int {}
+    public function getPointerType(): \FFI\CType {}
+    public function getStructFieldNames(): array {}
+    public function getStructFieldOffset(string $name): int {}
+    public function getStructFieldType(string $name): \FFI\CType {}
+    public function getFuncABI(): int {}
+    public function getFuncReturnType(): \FFI\CType {}
+    public function getFuncParameterCount(): int {}
+    public function getFuncParameterType(int $index): \FFI\CType {}
+}
+
+}
+
+namespace FTP {
+
+final class Connection
+{
+
+}
+
+}
+
+namespace IMAP {
+
+final class Connection
+{
+
+}
+
+}
+
+namespace LDAP {
+
+final class Connection
+{
+
+}
+
+final class Result
+{
+
+}
+
+final class ResultEntry
+{
+
+}
+
+}
+
+namespace MongoDB\BSON {
+
+function fromJSON(string $json): string {}
+
+function fromPHP(object|array $value): string {}
+
+function toCanonicalExtendedJSON(string $bson): string {}
+
+function toJSON(string $bson): string {}
+
+function toPHP(string $bson, ?array $typemap = NULL): object|array {}
+
+function toRelaxedExtendedJSON(string $bson): string {}
+
+interface Type
+{
+
+}
+
+interface Serializable extends \MongoDB\BSON\Type
+{
+    public function bsonSerialize(): \stdClass|\MongoDB\BSON\Document|\MongoDB\BSON\PackedArray|array;
+}
+
+interface Unserializable
+{
+    public function bsonUnserialize(array $data): void;
+}
+
+interface BinaryInterface extends \Stringable
+{
+    public function getData(): string;
+    public function getType(): int;
+    public function __toString(): string;
+}
+
+interface Decimal128Interface extends \Stringable
+{
+    public function __toString(): string;
+}
+
+interface JavascriptInterface extends \Stringable
+{
+    public function getCode(): string;
+    public function getScope(): ?object;
+    public function __toString(): string;
+}
+
+interface MaxKeyInterface
+{
+
+}
+
+interface MinKeyInterface
+{
+
+}
+
+interface ObjectIdInterface extends \Stringable
+{
+    public function getTimestamp(): int;
+    public function __toString(): string;
+}
+
+interface RegexInterface extends \Stringable
+{
+    public function getPattern(): string;
+    public function getFlags(): string;
+    public function __toString(): string;
+}
+
+interface TimestampInterface extends \Stringable
+{
+    public function getTimestamp(): int;
+    public function getIncrement(): int;
+    public function __toString(): string;
+}
+
+interface UTCDateTimeInterface extends \Stringable
+{
+    public function toDateTime(): \DateTime;
+    public function __toString(): string;
+}
+
+final class Iterator implements \Iterator, \Traversable
+{
+    public function current(): mixed {}
+    public function key(): string|int {}
+    public function next(): void {}
+    public function rewind(): void {}
+    public function valid(): bool {}
+}
+
+final class PackedArray implements \Stringable, \IteratorAggregate, \Traversable, \Serializable, \ArrayAccess, \MongoDB\BSON\Type
+{
+    public static function fromJSON(string $json): \MongoDB\BSON\PackedArray {}
+    public static function fromPHP(array $value): \MongoDB\BSON\PackedArray {}
+    public function get(int $index): mixed {}
+    public function getIterator(): \MongoDB\BSON\Iterator {}
+    public function has(int $index): bool {}
+    public function toPHP(?array $typeMap = NULL): object|array {}
+    public function toCanonicalExtendedJSON(): string {}
+    public function toRelaxedExtendedJSON(): string {}
+    public function offsetExists(mixed $offset): bool {}
+    public function offsetGet(mixed $offset): mixed {}
+    public function offsetSet(mixed $offset, mixed $value): void {}
+    public function offsetUnset(mixed $offset): void {}
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\PackedArray {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+}
+
+final class Document implements \Stringable, \IteratorAggregate, \Traversable, \Serializable, \ArrayAccess, \MongoDB\BSON\Type
+{
+    public static function fromBSON(string $bson): \MongoDB\BSON\Document {}
+    public static function fromJSON(string $json): \MongoDB\BSON\Document {}
+    public static function fromPHP(object|array $value): \MongoDB\BSON\Document {}
+    public function get(string $key): mixed {}
+    public function getIterator(): \MongoDB\BSON\Iterator {}
+    public function has(string $key): bool {}
+    public function toPHP(?array $typeMap = NULL): object|array {}
+    public function toCanonicalExtendedJSON(): string {}
+    public function toRelaxedExtendedJSON(): string {}
+    public function offsetExists(mixed $offset): bool {}
+    public function offsetGet(mixed $offset): mixed {}
+    public function offsetSet(mixed $offset, mixed $value): void {}
+    public function offsetUnset(mixed $offset): void {}
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Document {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+}
+
+final class Binary implements \Stringable, \MongoDB\BSON\BinaryInterface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    const TYPE_GENERIC = null;
+    const TYPE_FUNCTION = null;
+    const TYPE_OLD_BINARY = null;
+    const TYPE_OLD_UUID = null;
+    const TYPE_UUID = null;
+    const TYPE_MD5 = null;
+    const TYPE_ENCRYPTED = null;
+    const TYPE_COLUMN = null;
+    const TYPE_SENSITIVE = null;
+    const TYPE_USER_DEFINED = null;
+    public function __construct(string $data, int $type = \MongoDB\BSON\Binary::TYPE_GENERIC) {}
+    public function getData(): string {}
+    public function getType(): int {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Binary {}
+    public function __toString(): string {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class DBPointer implements \Stringable, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public static function __set_state(array $properties): \MongoDB\BSON\DBPointer {}
+    public function __toString(): string {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class Decimal128 implements \Stringable, \MongoDB\BSON\Decimal128Interface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __construct(string $value) {}
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Decimal128 {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class Int64 implements \Stringable, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __construct(string|int $value) {}
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Int64 {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class Javascript implements \Stringable, \MongoDB\BSON\JavascriptInterface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __construct(string $code, object|array|null $scope = NULL) {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Javascript {}
+    public function getCode(): string {}
+    public function getScope(): ?object {}
+    public function __toString(): string {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class MaxKey implements \MongoDB\BSON\MaxKeyInterface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public static function __set_state(array $properties): \MongoDB\BSON\MaxKey {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class MinKey implements \MongoDB\BSON\MinKeyInterface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public static function __set_state(array $properties): \MongoDB\BSON\MinKey {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class ObjectId implements \Stringable, \MongoDB\BSON\ObjectIdInterface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __construct(?string $id = NULL) {}
+    public function getTimestamp(): int {}
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\ObjectId {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+interface Persistable extends \MongoDB\BSON\Serializable, \MongoDB\BSON\Type, \MongoDB\BSON\Unserializable
+{
+    public function bsonSerialize(): \stdClass|\MongoDB\BSON\Document|array;
+}
+
+final class Regex implements \Stringable, \MongoDB\BSON\RegexInterface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __construct(string $pattern, string $flags = '') {}
+    public function getPattern(): string {}
+    public function getFlags(): string {}
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Regex {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class Symbol implements \Stringable, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Symbol {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class Timestamp implements \Stringable, \MongoDB\BSON\TimestampInterface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __construct(string|int $increment, string|int $timestamp) {}
+    public function getTimestamp(): int {}
+    public function getIncrement(): int {}
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Timestamp {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class Undefined implements \Stringable, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\Undefined {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+final class UTCDateTime implements \Stringable, \MongoDB\BSON\UTCDateTimeInterface, \JsonSerializable, \MongoDB\BSON\Type, \Serializable
+{
+    public function __construct(\DateTimeInterface|\MongoDB\BSON\Int64|string|int|float|null $milliseconds = NULL) {}
+    public function toDateTime(): \DateTime {}
+    public function toDateTimeImmutable(): \DateTimeImmutable {}
+    public function __toString(): string {}
+    public static function __set_state(array $properties): \MongoDB\BSON\UTCDateTime {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+    public function jsonSerialize(): mixed {}
+}
+
+}
+
+namespace MongoDB\Driver {
+
+interface CursorInterface extends \Traversable
+{
+    public function getId(): \MongoDB\Driver\CursorId|\MongoDB\BSON\Int64;
+    public function getServer(): \MongoDB\Driver\Server;
+    public function isDead(): bool;
+    public function setTypeMap(array $typemap): void;
+    public function toArray(): array;
+}
+
+final class BulkWrite implements \Countable
+{
+    public function __construct(?array $options = NULL) {}
+    public function count(): int {}
+    public function delete(object|array $filter, ?array $deleteOptions = NULL): void {}
+    public function insert(object|array $document): mixed {}
+    public function update(object|array $filter, object|array $newObj, ?array $updateOptions = NULL): void {}
+}
+
+final class ClientEncryption
+{
+    const AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC = null;
+    const AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM = null;
+    const ALGORITHM_INDEXED = null;
+    const ALGORITHM_UNINDEXED = null;
+    const ALGORITHM_RANGE = null;
+    const ALGORITHM_RANGE_PREVIEW = null;
+    const QUERY_TYPE_EQUALITY = null;
+    const QUERY_TYPE_RANGE = null;
+    const QUERY_TYPE_RANGE_PREVIEW = null;
+    public function __construct(array $options) {}
+    public function addKeyAltName(\MongoDB\BSON\Binary $keyId, string $keyAltName): ?object {}
+    public function createDataKey(string $kmsProvider, ?array $options = NULL): \MongoDB\BSON\Binary {}
+    public function decrypt(\MongoDB\BSON\Binary $value): mixed {}
+    public function deleteKey(\MongoDB\BSON\Binary $keyId): object {}
+    public function encrypt(mixed $value, ?array $options = NULL): \MongoDB\BSON\Binary {}
+    public function encryptExpression(object|array $expr, ?array $options = NULL): object {}
+    public function getKey(\MongoDB\BSON\Binary $keyId): ?object {}
+    public function getKeyByAltName(string $keyAltName): ?object {}
+    public function getKeys(): \MongoDB\Driver\Cursor {}
+    public function removeKeyAltName(\MongoDB\BSON\Binary $keyId, string $keyAltName): ?object {}
+    public function rewrapManyDataKey(object|array $filter, ?array $options = NULL): object {}
+}
+
+final class Command
+{
+    public function __construct(object|array $document, ?array $commandOptions = NULL) {}
+}
+
+final class Cursor implements \Iterator, \Traversable, \MongoDB\Driver\CursorInterface
+{
+    public function current(): object|array|null {}
+    public function getId(bool $asInt64 = false): \MongoDB\Driver\CursorId|\MongoDB\BSON\Int64 {}
+    public function getServer(): \MongoDB\Driver\Server {}
+    public function isDead(): bool {}
+    public function key(): ?int {}
+    public function next(): void {}
+    public function rewind(): void {}
+    public function setTypeMap(array $typemap): void {}
+    public function toArray(): array {}
+    public function valid(): bool {}
+}
+
+final class CursorId implements \Stringable, \Serializable
+{
+    public static function __set_state(array $properties): \MongoDB\Driver\CursorId {}
+    public function __toString(): string {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+}
+
+final class Manager
+{
+    public function __construct(?string $uri = NULL, ?array $uriOptions = NULL, ?array $driverOptions = NULL) {}
+    public function addSubscriber(\MongoDB\Driver\Monitoring\Subscriber $subscriber): void {}
+    public function createClientEncryption(array $options): \MongoDB\Driver\ClientEncryption {}
+    public function executeBulkWrite(string $namespace, \MongoDB\Driver\BulkWrite $bulk, \MongoDB\Driver\WriteConcern|array|null $options = NULL): \MongoDB\Driver\WriteResult {}
+    public function executeCommand(string $db, \MongoDB\Driver\Command $command, \MongoDB\Driver\ReadPreference|array|null $options = NULL): \MongoDB\Driver\Cursor {}
+    public function executeQuery(string $namespace, \MongoDB\Driver\Query $query, \MongoDB\Driver\ReadPreference|array|null $options = NULL): \MongoDB\Driver\Cursor {}
+    public function executeReadCommand(string $db, \MongoDB\Driver\Command $command, ?array $options = NULL): \MongoDB\Driver\Cursor {}
+    public function executeReadWriteCommand(string $db, \MongoDB\Driver\Command $command, ?array $options = NULL): \MongoDB\Driver\Cursor {}
+    public function executeWriteCommand(string $db, \MongoDB\Driver\Command $command, ?array $options = NULL): \MongoDB\Driver\Cursor {}
+    public function getEncryptedFieldsMap(): object|array|null {}
+    public function getReadConcern(): \MongoDB\Driver\ReadConcern {}
+    public function getReadPreference(): \MongoDB\Driver\ReadPreference {}
+    public function getServers(): array {}
+    public function getWriteConcern(): \MongoDB\Driver\WriteConcern {}
+    public function removeSubscriber(\MongoDB\Driver\Monitoring\Subscriber $subscriber): void {}
+    public function selectServer(?\MongoDB\Driver\ReadPreference $readPreference = NULL): \MongoDB\Driver\Server {}
+    public function startSession(?array $options = NULL): \MongoDB\Driver\Session {}
+}
+
+final class Query
+{
+    public function __construct(object|array $filter, ?array $queryOptions = NULL) {}
+}
+
+final class ReadConcern implements \MongoDB\BSON\Serializable, \MongoDB\BSON\Type, \Serializable
+{
+    const LINEARIZABLE = null;
+    const LOCAL = null;
+    const MAJORITY = null;
+    const AVAILABLE = null;
+    const SNAPSHOT = null;
+    public function __construct(?string $level = NULL) {}
+    public function getLevel(): ?string {}
+    public function isDefault(): bool {}
+    public static function __set_state(array $properties): \MongoDB\Driver\ReadConcern {}
+    public function bsonSerialize(): \stdClass {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+}
+
+final class ReadPreference implements \MongoDB\BSON\Serializable, \MongoDB\BSON\Type, \Serializable
+{
+    const RP_PRIMARY = null;
+    const RP_PRIMARY_PREFERRED = null;
+    const RP_SECONDARY = null;
+    const RP_SECONDARY_PREFERRED = null;
+    const RP_NEAREST = null;
+    const PRIMARY = null;
+    const PRIMARY_PREFERRED = null;
+    const SECONDARY = null;
+    const SECONDARY_PREFERRED = null;
+    const NEAREST = null;
+    const NO_MAX_STALENESS = null;
+    const SMALLEST_MAX_STALENESS_SECONDS = null;
+    public function __construct(string|int $mode, ?array $tagSets = NULL, ?array $options = NULL) {}
+    public function getHedge(): ?object {}
+    public function getMaxStalenessSeconds(): int {}
+    public function getMode(): int {}
+    public function getModeString(): string {}
+    public function getTagSets(): array {}
+    public static function __set_state(array $properties): \MongoDB\Driver\ReadPreference {}
+    public function bsonSerialize(): \stdClass {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+}
+
+final class Server
+{
+    const TYPE_UNKNOWN = null;
+    const TYPE_STANDALONE = null;
+    const TYPE_MONGOS = null;
+    const TYPE_POSSIBLE_PRIMARY = null;
+    const TYPE_RS_PRIMARY = null;
+    const TYPE_RS_SECONDARY = null;
+    const TYPE_RS_ARBITER = null;
+    const TYPE_RS_OTHER = null;
+    const TYPE_RS_GHOST = null;
+    const TYPE_LOAD_BALANCER = null;
+    public function executeBulkWrite(string $namespace, \MongoDB\Driver\BulkWrite $bulkWrite, \MongoDB\Driver\WriteConcern|array|null $options = NULL): \MongoDB\Driver\WriteResult {}
+    public function executeCommand(string $db, \MongoDB\Driver\Command $command, \MongoDB\Driver\ReadPreference|array|null $options = NULL): \MongoDB\Driver\Cursor {}
+    public function executeQuery(string $namespace, \MongoDB\Driver\Query $query, \MongoDB\Driver\ReadPreference|array|null $options = NULL): \MongoDB\Driver\Cursor {}
+    public function executeReadCommand(string $db, \MongoDB\Driver\Command $command, ?array $options = NULL): \MongoDB\Driver\Cursor {}
+    public function executeReadWriteCommand(string $db, \MongoDB\Driver\Command $command, ?array $options = NULL): \MongoDB\Driver\Cursor {}
+    public function executeWriteCommand(string $db, \MongoDB\Driver\Command $command, ?array $options = NULL): \MongoDB\Driver\Cursor {}
+    public function getHost(): string {}
+    public function getInfo(): array {}
+    public function getLatency(): ?int {}
+    public function getPort(): int {}
+    public function getServerDescription(): \MongoDB\Driver\ServerDescription {}
+    public function getTags(): array {}
+    public function getType(): int {}
+    public function isArbiter(): bool {}
+    public function isHidden(): bool {}
+    public function isPassive(): bool {}
+    public function isPrimary(): bool {}
+    public function isSecondary(): bool {}
+}
+
+final class ServerApi implements \MongoDB\BSON\Serializable, \MongoDB\BSON\Type, \Serializable
+{
+    const V1 = null;
+    public function __construct(string $version, ?bool $strict = NULL, ?bool $deprecationErrors = NULL) {}
+    public static function __set_state(array $properties): \MongoDB\Driver\ServerApi {}
+    public function bsonSerialize(): \stdClass {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+}
+
+final class ServerDescription
+{
+    const TYPE_UNKNOWN = null;
+    const TYPE_STANDALONE = null;
+    const TYPE_MONGOS = null;
+    const TYPE_POSSIBLE_PRIMARY = null;
+    const TYPE_RS_PRIMARY = null;
+    const TYPE_RS_SECONDARY = null;
+    const TYPE_RS_ARBITER = null;
+    const TYPE_RS_OTHER = null;
+    const TYPE_RS_GHOST = null;
+    const TYPE_LOAD_BALANCER = null;
+    public function getHelloResponse(): array {}
+    public function getHost(): string {}
+    public function getLastUpdateTime(): int {}
+    public function getPort(): int {}
+    public function getRoundTripTime(): ?int {}
+    public function getType(): string {}
+}
+
+final class TopologyDescription
+{
+    const TYPE_UNKNOWN = null;
+    const TYPE_SINGLE = null;
+    const TYPE_SHARDED = null;
+    const TYPE_REPLICA_SET_NO_PRIMARY = null;
+    const TYPE_REPLICA_SET_WITH_PRIMARY = null;
+    const TYPE_LOAD_BALANCED = null;
+    public function getServers(): array {}
+    public function getType(): string {}
+    public function hasReadableServer(?\MongoDB\Driver\ReadPreference $readPreference = NULL): bool {}
+    public function hasWritableServer(): bool {}
+}
+
+final class Session
+{
+    const TRANSACTION_NONE = null;
+    const TRANSACTION_STARTING = null;
+    const TRANSACTION_IN_PROGRESS = null;
+    const TRANSACTION_COMMITTED = null;
+    const TRANSACTION_ABORTED = null;
+    public function abortTransaction(): void {}
+    public function advanceClusterTime(object|array $clusterTime): void {}
+    public function advanceOperationTime(\MongoDB\BSON\TimestampInterface $operationTime): void {}
+    public function commitTransaction(): void {}
+    public function endSession(): void {}
+    public function getClusterTime(): ?object {}
+    public function getLogicalSessionId(): object {}
+    public function getOperationTime(): ?\MongoDB\BSON\Timestamp {}
+    public function getServer(): ?\MongoDB\Driver\Server {}
+    public function getTransactionOptions(): ?array {}
+    public function getTransactionState(): string {}
+    public function isDirty(): bool {}
+    public function isInTransaction(): bool {}
+    public function startTransaction(?array $options = NULL): void {}
+}
+
+final class WriteConcern implements \MongoDB\BSON\Serializable, \MongoDB\BSON\Type, \Serializable
+{
+    const MAJORITY = null;
+    public function __construct(string|int $w, ?int $wtimeout = NULL, ?bool $journal = NULL) {}
+    public function getJournal(): ?bool {}
+    public function getW(): string|int|null {}
+    public function getWtimeout(): int {}
+    public function isDefault(): bool {}
+    public static function __set_state(array $properties): \MongoDB\Driver\WriteConcern {}
+    public function bsonSerialize(): \stdClass {}
+    public function serialize(): string {}
+    public function unserialize(string $data): void {}
+    public function __unserialize(array $data): void {}
+    public function __serialize(): array {}
+}
+
+final class WriteConcernError
+{
+    public function getCode(): int {}
+    public function getInfo(): ?object {}
+    public function getMessage(): string {}
+}
+
+final class WriteError
+{
+    public function getCode(): int {}
+    public function getIndex(): int {}
+    public function getInfo(): ?object {}
+    public function getMessage(): string {}
+}
+
+final class WriteResult
+{
+    public function getInsertedCount(): ?int {}
+    public function getMatchedCount(): ?int {}
+    public function getModifiedCount(): ?int {}
+    public function getDeletedCount(): ?int {}
+    public function getUpsertedCount(): ?int {}
+    public function getServer(): \MongoDB\Driver\Server {}
+    public function getUpsertedIds(): array {}
+    public function getWriteConcernError(): ?\MongoDB\Driver\WriteConcernError {}
+    public function getWriteErrors(): array {}
+    public function getErrorReplies(): array {}
+    public function isAcknowledged(): bool {}
+}
+
+}
+
+namespace MongoDB\Driver\Exception {
+
+interface Exception extends \Throwable, \Stringable
+{
+
+}
+
+class RuntimeException extends \RuntimeException implements \MongoDB\Driver\Exception\Exception
+{
+    protected $errorLabels;
+    public function hasErrorLabel(string $errorLabel): bool {}
+}
+
+class ServerException extends \MongoDB\Driver\Exception\RuntimeException
+{
+
+}
+
+class ConnectionException extends \MongoDB\Driver\Exception\RuntimeException
+{
+
+}
+
+abstract class WriteException extends \MongoDB\Driver\Exception\ServerException
+{
+    protected $writeResult;
+    public function getWriteResult(): \MongoDB\Driver\WriteResult {}
+}
+
+class AuthenticationException extends \MongoDB\Driver\Exception\ConnectionException
+{
+
+}
+
+class BulkWriteException extends \MongoDB\Driver\Exception\WriteException
+{
+
+}
+
+class CommandException extends \MongoDB\Driver\Exception\ServerException
+{
+    protected $resultDocument;
+    public function getResultDocument(): object {}
+}
+
+final class ConnectionTimeoutException extends \MongoDB\Driver\Exception\ConnectionException
+{
+
+}
+
+class EncryptionException extends \MongoDB\Driver\Exception\RuntimeException
+{
+
+}
+
+final class ExecutionTimeoutException extends \MongoDB\Driver\Exception\ServerException
+{
+
+}
+
+class InvalidArgumentException extends \InvalidArgumentException implements \MongoDB\Driver\Exception\Exception
+{
+
+}
+
+class LogicException extends \LogicException implements \MongoDB\Driver\Exception\Exception
+{
+
+}
+
+final class SSLConnectionException extends \MongoDB\Driver\Exception\ConnectionException
+{
+
+}
+
+class UnexpectedValueException extends \UnexpectedValueException implements \MongoDB\Driver\Exception\Exception
+{
+
+}
+
+}
+
+namespace MongoDB\Driver\Monitoring {
+
+function addSubscriber(\MongoDB\Driver\Monitoring\Subscriber $subscriber): void {}
+
+function mongoc_log(int $level, string $domain, string $message): void {}
+
+function removeSubscriber(\MongoDB\Driver\Monitoring\Subscriber $subscriber): void {}
+
+interface Subscriber
+{
+
+}
+
+interface CommandSubscriber extends \MongoDB\Driver\Monitoring\Subscriber
+{
+    public function commandStarted(\MongoDB\Driver\Monitoring\CommandStartedEvent $event): void;
+    public function commandSucceeded(\MongoDB\Driver\Monitoring\CommandSucceededEvent $event): void;
+    public function commandFailed(\MongoDB\Driver\Monitoring\CommandFailedEvent $event): void;
+}
+
+final class CommandFailedEvent
+{
+    public function getCommandName(): string {}
+    public function getDatabaseName(): string {}
+    public function getDurationMicros(): int {}
+    public function getError(): \Exception {}
+    public function getHost(): string {}
+    public function getOperationId(): string {}
+    public function getPort(): int {}
+    public function getReply(): object {}
+    public function getRequestId(): string {}
+    public function getServer(): \MongoDB\Driver\Server {}
+    public function getServiceId(): ?\MongoDB\BSON\ObjectId {}
+    public function getServerConnectionId(): ?int {}
+}
+
+final class CommandStartedEvent
+{
+    public function getCommand(): object {}
+    public function getCommandName(): string {}
+    public function getDatabaseName(): string {}
+    public function getHost(): string {}
+    public function getOperationId(): string {}
+    public function getPort(): int {}
+    public function getRequestId(): string {}
+    public function getServer(): \MongoDB\Driver\Server {}
+    public function getServiceId(): ?\MongoDB\BSON\ObjectId {}
+    public function getServerConnectionId(): ?int {}
+}
+
+final class CommandSucceededEvent
+{
+    public function getCommandName(): string {}
+    public function getDatabaseName(): string {}
+    public function getDurationMicros(): int {}
+    public function getHost(): string {}
+    public function getOperationId(): string {}
+    public function getPort(): int {}
+    public function getReply(): object {}
+    public function getRequestId(): string {}
+    public function getServer(): \MongoDB\Driver\Server {}
+    public function getServiceId(): ?\MongoDB\BSON\ObjectId {}
+    public function getServerConnectionId(): ?int {}
+}
+
+interface LogSubscriber extends \MongoDB\Driver\Monitoring\Subscriber
+{
+    const LEVEL_ERROR = null;
+    const LEVEL_CRITICAL = null;
+    const LEVEL_WARNING = null;
+    const LEVEL_MESSAGE = null;
+    const LEVEL_INFO = null;
+    const LEVEL_DEBUG = null;
+    public function log(int $level, string $domain, string $message): void;
+}
+
+interface SDAMSubscriber extends \MongoDB\Driver\Monitoring\Subscriber
+{
+    public function serverChanged(\MongoDB\Driver\Monitoring\ServerChangedEvent $event): void;
+    public function serverClosed(\MongoDB\Driver\Monitoring\ServerClosedEvent $event): void;
+    public function serverOpening(\MongoDB\Driver\Monitoring\ServerOpeningEvent $event): void;
+    public function serverHeartbeatFailed(\MongoDB\Driver\Monitoring\ServerHeartbeatFailedEvent $event): void;
+    public function serverHeartbeatStarted(\MongoDB\Driver\Monitoring\ServerHeartbeatStartedEvent $event): void;
+    public function serverHeartbeatSucceeded(\MongoDB\Driver\Monitoring\ServerHeartbeatSucceededEvent $event): void;
+    public function topologyChanged(\MongoDB\Driver\Monitoring\TopologyChangedEvent $event): void;
+    public function topologyClosed(\MongoDB\Driver\Monitoring\TopologyClosedEvent $event): void;
+    public function topologyOpening(\MongoDB\Driver\Monitoring\TopologyOpeningEvent $event): void;
+}
+
+final class ServerChangedEvent
+{
+    public function getPort(): int {}
+    public function getHost(): string {}
+    public function getNewDescription(): \MongoDB\Driver\ServerDescription {}
+    public function getPreviousDescription(): \MongoDB\Driver\ServerDescription {}
+    public function getTopologyId(): \MongoDB\BSON\ObjectId {}
+}
+
+final class ServerClosedEvent
+{
+    public function getPort(): int {}
+    public function getHost(): string {}
+    public function getTopologyId(): \MongoDB\BSON\ObjectId {}
+}
+
+final class ServerHeartbeatFailedEvent
+{
+    public function getDurationMicros(): int {}
+    public function getError(): \Exception {}
+    public function getPort(): int {}
+    public function getHost(): string {}
+    public function isAwaited(): bool {}
+}
+
+final class ServerHeartbeatStartedEvent
+{
+    public function getPort(): int {}
+    public function getHost(): string {}
+    public function isAwaited(): bool {}
+}
+
+final class ServerHeartbeatSucceededEvent
+{
+    public function getDurationMicros(): int {}
+    public function getReply(): object {}
+    public function getPort(): int {}
+    public function getHost(): string {}
+    public function isAwaited(): bool {}
+}
+
+final class ServerOpeningEvent
+{
+    public function getPort(): int {}
+    public function getHost(): string {}
+    public function getTopologyId(): \MongoDB\BSON\ObjectId {}
+}
+
+final class TopologyChangedEvent
+{
+    public function getNewDescription(): \MongoDB\Driver\TopologyDescription {}
+    public function getPreviousDescription(): \MongoDB\Driver\TopologyDescription {}
+    public function getTopologyId(): \MongoDB\BSON\ObjectId {}
+}
+
+final class TopologyClosedEvent
+{
+    public function getTopologyId(): \MongoDB\BSON\ObjectId {}
+}
+
+final class TopologyOpeningEvent
+{
+    public function getTopologyId(): \MongoDB\BSON\ObjectId {}
+}
+
+}
+
+namespace Pcntl {
+
+enum QosClass implements \UnitEnum
+{
+    case UserInteractive;
+    case UserInitiated;
+    case Default;
+    case Utility;
+    case Background;
+}
+
+}
+
+namespace Pdo {
+
+class Mysql extends \PDO
+{
+    const ATTR_USE_BUFFERED_QUERY = null;
+    const ATTR_LOCAL_INFILE = null;
+    const ATTR_INIT_COMMAND = null;
+    const ATTR_COMPRESS = null;
+    const ATTR_DIRECT_QUERY = null;
+    const ATTR_FOUND_ROWS = null;
+    const ATTR_IGNORE_SPACE = null;
+    const ATTR_SSL_KEY = null;
+    const ATTR_SSL_CERT = null;
+    const ATTR_SSL_CA = null;
+    const ATTR_SSL_CAPATH = null;
+    const ATTR_SSL_CIPHER = null;
+    const ATTR_SERVER_PUBLIC_KEY = null;
+    const ATTR_MULTI_STATEMENTS = null;
+    const ATTR_SSL_VERIFY_SERVER_CERT = null;
+    const ATTR_LOCAL_INFILE_DIRECTORY = null;
+    public function getWarningCount(): int {}
+}
+
+class Pgsql extends \PDO
+{
+    const ATTR_DISABLE_PREPARES = null;
+    const ATTR_RESULT_MEMORY_SIZE = null;
+    const TRANSACTION_IDLE = null;
+    const TRANSACTION_ACTIVE = null;
+    const TRANSACTION_INTRANS = null;
+    const TRANSACTION_INERROR = null;
+    const TRANSACTION_UNKNOWN = null;
+    public function escapeIdentifier(string $input): string {}
+    public function copyFromArray(string $tableName, array $rows, string $separator = '	', string $nullAs = '\\\\N', ?string $fields = NULL): bool {}
+    public function copyFromFile(string $tableName, string $filename, string $separator = '	', string $nullAs = '\\\\N', ?string $fields = NULL): bool {}
+    public function copyToArray(string $tableName, string $separator = '	', string $nullAs = '\\\\N', ?string $fields = NULL): array|false {}
+    public function copyToFile(string $tableName, string $filename, string $separator = '	', string $nullAs = '\\\\N', ?string $fields = NULL): bool {}
+    public function lobCreate(): string|false {}
+    public function lobOpen(string $oid, string $mode = 'rb') {}
+    public function lobUnlink(string $oid): bool {}
+    public function getNotify(int $fetchMode = \PDO::FETCH_DEFAULT, int $timeoutMilliseconds = 0): array|false {}
+    public function getPid(): int {}
+    public function setNoticeCallback(?callable $callback): void {}
+}
+
+class Sqlite extends \PDO
+{
+    const DETERMINISTIC = null;
+    const OPEN_READONLY = null;
+    const OPEN_READWRITE = null;
+    const OPEN_CREATE = null;
+    const ATTR_OPEN_FLAGS = null;
+    const ATTR_READONLY_STATEMENT = null;
+    const ATTR_EXTENDED_RESULT_CODES = null;
+    public function createAggregate(string $name, callable $step, callable $finalize, int $numArgs = -1): bool {}
+    public function createCollation(string $name, callable $callback): bool {}
+    public function createFunction(string $function_name, callable $callback, int $num_args = -1, int $flags = 0): bool {}
+    public function loadExtension(string $name): void {}
+    public function openBlob(string $table, string $column, int $rowid, ?string $dbname = 'main', int $flags = \Pdo\Sqlite::OPEN_READONLY) {}
+}
+
+}
+
+namespace PgSql {
+
+final class Connection
+{
+
+}
+
+final class Result
+{
+
+}
+
+final class Lob
+{
+
+}
+
+}
+
 namespace Random {
 
 interface Engine
@@ -10490,7 +17816,6 @@ enum IntervalBoundary implements \UnitEnum
     case ClosedClosed;
     case OpenClosed;
     case OpenOpen;
-    public string $name;
 }
 
 }
@@ -10531,5 +17856,41 @@ final class Secure implements \Random\CryptoSafeEngine, \Random\Engine
 {
     public function generate(): string {}
 }
+
+}
+
+namespace Soap {
+
+final class Url
+{
+
+}
+
+final class Sdl
+{
+
+}
+
+}
+
+namespace Zstd {
+
+function compress($data, $level = null) {}
+
+function uncompress($data) {}
+
+function decompress($data) {}
+
+function compress_dict($data, $dictBuffer, $level = null) {}
+
+function compress_usingcdict($data, $dictBuffer, $level = null) {}
+
+function uncompress_dict($data, $dictBuffer) {}
+
+function decompress_dict($data, $dictBuffer) {}
+
+function uncompress_usingcdict($data, $dictBuffer) {}
+
+function decompress_usingcdict($data, $dictBuffer) {}
 
 }

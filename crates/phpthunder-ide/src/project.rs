@@ -101,6 +101,14 @@ impl FileTree {
         self.expanded.insert(dir.to_path_buf());
     }
 
+    /// Rereads `dir` if it is loaded, after files in it were created or
+    /// renamed (e.g. by a class rename).
+    pub fn refresh(&mut self, dir: &Path) {
+        if self.children.contains_key(dir) {
+            self.children.insert(dir.to_path_buf(), read_dir(dir));
+        }
+    }
+
     /// Collapses `dir` if expanded, otherwise expands it, re-reading it from disk.
     ///
     /// Called when a directory row is clicked in the sidebar.
