@@ -44,6 +44,8 @@ fn code_name(code: &Code) -> &'static str {
         Code::UnusedVariable(_) => "unused-variable",
         Code::MissingReturn(_) => "missing-return",
         Code::ReturnTypeMismatch { .. } => "return-type-mismatch",
+        Code::UnknownLaravelKey { .. } => "unknown-laravel-key",
+        Code::SimplifyOrderBy => "simplify-order-by",
         Code::External(_) => "external",
     }
 }

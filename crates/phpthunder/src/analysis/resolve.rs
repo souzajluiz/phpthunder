@@ -355,6 +355,18 @@ impl<'a> Analyzer<'a> {
                 let Some(f) = child("function") else {
                     return Ty::default();
                 };
+                // `app('cache')`: a core container alias names its class.
+                if let Some(class) = child("arguments")
+                    .and_then(|args| args.named_child(0))
+                    .and_then(|arg| arg.named_child(0))
+                    .filter(|v| v.kind() == "string")
+                    .and_then(|v| {
+                        let name = self.text(v).trim_matches(['\'', '"']);
+                        laravel::container_binding(self.text(f), name)
+                    })
+                {
+                    return Ty::class(class);
+                }
                 let ctx = self.ctx(f.start_byte());
                 let found = self.index.functions(&ctx.resolve_function(self.text(f)));
                 let Some((_, s)) = found.first() else {

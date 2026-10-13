@@ -17,6 +17,9 @@ const API_RESOURCE_ACTIONS: &[&str] = &["index", "store", "show", "update", "des
 /// Deepest nesting of config keys collected (`app.providers.x` is 3).
 const CONFIG_DEPTH: usize = 3;
 
+/// The framework's default config files, relative to the project root.
+const FRAMEWORK_CONFIG: &str = "vendor/laravel/framework/config";
+
 /// Whether `root` looks like a Laravel application (has `artisan`).
 pub fn is_laravel(root: &Path) -> bool {
     root.join("artisan").is_file()
@@ -32,7 +35,7 @@ pub fn scan_project(root: &Path) -> Option<LaravelProject> {
     let mut project = LaravelProject::default();
     for path in files_under(&root.join("routes"), ".php") {
         if let Ok(src) = std::fs::read_to_string(&path) {
-            project.routes.extend(route_names(&src, &path));
+            project.add(KeyKind::Route, route_names(&src, &path));
         }
     }
     let views = root.join("resources").join("views");
@@ -42,20 +45,31 @@ pub fn scan_project(root: &Path) -> Option<LaravelProject> {
         };
         let rel = rel.to_string_lossy().replace('\\', "/");
         let name = rel.trim_end_matches(".blade.php").replace('/', ".");
-        project.views.push(LaravelKey {
-            name,
-            path: path.clone(),
-            pos: Pos::default(),
-            detail: format!("resources/views/{rel}"),
-        });
+        project.add(
+            KeyKind::View,
+            [LaravelKey {
+                name,
+                path: path.clone(),
+                pos: Pos::default(),
+                detail: format!("resources/views/{rel}"),
+            }],
+        );
     }
     for path in files_under(&root.join("config"), ".php") {
         if let Ok(src) = std::fs::read_to_string(&path) {
-            project.config.extend(config_keys(&src, &path));
+            project.add(KeyKind::Config, config_keys(&src, &path));
+        }
+    }
+    // Laravel 11+ apps publish only the config files they change; the
+    // framework's own copies supply the rest (project keys win on repeats,
+    // since `finish` keeps the first of equal names).
+    for path in files_under(&root.join(FRAMEWORK_CONFIG), ".php") {
+        if let Ok(src) = std::fs::read_to_string(&path) {
+            project.add(KeyKind::Config, config_keys(&src, &path));
         }
     }
     for lang in [root.join("lang"), root.join("resources").join("lang")] {
-        project.translations.extend(translation_keys(&lang));
+        project.add(KeyKind::Translation, translation_keys(&lang));
     }
     project.components = blade_components(root);
     project.view_variables = view_variables(root);
@@ -63,19 +77,11 @@ pub fn scan_project(root: &Path) -> Option<LaravelProject> {
     for (file, show_values) in [(".env.example", true), (".env", false)] {
         let path = root.join(file);
         if let Ok(src) = std::fs::read_to_string(&path) {
-            project.env.extend(env_keys(&src, &path, show_values));
+            project.add(KeyKind::Env, env_keys(&src, &path, show_values));
         }
     }
-    for keys in [
-        &mut project.routes,
-        &mut project.views,
-        &mut project.config,
-        &mut project.translations,
-        &mut project.env,
-    ] {
-        keys.sort_by(|a, b| a.name.cmp(&b.name));
-        keys.dedup_by(|a, b| a.name == b.name);
-    }
+    scan_catalog(root, &mut project);
+    project.finish();
     Some(project)
 }
 
@@ -198,7 +204,7 @@ pub(crate) fn files_under(dir: &Path, suffix: &str) -> Vec<std::path::PathBuf> {
 }
 
 /// Contents of a string literal node, quotes removed.
-fn string_value(node: Node, src: &str) -> Option<String> {
+pub(super) fn string_value(node: Node, src: &str) -> Option<String> {
     matches!(node.kind(), "string" | "encapsed_string").then(|| {
         text(node, src)
             .trim_matches(|c| c == '\'' || c == '"')
@@ -207,7 +213,11 @@ fn string_value(node: Node, src: &str) -> Option<String> {
 }
 
 /// String value of the `i`-th argument of a call node.
-fn string_argument<'t>(call: Node<'t>, src: &str, i: usize) -> Option<(String, Node<'t>)> {
+pub(super) fn string_argument<'t>(
+    call: Node<'t>,
+    src: &str,
+    i: usize,
+) -> Option<(String, Node<'t>)> {
     let args = call.child_by_field_name("arguments")?;
     let mut c = args.walk();
     let arg = args
@@ -330,7 +340,7 @@ pub fn config_keys(src: &str, path: &Path) -> Vec<LaravelKey> {
 
 /// Dotted keys, under `prefix`, of the array a PHP file returns; shared by
 /// config files and translation files.
-fn array_keys(src: &str, path: &Path, prefix: &str) -> Vec<LaravelKey> {
+pub(super) fn array_keys(src: &str, path: &Path, prefix: &str) -> Vec<LaravelKey> {
     let file = prefix;
     let tree = parse(src);
     let lines = LineIndex::new(src);

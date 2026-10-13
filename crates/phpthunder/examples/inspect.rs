@@ -22,6 +22,8 @@ fn kind(code: &Code) -> &'static str {
         Code::UnusedVariable(_) => "unused variable",
         Code::MissingReturn(_) => "missing return",
         Code::ReturnTypeMismatch { .. } => "return type mismatch",
+        Code::UnknownLaravelKey { .. } => "unknown Laravel key",
+        Code::SimplifyOrderBy => "simplify orderBy",
         Code::External(_) => "external",
     }
 }

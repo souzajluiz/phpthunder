@@ -54,10 +54,23 @@ pub fn quick_fixes(
         .into_iter()
         .collect(),
         Code::UnusedVariable(_) => remove_assignment_fix(src, diagnostic).into_iter().collect(),
+        Code::SimplifyOrderBy => {
+            let edits = crate::laravel::order_by_fix(src, diagnostic.start);
+            if edits.is_empty() {
+                Vec::new()
+            } else {
+                vec![Fix {
+                    title: "Use orderByDesc()".into(),
+                    edits,
+                    kind: FixKind::UseOrderByDesc,
+                }]
+            }
+        }
         Code::UndefinedFunction(_)
         | Code::UndefinedVariable(_)
         | Code::MissingReturn(_)
         | Code::ReturnTypeMismatch { .. }
+        | Code::UnknownLaravelKey { .. }
         | Code::External(_) => Vec::new(),
     }
 }

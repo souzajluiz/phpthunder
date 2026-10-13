@@ -11,3 +11,4 @@ pub mod laravel;
 pub mod refactor;
 pub mod symbol;
 pub mod syntax;
+pub mod web;

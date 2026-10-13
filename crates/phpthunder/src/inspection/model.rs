@@ -51,6 +51,16 @@ pub enum Code {
         /// What is returned (`null`, `string`, `array`, a class, `nothing`).
         found: String,
     },
+    /// A string naming a Laravel key (route, view, config key, disk, …)
+    /// the project does not declare.
+    UnknownLaravelKey {
+        /// What the string names.
+        kind: crate::laravel::KeyKind,
+        /// The key as written.
+        name: String,
+    },
+    /// `orderBy(…, 'desc')` that `orderByDesc(…)` says more simply.
+    SimplifyOrderBy,
     /// Reported by an external analyser; carries its name (e.g. `PHPStan`).
     External(String),
 }
@@ -115,6 +125,17 @@ pub enum FixKind {
     /// Keeps the assigned expression but drops the unused variable
     /// (`$x = f();` becomes `f();`).
     RemoveAssignment,
+    /// Rewrites `orderBy(…, 'desc')` as `orderByDesc(…)`.
+    UseOrderByDesc,
+    /// Switches a Blade echo between `{{ }}` and `{!! !!}`.
+    ToggleBladeEcho {
+        /// Whether the result is the raw (unescaped) form.
+        to_raw: bool,
+    },
+    /// Turns a validation rule string into a rule array.
+    RulesToArray,
+    /// Turns a rule array of plain strings into a rule string.
+    RulesToString,
     /// Adds a property to a class.
     AddProperty {
         /// Class FQN.

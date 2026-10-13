@@ -373,6 +373,9 @@ pub fn blade_completions(
     offset: usize,
     view: Option<&str>,
 ) -> Option<(usize, Vec<Candidate>)> {
+    if let Some(found) = livewire::livewire_completions(project, src, offset, view) {
+        return Some(found);
+    }
     let before = src.get(..offset)?;
     let word_start = before
         .rfind(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '-' | '.' | ':')))
