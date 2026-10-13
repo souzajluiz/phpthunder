@@ -389,8 +389,14 @@ impl App {
                     tasks.push(self.git_push());
                 }
             }
-            GitOp::Push => self.notice = Some(tr!("git-pushed")),
-            GitOp::Pull => self.notice = Some(tr!("git-pulled")),
+            GitOp::Push => {
+                self.notify_background("Git".into(), tr!("git-pushed"));
+                self.notice = Some(tr!("git-pushed"));
+            }
+            GitOp::Pull => {
+                self.notify_background("Git".into(), tr!("git-pulled"));
+                self.notice = Some(tr!("git-pulled"));
+            }
             GitOp::Discard => self.notice = Some(tr!("git-discarded")),
             GitOp::Checkout | GitOp::CreateBranch => self.notice = Some(tr!("git-switched")),
         }

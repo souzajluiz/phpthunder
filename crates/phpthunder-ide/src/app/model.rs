@@ -150,10 +150,17 @@ pub enum Message {
     ToggleSidebar,
     /// Copy or cut is about to run: remember the selection for `⇧⌘V`.
     RememberSelection,
+    /// Open a file with the caret at a position (gutter arrows).
+    OpenAt(PathBuf, phpthunder::syntax::Pos),
+    /// List the overrides or subclasses of the symbol named at this offset.
+    ImplementationsAt(usize),
     /// Move the caret to the start of a line (sticky line clicked).
     JumpToLine(usize),
     /// Re-read the Claude plan limits the panel's CLI last reported.
     ClaudeUsageTick,
+    /// The window gained (`true`) or lost focus; desktop notifications are
+    /// only sent while it is in the background.
+    WindowFocus(bool),
     /// Switch the active Markdown tab between source, split and preview.
     MarkdownView(crate::editor::MarkdownView),
     /// A link in the Markdown preview was clicked: web links open in the

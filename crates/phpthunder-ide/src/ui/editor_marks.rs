@@ -6,11 +6,69 @@
 use super::*;
 use crate::app::{App, Message, col_left, row_top};
 use crate::editor::{Document, WrapLayout};
+use crate::tr;
 use iced::widget::{button, container, pin, row, space, text};
 use iced::{Color, Element, Fill, Padding, Theme};
 
 /// Element type of the editor views.
 type El<'a> = Element<'a, Message>;
+
+/// A small clickable icon for the gutter with a tooltip.
+fn gutter_button<'a>(glyph: Icon, tip: String, message: Message) -> El<'a> {
+    iced::widget::tooltip(
+        button(icon(glyph, 12.0, 2.0, MUTED))
+            .padding(1)
+            .style(ghost_button)
+            .on_press(message),
+        container(label(tip, 12.0, TEXT))
+            .padding([4, 8])
+            .style(popup),
+        iced::widget::tooltip::Position::Right,
+    )
+    .into()
+}
+
+/// The hex colors written in `line` (`#rgb`, `#rgba`, `#rrggbb`,
+/// `#rrggbbaa`), at most four.
+fn hex_colors(line: &str) -> Vec<Color> {
+    let bytes = line.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < bytes.len() && out.len() < 4 {
+        if bytes[i] != b'#' || (i > 0 && bytes[i - 1].is_ascii_alphanumeric()) {
+            i += 1;
+            continue;
+        }
+        let digits = bytes[i + 1..]
+            .iter()
+            .take_while(|b| b.is_ascii_hexdigit())
+            .count();
+        let after = bytes.get(i + 1 + digits);
+        if matches!(digits, 3 | 4 | 6 | 8) && after.is_none_or(|b| !b.is_ascii_alphanumeric()) {
+            let hex = &line[i + 1..i + 1 + digits];
+            let v = |s: &str| u8::from_str_radix(s, 16).unwrap_or(0);
+            let short = |c: char| v(&format!("{c}{c}"));
+            let chars: Vec<char> = hex.chars().collect();
+            let (r, g, b, a) = match digits {
+                3 | 4 => (
+                    short(chars[0]),
+                    short(chars[1]),
+                    short(chars[2]),
+                    chars.get(3).map_or(255, |c| short(*c)),
+                ),
+                _ => (
+                    v(&hex[0..2]),
+                    v(&hex[2..4]),
+                    v(&hex[4..6]),
+                    hex.get(6..8).map_or(255, v),
+                ),
+            };
+            out.push(Color::from_rgba8(r, g, b, f32::from(a) / 255.0));
+        }
+        i += 1 + digits;
+    }
+    out
+}
 
 /// Most sticky lines shown at once.
 const MAX_STICKY: usize = 3;
@@ -176,6 +234,106 @@ impl App {
         out
     }
 
+    /// Gutter arrows beside methods and classes on visible lines: up when
+    /// the method overrides or implements one in a supertype (click jumps
+    /// there), down when subclasses override it or extend the class (click
+    /// lists them).
+    pub(crate) fn hierarchy_marks<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
+        use phpthunder::symbol::{Kind, MemberTag};
+        if !doc.is_php() {
+            return Vec::new();
+        }
+        let layout = self.wrap_layout(doc);
+        let (first, last) = self.visible_lines(doc, &layout);
+        let mut out = Vec::new();
+        for s in self.lang.file_symbols(&doc.path) {
+            let line = s.name_span.start.line as usize;
+            if !(first..=last).contains(&line) || s.is_virtual {
+                continue;
+            }
+            let (up, down) = match s.kind {
+                Kind::Method => (
+                    self.lang.super_member(&s.fqn, MemberTag::Method, &s.name),
+                    !self.lang.overriding_methods(&s.fqn, &s.name).is_empty(),
+                ),
+                k if k.is_class_like() => (None, !self.lang.subtypes(&s.fqn).is_empty()),
+                _ => continue,
+            };
+            let y = row_top(&layout, line, 0) + (CODE_LINE - 14.0) / 2.0;
+            let mut marks: Vec<El<'a>> = Vec::new();
+            if let Some((path, target)) = up {
+                let owner = target
+                    .fqn
+                    .rsplit('\\')
+                    .next()
+                    .unwrap_or(&target.fqn)
+                    .to_string();
+                marks.push(gutter_button(
+                    Icon::StepOut,
+                    tr!(
+                        "gutter-overrides",
+                        target = format!("{owner}::{}()", target.name)
+                    ),
+                    Message::OpenAt(path, target.name_span.start),
+                ));
+            }
+            if down {
+                marks.push(gutter_button(
+                    Icon::StepInto,
+                    tr!("gutter-overridden"),
+                    Message::ImplementationsAt(s.name_start),
+                ));
+            }
+            if !marks.is_empty() {
+                out.push(
+                    pin(row(marks).spacing(0))
+                        .x(GUTTER_WIDTH - 15.0)
+                        .y(y)
+                        .into(),
+                );
+            }
+        }
+        out
+    }
+
+    /// A swatch past the end of each visible line for every hex color
+    /// (`#rgb`, `#rrggbb`, `#rrggbbaa`) written on it.
+    pub(crate) fn color_swatches<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
+        let layout = self.wrap_layout(doc);
+        let (first, last) = self.visible_lines(doc, &layout);
+        let last = last.min(doc.line_count().saturating_sub(1));
+        let mut out = Vec::new();
+        for line in first..=last {
+            let text = doc.line_text(line);
+            let colors = hex_colors(text);
+            if colors.is_empty() {
+                continue;
+            }
+            let end = doc.visual_column(doc.position_of(doc.line_end(line))) + 2;
+            for (i, color) in colors.into_iter().enumerate() {
+                let col = end + i * 2;
+                out.push(
+                    pin(container(space())
+                        .width(11)
+                        .height(11)
+                        .style(move |_: &Theme| container::Style {
+                            background: Some(color.into()),
+                            border: iced::Border {
+                                color: BORDER_STRONG,
+                                width: 1.0,
+                                radius: 2.0.into(),
+                            },
+                            ..Default::default()
+                        }))
+                    .x(col_left(&layout, col))
+                    .y(row_top(&layout, line, col) + (CODE_LINE - 11.0) / 2.0)
+                    .into(),
+                );
+            }
+        }
+        out
+    }
+
     /// A bookmark glyph in the gutter beside each bookmarked line.
     pub(crate) fn bookmark_marks<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
         let Some(lines) = self.bookmarks.get(&doc.path) else {
@@ -275,5 +433,20 @@ impl App {
             .width(Fill)
             .into(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hex_colors_should_read_short_and_long_forms() {
+        assert_eq!(hex_colors("color: #fff; bg: #1D1D26;").len(), 2);
+    }
+
+    #[test]
+    fn hex_colors_should_skip_ids_and_odd_lengths() {
+        assert!(hex_colors("a#fff #12345 #abcdefg").is_empty());
     }
 }

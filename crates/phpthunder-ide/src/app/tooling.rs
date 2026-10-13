@@ -58,7 +58,14 @@ impl App {
     /// Stores a finished run; a failed start becomes a notice.
     pub(crate) fn tests_done(&mut self, result: Result<TestRun, String>) {
         match result {
-            Ok(run) => self.tests = Some(Tests::Done(run)),
+            Ok(run) => {
+                let (passed, failed, _) = run.counts();
+                self.notify_background(
+                    tr!("notify-tests"),
+                    tr!("notify-tests-body", passed = passed, failed = failed),
+                );
+                self.tests = Some(Tests::Done(run));
+            }
             Err(error) => {
                 self.tests = None;
                 self.fail(error);

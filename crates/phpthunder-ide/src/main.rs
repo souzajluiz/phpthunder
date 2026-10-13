@@ -14,6 +14,7 @@ mod i18n;
 mod keymap;
 mod language;
 mod log;
+mod notify;
 mod packages;
 mod palette;
 mod phpstan;
@@ -86,6 +87,7 @@ fn main() -> iced::Result {
         .title(App::title)
         .subscription(App::subscription)
         .theme(|_: &App| ui::app_theme())
+        .scale_factor(|app: &App| app.zoom)
         .default_font(ui::UI)
         .window(window_settings())
         .centered()

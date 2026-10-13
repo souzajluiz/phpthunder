@@ -28,7 +28,10 @@ impl App {
         let Some(doc) = self.doc().filter(|d| d.is_php() && d.selection().is_none()) else {
             return false;
         };
-        let Some(expansion) = template::expand_at(&doc.text, doc.offset(doc.cursor())) else {
+        let offset = doc.offset(doc.cursor());
+        let found = template::expand_postfix(&doc.text, offset)
+            .or_else(|| template::expand_at(&doc.text, offset));
+        let Some(expansion) = found else {
             return false;
         };
         self.apply_expansion(expansion);

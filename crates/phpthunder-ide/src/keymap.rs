@@ -218,11 +218,17 @@ pub enum Cmd {
     GotoTypeDeclaration,
     /// Switch between a class and its test (`⇧⌘T`).
     GotoTest,
+    /// Make everything larger (`⌘=`).
+    ZoomIn,
+    /// Make everything smaller (`⌘−`).
+    ZoomOut,
+    /// Back to the normal size (`⌘0`).
+    ZoomReset,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 103] = {
+    pub const ALL: [Cmd; 106] = {
         use Cmd::*;
         [
             Save,
@@ -328,6 +334,9 @@ impl Cmd {
             GotoSuperMethod,
             GotoTypeDeclaration,
             GotoTest,
+            ZoomIn,
+            ZoomOut,
+            ZoomReset,
         ]
     };
 
@@ -396,6 +405,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("u", true, false) => ToggleCase,
             ("t", false, true) => SurroundWith,
             ("a", true, false) => FindAction,
+            ("=", false, false) | ("+", _, false) => ZoomIn,
+            ("-", false, false) => ZoomOut,
+            ("0", false, false) => ZoomReset,
             ("e", true, false) => RecentLocations,
             ("v", true, false) => PasteFromHistory,
             ("c", true, true) => CopyReference,
@@ -595,6 +607,9 @@ pub fn hint(cmd: Cmd) -> &'static str {
         GotoSuperMethod => "⌘U",
         GotoTypeDeclaration => "⇧⌘B",
         GotoTest => "⇧⌘T",
+        ZoomIn => "⌘=",
+        ZoomOut => "⌘−",
+        ZoomReset => "⌘0",
     }
 }
 

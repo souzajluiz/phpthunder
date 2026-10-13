@@ -170,7 +170,20 @@ impl App {
             Cmd::GotoSuperMethod => self.goto_super_method(),
             Cmd::GotoTypeDeclaration => self.goto_type_declaration(),
             Cmd::GotoTest => self.goto_test(),
+            Cmd::ZoomIn => self.set_zoom(self.zoom + 0.1),
+            Cmd::ZoomOut => self.set_zoom(self.zoom - 0.1),
+            Cmd::ZoomReset => self.set_zoom(1.0),
         }
+    }
+
+    /// Sets the interface scale, kept between 50% and 300%.
+    fn set_zoom(&mut self, zoom: f32) -> Task<Message> {
+        self.zoom = (zoom * 10.0).round().clamp(5.0, 30.0) / 10.0;
+        self.notice = Some(tr!(
+            "notice-zoom",
+            percent = format!("{:.0}", self.zoom * 100.0)
+        ));
+        Task::none()
     }
 
     /// Runs a caret-only action (no text change) on the active document and

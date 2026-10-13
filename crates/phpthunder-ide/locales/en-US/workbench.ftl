@@ -86,3 +86,7 @@ claude-limit-session = 5h
 claude-limit-week = Week
 claude-limit-used = { $window }: { $percent }% used
 claude-limit-resets = {" "}· resets in { $left }
+
+# Gutter arrows beside methods and classes.
+gutter-overrides = Overrides { $target }
+gutter-overridden = Overridden in subclasses (click to list)

@@ -26,8 +26,14 @@ fn line_indent(text: &str, offset: usize) -> &str {
 /// `template` rendered to replace `start..end`, with its later lines
 /// indented like the line it lands on.
 pub fn render(template: &Template, text: &str, start: usize, end: usize) -> Expansion {
+    render_body(template.body, text, start, end)
+}
+
+/// Template `body` (with its [`END`] caret mark) rendered to replace
+/// `start..end`, later lines indented like the line it lands on.
+pub fn render_body(body: &str, text: &str, start: usize, end: usize) -> Expansion {
     let indent = line_indent(text, start);
-    let body = template.body.replace('\n', &format!("\n{indent}"));
+    let body = body.replace('\n', &format!("\n{indent}"));
     let caret_in_body = body.find(END).unwrap_or(body.len());
     Expansion {
         start,

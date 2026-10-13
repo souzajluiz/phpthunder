@@ -93,6 +93,8 @@ pub struct App {
     pub nav_forward: Vec<Location>,
     /// Transient toast message; cleared on the next edit or Escape.
     pub notice: Option<String>,
+    /// Whether the window has focus; see [`App::notify_background`].
+    pub focused: bool,
     /// Currently held keyboard modifiers.
     pub modifiers: Modifiers,
     /// When a bare Shift was last pressed, for double-Shift detection.
@@ -157,6 +159,8 @@ pub struct App {
     pub edit_back: usize,
     /// Copied and cut texts, newest first (`⇧⌘V`).
     pub clipboard_history: Vec<String>,
+    /// Interface scale (`⌘=` / `⌘−` / `⌘0`), 1.0 by default.
+    pub zoom: f32,
     /// Whether spaces and tabs are drawn as dots and arrows.
     pub show_whitespace: bool,
     /// Claude plan limits last reported by the Claude panel's CLI.
@@ -256,7 +260,8 @@ pub fn bindings(
 
 /// Global event filter for [`App::subscription`]: forwards keyboard events
 /// as [`Message::Keyboard`], tagging whether a focused widget already
-/// captured them, and drops everything else.
+/// captured them, and window focus changes as [`Message::WindowFocus`];
+/// drops everything else.
 fn keyboard_events(
     event: Event,
     status: event::Status,
@@ -264,6 +269,8 @@ fn keyboard_events(
 ) -> Option<Message> {
     match event {
         Event::Keyboard(e) => Some(Message::Keyboard(e, status == event::Status::Captured)),
+        Event::Window(iced::window::Event::Focused) => Some(Message::WindowFocus(true)),
+        Event::Window(iced::window::Event::Unfocused) => Some(Message::WindowFocus(false)),
         _ => None,
     }
 }
@@ -319,6 +326,7 @@ impl App {
             nav_back: Vec::new(),
             nav_forward: Vec::new(),
             notice: None,
+            focused: true,
             modifiers: Modifiers::default(),
             last_shift: None,
             last_search: None,
@@ -348,6 +356,7 @@ impl App {
             packages: crate::packages::Installs::default(),
             claude_usage: crate::claude_usage::Usage::default(),
             show_whitespace: false,
+            zoom: 1.0,
             bookmarks: std::collections::BTreeMap::new(),
             edit_locations: Vec::new(),
             edit_back: 0,
@@ -409,7 +418,16 @@ impl App {
     #[track_caller]
     pub(crate) fn fail(&mut self, message: String) {
         crate::log::error(&message);
+        self.notify_background(crate::tr!("notify-error"), message.clone());
         self.notice = Some(message);
+    }
+
+    /// Sends a desktop notification, but only while the window is in the
+    /// background: in front, the in-app notice already shows the same.
+    pub(crate) fn notify_background(&self, summary: String, body: String) {
+        if !self.focused {
+            crate::notify::send(summary, body);
+        }
     }
 
     /// Active editor tab, if any; the target of most editor commands.
@@ -810,6 +828,17 @@ impl App {
                 self.sidebar = !self.sidebar;
                 Task::none()
             }
+            Message::OpenAt(path, pos) => {
+                self.record_nav();
+                self.open(path, Some(pos))
+            }
+            Message::ImplementationsAt(offset) => {
+                if let Some(doc) = self.doc_mut() {
+                    let pos = doc.position_of(offset);
+                    doc.move_to(pos);
+                }
+                self.goto_implementation()
+            }
             Message::RememberSelection => {
                 self.remember_selection();
                 Task::none()
@@ -853,6 +882,10 @@ impl App {
             Message::ResizeReset(splitter) => {
                 self.panes.reset(splitter);
                 SavedLayout::from(self.panes.sizes).save();
+                Task::none()
+            }
+            Message::WindowFocus(focused) => {
+                self.focused = focused;
                 Task::none()
             }
             Message::SplitterHover(splitter) => {

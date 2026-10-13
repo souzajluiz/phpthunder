@@ -40,6 +40,10 @@ soft_wrap = false
 # Command the Claude panel runs.
 claude_command = "claude"
 
+# Desktop notifications for errors and finished tasks while the IDE is in
+# the background.
+notifications = true
+
 # Panel sizes in pixels, saved whenever a panel is resized.
 # sidebar_width = 280
 # bottom_height = 260
@@ -63,6 +67,8 @@ pub struct Settings {
     pub shell: Option<String>,
     /// Command the Claude panel runs.
     pub claude_command: String,
+    /// Desktop notifications while the window is in the background.
+    pub notifications: bool,
     /// Width of the project sidebar; written by the IDE on resize.
     pub sidebar_width: Option<u32>,
     /// Height of the bottom tool panel; written by the IDE on resize.
@@ -80,6 +86,7 @@ impl Default for Settings {
             soft_wrap: false,
             shell: None,
             claude_command: "claude".to_string(),
+            notifications: true,
             sidebar_width: None,
             bottom_height: None,
             right_width: None,

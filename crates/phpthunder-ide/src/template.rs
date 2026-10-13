@@ -3,6 +3,8 @@
 
 mod expand;
 mod model;
+mod postfix;
 
 pub use expand::*;
 pub use model::*;
+pub use postfix::*;

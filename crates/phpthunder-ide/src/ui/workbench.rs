@@ -771,6 +771,12 @@ impl App {
         for mark in self.bookmark_marks(doc) {
             content = content.push(mark);
         }
+        for mark in self.hierarchy_marks(doc) {
+            content = content.push(mark);
+        }
+        for mark in self.color_swatches(doc) {
+            content = content.push(mark);
+        }
         for mark in self.diagnostic_marks(doc) {
             content = content.push_under(mark);
         }
