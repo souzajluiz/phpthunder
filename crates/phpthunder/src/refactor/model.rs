@@ -62,3 +62,13 @@ impl ClassOutline {
         self.methods.iter().any(|m| m.eq_ignore_ascii_case(name))
     }
 }
+
+/// Edits of a refactoring confined to one file, with where the caret goes
+/// afterwards (a byte offset in the edited text).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LocalRefactoring {
+    /// Edits on the current file.
+    pub edits: Vec<crate::inspection::Edit>,
+    /// Caret offset after applying the edits.
+    pub caret: usize,
+}
