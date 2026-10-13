@@ -447,8 +447,8 @@ impl App {
         });
         let new_file = self.tree.root.clone().map(|root| {
             tooltip(
-                button(label("+", 16.0, MUTED))
-                    .padding([0, 6])
+                button(icon(Icon::Plus, 14.0, 2.0, MUTED))
+                    .padding(5)
                     .style(ghost_button)
                     .on_press(Message::ShowFileActions(root)),
                 container(label(tr!("file-new-file"), 12.0, TEXT))
@@ -459,15 +459,24 @@ impl App {
         });
         let mut title = row![
             label(tr!("rail-project"), 13.0, TEXT).font(UI_BOLD),
-            icon(Icon::ChevronDown, 12.0, 2.0, MUTED),
             space().width(Fill),
         ]
-        .spacing(6)
         .align_y(Center);
         if let Some(button) = new_file {
             title = title.push(button);
         }
-        let header = container(title).padding([0, 16]).height(40).center_y(40);
+        // Left edge lines up with the drawn stroke of the tree's first chevron
+        // (12px of list padding and indent plus the glyph's own inset); the
+        // right edge with the rows' trailing padding.
+        let header = container(title)
+            .padding(Padding {
+                left: 16.0,
+                right: 11.0,
+                top: 0.0,
+                bottom: 0.0,
+            })
+            .height(40)
+            .center_y(40);
         let list = scrollable(column(rows).spacing(1).padding([0, 8]))
             .height(Fill)
             .style(scrollbars);

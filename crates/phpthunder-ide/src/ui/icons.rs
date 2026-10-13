@@ -85,6 +85,8 @@ pub enum Icon {
     Docker,
     /// Package manifests: Composer, npm (`package`).
     Package,
+    /// New file or folder in the project tree header (`plus`).
+    Plus,
 }
 
 impl Icon {
@@ -129,6 +131,7 @@ impl Icon {
             Icon::Package => include_str!("../../assets/icons/package.svg"),
             Icon::PanelRight => include_str!("../../assets/icons/panel-right.svg"),
             Icon::PanelBottom => include_str!("../../assets/icons/panel-bottom.svg"),
+            Icon::Plus => include_str!("../../assets/icons/plus.svg"),
         }
     }
 }
