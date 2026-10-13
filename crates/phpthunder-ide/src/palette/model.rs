@@ -1,5 +1,6 @@
 //! Navigation popup data: modes, targets, items and the open popup.
 
+use crate::tr;
 use phpthunder::syntax::Pos;
 use std::path::PathBuf;
 
@@ -39,25 +40,25 @@ pub enum Mode {
 
 impl Mode {
     /// Mode name shown in the palette footer.
-    pub(crate) fn title(self) -> &'static str {
+    pub(crate) fn title(self) -> String {
         match self {
-            Mode::Files => "Go to file",
-            Mode::Classes => "Go to class",
-            Mode::Symbols => "Go to symbol",
-            Mode::Recent => "Recent files",
-            Mode::Line => "Go to line",
-            Mode::Everywhere => "Search everywhere",
-            Mode::Structure => "File structure",
-            Mode::Choose => "Choose",
+            Mode::Files => tr!("action-go-to-file"),
+            Mode::Classes => tr!("action-go-to-class"),
+            Mode::Symbols => tr!("action-go-to-symbol"),
+            Mode::Recent => tr!("action-recent-files"),
+            Mode::Line => tr!("action-go-to-line"),
+            Mode::Everywhere => tr!("action-search-everywhere"),
+            Mode::Structure => tr!("action-file-structure"),
+            Mode::Choose => tr!("action-choose"),
         }
     }
 
     /// Placeholder text for the query input.
-    pub(crate) fn placeholder(self) -> &'static str {
+    pub(crate) fn placeholder(self) -> String {
         match self {
-            Mode::Line => "line[:column]",
-            Mode::Recent => "Filter recent files",
-            _ => "Type a name",
+            Mode::Line => tr!("palette-placeholder-line"),
+            Mode::Recent => tr!("palette-placeholder-recent"),
+            _ => tr!("palette-placeholder"),
         }
     }
 }

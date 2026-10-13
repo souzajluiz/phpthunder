@@ -5,6 +5,7 @@ use crate::app::{App, Bottom, EDITOR_ID, Message, Search, TestTarget};
 use crate::keymap::Cmd;
 use crate::palette::{self, Mode, Palette, Target};
 use crate::search::{self, SearchDialog};
+use crate::tr;
 use iced::Task;
 use iced::widget::Id;
 use iced::widget::operation;
@@ -305,10 +306,7 @@ impl App {
         let cursor = self.docs[i].cursor();
         self.docs[i].set_text(text, cursor);
         self.after_change(true);
-        self.notice = Some(format!(
-            "Replaced {count} occurrence{}",
-            if count == 1 { "" } else { "s" }
-        ));
+        self.notice = Some(tr!("notice-replaced", count = count));
         Task::none()
     }
 

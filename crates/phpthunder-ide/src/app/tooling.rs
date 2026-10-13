@@ -5,6 +5,7 @@ use super::*;
 use crate::composer::composer_commands;
 use crate::palette::{Item, Mode, Palette, Target};
 use crate::testing::{Scope, TestRun, run_tests, test_at};
+use crate::tr;
 use iced::Task;
 use iced::widget::{Id, operation};
 use phpthunder::inspection::{Code, Diagnostic, Severity};
@@ -92,7 +93,7 @@ impl App {
             }
         }
         if !failures.is_empty() {
-            self.notice = Some(format!("Could not save {}", failures.join(", ")));
+            self.notice = Some(tr!("notice-save-failed-many", files = failures.join(", ")));
         }
     }
 
@@ -120,7 +121,7 @@ impl App {
         &mut self,
         path: &std::path::Path,
         version: u64,
-        result: Result<(String, crate::formatter::Formatter), String>,
+        result: Result<Option<(String, crate::formatter::Formatter)>, String>,
     ) {
         let Some(i) = self
             .docs
@@ -130,8 +131,10 @@ impl App {
             return;
         };
         let (text, notice) = match result {
-            Ok((text, formatter)) => (text, format!("Formatted with {}", formatter.name())),
-            Err(error) if error.starts_with("No formatter") => {
+            Ok(Some((text, formatter))) => {
+                (text, tr!("notice-formatted", formatter = formatter.name()))
+            }
+            Ok(None) => {
                 let trimmed: String = self.docs[i]
                     .text
                     .lines()
@@ -139,10 +142,7 @@ impl App {
                     .collect::<Vec<_>>()
                     .join("\n")
                     + "\n";
-                (
-                    trimmed,
-                    "No project formatter: trailing whitespace removed".into(),
-                )
+                (trimmed, tr!("notice-whitespace-trimmed"))
             }
             Err(error) => {
                 self.notice = Some(error);
@@ -234,7 +234,7 @@ impl App {
             })
             .collect();
         if items.is_empty() {
-            self.notice = Some("No composer.json in this project".into());
+            self.notice = Some(tr!("notice-no-composer"));
             return Task::none();
         }
         self.close_overlays();
@@ -243,7 +243,7 @@ impl App {
             query: String::new(),
             items: items.clone(),
             selected: 0,
-            fixed: Some(("Composer".into(), items)),
+            fixed: Some((tr!("composer-title"), items)),
         });
         operation::focus(Id::new(crate::palette::INPUT_ID))
     }

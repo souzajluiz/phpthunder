@@ -36,7 +36,7 @@ pub enum Code {
         name: String,
     },
     /// A `use` import whose alias never appears in the file.
-    UnusedImport,
+    UnusedImport(String),
     /// A variable read in a function but never assigned there.
     UndefinedVariable(String),
     /// Reported by an external analyser; carries its name (e.g. `PHPStan`).
@@ -81,4 +81,30 @@ pub struct Fix {
     pub title: String,
     /// Edits applied together as one undo step.
     pub edits: Vec<Edit>,
+    /// What the fix does, with its data; lets front ends phrase the title
+    /// in their own language.
+    pub kind: FixKind,
+}
+
+/// What a [`Fix`] does.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FixKind {
+    /// Adds `use <FQN>;`.
+    ImportClass(String),
+    /// Deletes an unused `use`.
+    RemoveImport,
+    /// Adds an empty method to a class.
+    AddMethod {
+        /// Class FQN.
+        class: String,
+        /// Method name.
+        name: String,
+    },
+    /// Adds a property to a class.
+    AddProperty {
+        /// Class FQN.
+        class: String,
+        /// Property name without `$`.
+        name: String,
+    },
 }

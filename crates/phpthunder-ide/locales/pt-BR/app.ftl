@@ -1,0 +1,69 @@
+# App — tradução pt-BR. Mesmas chaves de en-US.
+
+notice-no-suggestions = Nenhuma sugestão
+notice-no-declaration = Nenhuma declaração encontrada
+notice-nothing-to-search = Nada para buscar: posicione o cursor em um símbolo
+notice-open-failed = Não foi possível abrir { $path }: { $error }
+notice-read-failed = Não foi possível ler { $path }
+notice-write-failed = Não foi possível gravar { $path }: { $error }
+notice-save-failed = Não foi possível salvar { $file }: { $error }
+notice-save-failed-many = Não foi possível salvar { $files }
+notice-invalid-pattern = Padrão inválido: { $error }
+notice-replaced = { $count ->
+    [one] 1 ocorrência substituída
+   *[other] { $count } ocorrências substituídas
+}
+
+notice-caret-class-or-method = Posicione o cursor em uma classe ou método
+notice-caret-in-class = Posicione o cursor em uma classe ou dentro dela
+notice-caret-on-name = Posicione o cursor em um nome para renomear
+notice-no-implementations = Nenhuma implementação de { $name } encontrada
+notice-no-parameter-info = Sem informação de parâmetros aqui
+implementations-title = Implementações de { $name }
+hierarchy-title = Hierarquia de tipos de { $name }
+hierarchy-not-indexed = não indexado
+
+notice-renamed = { $occurrences ->
+    [one] 1 ocorrência renomeada
+   *[other] { $occurrences } ocorrências renomeadas
+} em { $files ->
+    [one] 1 arquivo
+   *[other] { $files } arquivos
+}
+notice-rename-exists = { $path } já existe; arquivo não renomeado
+notice-rename-failed = Não foi possível renomear { $path }: { $error }
+
+intention-implement-methods = Implementar métodos
+intention-optimize-imports = Otimizar imports
+notice-implemented = { $count ->
+    [one] 1 método implementado
+   *[other] { $count } métodos implementados
+}
+notice-imports-optimized = Os imports já estão otimizados
+
+notice-formatted = Formatado com { $formatter }
+notice-whitespace-trimmed = Sem formatador no projeto: espaços no fim das linhas removidos
+notice-no-composer = Nenhum composer.json neste projeto
+
+composer-title = Composer
+composer-install = Instalar dependências do composer.lock
+composer-update = Atualizar dependências para as últimas versões permitidas
+composer-dump-autoload = Regenerar o autoloader
+composer-outdated = Listar dependências diretas desatualizadas
+composer-validate = Verificar o composer.json
+composer-script = script
+composer-steps = { $count ->
+    [one] 1 passo
+   *[other] { $count } passos
+}
+
+error-run-php = não foi possível executar o php: { $error }
+error-no-test-runner = Nenhum executor de testes encontrado (instale pestphp/pest ou phpunit/phpunit)
+error-formatter-failed = { $formatter } falhou: { $error }
+error-phpstan-missing = O PHPStan não está instalado
+error-phpstan-no-report = O PHPStan não retornou relatório
+error-terminal-open = não foi possível abrir um terminal: { $error }
+error-terminal-shell = não foi possível iniciar o shell: { $error }
+error-indexing = falha na indexação: { $error }
+error-rename = falha ao renomear: { $error }
+error-invalid-pattern = padrão inválido

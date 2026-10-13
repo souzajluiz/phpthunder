@@ -2,6 +2,7 @@
 //! or PHPCBF), so the result matches its configured code style.
 
 use crate::project::vendor_bin;
+use crate::tr;
 use std::path::{Path, PathBuf};
 
 /// Formatter found in `vendor/bin`, in order of preference.
@@ -42,14 +43,18 @@ pub fn detect_formatter(root: &Path) -> Option<(Formatter, PathBuf)> {
 /// formatted there with the project as working directory (so the project's
 /// configuration applies), then read back.
 ///
+/// `Ok(None)` when the project has no formatter installed.
+///
 /// # Errors
-/// Returns a message when no formatter is installed or it fails.
+/// Returns a message when the formatter cannot run or fails.
 pub async fn format_php(
     root: PathBuf,
     file_name: String,
     text: String,
-) -> Result<(String, Formatter), String> {
-    let (formatter, bin) = detect_formatter(&root).ok_or("No formatter found (install laravel/pint, friendsofphp/php-cs-fixer or squizlabs/php_codesniffer)")?;
+) -> Result<Option<(String, Formatter)>, String> {
+    let Some((formatter, bin)) = detect_formatter(&root) else {
+        return Ok(None);
+    };
     let dir = std::env::temp_dir().join(format!("phpthunder-format-{}", std::process::id()));
     tokio::fs::create_dir_all(&dir)
         .await
@@ -72,18 +77,18 @@ pub async fn format_php(
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("cannot run php: {e}"))?;
+        .map_err(|e| tr!("error-run-php", error = e.to_string()))?;
     let formatted = tokio::fs::read_to_string(&file)
         .await
         .map_err(|e| e.to_string())?;
     let _ = tokio::fs::remove_file(&file).await;
     // PHPCBF exits with 1 when it fixed something; only a missing result is an error.
     if formatted.is_empty() && !text.is_empty() {
-        return Err(format!(
-            "{} failed: {}",
-            formatter.name(),
-            String::from_utf8_lossy(&output.stderr).trim()
+        return Err(tr!(
+            "error-formatter-failed",
+            formatter = formatter.name(),
+            error = String::from_utf8_lossy(&output.stderr).trim().to_string()
         ));
     }
-    Ok((formatted, formatter))
+    Ok(Some((formatted, formatter)))
 }

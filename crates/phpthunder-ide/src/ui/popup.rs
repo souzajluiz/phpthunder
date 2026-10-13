@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::app::{App, Intention, Intentions, Message, RENAME_INPUT, SignatureView};
+use crate::tr;
 use iced::widget::text::Span;
 use iced::widget::{Id, button, column, container, rich_text, row, space, text_input};
 use iced::{Center, Element, Fill, Font, Length, Padding, Theme};
@@ -84,7 +85,7 @@ impl App {
         let Some(d) = &self.rename else {
             return space().into();
         };
-        let input = text_input("New name", &d.name)
+        let input = text_input(&tr!("rename-placeholder"), &d.name)
             .id(Id::new(RENAME_INPUT))
             .on_input(Message::RenameInput)
             .on_submit(Message::RenameSubmit)
@@ -94,13 +95,18 @@ impl App {
             .style(boxed_input);
         let mut content = column![
             row![
-                label(format!("Rename {}", d.original), 14.0, TEXT_BRIGHT).font(UI_BOLD),
+                label(
+                    tr!("rename-title", name = d.original.as_str()),
+                    14.0,
+                    TEXT_BRIGHT
+                )
+                .font(UI_BOLD),
                 space().width(Fill),
-                label("↵ rename   esc cancel", 11.0, MUTED),
+                label(tr!("rename-hints"), 11.0, MUTED),
             ]
             .align_y(Center),
             input,
-            label("Updates every usage in the project; a class file named after the class is renamed too.", 12.0, MUTED),
+            label(tr!("rename-help"), 12.0, MUTED),
         ]
         .spacing(12)
         .padding(16)

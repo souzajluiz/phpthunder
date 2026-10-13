@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::project::vendor_bin;
+use crate::tr;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
@@ -34,7 +35,7 @@ impl Scope {
                 .unwrap_or_default()
         };
         match self {
-            Scope::All => "All tests".into(),
+            Scope::All => tr!("tests-all"),
             Scope::File(p) => name(p),
             Scope::Filter(p, f) => format!("{} › {f}", name(p)),
         }
@@ -81,8 +82,7 @@ pub fn detect_framework(root: &Path) -> Option<(Framework, PathBuf)> {
 /// Returns a message when no framework is installed or the process cannot
 /// start. A run with failing tests is a successful `TestRun`.
 pub async fn run_tests(root: PathBuf, scope: Scope) -> Result<TestRun, String> {
-    let (_, bin) = detect_framework(&root)
-        .ok_or("No test runner found (install pestphp/pest or phpunit/phpunit)")?;
+    let (_, bin) = detect_framework(&root).ok_or_else(|| tr!("error-no-test-runner"))?;
     let report = std::env::temp_dir().join(format!("phpthunder-junit-{}.xml", std::process::id()));
     let _ = std::fs::remove_file(&report);
     let mut cmd = tokio::process::Command::new("php");
@@ -104,7 +104,7 @@ pub async fn run_tests(root: PathBuf, scope: Scope) -> Result<TestRun, String> {
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("cannot run php: {e}"))?;
+        .map_err(|e| tr!("error-run-php", error = e.to_string()))?;
     let elapsed = started.elapsed();
     let console = format!(
         "{}{}",

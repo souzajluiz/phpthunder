@@ -5,6 +5,7 @@ use super::*;
 use crate::app::{App, Message, TestTarget, Tests};
 use crate::editor::Document;
 use crate::testing::Outcome;
+use crate::tr;
 use iced::widget::{button, column, container, pin, row, scrollable, space};
 use iced::{Center, Color, Element, Fill, Padding, Theme};
 use phpthunder::inspection::Severity;
@@ -21,19 +22,15 @@ impl App {
     /// The Problems panel: every diagnostic of the active file, in order.
     pub(crate) fn problems_body(&self) -> Element<'_, Message> {
         let Some(doc) = self.doc() else {
-            return container(label("No file open", 12.0, MUTED))
+            return container(label(tr!("problems-no-file"), 12.0, MUTED))
                 .padding([10, 16])
                 .into();
         };
         let problems = doc.problems();
         if problems.is_empty() {
-            return container(label(
-                format!("No problems in {}", doc.title()),
-                12.0,
-                MUTED,
-            ))
-            .padding([10, 16])
-            .into();
+            return container(label(tr!("problems-none", file = doc.title()), 12.0, MUTED))
+                .padding([10, 16])
+                .into();
         }
         let rows = problems.into_iter().enumerate().map(|(i, d)| {
             let mark = if d.severity == Severity::Error {
@@ -44,7 +41,7 @@ impl App {
             button(
                 row![
                     icon(mark, 14.0, 2.0, severity_color(d.severity)),
-                    label(d.message.clone(), 13.0, TEXT),
+                    label(crate::i18n::diagnostic_message(d), 13.0, TEXT),
                     space().width(Fill),
                     label(
                         format!("{}:{}", doc.title(), d.span.start.line + 1),
@@ -156,7 +153,7 @@ impl App {
     /// The Tests panel: a summary with run buttons, then every test case;
     /// failures show their message.
     pub(crate) fn tests_body(&self) -> Element<'_, Message> {
-        let action = |name: &'static str, target: TestTarget| -> Element<'_, Message> {
+        let action = |name: String, target: TestTarget| -> Element<'_, Message> {
             button(label(name, 12.0, TEXT_SOFT))
                 .padding([3, 10])
                 .style(ghost_button)
@@ -164,15 +161,15 @@ impl App {
                 .into()
         };
         let actions = row![
-            action("Run again", TestTarget::Again),
-            action("Run file", TestTarget::File),
-            action("Run all", TestTarget::All),
+            action(tr!("tests-run-again"), TestTarget::Again),
+            action(tr!("tests-run-file"), TestTarget::File),
+            action(tr!("tests-run-all"), TestTarget::All),
         ]
         .spacing(4);
         let (summary, rows): (Element<'_, Message>, Vec<Element<'_, Message>>) = match &self.tests {
-            None => (label("No test run yet", 12.0, MUTED).into(), Vec::new()),
+            None => (label(tr!("tests-none"), 12.0, MUTED).into(), Vec::new()),
             Some(Tests::Running(scope)) => (
-                label(format!("Running {scope}…"), 12.0, MUTED).into(),
+                label(tr!("tests-running", scope = scope.as_str()), 12.0, MUTED).into(),
                 Vec::new(),
             ),
             Some(Tests::Done(run)) => {
@@ -184,9 +181,9 @@ impl App {
                 };
                 let summary = row![
                     label(run.scope.label(), 12.0, TEXT),
-                    label(format!("{passed} passed"), 12.0, rgb(0x9ECE6A)),
-                    label(format!("{failed} failed"), 12.0, color),
-                    label(format!("{skipped} skipped"), 12.0, MUTED),
+                    label(tr!("tests-passed", count = passed), 12.0, rgb(0x9ECE6A)),
+                    label(tr!("tests-failed", count = failed), 12.0, color),
+                    label(tr!("tests-skipped", count = skipped), 12.0, MUTED),
                     label(format!("{:.2} s", run.elapsed.as_secs_f64()), 12.0, MUTED),
                 ]
                 .spacing(12);

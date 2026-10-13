@@ -1,6 +1,7 @@
 //! Parameter info while typing calls, and rename across the project.
 
 use super::*;
+use crate::tr;
 use iced::Task;
 use iced::widget::{Id, operation};
 use phpthunder::refactor::RenamePlan;
@@ -26,7 +27,7 @@ impl App {
             None => {
                 self.signature = None;
                 if explicit {
-                    self.notice = Some("No parameter info here".into());
+                    self.notice = Some(tr!("notice-no-parameter-info"));
                 }
             }
         }
@@ -44,7 +45,7 @@ impl App {
             .map_or(doc.text.len(), |i| offset + i);
         let name = doc.text[start..end].to_string();
         if name.is_empty() {
-            self.notice = Some("Place the caret on a name to rename".into());
+            self.notice = Some(tr!("notice-caret-on-name"));
             return Task::none();
         }
         self.close_overlays();
@@ -110,10 +111,10 @@ impl App {
         if let Some((from, to)) = &plan.file_rename {
             self.rename_file(from, to);
         }
-        self.notice = Some(format!(
-            "Renamed {occurrences} occurrence{} in {files} file{}",
-            if occurrences == 1 { "" } else { "s" },
-            if files == 1 { "" } else { "s" }
+        self.notice = Some(tr!(
+            "notice-renamed",
+            occurrences = occurrences,
+            files = files
         ));
         Task::batch([self.reveal_cursor(), operation::focus(Id::new(EDITOR_ID))])
     }
@@ -122,7 +123,7 @@ impl App {
     /// sync. Refuses to overwrite an existing file.
     fn rename_file(&mut self, from: &std::path::Path, to: &std::path::Path) {
         if to.exists() {
-            self.notice = Some(format!("{} already exists; file not renamed", to.display()));
+            self.notice = Some(tr!("notice-rename-exists", path = to.display().to_string()));
             return;
         }
         // Unsaved edits of the renamed file are written first, so the move
@@ -133,7 +134,11 @@ impl App {
             doc.mark_saved();
         }
         if let Err(e) = std::fs::rename(from, to) {
-            self.notice = Some(format!("Could not rename {}: {e}", from.display()));
+            self.notice = Some(tr!(
+                "notice-rename-failed",
+                path = from.display().to_string(),
+                error = e.to_string()
+            ));
             return;
         }
         if let Some(doc) = self.docs.iter_mut().find(|d| d.path == from) {

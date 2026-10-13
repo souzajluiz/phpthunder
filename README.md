@@ -78,6 +78,15 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
 Shortcuts: `⌘O` open folder, `⌘S` save, `⌘W` close tab, `⌘1` toggle project
 tree, `Esc` close popups/panel.
 
+### Languages
+
+The IDE speaks English and Brazilian Portuguese, following the system
+language. Override it with `PHPTHUNDER_LANG=pt-BR` (or `en-US`). Strings
+live in [Fluent](https://projectfluent.org) catalogs under
+`crates/phpthunder-ide/locales/<language>/`; to add a language, copy
+`en-US/`, translate it and register it in `src/i18n/locale.rs`. A test
+checks that every language has every message with the same arguments.
+
 ## Project layout
 
 ```

@@ -9,7 +9,7 @@ use crate::inspection::{Code, Edit, diagnostics};
 pub fn optimize_imports(index: &Index, src: &str) -> String {
     let unused: Vec<Edit> = diagnostics(index, src)
         .into_iter()
-        .filter(|d| d.code == Code::UnusedImport)
+        .filter(|d| matches!(d.code, Code::UnusedImport(_)))
         .flat_map(|d| crate::inspection::quick_fixes(index, src, &d, |_| None))
         .flat_map(|f| f.edits)
         .collect();

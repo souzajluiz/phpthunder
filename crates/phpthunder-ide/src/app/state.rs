@@ -8,6 +8,7 @@ use crate::language::Language;
 use crate::palette::Palette;
 use crate::project::{FileTree, git_branch};
 use crate::search::{FindBar, SearchDialog, Toggle};
+use crate::tr;
 use crate::ui::{CHAR_WIDTH, CODE_LINE, EDITOR_PAD_LEFT, EDITOR_PAD_TOP};
 use iced::event::{self, Event};
 use iced::keyboard::{self, Key, Modifiers, key::Named};
@@ -345,7 +346,11 @@ impl App {
                     Task::batch([open, self.apply_pending_select()])
                 }
                 Err(e) => {
-                    self.notice = Some(format!("Could not open {}: {e}", path.display()));
+                    self.notice = Some(tr!(
+                        "notice-open-failed",
+                        path = path.display().to_string(),
+                        error = e
+                    ));
                     Task::none()
                 }
             },
@@ -504,7 +509,7 @@ impl App {
                     Ok(results) => self.search = Some(Search::Done(results, None)),
                     Err(e) => {
                         self.search = None;
-                        self.notice = Some(format!("Invalid pattern: {e}"));
+                        self.notice = Some(tr!("notice-invalid-pattern", error = e));
                     }
                 }
                 Task::none()
@@ -807,7 +812,11 @@ impl App {
             return Task::none();
         };
         if let Err(e) = std::fs::write(&doc.path, &doc.text) {
-            let msg = format!("Could not save {}: {e}", doc.title());
+            let msg = tr!(
+                "notice-save-failed",
+                file = doc.title(),
+                error = e.to_string()
+            );
             self.notice = Some(msg);
             return Task::none();
         }
@@ -997,7 +1006,7 @@ impl App {
         if items.is_empty() {
             self.completion = None;
             if explicit {
-                self.notice = Some("No suggestions".into());
+                self.notice = Some(tr!("notice-no-suggestions"));
             }
             return;
         }
@@ -1111,7 +1120,7 @@ impl App {
         let problems: Vec<_> = self
             .diagnostics_at(offset)
             .into_iter()
-            .map(|d| (d.severity, d.message))
+            .map(|d| (d.severity, crate::i18n::diagnostic_message(&d)))
             .collect();
         let def = self.lang.definitions(&doc.text, offset).into_iter().next();
         if def.is_none() && problems.is_empty() {
@@ -1162,7 +1171,7 @@ impl App {
                 self.open(def.path, Some(def.symbol.name_span.start))
             }
             None => {
-                self.notice = Some("No declaration found".into());
+                self.notice = Some(tr!("notice-no-declaration"));
                 Task::none()
             }
         }
@@ -1219,7 +1228,7 @@ impl App {
         let Some((def, usages)) = found.map(|b| *b) else {
             self.usages = None;
             self.bottom = None;
-            self.notice = Some("Nothing to search: place the cursor on a symbol".into());
+            self.notice = Some(tr!("notice-nothing-to-search"));
             return;
         };
         let mut cache: std::collections::HashMap<PathBuf, String> =
@@ -1253,11 +1262,11 @@ impl App {
             _ => qualified(s),
         };
         let count = rows.iter().filter(|r| !r.is_declaration).count();
-        let title = format!(
-            "{name} — {count} usage{} in {} file{}",
-            if count == 1 { "" } else { "s" },
-            files.len(),
-            if files.len() == 1 { "" } else { "s" }
+        let title = tr!(
+            "usages-title",
+            name = name,
+            count = count,
+            files = files.len()
         );
         self.usages = Some(Usages::Found {
             title,

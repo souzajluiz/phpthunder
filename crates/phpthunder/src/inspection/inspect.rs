@@ -333,7 +333,7 @@ fn unused_imports(
                     target,
                     Severity::Warning,
                     format!("Unused import '{}'", clause.fqn),
-                    Code::UnusedImport,
+                    Code::UnusedImport(clause.fqn.clone()),
                 );
             }
             continue;
@@ -592,7 +592,7 @@ mod tests {
         let diags = diagnostics(&index, src);
         let unused: Vec<&str> = diags
             .iter()
-            .filter(|d| d.code == Code::UnusedImport)
+            .filter(|d| matches!(d.code, Code::UnusedImport(_)))
             .map(|d| &src[d.start..d.end])
             .collect();
         assert_eq!(unused, vec!["use Lib\\Unused;"]);

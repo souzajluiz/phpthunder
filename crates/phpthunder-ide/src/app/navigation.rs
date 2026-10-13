@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::palette::{Item, Mode, Palette, Target};
+use crate::tr;
 use iced::Task;
 use iced::widget::{Id, operation};
 use phpthunder::symbol::{Kind, Symbol};
@@ -26,7 +27,7 @@ impl App {
         };
         let offset = doc.offset(doc.cursor());
         let Some(def) = self.lang.definitions(&doc.text, offset).into_iter().next() else {
-            self.notice = Some("Place the caret on a class or method".into());
+            self.notice = Some(tr!("notice-caret-class-or-method"));
             return Task::none();
         };
         let s = &def.symbol;
@@ -37,7 +38,7 @@ impl App {
         };
         match found.len() {
             0 => {
-                self.notice = Some(format!("No implementations of {} found", symbol_title(s)));
+                self.notice = Some(tr!("notice-no-implementations", name = symbol_title(s)));
                 Task::none()
             }
             1 => {
@@ -72,7 +73,7 @@ impl App {
                     })
                     .collect();
                 self.close_overlays();
-                let title = format!("Implementations of {}", symbol_title(s));
+                let title = tr!("implementations-title", name = symbol_title(s));
                 self.palette = Some(Palette {
                     mode: Mode::Choose,
                     query: String::new(),
@@ -102,7 +103,7 @@ impl App {
             None => match phpthunder::refactor::enclosing_class_fqn(&doc.text, offset) {
                 Some(fqn) => fqn,
                 None => {
-                    self.notice = Some("Place the caret on or inside a class".into());
+                    self.notice = Some(tr!("notice-caret-in-class"));
                     return Task::none();
                 }
             },
@@ -120,11 +121,14 @@ impl App {
             HierarchyRow {
                 depth,
                 label: short.to_string(),
-                detail: [ns.to_string(), file.unwrap_or_else(|| "not indexed".into())]
-                    .into_iter()
-                    .filter(|s| !s.is_empty())
-                    .collect::<Vec<_>>()
-                    .join(" · "),
+                detail: [
+                    ns.to_string(),
+                    file.unwrap_or_else(|| tr!("hierarchy-not-indexed")),
+                ]
+                .into_iter()
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+                .join(" · "),
                 target: decl.map(|(p, s)| (p, s.name_span.start)),
             }
         };
@@ -142,7 +146,7 @@ impl App {
         }
         let short = class.rsplit('\\').next().unwrap_or(&class);
         self.hierarchy = Some(Hierarchy {
-            title: format!("Type hierarchy of {short}"),
+            title: tr!("hierarchy-title", name = short),
             rows,
         });
         self.bottom = Some(Bottom::Hierarchy);

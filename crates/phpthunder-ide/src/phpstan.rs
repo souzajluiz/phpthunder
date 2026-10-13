@@ -2,6 +2,7 @@
 //! configuration and turn its findings into problems.
 
 use crate::project::vendor_bin;
+use crate::tr;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -50,7 +51,9 @@ pub fn phpstan_available(root: &Path) -> bool {
 /// Returns the JSON error when the output is not a PHPStan report.
 pub fn parse_report(json: &str, file: &Path) -> Result<Vec<Finding>, String> {
     // PHPStan may print warnings before the JSON object.
-    let start = json.find('{').ok_or("PHPStan returned no report")?;
+    let start = json
+        .find('{')
+        .ok_or_else(|| tr!("error-phpstan-no-report"))?;
     let report: Report = serde_json::from_str(&json[start..]).map_err(|e| e.to_string())?;
     let wanted = file.to_string_lossy();
     Ok(report
@@ -72,7 +75,7 @@ pub fn parse_report(json: &str, file: &Path) -> Result<Vec<Finding>, String> {
 /// Returns a message when PHPStan is missing, cannot start, or its output
 /// cannot be read.
 pub async fn analyse(root: PathBuf, file: PathBuf) -> Result<Vec<Finding>, String> {
-    let bin = vendor_bin(&root, "phpstan").ok_or("PHPStan is not installed")?;
+    let bin = vendor_bin(&root, "phpstan").ok_or_else(|| tr!("error-phpstan-missing"))?;
     let output = tokio::process::Command::new("php")
         .current_dir(&root)
         .arg(&bin)
@@ -86,7 +89,7 @@ pub async fn analyse(root: PathBuf, file: PathBuf) -> Result<Vec<Finding>, Strin
         .arg(&file)
         .output()
         .await
-        .map_err(|e| format!("cannot run php: {e}"))?;
+        .map_err(|e| tr!("error-run-php", error = e.to_string()))?;
     parse_report(&String::from_utf8_lossy(&output.stdout), &file)
 }
 

@@ -1,6 +1,7 @@
 //! In-process language services: the phpthunder index and analysis, without
 //! a separate server process or JSON-RPC.
 
+use crate::tr;
 use parking_lot::RwLock;
 use phpthunder::analysis::{self, Candidate, Definition, Usage};
 use phpthunder::index::{self, Index, index_source};
@@ -62,7 +63,7 @@ impl Language {
             }
         })
         .await
-        .map_err(|e| format!("indexing failed: {e}"))
+        .map_err(|e| tr!("error-indexing", error = e.to_string()))
     }
 
     /// Re-indexes one file from its current (possibly unsaved) text. Called
@@ -144,7 +145,7 @@ impl Language {
             })
         })
         .await
-        .map_err(|e| format!("rename failed: {e}"))?
+        .map_err(|e| tr!("error-rename", error = e.to_string()))?
     }
 
     /// `text` with unused imports removed and import blocks sorted.

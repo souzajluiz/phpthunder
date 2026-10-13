@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::app::{App, Message, TERMINAL_SINK};
+use crate::tr;
 use iced::widget::text::{LineHeight, Span, Wrapping};
 use iced::widget::{Id, button, column, container, mouse_area, rich_text, row, sensor, text_input};
 use iced::{Center, Color, Element, Fill, Font, Theme, mouse};
@@ -110,8 +111,8 @@ impl App {
         let Some(session) = &self.terminal else {
             return container(
                 row![
-                    label("No terminal running", 12.0, MUTED),
-                    button(label("Start", 12.0, TEXT_SOFT))
+                    label(tr!("terminal-none"), 12.0, MUTED),
+                    button(label(tr!("terminal-start"), 12.0, TEXT_SOFT))
                         .padding([4, 10])
                         .style(ghost_button)
                         .on_press(Message::TerminalRestart),
@@ -146,8 +147,8 @@ impl App {
         if session.has_exited() {
             layers = layers.push(
                 row![
-                    label("Process exited", 12.0, MUTED),
-                    button(label("Restart", 12.0, TEXT_SOFT))
+                    label(tr!("terminal-exited"), 12.0, MUTED),
+                    button(label(tr!("terminal-restart"), 12.0, TEXT_SOFT))
                         .padding([4, 10])
                         .style(ghost_button)
                         .on_press(Message::TerminalRestart),

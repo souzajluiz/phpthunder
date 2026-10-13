@@ -8,6 +8,7 @@ use crate::app::{
 use crate::editor::Document;
 use crate::keymap::{Cmd, hint};
 use crate::search::{self, Toggle};
+use crate::tr;
 use crate::ui::*;
 use crate::ui::{Icon, icon};
 use iced::alignment::{Horizontal, Vertical};
@@ -146,8 +147,8 @@ impl App {
         let content = column![
             icon(Icon::Bolt, 44.0, 1.8, ACCENT),
             label("phpthunder", 24.0, TEXT_BRIGHT).font(UI_BOLD),
-            label("Open a PHP project folder to start.", 14.0, MUTED),
-            button(label("Open Folder", 14.0, rgb(0x14161C)).font(UI_MEDIUM))
+            label(tr!("welcome-hint"), 14.0, MUTED),
+            button(label(tr!("welcome-open-folder"), 14.0, rgb(0x14161C)).font(UI_MEDIUM))
                 .padding([10, 20])
                 .style(primary_button)
                 .on_press(Message::OpenFolderDialog),
@@ -212,7 +213,7 @@ impl App {
     /// Narrow tool rail on the far left. Only the project button is wired (it
     /// toggles the sidebar); the others are placeholders with tooltips.
     fn rail(&self) -> El<'_> {
-        let item = |which: Icon, active: bool, msg: Option<Message>, tip: &'static str| -> El<'_> {
+        let item = |which: Icon, active: bool, msg: Option<Message>, tip: String| -> El<'_> {
             let b = button(
                 container(icon(which, 20.0, 1.8, if active { ACCENT } else { MUTED })).center(44),
             )
@@ -235,33 +236,33 @@ impl App {
                 Icon::Folder,
                 self.sidebar,
                 Some(Message::ToggleSidebar),
-                "Project  ⌘1"
+                format!("{}  {}", tr!("rail-project"), hint(Cmd::ToggleSidebar))
             ),
             item(
                 Icon::Search,
                 false,
                 Some(Message::Command(Cmd::FindInPath)),
-                "Find in path  ⇧⌘F"
+                format!("{}  {}", tr!("action-find-in-path"), hint(Cmd::FindInPath))
             ),
             item(
                 Icon::Symbols,
                 false,
                 Some(Message::Command(Cmd::GotoSymbol)),
-                "Go to symbol  ⌥⌘O"
+                format!("{}  {}", tr!("action-go-to-symbol"), hint(Cmd::GotoSymbol))
             ),
             item(
                 Icon::Tests,
                 self.bottom == Some(Bottom::Tests),
                 Some(Message::RunTests(TestTarget::Context)),
-                "Run tests  ⌃⇧R"
+                format!("{}  {}", tr!("rail-run-tests"), hint(Cmd::RunTests))
             ),
             item(
                 Icon::Terminal,
                 self.bottom == Some(Bottom::Terminal),
                 Some(Message::Command(Cmd::ToggleTerminal)),
-                "Terminal  ⌥F12"
+                format!("{}  {}", tr!("panel-terminal"), hint(Cmd::ToggleTerminal))
             ),
-            item(Icon::Branch, false, None, "Git — coming soon"),
+            item(Icon::Branch, false, None, tr!("rail-git")),
         ]
         .spacing(4)
         .padding(Padding {
@@ -341,7 +342,7 @@ impl App {
             .style(row_button(selected))
             .into()
         });
-        let header = container(label("PROJECT", 11.0, MUTED).font(UI_BOLD))
+        let header = container(label(tr!("sidebar-project"), 11.0, MUTED).font(UI_BOLD))
             .padding([0, 16])
             .height(36)
             .center_y(36);
@@ -388,7 +389,7 @@ impl App {
     /// Cheat sheet of navigation shortcuts for the empty editor area; key labels
     /// come from `keymap::hint`.
     fn shortcuts(&self) -> El<'_> {
-        let line = |cmd: Cmd, what: &'static str| {
+        let line = |cmd: Cmd, what: String| {
             row![
                 label(what, 13.0, MUTED).width(200),
                 label(hint(cmd), 13.0, TEXT_SOFT).font(MONO)
@@ -396,14 +397,14 @@ impl App {
             .spacing(16)
         };
         column![
-            label("Open a file from the project tree", 15.0, TEXT),
+            label(tr!("shortcuts-title"), 15.0, TEXT),
             space().height(8),
-            line(Cmd::SearchEverywhere, "Search everywhere"),
-            line(Cmd::GotoFile, "Go to file"),
-            line(Cmd::GotoClass, "Go to class"),
-            line(Cmd::GotoSymbol, "Go to symbol"),
-            line(Cmd::RecentFiles, "Recent files"),
-            line(Cmd::FindInPath, "Find in path"),
+            line(Cmd::SearchEverywhere, tr!("action-search-everywhere")),
+            line(Cmd::GotoFile, tr!("action-go-to-file")),
+            line(Cmd::GotoClass, tr!("action-go-to-class")),
+            line(Cmd::GotoSymbol, tr!("action-go-to-symbol")),
+            line(Cmd::RecentFiles, tr!("action-recent-files")),
+            line(Cmd::FindInPath, tr!("action-find-in-path")),
         ]
         .spacing(10)
         .into()
@@ -655,7 +656,7 @@ impl App {
     /// no panel is open; shown under the editor by `main_area`.
     fn bottom_panel(&self) -> Option<El<'_>> {
         let current = self.bottom?;
-        let tab = |b: Bottom, name: &'static str| -> El<'_> {
+        let tab = |b: Bottom, name: String| -> El<'_> {
             let active = b == current;
             button(label(name, 13.0, if active { TEXT_BRIGHT } else { MUTED }))
                 .on_press(Message::SelectBottom(b))
@@ -679,19 +680,19 @@ impl App {
         };
         let mut tabs = row![].spacing(4).align_y(Center);
         if self.usages.is_some() {
-            tabs = tabs.push(tab(Bottom::Usages, "Usages"));
+            tabs = tabs.push(tab(Bottom::Usages, tr!("panel-usages")));
         }
         if self.search.is_some() {
-            tabs = tabs.push(tab(Bottom::Find, "Find"));
+            tabs = tabs.push(tab(Bottom::Find, tr!("panel-find")));
         }
-        tabs = tabs.push(tab(Bottom::Problems, "Problems"));
+        tabs = tabs.push(tab(Bottom::Problems, tr!("panel-problems")));
         if self.hierarchy.is_some() {
-            tabs = tabs.push(tab(Bottom::Hierarchy, "Hierarchy"));
+            tabs = tabs.push(tab(Bottom::Hierarchy, tr!("panel-hierarchy")));
         }
         if self.tests.is_some() {
-            tabs = tabs.push(tab(Bottom::Tests, "Tests"));
+            tabs = tabs.push(tab(Bottom::Tests, tr!("panel-tests")));
         }
-        tabs = tabs.push(tab(Bottom::Terminal, "Terminal"));
+        tabs = tabs.push(tab(Bottom::Terminal, tr!("panel-terminal")));
         let close = button(icon(Icon::Close, 12.0, 2.0, MUTED))
             .padding(6)
             .style(ghost_button)
@@ -725,11 +726,13 @@ impl App {
     fn usages_body(&self) -> El<'_> {
         match &self.usages {
             None => space().into(),
-            Some(Usages::Searching(name)) => {
-                container(label(format!("Searching usages of {name}…"), 12.0, MUTED))
-                    .padding([10, 16])
-                    .into()
-            }
+            Some(Usages::Searching(name)) => container(label(
+                tr!("usages-searching", name = name.as_str()),
+                12.0,
+                MUTED,
+            ))
+            .padding([10, 16])
+            .into(),
             Some(Usages::Found {
                 title,
                 rows,
@@ -746,7 +749,7 @@ impl App {
                     .align_y(Center);
                     if r.is_declaration {
                         line = line.push(
-                            container(label("declaration", 11.0, MUTED))
+                            container(label(tr!("usages-declaration"), 11.0, MUTED))
                                 .padding([1, 6])
                                 .style(pill),
                         );
@@ -781,26 +784,24 @@ impl App {
     fn find_results_body(&self) -> El<'_> {
         match &self.search {
             None => space().into(),
-            Some(Search::Running(q)) => {
-                container(label(format!("Searching for “{q}”…"), 12.0, MUTED))
-                    .padding([10, 16])
-                    .into()
-            }
+            Some(Search::Running(q)) => container(label(
+                tr!("find-results-searching", query = q.as_str()),
+                12.0,
+                MUTED,
+            ))
+            .padding([10, 16])
+            .into(),
             Some(Search::Done(results, selected)) => {
                 let files = results.files.len();
-                let title = format!(
-                    "“{}” — {} match{} in {} file{}{}",
-                    results.query,
-                    results.total,
-                    if results.total == 1 { "" } else { "es" },
-                    files,
-                    if files == 1 { "" } else { "s" },
-                    if results.truncated {
-                        " (stopped at the limit)"
-                    } else {
-                        ""
-                    }
+                let mut title = tr!(
+                    "find-results-title",
+                    query = results.query.as_str(),
+                    matches = results.total,
+                    files = files,
                 );
+                if results.truncated {
+                    title = format!("{title} {}", tr!("find-results-truncated"));
+                }
                 let root = self.tree.root.as_deref();
                 let mut list = column![].spacing(1).padding([2, 8]);
                 for (fi, file) in results.files.iter().enumerate() {
@@ -882,7 +883,7 @@ impl App {
     /// buttons and an expandable replace row.
     fn find_bar_view(&self) -> Option<El<'_>> {
         let f = self.find.as_ref()?;
-        let toggle = |t: Toggle, on: bool, text_: &'static str, tip: &'static str| -> El<'_> {
+        let toggle = |t: Toggle, on: bool, text_: &'static str, tip: String| -> El<'_> {
             tooltip(
                 button(label(text_, 12.0, if on { ACCENT } else { MUTED }).font(MONO))
                     .padding([3, 7])
@@ -896,13 +897,19 @@ impl App {
             .into()
         };
         let count = match (&f.error, f.matches.len(), f.current) {
-            (Some(_), _, _) => label("Bad pattern", 12.0, rgb(0xF7768E)),
-            (None, 0, _) if !f.query.is_empty() => label("No results", 12.0, rgb(0xF7768E)),
+            (Some(_), _, _) => label(tr!("find-bad-pattern"), 12.0, rgb(0xF7768E)),
+            (None, 0, _) if !f.query.is_empty() => {
+                label(tr!("find-no-results"), 12.0, rgb(0xF7768E))
+            }
             (None, 0, _) => label("", 12.0, MUTED),
-            (None, n, Some(c)) => label(format!("{} of {n}", c + 1), 12.0, MUTED),
-            (None, n, None) => label(format!("{n} results"), 12.0, MUTED),
+            (None, n, Some(c)) => label(
+                tr!("list-position", current = c + 1, total = n),
+                12.0,
+                MUTED,
+            ),
+            (None, n, None) => label(tr!("find-count", count = n), 12.0, MUTED),
         };
-        let input = iced::widget::text_input("Find", &f.query)
+        let input = iced::widget::text_input(&tr!("find-placeholder"), &f.query)
             .id(iced::widget::Id::new(search::FIND_INPUT))
             .on_input(Message::FindQuery)
             .on_submit(Message::FindStep(true))
@@ -934,9 +941,14 @@ impl App {
         let mut find_row = row![
             expand,
             input,
-            toggle(Toggle::Case, f.options.case_sensitive, "Aa", "Match case"),
-            toggle(Toggle::Word, f.options.whole_word, "W", "Words"),
-            toggle(Toggle::Regex, f.options.regex, ".*", "Regex"),
+            toggle(
+                Toggle::Case,
+                f.options.case_sensitive,
+                "Aa",
+                tr!("find-match-case")
+            ),
+            toggle(Toggle::Word, f.options.whole_word, "W", tr!("find-words")),
+            toggle(Toggle::Regex, f.options.regex, ".*", tr!("find-regex")),
             count,
             nav(false),
             nav(true),
@@ -952,7 +964,7 @@ impl App {
         );
         let mut col = column![find_row].spacing(6);
         if f.show_replace {
-            let replace = iced::widget::text_input("Replace", &f.replacement)
+            let replace = iced::widget::text_input(&tr!("replace-placeholder"), &f.replacement)
                 .id(iced::widget::Id::new(search::REPLACE_INPUT))
                 .on_input(Message::ReplaceText)
                 .on_submit(Message::ReplaceOne)
@@ -961,7 +973,7 @@ impl App {
                 .padding([5, 8])
                 .width(320)
                 .style(boxed_input);
-            let action = |name: &'static str, msg: Message| -> El<'_> {
+            let action = |name: String, msg: Message| -> El<'_> {
                 button(label(name, 12.0, TEXT_SOFT))
                     .padding([4, 10])
                     .style(ghost_button)
@@ -972,8 +984,8 @@ impl App {
                 row![
                     space().width(20),
                     replace,
-                    action("Replace", Message::ReplaceOne),
-                    action("Replace All", Message::ReplaceAll)
+                    action(tr!("replace-one"), Message::ReplaceOne),
+                    action(tr!("replace-all"), Message::ReplaceAll)
                 ]
                 .spacing(6)
                 .align_y(Center),
@@ -1052,7 +1064,7 @@ impl App {
                 .on_press(Message::SearchToggle(t))
                 .into()
         };
-        let query = iced::widget::text_input("Text to find", &d.query)
+        let query = iced::widget::text_input(&tr!("search-placeholder"), &d.query)
             .id(iced::widget::Id::new(search::SEARCH_INPUT))
             .on_input(Message::SearchQuery)
             .on_submit(Message::SearchSubmit)
@@ -1060,7 +1072,7 @@ impl App {
             .font(MONO)
             .padding([8, 10])
             .style(boxed_input);
-        let mask = iced::widget::text_input("File mask, e.g. *.php", &d.mask)
+        let mask = iced::widget::text_input(&tr!("search-mask-placeholder"), &d.mask)
             .on_input(Message::SearchMask)
             .on_submit(Message::SearchSubmit)
             .size(13)
@@ -1069,9 +1081,9 @@ impl App {
             .style(boxed_input);
         let content = column![
             row![
-                label("Find in Path", 14.0, TEXT_BRIGHT).font(UI_BOLD),
+                label(tr!("search-title"), 14.0, TEXT_BRIGHT).font(UI_BOLD),
                 space().width(Fill),
-                label("↵ search   esc close", 11.0, MUTED)
+                label(tr!("search-hints"), 11.0, MUTED)
             ]
             .align_y(Center),
             query,
@@ -1087,7 +1099,7 @@ impl App {
             .align_y(Center),
             row![
                 space().width(Fill),
-                button(label("Find", 13.0, rgb(0x14161C)).font(UI_MEDIUM))
+                button(label(tr!("search-submit"), 13.0, rgb(0x14161C)).font(UI_MEDIUM))
                     .padding([6, 16])
                     .style(primary_button)
                     .on_press(Message::SearchSubmit),
@@ -1112,9 +1124,13 @@ impl App {
     fn status_bar(&self) -> El<'_> {
         let indexing = match &self.indexing {
             Indexing::Idle => String::new(),
-            Indexing::Running => "Indexing…".into(),
+            Indexing::Running => tr!("status-indexing"),
             Indexing::Done(r) => {
-                format!("{} files indexed · {}", r.files, format_elapsed(r.elapsed))
+                tr!(
+                    "status-indexed",
+                    files = r.files,
+                    elapsed = format_elapsed(r.elapsed)
+                )
             }
         };
         let mut bar = row![
@@ -1157,9 +1173,9 @@ impl App {
                     .on_press(Message::Command(Cmd::Problems)),
                 container(label(
                     if stale {
-                        "Inspecting…"
+                        tr!("status-inspecting")
                     } else {
-                        "Problems  ⌘6"
+                        format!("{}  {}", tr!("panel-problems"), hint(Cmd::Problems))
                     },
                     12.0,
                     TEXT,
@@ -1173,7 +1189,11 @@ impl App {
             let pos = doc.cursor();
             bar = bar
                 .push(label(
-                    format!("Ln {}, Col {}", pos.line + 1, doc.visual_column(pos) + 1),
+                    tr!(
+                        "status-position",
+                        line = pos.line + 1,
+                        column = doc.visual_column(pos) + 1
+                    ),
                     12.0,
                     MUTED,
                 ))
@@ -1268,7 +1288,11 @@ fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
         label(item.detail.clone(), 12.0, SYN_VARIABLE).font(MONO),
         space().height(Fill),
         label(
-            format!("{} of {}", c.selected + 1, c.items.len()),
+            tr!(
+                "list-position",
+                current = c.selected + 1,
+                total = c.items.len()
+            ),
             11.0,
             MUTED
         ),

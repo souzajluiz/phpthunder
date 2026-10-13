@@ -1,5 +1,6 @@
 //! Search state: the find bar, the find-in-path dialog, options and results.
 
+use crate::tr;
 use regex::{Regex, RegexBuilder};
 use std::path::PathBuf;
 
@@ -77,7 +78,7 @@ impl Options {
                 e.to_string()
                     .lines()
                     .last()
-                    .unwrap_or("invalid pattern")
+                    .unwrap_or(&tr!("error-invalid-pattern"))
                     .trim()
                     .to_string()
             })

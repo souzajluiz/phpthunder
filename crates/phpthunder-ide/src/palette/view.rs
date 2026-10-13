@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::app::{App, Message};
+use crate::tr;
 use crate::ui::*;
 use iced::widget::text::Span;
 use iced::widget::{Id, button, column, container, rich_text, row, space, text, text_input};
@@ -161,9 +162,13 @@ impl App {
                                 badge: badge(s.kind),
                                 title,
                                 matched,
-                                detail: format!("{owner} · line {}", s.name_span.start.line + 1)
-                                    .trim_start_matches(" · ")
-                                    .to_string(),
+                                detail: tr!(
+                                    "palette-symbol-detail",
+                                    owner = owner,
+                                    line = s.name_span.start.line + 1
+                                )
+                                .trim_start_matches(" · ")
+                                .to_string(),
                                 target: Target::Symbol(doc.path.clone(), s.name_span.start),
                             },
                         ));
@@ -184,7 +189,7 @@ impl App {
                         0,
                         Item {
                             badge: "#",
-                            title: format!("Line {line}, column {col}"),
+                            title: tr!("palette-line-item", line = line, column = col),
                             matched: Vec::new(),
                             detail: doc.line_text(line - 1).trim().chars().take(80).collect(),
                             target: Target::Line(line - 1, col.saturating_sub(1)),
@@ -209,7 +214,7 @@ impl App {
     /// the accent color, and a footer with the mode and keys. Called from
     /// `App::view`, which stacks it over a click-to-close backdrop.
     pub fn palette_view<'a>(&'a self, p: &'a Palette) -> Element<'a, Message> {
-        let input = text_input(p.mode.placeholder(), &p.query)
+        let input = text_input(&p.mode.placeholder(), &p.query)
             .id(Id::new(INPUT_ID))
             .on_input(Message::PaletteQuery)
             .on_submit(Message::PaletteSubmit)
@@ -278,7 +283,7 @@ impl App {
             });
         let empty = p.items.is_empty() && (!p.query.is_empty() || matches!(p.mode, Mode::Recent));
         let list: Element<'_, Message> = if empty {
-            container(text("Nothing found").size(13).color(MUTED))
+            container(text(tr!("palette-nothing-found")).size(13).color(MUTED))
                 .padding([10, 14])
                 .into()
         } else {
@@ -288,14 +293,12 @@ impl App {
             text(
                 p.fixed
                     .as_ref()
-                    .map_or(p.mode.title(), |(title, _)| title.as_str())
+                    .map_or_else(|| p.mode.title(), |(title, _)| title.clone())
             )
             .size(11)
             .color(MUTED),
             space().width(Fill),
-            text("↑↓ navigate   ↵ open   esc close")
-                .size(11)
-                .color(MUTED),
+            text(tr!("palette-hints")).size(11).color(MUTED),
         ]
         .padding([7, 14]);
         let card = container(column![

@@ -1,19 +1,19 @@
 //! Composer: the project's scripts plus the common commands, to run in the
 //! integrated terminal.
 
+use crate::tr;
 use std::path::Path;
 
 /// Commands offered even without scripts, with what they do.
-const STANDARD: &[(&str, &str)] = &[
-    ("install", "Install dependencies from composer.lock"),
-    (
-        "update",
-        "Update dependencies to their latest allowed versions",
-    ),
-    ("dump-autoload", "Regenerate the autoloader"),
-    ("outdated --direct", "List outdated direct dependencies"),
-    ("validate", "Check composer.json"),
-];
+fn standard() -> [(&'static str, String); 5] {
+    [
+        ("install", tr!("composer-install")),
+        ("update", tr!("composer-update")),
+        ("dump-autoload", tr!("composer-dump-autoload")),
+        ("outdated --direct", tr!("composer-outdated")),
+        ("validate", tr!("composer-validate")),
+    ]
+}
 
 /// A command line for `composer` and its description.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,17 +42,23 @@ pub fn composer_commands(root: &Path) -> Vec<ComposerCommand> {
                     args: name.clone(),
                     description: match body {
                         serde_json::Value::String(s) => s.clone(),
-                        serde_json::Value::Array(steps) => format!("{} steps", steps.len()),
-                        _ => "script".into(),
+                        serde_json::Value::Array(steps) => {
+                            tr!("composer-steps", count = steps.len())
+                        }
+                        _ => tr!("composer-script"),
                     },
                 })
                 .collect()
         })
         .unwrap_or_default();
-    commands.extend(STANDARD.iter().map(|(args, description)| ComposerCommand {
-        args: (*args).to_string(),
-        description: (*description).to_string(),
-    }));
+    commands.extend(
+        standard()
+            .into_iter()
+            .map(|(args, description)| ComposerCommand {
+                args: args.to_string(),
+                description,
+            }),
+    );
     commands
 }
 

@@ -2,6 +2,7 @@
 //! actions, and applying their edits across files.
 
 use super::*;
+use crate::tr;
 use iced::Task;
 use phpthunder::inspection::{Edit, Fix};
 use std::collections::BTreeMap;
@@ -89,13 +90,19 @@ impl App {
             return;
         }
         let Ok(text) = std::fs::read_to_string(path) else {
-            self.notice = Some(format!("Could not read {}", path.display()));
+            self.notice = Some(tr!("notice-read-failed", path = path.display().to_string()));
             return;
         };
         let updated = phpthunder::refactor::apply_edits(&text, edits);
         match std::fs::write(path, &updated) {
             Ok(()) => self.lang.update_file(path, &updated),
-            Err(e) => self.notice = Some(format!("Could not write {}: {e}", path.display())),
+            Err(e) => {
+                self.notice = Some(tr!(
+                    "notice-write-failed",
+                    path = path.display().to_string(),
+                    error = e.to_string()
+                ))
+            }
         }
     }
 
@@ -123,11 +130,7 @@ impl App {
             doc.apply_edits(&[edit]);
         }
         self.after_change(true);
-        self.notice = Some(format!(
-            "Implemented {} method{}",
-            missing.len(),
-            if missing.len() == 1 { "" } else { "s" }
-        ));
+        self.notice = Some(tr!("notice-implemented", count = missing.len()));
         self.reveal_cursor()
     }
 
@@ -138,7 +141,7 @@ impl App {
         };
         let optimized = self.lang.optimize_imports(&doc.text);
         if optimized == doc.text {
-            self.notice = Some("Imports are already optimized".into());
+            self.notice = Some(tr!("notice-imports-optimized"));
             return Task::none();
         }
         let cursor = doc.cursor();

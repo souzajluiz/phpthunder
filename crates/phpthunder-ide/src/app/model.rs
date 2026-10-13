@@ -3,6 +3,7 @@
 use crate::keymap::Cmd;
 use crate::language::IndexReport;
 use crate::search::{SearchResults, Toggle};
+use crate::tr;
 use iced::Point;
 use iced::keyboard::{self};
 use iced::widget::scrollable::Viewport;
@@ -163,11 +164,12 @@ pub enum Message {
     TestsDone(Result<crate::testing::TestRun, String>),
     /// Open the test case at this index of the Tests panel.
     OpenTest(usize),
-    /// The formatter finished: file, document version, result.
+    /// The formatter finished: file, document version, result (`None` when
+    /// the project has no formatter).
     Formatted(
         PathBuf,
         u64,
-        Result<(String, crate::formatter::Formatter), String>,
+        Result<Option<(String, crate::formatter::Formatter)>, String>,
     ),
     /// PHPStan finished analysing a saved file.
     PhpstanDone(PathBuf, Result<Vec<crate::phpstan::Finding>, String>),
@@ -315,9 +317,9 @@ impl Intention {
     /// Menu label.
     pub fn title(&self) -> String {
         match self {
-            Intention::Fix(fix) => fix.title.clone(),
-            Intention::ImplementMethods { .. } => "Implement methods".into(),
-            Intention::OptimizeImports => "Optimize imports".into(),
+            Intention::Fix(fix) => crate::i18n::fix_title(fix),
+            Intention::ImplementMethods { .. } => tr!("intention-implement-methods"),
+            Intention::OptimizeImports => tr!("intention-optimize-imports"),
         }
     }
 }

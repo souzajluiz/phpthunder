@@ -18,9 +18,10 @@ pub fn quick_fixes(
 ) -> Vec<Fix> {
     match &diagnostic.code {
         Code::UndefinedClass(fqn) => import_fixes(index, src, diagnostic, fqn),
-        Code::UnusedImport => vec![Fix {
+        Code::UnusedImport(_) => vec![Fix {
             title: "Remove unused import".into(),
             edits: vec![remove_import_edit(src, diagnostic)],
+            kind: FixKind::RemoveImport,
         }],
         Code::UndefinedMethod {
             class,
@@ -31,6 +32,10 @@ pub fn quick_fixes(
             class,
             &method_stub(name, *is_static),
             &format!("Add method '{name}()' to {}", short(class)),
+            FixKind::AddMethod {
+                class: class.clone(),
+                name: name.clone(),
+            },
             load,
         )
         .into_iter()
@@ -40,6 +45,10 @@ pub fn quick_fixes(
             class,
             &format!("\n    public mixed ${name};\n"),
             &format!("Add property '${name}' to {}", short(class)),
+            FixKind::AddProperty {
+                class: class.clone(),
+                name: name.clone(),
+            },
             load,
         )
         .into_iter()
@@ -75,6 +84,7 @@ fn import_fixes(index: &Index, src: &str, diagnostic: &Diagnostic, fqn: &str) ->
                 end: at,
                 text: format!("\nuse {};", s.fqn),
             }],
+            kind: FixKind::ImportClass(s.fqn.clone()),
         })
         .collect();
     fixes.sort_by(|a, b| a.title.cmp(&b.title));
@@ -117,6 +127,7 @@ fn add_member_fix(
     class: &str,
     member: &str,
     title: &str,
+    kind: FixKind,
     load: impl Fn(&Path) -> Option<String>,
 ) -> Option<Fix> {
     let (path, symbol) = index.classes(class).into_iter().next()?;
@@ -140,5 +151,6 @@ fn add_member_fix(
             end: close,
             text: member.to_string(),
         }],
+        kind,
     })
 }

@@ -17,7 +17,7 @@ fn kind(code: &Code) -> &'static str {
         Code::UndefinedFunction(_) => "undefined function",
         Code::UndefinedMethod { .. } => "undefined method",
         Code::UndefinedProperty { .. } => "undefined property",
-        Code::UnusedImport => "unused import",
+        Code::UnusedImport(_) => "unused import",
         Code::UndefinedVariable(_) => "undefined variable",
         Code::External(_) => "external",
     }

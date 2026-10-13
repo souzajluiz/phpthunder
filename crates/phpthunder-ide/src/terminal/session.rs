@@ -1,6 +1,7 @@
 //! A shell running in a pseudo-terminal, with its screen kept by a VT100
 //! parser on a reader thread.
 
+use crate::tr;
 use iced::futures::Stream;
 use parking_lot::Mutex;
 use portable_pty::{Child, CommandBuilder, MasterPty, PtySize, native_pty_system};
@@ -61,7 +62,7 @@ impl Session {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| format!("cannot open a terminal: {e}"))?;
+            .map_err(|e| tr!("error-terminal-open", error = e.to_string()))?;
         let mut cmd = CommandBuilder::new_default_prog();
         cmd.cwd(cwd);
         cmd.env("TERM", "xterm-256color");
@@ -69,7 +70,7 @@ impl Session {
         let child = pty
             .slave
             .spawn_command(cmd)
-            .map_err(|e| format!("cannot start the shell: {e}"))?;
+            .map_err(|e| tr!("error-terminal-shell", error = e.to_string()))?;
         let mut reader = pty.master.try_clone_reader().map_err(|e| e.to_string())?;
         let writer = pty.master.take_writer().map_err(|e| e.to_string())?;
         let parser = Arc::new(Mutex::new(vt100::Parser::new(rows, cols, SCROLLBACK)));

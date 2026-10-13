@@ -6,6 +6,7 @@ mod app;
 mod composer;
 mod editor;
 mod formatter;
+mod i18n;
 mod keymap;
 mod language;
 mod palette;
@@ -64,6 +65,7 @@ fn window_settings() -> window::Settings {
 ///
 /// Returns iced's error if the window or graphics backend cannot be created.
 fn main() -> iced::Result {
+    i18n::init_locale(i18n::detect_locale());
     let mut application = iced::application(App::boot, App::update, App::view)
         .title(App::title)
         .subscription(App::subscription)
