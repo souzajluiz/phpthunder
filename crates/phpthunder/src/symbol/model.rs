@@ -98,10 +98,32 @@ pub struct Symbol {
     pub supers: Vec<String>,
     /// Declared only in PHPDoc (`@property`, `@method`).
     pub is_virtual: bool,
+    /// `@template` parameter names declared on this class, method or function.
+    pub templates: Vec<String>,
+    /// For classes: generic arguments given to supertypes by `@extends`,
+    /// `@implements` and `@use`, as (supertype FQN, arguments).
+    pub super_args: Vec<(String, Vec<String>)>,
+    /// For methods and functions: `(parameter index, template)` for each
+    /// `@param class-string<T>`, so `make(User::class)` binds `T` to `User`.
+    pub class_string_params: Vec<(usize, String)>,
 }
 
 /// Return/property type sentinel meaning "late static binding": `static` or `$this`.
 pub const STATIC_TYPE: &str = "static";
+
+/// Prefix marking a `@template` parameter inside a [`Ty`] (`<T>TValue`);
+/// such names are replaced by [`Ty::substitute`] at the use site.
+pub const TEMPLATE_PREFIX: &str = "<T>";
+
+/// The template-parameter marker for `name`.
+pub fn template_marker(name: &str) -> String {
+    format!("{TEMPLATE_PREFIX}{name}")
+}
+
+/// The template name if `ty` is a template-parameter marker.
+pub fn template_name(ty: &str) -> Option<&str> {
+    ty.strip_prefix(TEMPLATE_PREFIX)
+}
 
 /// A resolved type: the class an expression evaluates to and, for arrays and
 /// generic collections, the class of its elements.
@@ -111,6 +133,9 @@ pub struct Ty {
     pub class: Option<String>,
     /// Element class of `T[]`, `array<K, T>`, and generic collections.
     pub elem: Option<String>,
+    /// Generic arguments (`Collection<int, User>` -> `["", "App\\User"]`);
+    /// an empty string stands for a non-class argument.
+    pub args: Vec<String>,
 }
 
 impl Ty {
@@ -118,7 +143,7 @@ impl Ty {
     pub fn class(fqn: impl Into<String>) -> Self {
         Self {
             class: Some(fqn.into()),
-            elem: None,
+            ..Self::default()
         }
     }
 
@@ -129,10 +154,54 @@ impl Ty {
 
     /// Fills whatever `self` lacks from `other` (native types win over docs).
     pub fn or(self, other: Ty) -> Ty {
+        let args = if self.args.is_empty() {
+            other.args
+        } else {
+            self.args
+        };
         Ty {
             class: self.class.or(other.class),
             elem: self.elem.or(other.elem),
+            args,
         }
+    }
+
+    /// Replaces template markers using `bindings` (template name ->
+    /// concrete class, `""` for non-class); markers left unbound are
+    /// dropped so they never leak out as class names.
+    pub fn substitute(self, bindings: &std::collections::HashMap<String, String>) -> Ty {
+        let bind = |c: Option<String>| match c {
+            Some(c) => match template_name(&c) {
+                Some(t) => bindings.get(t).filter(|b| !b.is_empty()).cloned(),
+                None => Some(c),
+            },
+            None => None,
+        };
+        let args = self
+            .args
+            .into_iter()
+            .map(|a| match template_name(&a) {
+                Some(t) => bindings.get(t).cloned().unwrap_or_default(),
+                None => a,
+            })
+            .collect();
+        Ty {
+            class: bind(self.class),
+            elem: bind(self.elem),
+            args,
+        }
+    }
+
+    /// Whether any part of the type is still an unbound template marker.
+    pub fn has_templates(&self) -> bool {
+        self.class
+            .as_deref()
+            .is_some_and(|c| template_name(c).is_some())
+            || self
+                .elem
+                .as_deref()
+                .is_some_and(|c| template_name(c).is_some())
+            || self.args.iter().any(|a| template_name(a).is_some())
     }
 
     /// Replaces [`STATIC_TYPE`] with the class the member was accessed on.
@@ -146,9 +215,21 @@ impl Ty {
                 }
             })
         };
+        let args = self
+            .args
+            .into_iter()
+            .map(|a| {
+                if a == STATIC_TYPE {
+                    receiver.to_string()
+                } else {
+                    a
+                }
+            })
+            .collect();
         Ty {
             class: bind(self.class),
             elem: bind(self.elem),
+            args,
         }
     }
 }

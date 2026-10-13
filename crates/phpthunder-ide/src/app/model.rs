@@ -66,7 +66,7 @@ pub enum Message {
     HoverFire(u64),
     // Usages and bottom panel
     /// Async find-usages finished; `None` when no symbol was under the cursor.
-    UsagesFound(Option<(Definition, Vec<Usage>)>),
+    UsagesFound(Option<Box<(Definition, Vec<Usage>)>>),
     /// Jump to the usage row at this index.
     OpenUsage(usize),
     /// Switch the bottom panel tab.

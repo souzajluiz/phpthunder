@@ -21,6 +21,7 @@ pub fn build(root: Node, src: &str, lines: &LineIndex) -> Vec<Symbol> {
         src,
         lines,
         out: Vec::new(),
+        templates: Vec::new(),
     };
     for_each_statement(root, src, |stmt, ctx| b.statement(stmt, ctx));
     b.out
@@ -49,7 +50,7 @@ pub fn resolve_type(node: Node, src: &str, ctx: &NameContext, owner: Option<&str
             match raw.to_ascii_lowercase().as_str() {
                 "self" => Ty {
                     class: owner.map(str::to_string),
-                    elem: None,
+                    ..Ty::default()
                 },
                 "static" | "$this" => Ty::class(STATIC_TYPE),
                 _ if is_builtin_type(raw) => Ty::default(),
@@ -88,6 +89,9 @@ struct Builder<'a> {
     lines: &'a LineIndex,
     /// Stubs built so far, in source order.
     out: Vec<Symbol>,
+    /// `@template` names in scope (enclosing class, then method), so PHPDoc
+    /// types naming them become template markers.
+    templates: Vec<String>,
 }
 
 impl Builder<'_> {
@@ -137,6 +141,9 @@ impl Builder<'_> {
             extends: None,
             supers: Vec::new(),
             is_virtual: false,
+            templates: Vec::new(),
+            super_args: Vec::new(),
+            class_string_params: Vec::new(),
         };
         let index = self.out.len();
         self.out.push(symbol);
@@ -150,9 +157,44 @@ impl Builder<'_> {
             .map(|t| resolve_type(t, self.src, ctx, owner))
             .unwrap_or_default();
         let doc = doc_of(decl, self.src)
-            .and_then(|d| d.return_type().map(|t| resolve_doc_type(t, ctx, owner)))
+            .and_then(|d| {
+                d.return_type()
+                    .map(|t| resolve_doc_type_in(t, ctx, owner, &self.templates))
+            })
             .unwrap_or_default();
         native.or(doc)
+    }
+
+    /// Return type, own `@template` names and `class-string<T>` parameters of
+    /// a function or method. The callable's templates are in scope (on top
+    /// of the class's) while its return type is resolved.
+    fn callable_types(
+        &mut self,
+        decl: Node,
+        ctx: &NameContext,
+        owner: Option<&str>,
+    ) -> (Ty, Vec<String>, Vec<(usize, String)>) {
+        let doc = doc_of(decl, self.src);
+        let own = doc.as_ref().map(|d| d.templates()).unwrap_or_default();
+        let outer = self.templates.len();
+        self.templates.extend(own.iter().cloned());
+        let ty = self.return_type(decl, ctx, owner);
+        self.templates.truncate(outer);
+        let mut class_strings = Vec::new();
+        if let (Some(doc), Some(params)) = (&doc, decl.child_by_field_name("parameters")) {
+            let mut c = params.walk();
+            for (i, p) in params.named_children(&mut c).enumerate() {
+                let Some(name) = p.child_by_field_name("name") else {
+                    continue;
+                };
+                if let Some(t) =
+                    doc.class_string_param(text(name, self.src).trim_start_matches('$'))
+                {
+                    class_strings.push((i, t));
+                }
+            }
+        }
+        (ty, own, class_strings)
     }
 
     /// Records the declarations of one top-level statement, recursing into conditional blocks so guarded declarations are indexed too.
@@ -164,8 +206,11 @@ impl Builder<'_> {
                     return;
                 };
                 let fqn = ctx.qualify(text(name, self.src));
-                let ty = self.return_type(node, ctx, None);
-                self.push(Kind::Function, node, name, fqn).ty = ty;
+                let (ty, templates, class_strings) = self.callable_types(node, ctx, None);
+                let sym = self.push(Kind::Function, node, name, fqn);
+                sym.ty = ty;
+                sym.templates = templates;
+                sym.class_string_params = class_strings;
             }
             "const_declaration" => {
                 let mut c = node.walk();
@@ -222,20 +267,37 @@ impl Builder<'_> {
                 }
             }
         }
+        let doc = doc_of(node, self.src);
+        let templates = doc.as_ref().map(|d| d.templates()).unwrap_or_default();
+        let super_args: Vec<(String, Vec<String>)> = doc
+            .iter()
+            .flat_map(|d| d.tags.iter())
+            .filter_map(|t| match &t.tag {
+                Tag::Extends { ty } => {
+                    let resolved = resolve_doc_type_in(ty, ctx, Some(&fqn), &templates);
+                    Some((resolved.class?, resolved.args))
+                }
+                _ => None,
+            })
+            .collect();
         let class_index = self.out.len();
         {
             let sym = self.push(kind, node, name, fqn.clone());
             sym.extends = extends;
             sym.supers = supers;
+            sym.templates = templates.clone();
+            sym.super_args = super_args;
         }
+        // Members see the class's templates; nested classes do not leak them.
+        let outer = std::mem::replace(&mut self.templates, templates);
         self.virtual_members(node, ctx, &fqn, class_index);
-        let Some(body) = node.child_by_field_name("body") else {
-            return;
-        };
-        let mut c = body.walk();
-        for member in body.named_children(&mut c) {
-            self.member(member, ctx, &fqn, class_index);
+        if let Some(body) = node.child_by_field_name("body") {
+            let mut c = body.walk();
+            for member in body.named_children(&mut c) {
+                self.member(member, ctx, &fqn, class_index);
+            }
         }
+        self.templates = outer;
     }
 
     /// `@property`, `@method`, and `@mixin` from the class docblock.
@@ -275,11 +337,14 @@ impl Builder<'_> {
                 doc: String::new(),
                 ty: ty
                     .as_deref()
-                    .map(|t| resolve_doc_type(t, ctx, Some(owner)))
+                    .map(|t| resolve_doc_type_in(t, ctx, Some(owner), &self.templates))
                     .unwrap_or_default(),
                 extends: None,
                 supers: Vec::new(),
                 is_virtual: true,
+                templates: Vec::new(),
+                super_args: Vec::new(),
+                class_string_params: Vec::new(),
             });
         }
     }
@@ -295,10 +360,12 @@ impl Builder<'_> {
                 let Some(name) = node.child_by_field_name("name") else {
                     return;
                 };
-                let ty = self.return_type(node, ctx, Some(owner));
+                let (ty, templates, class_strings) = self.callable_types(node, ctx, Some(owner));
                 let sym = self.push(Kind::Method, node, name, owner.to_string());
                 sym.is_static = is_static;
                 sym.ty = ty;
+                sym.templates = templates;
+                sym.class_string_params = class_strings;
                 // Constructor property promotion: `__construct(private Foo $foo)`.
                 if text(name, src).eq_ignore_ascii_case("__construct") {
                     let doc = doc_of(node, src);
@@ -320,7 +387,7 @@ impl Builder<'_> {
                         let documented = doc
                             .as_ref()
                             .and_then(|d| d.param_type(text(var, src).trim_start_matches('$')))
-                            .map(|t| resolve_doc_type(t, ctx, Some(owner)))
+                            .map(|t| resolve_doc_type_in(t, ctx, Some(owner), &self.templates))
                             .unwrap_or_default();
                         self.push(Kind::Property, p, var, owner.to_string()).ty =
                             native.or(documented);
@@ -345,7 +412,7 @@ impl Builder<'_> {
                     let documented = doc
                         .as_ref()
                         .and_then(|d| d.var_type(Some(name)))
-                        .map(|t| resolve_doc_type(t, ctx, Some(owner)))
+                        .map(|t| resolve_doc_type_in(t, ctx, Some(owner), &self.templates))
                         .unwrap_or_default();
                     let sym = self.push(Kind::Property, node, var, owner.to_string());
                     sym.is_static = is_static;
@@ -487,15 +554,16 @@ class Post {
         assert_eq!(
             find(Kind::Property, "comments").ty,
             Ty {
-                class: None,
-                elem: Some("App\\Comment".into())
+                elem: Some("App\\Comment".into()),
+                ..Ty::default()
             }
         );
         assert_eq!(
             find(Kind::Property, "tags").ty,
             Ty {
                 class: Some("Illuminate\\Support\\Collection".into()),
-                elem: Some("App\\Tag".into())
+                elem: Some("App\\Tag".into()),
+                args: vec![String::new(), "App\\Tag".into()],
             }
         );
         let latest = find(Kind::Method, "latest");

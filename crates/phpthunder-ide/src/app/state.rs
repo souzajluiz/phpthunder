@@ -1097,10 +1097,9 @@ impl App {
         self.usages = Some(Usages::Searching(name));
         self.bottom = Some(Bottom::Usages);
         self.close_overlays();
-        Task::perform(
-            self.lang.clone().usages(text, offset, open),
-            Message::UsagesFound,
-        )
+        Task::perform(self.lang.clone().usages(text, offset, open), |found| {
+            Message::UsagesFound(found.map(Box::new))
+        })
     }
 
     /// Unsaved editor buffers, which win over disk content.
@@ -1125,8 +1124,8 @@ impl App {
     /// Turns a usages search result into panel rows with source previews
     /// (each file read once) and a `N usages in M files` title. `None` means
     /// no symbol was under the cursor: the panel closes with a notice.
-    fn show_usages(&mut self, found: Option<(Definition, Vec<Usage>)>) {
-        let Some((def, usages)) = found else {
+    fn show_usages(&mut self, found: Option<Box<(Definition, Vec<Usage>)>>) {
+        let Some((def, usages)) = found.map(|b| *b) else {
             self.usages = None;
             self.bottom = None;
             self.notice = Some("Nothing to search: place the cursor on a symbol".into());

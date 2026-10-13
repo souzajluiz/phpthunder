@@ -48,6 +48,17 @@ pub enum Tag {
         /// Class name as written.
         class: String,
     },
+    /// `@template T [of Bound]` (also covariant/contravariant variants).
+    Template {
+        /// Template parameter name.
+        name: String,
+    },
+    /// `@extends`, `@implements` or `@use` with generic arguments, e.g.
+    /// `@extends Collection<int, User>`.
+    Extends {
+        /// Supertype expression as written.
+        ty: String,
+    },
 }
 
 /// A tag plus its byte offset inside the comment (for go to definition on
@@ -91,6 +102,25 @@ impl DocBlock {
     }
 
     /// Type expression of the `@param` for `name` (without `$`), unresolved.
+    /// Names declared with `@template`, in order.
+    pub fn templates(&self) -> Vec<String> {
+        self.tags
+            .iter()
+            .filter_map(|t| match &t.tag {
+                Tag::Template { name } => Some(name.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The template `T` when parameter `name` is documented as
+    /// `class-string<T>`.
+    pub fn class_string_param(&self, name: &str) -> Option<String> {
+        let ty = self.param_type(name)?;
+        let inner = ty.trim().strip_prefix("class-string<")?.strip_suffix('>')?;
+        Some(inner.trim().to_string())
+    }
+
     pub fn param_type(&self, name: &str) -> Option<&str> {
         self.tags.iter().find_map(|t| match &t.tag {
             Tag::Param { ty, var } if var == name => Some(ty.as_str()),
@@ -183,6 +213,29 @@ fn parse_tag(name: &str, body: &str) -> Option<Tag> {
                 name: name.into(),
             })
         }
+        "template"
+        | "template-covariant"
+        | "template-contravariant"
+        | "phpstan-template"
+        | "psalm-template" => {
+            let name = first_word(body);
+            (!name.is_empty()).then(|| Tag::Template { name: name.into() })
+        }
+        "extends"
+        | "implements"
+        | "use"
+        | "phpstan-extends"
+        | "phpstan-implements"
+        | "phpstan-use"
+        | "psalm-extends"
+        | "psalm-implements"
+        | "psalm-use"
+        | "template-extends"
+        | "template-implements"
+        | "template-use" => {
+            let (ty, _) = split_type(body);
+            ty.contains('<').then(|| Tag::Extends { ty: ty.into() })
+        }
         "mixin" => {
             let class = first_word(body);
             (!class.is_empty()).then(|| Tag::Mixin {
@@ -262,8 +315,16 @@ fn union_parts(ty: &str) -> Vec<&str> {
 /// `self` becomes `owner` and `static`/`$this` become [`STATIC_TYPE`]; builtins,
 /// pseudo-types (`array-key`, `class-string`, ...), literals, and variables
 /// yield `None`.
-fn resolve_name(name: &str, ctx: &NameContext, owner: Option<&str>) -> Option<String> {
+fn resolve_name(
+    name: &str,
+    ctx: &NameContext,
+    owner: Option<&str>,
+    templates: &[String],
+) -> Option<String> {
     let name = name.trim();
+    if templates.iter().any(|t| t == name) {
+        return Some(template_marker(name));
+    }
     match name.to_ascii_lowercase().as_str() {
         "" | "null" | "resource" | "scalar" | "numeric" | "array-key" | "class-string"
         | "positive-int" | "negative-int" | "non-empty-string" | "list" | "non-empty-array"
@@ -288,6 +349,37 @@ fn resolve_name(name: &str, ctx: &NameContext, owner: Option<&str>) -> Option<St
 /// Understands `?T`, `T[]`, and `Generic<..., T>` (the last generic argument
 /// becomes the element type). `owner` is the class that `self` refers to.
 pub fn resolve_doc_type(ty: &str, ctx: &NameContext, owner: Option<&str>) -> Ty {
+    resolve_doc_type_in(ty, ctx, owner, &[])
+}
+
+/// Splits generic arguments `int, array<K, V>, User` at top-level commas.
+fn split_args(args: &str) -> Vec<&str> {
+    let mut parts = Vec::new();
+    let (mut depth, mut start) = (0i32, 0);
+    for (i, ch) in args.char_indices() {
+        match ch {
+            '<' | '(' | '{' => depth += 1,
+            '>' | ')' | '}' => depth -= 1,
+            ',' if depth == 0 => {
+                parts.push(args[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    parts.push(args[start..].trim());
+    parts
+}
+
+/// [`resolve_doc_type`] with `@template` parameters in scope: their names
+/// become template markers instead of class names, and generic arguments
+/// (`Collection<int, User>`) are kept in [`Ty::args`].
+pub fn resolve_doc_type_in(
+    ty: &str,
+    ctx: &NameContext,
+    owner: Option<&str>,
+    templates: &[String],
+) -> Ty {
     let mut out = Ty::default();
     for part in union_parts(ty.trim().trim_start_matches('?')) {
         let part = part
@@ -296,24 +388,28 @@ pub fn resolve_doc_type(ty: &str, ctx: &NameContext, owner: Option<&str>) -> Ty 
             .trim_matches(|c| c == '(' || c == ')');
         let t = if let Some(elem) = part.strip_suffix("[]") {
             Ty {
-                class: None,
-                elem: resolve_doc_type(elem, ctx, owner).class,
+                elem: resolve_doc_type_in(elem, ctx, owner, templates).class,
+                ..Ty::default()
             }
         } else if let Some(open) = part.find('<') {
             let base = &part[..open];
-            let args = part[open + 1..].trim_end_matches('>');
-            let last_arg = union_parts(args)
-                .last()
-                .and_then(|a| a.rsplit(',').next())
-                .unwrap_or("");
+            let args: Vec<String> = split_args(part[open + 1..].trim_end_matches('>'))
+                .into_iter()
+                .map(|a| {
+                    resolve_doc_type_in(a, ctx, owner, templates)
+                        .class
+                        .unwrap_or_default()
+                })
+                .collect();
             Ty {
-                class: resolve_name(base, ctx, owner),
-                elem: resolve_doc_type(last_arg, ctx, owner).class,
+                class: resolve_name(base, ctx, owner, templates),
+                elem: args.last().filter(|a| !a.is_empty()).cloned(),
+                args,
             }
         } else {
             Ty {
-                class: resolve_name(part, ctx, owner),
-                elem: None,
+                class: resolve_name(part, ctx, owner, templates),
+                ..Ty::default()
             }
         };
         out = out.or(t);
@@ -378,22 +474,24 @@ mod tests {
         assert_eq!(
             resolve_doc_type("User[]", &ctx, None),
             Ty {
-                class: None,
-                elem: Some("App\\User".into())
+                elem: Some("App\\User".into()),
+                ..Ty::default()
             }
         );
         assert_eq!(
             resolve_doc_type("\\Illuminate\\Support\\Collection<int, User>", &ctx, None),
             Ty {
                 class: Some("Illuminate\\Support\\Collection".into()),
-                elem: Some("App\\User".into())
+                elem: Some("App\\User".into()),
+                args: vec![String::new(), "App\\User".into()],
             }
         );
         assert_eq!(
             resolve_doc_type("array<string, User>", &ctx, None),
             Ty {
-                class: None,
-                elem: Some("App\\User".into())
+                elem: Some("App\\User".into()),
+                args: vec![String::new(), "App\\User".into()],
+                ..Ty::default()
             }
         );
         assert_eq!(

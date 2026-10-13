@@ -347,3 +347,87 @@ fn inspections_should_only_flag_real_problems_in_the_fixture() {
         ["Http/PostController.php:21 Undefined function 'cache'"]
     );
 }
+
+/// Source exercising `@template` generics, resolved against itself.
+const GENERICS: &str = r#"<?php
+namespace App;
+/**
+ * @template TKey
+ * @template TValue
+ */
+class Collection {
+    /** @return TValue|null */
+    public function first() {}
+    /** @return static */
+    public function filter() {}
+    /** @return array<TKey, TValue> */
+    public function all() {}
+}
+/** @extends Collection<int, User> */
+class UserList extends Collection {}
+class User { public function name() {} }
+class Container {
+    /**
+     * @template T
+     * @param class-string<T> $id
+     * @return T
+     */
+    public function get(string $id) {}
+}
+/** @return Collection<int, User> */
+function users() {}
+/**
+ * @template T
+ * @param class-string<T> $class
+ * @return T
+ */
+function make(string $class) {}
+function demo(UserList $list, Container $c) {
+    users()->first()->name();
+    users()->filter()->first()->name();
+    foreach (users()->all() as $u) { $u->name(); }
+    $list->first()->name();
+    make(User::class)->name();
+    $c->get(User::class)->name();
+}
+"#;
+
+/// Resolves the `nth` (0-based) `->name()` call in [`GENERICS`].
+fn generic_target(nth: usize) -> Vec<String> {
+    let mut idx = Index::default();
+    idx.update(
+        PathBuf::from("/g.php"),
+        phpthunder::index::index_source(GENERICS),
+    );
+    let offset = GENERICS.match_indices("name()").nth(nth + 1).unwrap().0;
+    definitions_at(&idx, GENERICS, offset)
+        .into_iter()
+        .map(|d| format!("{}::{}", d.symbol.fqn, d.symbol.name))
+        .collect()
+}
+
+#[test]
+fn generics_should_bind_class_templates_from_the_receiver() {
+    assert_eq!(generic_target(0), ["App\\User::name"]);
+}
+
+#[test]
+fn generics_should_keep_arguments_through_static_returns() {
+    assert_eq!(generic_target(1), ["App\\User::name"]);
+}
+
+#[test]
+fn generics_should_type_foreach_values_from_template_arrays() {
+    assert_eq!(generic_target(2), ["App\\User::name"]);
+}
+
+#[test]
+fn generics_should_follow_extends_arguments() {
+    assert_eq!(generic_target(3), ["App\\User::name"]);
+}
+
+#[test]
+fn generics_should_bind_class_string_parameters() {
+    assert_eq!(generic_target(4), ["App\\User::name"]);
+    assert_eq!(generic_target(5), ["App\\User::name"]);
+}

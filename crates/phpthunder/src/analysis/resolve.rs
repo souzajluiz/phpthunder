@@ -6,8 +6,11 @@
 use super::*;
 use crate::index::Index;
 use crate::symbol::{MemberTag, doc_of, resolve_type};
-use crate::symbol::{Tag, Ty, is_doc_comment, parse_docblock, resolve_doc_type};
+use crate::symbol::{
+    STATIC_TYPE, Symbol, Tag, Ty, is_doc_comment, parse_docblock, resolve_doc_type, template_name,
+};
 use crate::syntax::{NameContext, UseKind, context_at, is_class_like, parse, text, use_clauses};
+use std::collections::{HashMap, HashSet, VecDeque};
 use tree_sitter::{Node, Tree};
 
 /// Looks up every declaration `target` may refer to.
@@ -268,16 +271,6 @@ impl<'a> Analyzer<'a> {
             return Ty::default();
         }
         let d = depth + 1;
-        let member_ty = |class: Option<String>, tag, name: Option<Node>| -> Ty {
-            let (Some(class), Some(name)) = (class, name) else {
-                return Ty::default();
-            };
-            let found = self.index.find_member(&class, tag, self.text(name));
-            found
-                .first()
-                .map(|(_, s)| s.ty.clone().bind_static(&class))
-                .unwrap_or_default()
-        };
         let child = |field: &str| expr.child_by_field_name(field);
         match expr.kind() {
             "variable_name" => {
@@ -285,7 +278,7 @@ impl<'a> Analyzer<'a> {
                 match self.text(expr) {
                     "$this" => Ty {
                         class: self.enclosing_class(expr, &ctx),
-                        elem: None,
+                        ..Ty::default()
                     },
                     var => self.variable_type(expr, var, &ctx, d),
                 }
@@ -295,47 +288,75 @@ impl<'a> Analyzer<'a> {
                 let class = expr.named_children(&mut c).find(|n| is_name(n.kind()));
                 Ty {
                     class: class.and_then(|n| self.class_ref(n, &self.ctx(n.start_byte()))),
-                    elem: None,
+                    ..Ty::default()
                 }
             }
-            "member_call_expression" | "nullsafe_member_call_expression" => member_ty(
-                child("object").and_then(|o| self.type_of(o, d)),
-                MemberTag::Method,
-                child("name"),
-            ),
-            "member_access_expression" | "nullsafe_member_access_expression" => member_ty(
-                child("object").and_then(|o| self.type_of(o, d)),
-                MemberTag::Property,
-                child("name"),
-            ),
-            "scoped_call_expression" => member_ty(
-                child("scope").and_then(|s| self.class_of_scope(s, d)),
-                MemberTag::Method,
-                child("name"),
-            ),
-            "scoped_property_access_expression" => member_ty(
-                child("scope").and_then(|s| self.class_of_scope(s, d)),
-                MemberTag::Property,
-                child("name").and_then(|n| n.named_child(0)),
-            ),
-            "class_constant_access_expression" => member_ty(
-                expr.named_child(0).and_then(|s| self.class_of_scope(s, d)),
-                MemberTag::Constant,
-                expr.named_child(1),
-            ),
+            "member_call_expression" | "nullsafe_member_call_expression" => {
+                let receiver = child("object")
+                    .map(|o| self.ty_of(o, d))
+                    .unwrap_or_default();
+                self.member_ty(
+                    receiver,
+                    MemberTag::Method,
+                    child("name"),
+                    child("arguments"),
+                )
+            }
+            "member_access_expression" | "nullsafe_member_access_expression" => {
+                let receiver = child("object")
+                    .map(|o| self.ty_of(o, d))
+                    .unwrap_or_default();
+                self.member_ty(receiver, MemberTag::Property, child("name"), None)
+            }
+            "scoped_call_expression" => {
+                let receiver = Ty {
+                    class: child("scope").and_then(|s| self.class_of_scope(s, d)),
+                    ..Ty::default()
+                };
+                self.member_ty(
+                    receiver,
+                    MemberTag::Method,
+                    child("name"),
+                    child("arguments"),
+                )
+            }
+            "scoped_property_access_expression" => {
+                let receiver = Ty {
+                    class: child("scope").and_then(|s| self.class_of_scope(s, d)),
+                    ..Ty::default()
+                };
+                self.member_ty(
+                    receiver,
+                    MemberTag::Property,
+                    child("name").and_then(|n| n.named_child(0)),
+                    None,
+                )
+            }
+            "class_constant_access_expression" => {
+                let receiver = Ty {
+                    class: expr.named_child(0).and_then(|s| self.class_of_scope(s, d)),
+                    ..Ty::default()
+                };
+                self.member_ty(receiver, MemberTag::Constant, expr.named_child(1), None)
+            }
             "function_call_expression" => {
                 let Some(f) = child("function") else {
                     return Ty::default();
                 };
                 let ctx = self.ctx(f.start_byte());
                 let found = self.index.functions(&ctx.resolve_function(self.text(f)));
-                found.first().map(|(_, s)| s.ty.clone()).unwrap_or_default()
+                let Some((_, s)) = found.first() else {
+                    return Ty::default();
+                };
+                let mut bindings = HashMap::new();
+                self.bind_class_strings(s, child("arguments"), &mut bindings);
+                s.ty.clone().substitute(&bindings)
             }
             "subscript_expression" => {
                 let elem = expr.named_child(0).and_then(|a| self.ty_of(a, d).elem);
                 Ty {
                     class: elem,
-                    elem: None,
+                    ..Ty::default()
                 }
             }
             "parenthesized_expression" => expr
@@ -344,6 +365,69 @@ impl<'a> Analyzer<'a> {
                 .unwrap_or_default(),
             "assignment_expression" => child("right").map(|e| self.ty_of(e, d)).unwrap_or_default(),
             _ => Ty::default(),
+        }
+    }
+
+    /// Type of a member accessed on `receiver`: its declared type with the
+    /// receiver's generic arguments and any `X::class` arguments bound to
+    /// the member's templates, and `static` bound to the receiver.
+    fn member_ty(
+        &self,
+        receiver: Ty,
+        tag: MemberTag,
+        name: Option<Node>,
+        arguments: Option<Node>,
+    ) -> Ty {
+        let (Some(class), Some(name)) = (receiver.class.clone(), name) else {
+            return Ty::default();
+        };
+        let found = self.index.find_member(&class, tag, self.text(name));
+        let Some((_, s)) = found.first() else {
+            return Ty::default();
+        };
+        let mut bindings = generic_bindings(self.index, &class, &receiver.args, &s.fqn);
+        self.bind_class_strings(s, arguments, &mut bindings);
+        let ty = s.ty.clone().substitute(&bindings);
+        // `static` keeps the receiver's generic arguments (`filter(): static`).
+        if ty.class.as_deref() == Some(STATIC_TYPE) {
+            return Ty {
+                class: Some(class),
+                elem: receiver.elem,
+                args: receiver.args,
+            };
+        }
+        ty.bind_static(&class)
+    }
+
+    /// Binds templates of `callee` declared as `class-string<T>` parameters
+    /// to the class of a matching `Foo::class` argument.
+    fn bind_class_strings(
+        &self,
+        callee: &Symbol,
+        arguments: Option<Node>,
+        bindings: &mut HashMap<String, String>,
+    ) {
+        let Some(arguments) = arguments else { return };
+        if callee.class_string_params.is_empty() {
+            return;
+        }
+        let mut c = arguments.walk();
+        let args: Vec<Node> = arguments.named_children(&mut c).collect();
+        for (index, template) in &callee.class_string_params {
+            let Some(value) = args.get(*index).and_then(|a| a.named_child(0)) else {
+                continue;
+            };
+            let is_class_constant = value.kind() == "class_constant_access_expression"
+                && value
+                    .named_child(1)
+                    .is_some_and(|n| self.text(n).eq_ignore_ascii_case("class"));
+            if let Some(class) = value
+                .named_child(0)
+                .filter(|_| is_class_constant)
+                .and_then(|s| self.class_of_scope(s, 0))
+            {
+                bindings.insert(template.clone(), class);
+            }
         }
     }
 
@@ -427,7 +511,7 @@ impl<'a> Analyzer<'a> {
                             .unwrap_or_default();
                         Ty {
                             class: iterated.elem,
-                            elem: None,
+                            ..Ty::default()
                         }
                     })
                 }
@@ -521,4 +605,52 @@ pub fn definitions_at(index: &Index, src: &str, byte: usize) -> Vec<Definition> 
         .target_at(byte)
         .map(|(t, _)| resolve(index, &t))
         .unwrap_or_default()
+}
+
+/// Template bindings for members declared on `owner` when accessed through
+/// `class` with generic arguments `args`, following `@extends` /
+/// `@implements` / `@use` arguments up the hierarchy.
+fn generic_bindings(
+    index: &Index,
+    class: &str,
+    args: &[String],
+    owner: &str,
+) -> HashMap<String, String> {
+    let mut seen = HashSet::new();
+    let mut queue = VecDeque::from([(class.to_string(), args.to_vec())]);
+    while let Some((cls, cls_args)) = queue.pop_front() {
+        if !seen.insert(cls.to_ascii_lowercase()) {
+            continue;
+        }
+        let Some((_, decl)) = index.classes(&cls).into_iter().next() else {
+            continue;
+        };
+        let own: HashMap<String, String> = decl
+            .templates
+            .iter()
+            .cloned()
+            .zip(cls_args.iter().cloned())
+            .collect();
+        if cls.eq_ignore_ascii_case(owner) {
+            return own;
+        }
+        for sup in &decl.supers {
+            // Arguments given to this supertype, expressed in our own templates.
+            let given = decl
+                .super_args
+                .iter()
+                .find(|(name, _)| name.eq_ignore_ascii_case(sup))
+                .map(|(_, a)| {
+                    a.iter()
+                        .map(|x| match template_name(x) {
+                            Some(t) => own.get(t).cloned().unwrap_or_default(),
+                            None => x.clone(),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            queue.push_back((sup.clone(), given));
+        }
+    }
+    HashMap::new()
 }

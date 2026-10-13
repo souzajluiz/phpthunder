@@ -28,6 +28,9 @@ PHPDoc is understood where native types are missing or too vague:
   (`Foo[]`, `array<int, Foo>`, `Collection<int, Foo>`): the element type flows
   into `foreach` variables and `$items[0]`
 - the docblock summary is shown on hover
+- generics: `@template` on classes and methods, `@extends` / `@implements` /
+  `@use` arguments, and `class-string<T>` parameters, so
+  `Collection<int, User>->first()` and `app(User::class)` resolve to `User`
 
 ## How it works
 
@@ -139,7 +142,5 @@ the sample project in `crates/phpthunder/tests/fixtures/app`.
 
 ## Limitations
 
-- No `@template` generics: `Collection<int, User>` knows its element type,
-  but methods returning the template parameter (`first(): TValue`) do not.
 - No diagnostics, rename, or formatting yet.
 - The index lives in memory and is rebuilt on each start.
