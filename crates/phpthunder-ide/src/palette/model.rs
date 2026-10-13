@@ -78,6 +78,10 @@ pub enum Target {
     Generate(crate::app::Generation),
     /// Insert the live template with this abbreviation at the caret.
     Template(&'static str),
+    /// Check out this Git branch.
+    Checkout(crate::git::Branch),
+    /// Create and check out a Git branch with this name.
+    CreateBranch(String),
 }
 
 /// One ranked palette result.
@@ -108,4 +112,7 @@ pub struct Palette {
     /// For [`Mode::Choose`]: the footer title and the full list the query
     /// filters.
     pub fixed: Option<(String, Vec<Item>)>,
+    /// For [`Mode::Choose`]: builds an extra entry from the query when no
+    /// title equals it (e.g. "create branch <query>").
+    pub extra: Option<fn(&str) -> Option<Item>>,
 }

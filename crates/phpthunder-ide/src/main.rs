@@ -6,6 +6,7 @@ mod app;
 mod composer;
 mod editor;
 mod formatter;
+mod git;
 mod i18n;
 mod keymap;
 mod language;

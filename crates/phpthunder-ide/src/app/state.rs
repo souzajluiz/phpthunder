@@ -120,6 +120,14 @@ pub struct App {
     pub phpstan_running: bool,
     /// Route names, views and config keys of a Laravel project.
     pub laravel: LaravelScan,
+    /// Git status of the project; `None` outside a repository.
+    pub git: Option<crate::git::RepoStatus>,
+    /// `HEAD` version of open files (`None`: not in `HEAD`), for the gutter.
+    pub git_base: std::collections::HashMap<PathBuf, Option<String>>,
+    /// Gutter change marks of open files.
+    pub git_marks: std::collections::HashMap<PathBuf, Vec<crate::git::LineChange>>,
+    /// Commit panel state.
+    pub commit: CommitPanel,
 }
 
 /// Whether `c` can be part of a PHP identifier; used to decide when
@@ -236,6 +244,10 @@ impl App {
             last_test_scope: None,
             phpstan_running: false,
             laravel: None,
+            git: None,
+            git_base: Default::default(),
+            git_marks: Default::default(),
+            commit: CommitPanel::default(),
         };
         let folder = std::env::args()
             .nth(1)
@@ -321,6 +333,31 @@ impl App {
                 self.vendor_files = vendor;
                 Task::none()
             }
+            Message::GitStatus(result) => self.git_status_arrived(result),
+            Message::GitBase(path, content) => {
+                self.git_base_arrived(path, content);
+                Task::none()
+            }
+            Message::GitRefresh => self.refresh_git(),
+            Message::GitToggleStage(path) => self.git_toggle_stage(path),
+            Message::GitStageAll(stage) => self.git_stage_all(stage),
+            Message::GitSelect(path) => self.git_select(path),
+            Message::GitDiff(path, diff) => {
+                self.git_diff_arrived(path, diff);
+                Task::none()
+            }
+            Message::GitOpenLine(line) => self.git_open_line(line),
+            Message::GitCommitText(message) => {
+                self.commit.message = message;
+                Task::none()
+            }
+            Message::GitCommit(and_push) => self.git_commit(and_push),
+            Message::GitDiscard(path) => self.git_discard(path),
+            Message::GitPull => self.git_pull(),
+            Message::GitPush => self.git_push(),
+            Message::GitShowBranches => self.git_show_branches(),
+            Message::GitBranches(result) => self.git_branches_arrived(result),
+            Message::GitDone(op, result) => self.git_done(op, result),
             Message::LaravelScanned(project) => {
                 self.laravel = project;
                 Task::none()
@@ -350,12 +387,14 @@ impl App {
             }
             Message::FileLoaded(path, result, target) => match result {
                 Ok(text) => {
+                    let mut base = Task::none();
                     if !self.docs.iter().any(|d| d.path == path) {
                         self.docs.push(Document::new(path.clone(), text));
+                        base = self.load_git_base(path.clone());
                     }
                     let open = self.open(path, target);
                     self.inspect_pending = true;
-                    Task::batch([open, self.apply_pending_select()])
+                    Task::batch([open, self.apply_pending_select(), base])
                 }
                 Err(e) => {
                     self.notice = Some(tr!(
@@ -713,9 +752,14 @@ impl App {
         self.bottom = None;
         self.indexing = Indexing::Running;
         self.laravel = None;
+        self.git = None;
+        self.git_base.clear();
+        self.git_marks.clear();
+        self.commit = CommitPanel::default();
         let list_root = root.clone();
         Task::batch([
             self.scan_laravel(),
+            self.refresh_git(),
             Task::perform(self.lang.clone().index_project(root), Message::Indexed),
             Task::perform(
                 async move {
@@ -838,7 +882,7 @@ impl App {
         doc.mark_saved();
         let path = doc.path.clone();
         let rescan = self.rescan_laravel_after_save(&path);
-        Task::batch([rescan, self.phpstan_after_save(path)])
+        Task::batch([rescan, self.refresh_git(), self.phpstan_after_save(path)])
     }
 
     // ----- navigation history -------------------------------------------------
@@ -981,6 +1025,9 @@ impl App {
             && doc.is_php()
         {
             self.lang.update_file(&doc.path.clone(), &doc.text.clone());
+        }
+        if let Some(path) = self.doc().map(|d| d.path.clone()) {
+            self.refresh_git_marks(&path);
         }
         self.inspect_pending = true;
         self.intentions = None;

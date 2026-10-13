@@ -83,7 +83,7 @@ impl App {
     }
 
     /// Writes every modified PHP tab to disk (before running tests).
-    fn save_all_php(&mut self) {
+    pub(crate) fn save_all_php(&mut self) {
         let mut failures = Vec::new();
         for doc in self.docs.iter_mut().filter(|d| d.dirty && d.is_php()) {
             match std::fs::write(&doc.path, &doc.text) {

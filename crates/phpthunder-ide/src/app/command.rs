@@ -93,6 +93,9 @@ impl App {
             Cmd::Composer => self.open_composer(),
             Cmd::Generate => self.open_generate(),
             Cmd::InsertTemplate => self.open_templates(),
+            Cmd::Commit => self.open_commit_panel(),
+            Cmd::Push => self.git_push(),
+            Cmd::Pull => self.git_pull(),
             Cmd::Problems => {
                 self.bottom = Some(Bottom::Problems);
                 Task::none()
@@ -116,6 +119,7 @@ impl App {
             items: items.clone(),
             selected: 0,
             fixed: Some((title, items)),
+            extra: None,
         });
         operation::focus(Id::new(palette::INPUT_ID))
     }
@@ -143,6 +147,7 @@ impl App {
             items,
             selected,
             fixed: None,
+            extra: None,
         });
         operation::focus(Id::new(palette::INPUT_ID))
     }
@@ -154,10 +159,16 @@ impl App {
         let Some(mode) = self.palette.as_ref().map(|p| p.mode) else {
             return Task::none();
         };
-        let items = match self.palette.as_ref().and_then(|p| p.fixed.as_ref()) {
+        let mut items = match self.palette.as_ref().and_then(|p| p.fixed.as_ref()) {
             Some((_, fixed)) => filter_fixed(fixed, &query),
             None => self.palette_items(mode, &query),
         };
+        let extra = self.palette.as_ref().and_then(|p| p.extra);
+        if let Some(item) = extra.and_then(|build| build(&query))
+            && !items.iter().any(|i| i.title == query)
+        {
+            items.push(item);
+        }
         if let Some(p) = &mut self.palette {
             p.query = query;
             p.items = items;
@@ -197,6 +208,8 @@ impl App {
             Target::Command(command) => self.run_in_terminal(&command),
             Target::Generate(generation) => self.generate(generation),
             Target::Template(abbreviation) => self.insert_template(abbreviation),
+            Target::Checkout(branch) => self.git_checkout(branch),
+            Target::CreateBranch(name) => self.git_create_branch(name),
             Target::Line(line, col) => {
                 let Some(doc) = self.doc() else {
                     return Task::none();

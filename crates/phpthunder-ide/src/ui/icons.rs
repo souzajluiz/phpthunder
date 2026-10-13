@@ -34,6 +34,18 @@ pub enum Icon {
     Hierarchy,
     /// Tests tool in the rail (`flask-conical`).
     Tests,
+    /// Refresh the Git status (`refresh-cw`).
+    Refresh,
+    /// Git pull (`arrow-down-to-line`).
+    Pull,
+    /// Git push (`arrow-up-from-line`).
+    Push,
+    /// Discard a file's changes (`undo-2`).
+    Undo,
+    /// Staged checkbox (`check`).
+    Check,
+    /// Commit tool in the rail (`git-commit-horizontal`).
+    Commit,
 }
 
 impl Icon {
@@ -53,6 +65,12 @@ impl Icon {
             Icon::Warning => include_str!("../../assets/icons/triangle-alert.svg"),
             Icon::Hierarchy => include_str!("../../assets/icons/network.svg"),
             Icon::Tests => include_str!("../../assets/icons/flask-conical.svg"),
+            Icon::Refresh => include_str!("../../assets/icons/refresh-cw.svg"),
+            Icon::Pull => include_str!("../../assets/icons/arrow-down-to-line.svg"),
+            Icon::Push => include_str!("../../assets/icons/arrow-up-from-line.svg"),
+            Icon::Undo => include_str!("../../assets/icons/undo-2.svg"),
+            Icon::Check => include_str!("../../assets/icons/check.svg"),
+            Icon::Commit => include_str!("../../assets/icons/git-commit-horizontal.svg"),
         }
     }
 }

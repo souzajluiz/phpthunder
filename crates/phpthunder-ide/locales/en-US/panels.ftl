@@ -45,3 +45,5 @@ terminal-none = No terminal running
 terminal-start = Start
 terminal-exited = Process exited
 terminal-restart = Restart
+
+panel-commit = Commit

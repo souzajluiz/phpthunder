@@ -83,6 +83,11 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
   `@include`/`@extends`; Eloquent relations, scopes, accessors, `$fillable`
   and `$casts` attributes are known members of the model; Blade templates
   get their own highlighting
+- Git (the `git` command line): Commit panel (`⌘K`) with changed files,
+  staging checkboxes, diff against `HEAD`, commit, commit and push, discard
+  (asks twice); push (`⇧⌘K`) and fast-forward pull (`⌘T`); branch picker
+  from the title bar to switch or create branches; added/modified/deleted
+  marks in the gutter while typing; changed files colored in the tree
 
 Shortcuts: `⌘O` open folder, `⌘S` save, `⌘W` close tab, `⌘1` toggle project
 tree, `Esc` close popups/panel.

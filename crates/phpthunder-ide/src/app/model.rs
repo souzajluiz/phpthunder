@@ -179,6 +179,92 @@ pub enum Message {
     ),
     /// PHPStan finished analysing a saved file.
     PhpstanDone(PathBuf, Result<Vec<crate::phpstan::Finding>, String>),
+    // Git
+    /// Git status arrived (`Err` outside a repository or on git errors).
+    GitStatus(Result<crate::git::RepoStatus, String>),
+    /// `HEAD` content of an open file arrived (`None`: not in `HEAD`).
+    GitBase(PathBuf, Option<String>),
+    /// Re-read the Git status.
+    GitRefresh,
+    /// Stage the file if it is not staged, else unstage it.
+    GitToggleStage(PathBuf),
+    /// Stage (`true`) or unstage (`false`) every changed file.
+    GitStageAll(bool),
+    /// Show the diff of a changed file in the Commit panel.
+    GitSelect(PathBuf),
+    /// The diff of the selected file is ready.
+    GitDiff(PathBuf, Vec<crate::git::DiffLine>),
+    /// Open the file of the selected diff at a 1-based line.
+    GitOpenLine(usize),
+    /// Commit message edited.
+    GitCommitText(String),
+    /// Commit the staged files, then push when `true`.
+    GitCommit(bool),
+    /// Discard a file's changes; the first press asks for confirmation.
+    GitDiscard(PathBuf),
+    /// Pull the current branch.
+    GitPull,
+    /// Push the current branch.
+    GitPush,
+    /// Show the branch picker.
+    GitShowBranches,
+    /// The branch list for the picker arrived.
+    GitBranches(Result<Vec<crate::git::Branch>, String>),
+    /// A Git operation finished.
+    GitDone(GitOp, Result<String, String>),
+}
+
+/// A Git operation started from the IDE, reported by [`Message::GitDone`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GitOp {
+    /// Staging or unstaging files.
+    Stage,
+    /// A commit; pushes afterwards when `true`.
+    Commit(bool),
+    /// A push.
+    Push,
+    /// A pull.
+    Pull,
+    /// Discarding a file's changes.
+    Discard,
+    /// Checking out a branch.
+    Checkout,
+    /// Creating a branch.
+    CreateBranch,
+}
+
+impl GitOp {
+    /// Whether the operation may change files on disk (open tabs reload).
+    pub fn changes_files(&self) -> bool {
+        matches!(self, GitOp::Pull | GitOp::Discard | GitOp::Checkout)
+    }
+
+    /// Progress label while it runs.
+    pub fn progress(&self) -> String {
+        match self {
+            GitOp::Stage => tr!("git-staging"),
+            GitOp::Commit(_) => tr!("git-committing"),
+            GitOp::Push => tr!("git-pushing"),
+            GitOp::Pull => tr!("git-pulling"),
+            GitOp::Discard => tr!("git-discarding"),
+            GitOp::Checkout | GitOp::CreateBranch => tr!("git-switching"),
+        }
+    }
+}
+
+/// State of the Commit panel.
+#[derive(Default)]
+pub struct CommitPanel {
+    /// Commit message being written.
+    pub message: String,
+    /// File whose diff is shown.
+    pub selected: Option<PathBuf>,
+    /// Diff of `selected` against `HEAD`.
+    pub diff: Vec<crate::git::DiffLine>,
+    /// Operation in progress, shown instead of the buttons.
+    pub busy: Option<GitOp>,
+    /// File whose discard waits for a second press.
+    pub confirm_discard: Option<PathBuf>,
 }
 
 /// Which tests a [`Message::RunTests`] runs.
@@ -217,6 +303,8 @@ pub enum Bottom {
     Terminal,
     /// Test results.
     Tests,
+    /// Git changes and commit.
+    Commit,
 }
 
 /// State of the background project index, shown in the status bar.

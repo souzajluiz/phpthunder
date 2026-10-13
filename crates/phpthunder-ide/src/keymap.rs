@@ -95,6 +95,12 @@ pub enum Cmd {
     Generate,
     /// Pick a live template to insert at the caret (`⌘J`).
     InsertTemplate,
+    /// Open the Git Commit panel (`⌘K`).
+    Commit,
+    /// Push the current branch (`⇧⌘K`).
+    Push,
+    /// Pull the current branch (`⌘T`).
+    Pull,
 }
 
 /// Maps a key press and its modifiers to the bound `Cmd`, or `None` if
@@ -126,6 +132,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("e", false, false) => RecentFiles,
             ("n", false, false) => Generate,
             ("j", false, false) => InsertTemplate,
+            ("k", false, false) => Commit,
+            ("k", true, false) => Push,
+            ("t", false, false) => Pull,
             ("f", false, false) => Find,
             ("r", false, false) => Replace,
             ("g", false, false) => FindNext,
@@ -210,5 +219,8 @@ pub fn hint(cmd: Cmd) -> &'static str {
         Composer => "⌃⌥C",
         Generate => "⌘N",
         InsertTemplate => "⌘J",
+        Commit => "⌘K",
+        Push => "⇧⌘K",
+        Pull => "⌘T",
     }
 }

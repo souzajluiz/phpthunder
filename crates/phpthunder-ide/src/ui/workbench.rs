@@ -59,7 +59,7 @@ pub fn rule<'a>() -> El<'a> {
 }
 
 /// A full-width 1px separator in `BORDER` color between stacked panes.
-fn hsep<'a>() -> El<'a> {
+pub(crate) fn hsep<'a>() -> El<'a> {
     container(space())
         .width(Fill)
         .height(1)
@@ -68,7 +68,7 @@ fn hsep<'a>() -> El<'a> {
 }
 
 /// A full-height 1px separator between side-by-side panes and tabs.
-fn vsep<'a>() -> El<'a> {
+pub(crate) fn vsep<'a>() -> El<'a> {
     container(space())
         .width(1)
         .height(Fill)
@@ -190,12 +190,17 @@ impl App {
         });
         if let Some(branch) = &self.branch {
             bar = bar.push(
-                row![
-                    icon(Icon::Branch, 14.0, 2.0, MUTED),
-                    label(branch.clone(), 13.0, MUTED)
-                ]
-                .spacing(6)
-                .align_y(Center),
+                button(
+                    row![
+                        icon(Icon::Branch, 14.0, 2.0, MUTED),
+                        label(branch.clone(), 13.0, MUTED)
+                    ]
+                    .spacing(6)
+                    .align_y(Center),
+                )
+                .padding([2, 6])
+                .style(ghost_button)
+                .on_press(Message::GitShowBranches),
             );
         }
         let bar = container(bar)
@@ -261,7 +266,12 @@ impl App {
                 Some(Message::Command(Cmd::ToggleTerminal)),
                 format!("{}  {}", tr!("panel-terminal"), hint(Cmd::ToggleTerminal))
             ),
-            item(Icon::Branch, false, None, tr!("rail-git")),
+            item(
+                Icon::Commit,
+                self.bottom == Some(Bottom::Commit),
+                Some(Message::Command(Cmd::Commit)),
+                format!("{}  {}", tr!("panel-commit"), hint(Cmd::Commit))
+            ),
         ]
         .spacing(4)
         .padding(Padding {
@@ -313,12 +323,21 @@ impl App {
             } else {
                 Message::OpenFile(r.entry.path.clone())
             };
-            let color = if selected {
-                TEXT_BRIGHT
-            } else if r.entry.is_dir {
-                TEXT
-            } else {
-                TEXT_SOFT
+            let change = self.git.as_ref().and_then(|g| {
+                if r.entry.is_dir {
+                    g.files
+                        .iter()
+                        .any(|f| f.path.starts_with(&r.entry.path))
+                        .then_some(crate::git::Change::Modified)
+                } else {
+                    g.change_of(&r.entry.path)
+                }
+            });
+            let color = match change {
+                Some(change) => change_color(change),
+                None if selected => TEXT_BRIGHT,
+                None if r.entry.is_dir => TEXT,
+                None => TEXT_SOFT,
             };
             button(
                 row![
@@ -573,6 +592,9 @@ impl App {
         for mark in self.diagnostic_marks(doc) {
             content = content.push_under(mark);
         }
+        for mark in self.git_gutter_marks(doc) {
+            content = content.push(mark);
+        }
 
         let scroller = scrollable(content)
             .id(EDITOR_SCROLL_ID)
@@ -692,6 +714,9 @@ impl App {
             tabs = tabs.push(tab(Bottom::Tests, tr!("panel-tests")));
         }
         tabs = tabs.push(tab(Bottom::Terminal, tr!("panel-terminal")));
+        if self.git.is_some() {
+            tabs = tabs.push(tab(Bottom::Commit, tr!("panel-commit")));
+        }
         let close = button(icon(Icon::Close, 12.0, 2.0, MUTED))
             .padding(6)
             .style(ghost_button)
@@ -709,6 +734,7 @@ impl App {
             Bottom::Hierarchy => self.hierarchy_body(),
             Bottom::Terminal => self.terminal_body(),
             Bottom::Tests => self.tests_body(),
+            Bottom::Commit => self.commit_body(),
         };
         Some(
             container(column![header, hsep(), body])

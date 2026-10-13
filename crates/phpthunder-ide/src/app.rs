@@ -2,6 +2,7 @@
 
 mod command;
 mod generate;
+mod git;
 mod inspection;
 mod intention;
 mod laravel;

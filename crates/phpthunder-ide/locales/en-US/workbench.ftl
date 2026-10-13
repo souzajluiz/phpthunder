@@ -9,7 +9,6 @@ sidebar-project = PROJECT
 
 rail-project = Project
 rail-run-tests = Run tests
-rail-git = Git — coming soon
 
 action-search-everywhere = Search everywhere
 action-go-to-file = Go to file
