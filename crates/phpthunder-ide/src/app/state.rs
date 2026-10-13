@@ -549,7 +549,9 @@ impl App {
                 Ok(text) => {
                     let mut base = Task::none();
                     if !self.docs.iter().any(|d| d.path == path) {
-                        self.docs.push(Document::new(path.clone(), text));
+                        let mut doc = Document::new(path.clone(), text);
+                        doc.set_editorconfig(self.editorconfig_for(&path));
+                        self.docs.push(doc);
                         base = self.load_git_base(path.clone());
                     }
                     let open = self.open(path, target);
@@ -1132,7 +1134,22 @@ impl App {
         })
     }
 
-    /// Writes the active buffer to disk synchronously (`Cmd::Save`). On
+    /// The EditorConfig style for `path`, reading `.editorconfig` files up
+    /// to the project root (or the file's folder outside a project).
+    pub(crate) fn editorconfig_for(&self, path: &Path) -> crate::formatter::editorconfig::Style {
+        let root = self
+            .tree
+            .root
+            .as_deref()
+            .filter(|r| path.starts_with(r))
+            .or_else(|| path.parent());
+        root.map(|r| crate::formatter::editorconfig::style_for(path, r))
+            .unwrap_or_default()
+    }
+
+    /// Writes the active buffer to disk synchronously (`Cmd::Save`), first
+    /// applying the file's EditorConfig save rules (trailing whitespace,
+    /// final newline, line endings). On
     /// failure the error is shown as a notice and the tab stays dirty.
     pub fn save(&mut self) -> Task<Message> {
         // A preview tab holds no text: writing it would empty the file.
@@ -1142,7 +1159,13 @@ impl App {
         let Some(doc) = self.doc_mut() else {
             return Task::none();
         };
-        if let Err(e) = std::fs::write(&doc.path, &doc.text) {
+        let (text, disk) = doc.text_for_save();
+        if text != doc.text {
+            let cursor = doc.cursor();
+            doc.checkpoint();
+            doc.set_text(text, cursor);
+        }
+        if let Err(e) = std::fs::write(&doc.path, &disk) {
             let msg = tr!(
                 "notice-save-failed",
                 file = doc.title(),

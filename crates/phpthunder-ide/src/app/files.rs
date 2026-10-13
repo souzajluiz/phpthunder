@@ -25,6 +25,12 @@ impl App {
                 continue;
             }
             git_changed = true;
+            if path.file_name().is_some_and(|n| n == ".editorconfig") {
+                for i in 0..self.docs.len() {
+                    let style = self.editorconfig_for(&self.docs[i].path);
+                    self.docs[i].set_editorconfig(style);
+                }
+            }
             if crate::packages::Installs::is_lock_file(&path)
                 && let Some(root) = self.tree.root.as_deref()
                 && path.parent() == Some(root)

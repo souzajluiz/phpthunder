@@ -208,6 +208,16 @@ fn glob_match(p: &[u8], s: &[u8]) -> bool {
                 return !s.is_empty() && s[0] == b'{' && glob_match(&p[1..], &s[1..]);
             };
             let rest = &p[close + 1..];
+            if let Some((lo, hi)) = number_range(&p[1..close]) {
+                // `{n..m}`: any integer from n to m, as written in the name.
+                return (1..=s.len()).any(|end| {
+                    std::str::from_utf8(&s[..end])
+                        .ok()
+                        .and_then(|n| n.parse::<i64>().ok())
+                        .is_some_and(|n| (lo..=hi).contains(&n))
+                        && glob_match(rest, &s[end..])
+                });
+            }
             p[1..close].split(|&c| c == b',').any(|alt| {
                 let mut pattern = alt.to_vec();
                 pattern.extend_from_slice(rest);
@@ -238,13 +248,38 @@ fn glob_match(p: &[u8], s: &[u8]) -> bool {
             }
             hit != negate && glob_match(&p[close + 1..], &s[1..])
         }
+        // `\` makes the next character literal (`\*`, `\{`).
+        Some(b'\\') if p.len() > 1 => s.first() == Some(&p[1]) && glob_match(&p[2..], &s[1..]),
         Some(&c) => s.first() == Some(&c) && glob_match(&p[1..], &s[1..]),
     }
+}
+
+/// The bounds of a `{n..m}` numeric range body (`n..m`), lower first.
+fn number_range(body: &[u8]) -> Option<(i64, i64)> {
+    let body = std::str::from_utf8(body).ok()?;
+    let (lo, hi) = body.split_once("..")?;
+    let (lo, hi) = (lo.parse::<i64>().ok()?, hi.parse::<i64>().ok()?);
+    Some((lo.min(hi), lo.max(hi)))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn matches_should_accept_numbers_inside_a_range() {
+        assert!(matches("file{1..12}.txt", "file10.txt"));
+    }
+
+    #[test]
+    fn matches_should_reject_numbers_outside_a_range() {
+        assert!(!matches("file{1..12}.txt", "file13.txt"));
+    }
+
+    #[test]
+    fn matches_should_treat_escaped_star_literally() {
+        assert!(!matches("a\\*b", "axb"));
+    }
 
     const CONFIG: &str = "root = true\n\n[*]\nindent_style = space\nindent_size = 4\ninsert_final_newline = true\ntrim_trailing_whitespace = true\n\n[*.{yml,yaml,json}]\nindent_size = 2\n\n[*.md]\ntrim_trailing_whitespace = false\n\n[docker-compose.yml]\nindent_size = 4\n\n[src/**.php]\nend_of_line = crlf\n";
 

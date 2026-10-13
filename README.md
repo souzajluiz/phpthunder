@@ -91,6 +91,15 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
   file moves to its PSR-4 folder, imports follow)
 - Blade: completion of `<x-` components and their attributes, `@`
   directives and the variables passed to the view
+- EditorConfig: `.editorconfig` sets indentation while typing (tabs or
+  spaces, width) and, on save, trims trailing whitespace, fixes the final
+  newline and line endings; Reformat starts from the same style
+- Markdown: preview beside the source (or alone), toggled in the tab's
+  corner; links open in the browser or as files
+- `composer.json` and `package.json`: each dependency shows its locked
+  version and summary; `⌘`-click opens its Packagist or npm page
+- Claude panel: the status bar shows how much of the 5-hour and weekly
+  plan limits is used, with reset times in a tooltip
 - Live templates: type an abbreviation and press Tab (`fore`, `forek`,
   `pubf`, `__c`, `try`, `it`, `dd`, …) or pick one with `⌘J`
 - Laravel: completion and go to declaration for route names, views and

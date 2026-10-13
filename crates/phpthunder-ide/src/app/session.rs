@@ -134,6 +134,7 @@ impl App {
                 continue;
             }
             let mut doc = crate::editor::Document::new(tab.path.clone(), text);
+            doc.set_editorconfig(self.editorconfig_for(&tab.path));
             let position = iced::widget::text_editor::Position {
                 line: tab.line.min(doc.line_count().saturating_sub(1)),
                 column: tab.column,

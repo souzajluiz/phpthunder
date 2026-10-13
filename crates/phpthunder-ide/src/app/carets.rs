@@ -19,7 +19,7 @@ impl App {
             Message::TypeChar(c) => MultiEdit::Insert(c.to_string()),
             Message::Backspace => MultiEdit::Backspace,
             Message::SmartEnter => MultiEdit::Insert("\n".into()),
-            Message::Indent(false) => MultiEdit::Insert("    ".into()),
+            Message::Indent(false) => MultiEdit::Insert(doc.indent_unit.clone()),
             Message::Edit(Action::Edit(Edit::Insert(c))) => MultiEdit::Insert(c.to_string()),
             Message::Edit(Action::Edit(Edit::Enter)) => MultiEdit::Insert("\n".into()),
             Message::Edit(Action::Edit(Edit::Backspace)) => MultiEdit::Backspace,

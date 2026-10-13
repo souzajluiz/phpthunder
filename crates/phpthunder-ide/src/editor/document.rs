@@ -93,6 +93,12 @@ pub struct Document {
     pub markdown: Vec<iced::widget::markdown::Item>,
     /// How a Markdown tab is shown: source, source beside preview, or preview.
     pub markdown_view: MarkdownView,
+    /// The file's EditorConfig style (see [`Self::set_editorconfig`]):
+    /// indentation while typing, and the clean-up applied on save.
+    pub editorconfig: crate::formatter::editorconfig::Style,
+    /// One indentation level for Tab, Enter and `}`: [`INDENT`] unless the
+    /// file's EditorConfig asks for tabs or another width.
+    pub indent_unit: String,
 }
 
 /// Leading whitespace (indentation) of `line`, used to carry indentation onto new lines.
@@ -127,9 +133,66 @@ impl Document {
             extra_carets: Vec::new(),
             markdown: Vec::new(),
             markdown_view: MarkdownView::default(),
+            editorconfig: crate::formatter::editorconfig::Style::default(),
+            indent_unit: INDENT.to_string(),
         };
         doc.refresh_highlights();
         doc
+    }
+
+    /// Adopts `style` (the file's EditorConfig) for indentation and saving.
+    /// Called by the app whenever a tab opens and when an `.editorconfig`
+    /// changes; properties left unset keep the editor's defaults.
+    pub fn set_editorconfig(&mut self, style: crate::formatter::editorconfig::Style) {
+        self.indent_unit = if style.indent_style.is_some() || style.indent_size.is_some() {
+            style.indent_unit(INDENT.len())
+        } else {
+            INDENT.to_string()
+        };
+        self.editorconfig = style;
+    }
+
+    /// The text to write on save, following the EditorConfig properties
+    /// that are set: `trim_trailing_whitespace`, `insert_final_newline` and
+    /// `end_of_line`. Unset properties leave the text as it is. Returns the
+    /// buffer text (always `\n` line breaks) and the bytes for the disk.
+    pub fn text_for_save(&self) -> (String, String) {
+        use crate::formatter::editorconfig::EndOfLine;
+        let style = &self.editorconfig;
+        let mut text = self.text.replace("\r\n", "\n");
+        if style.trim_trailing_whitespace == Some(true) {
+            let markdown = self.file_type == FileType::Markdown;
+            text = text
+                .split('\n')
+                .map(|line| {
+                    let trimmed = line.trim_end_matches([' ', '\t']);
+                    // A Markdown hard break is two trailing spaces.
+                    if markdown && line.ends_with("  ") && !trimmed.is_empty() {
+                        format!("{trimmed}  ")
+                    } else {
+                        trimmed.to_string()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+        }
+        match style.insert_final_newline {
+            Some(true) if !text.is_empty() && !text.ends_with('\n') => text.push('\n'),
+            Some(false) => {
+                let kept = text.trim_end_matches('\n').len();
+                text.truncate(kept);
+            }
+            _ => {}
+        }
+        let disk = match style.end_of_line {
+            Some(EndOfLine::CrLf) => text.replace('\n', "\r\n"),
+            Some(EndOfLine::Cr) => text.replace('\n', "\r"),
+            Some(EndOfLine::Lf) => text.clone(),
+            // Unset: keep CRLF when the file already used it.
+            None if self.text.contains("\r\n") => text.replace('\n', "\r\n"),
+            None => text.clone(),
+        };
+        (text, disk)
     }
 
     /// File name shown in the tab strip, window title and save errors; empty if the path has no file name.
@@ -747,15 +810,20 @@ impl Document {
         self.checkpoint();
         let (start, end) = self.selection().unwrap_or((offset, offset));
         if between {
-            let insert = format!("\n{indent}{INDENT}\n{indent}");
+            let unit = self.indent_unit.clone();
+            let insert = format!("\n{indent}{unit}\n{indent}");
             self.replace(start, end, &insert);
             let pos = Position {
                 line: self.cursor().line - 1,
-                column: indent.len() + INDENT.len(),
+                column: indent.len() + unit.len(),
             };
             self.move_to(pos);
         } else {
-            let extra = if opens { INDENT } else { "" };
+            let extra = if opens {
+                self.indent_unit.clone()
+            } else {
+                String::new()
+            };
             self.replace(start, end, &format!("\n{indent}{extra}"));
         }
         self.last_edit = None;
@@ -833,12 +901,13 @@ impl Document {
         let offset = self.offset(pos);
         if self.selection().is_none()
             && line.trim().is_empty()
-            && line.len() >= INDENT.len()
+            && line.ends_with(self.indent_unit.as_str())
             && self.char_after(offset) != Some('}')
         {
             let start = self.line_start(pos.line);
+            let unit = self.indent_unit.len();
             self.checkpoint();
-            self.replace(start + line.len() - INDENT.len(), start + line.len(), "");
+            self.replace(start + line.len() - unit, start + line.len(), "");
         }
         self.type_pair_char('}');
     }
@@ -847,21 +916,27 @@ impl Document {
     pub fn indent(&mut self, outdent: bool) {
         let (lo, hi) = self.selected_lines();
         if self.selection().is_none() && !outdent {
-            let col = self.visual_column(self.cursor());
-            let n = INDENT.len() - col % INDENT.len();
+            let insert = if self.indent_unit == "\t" {
+                "\t".to_string()
+            } else {
+                let col = self.visual_column(self.cursor());
+                " ".repeat(self.indent_unit.len() - col % self.indent_unit.len())
+            };
             self.checkpoint();
             let offset = self.offset(self.cursor());
-            self.replace(offset, offset, &" ".repeat(n));
+            self.replace(offset, offset, &insert);
             return;
         }
         let mut text = self.text.clone();
         for line in (lo..=hi).rev() {
             let start = self.line_start(line);
             if outdent {
-                let ws = leading_ws(self.line_text(line)).len().min(INDENT.len());
+                let ws = leading_ws(self.line_text(line))
+                    .len()
+                    .min(self.indent_unit.len());
                 text.replace_range(start..start + ws, "");
             } else if !self.line_text(line).is_empty() {
-                text.insert_str(start, INDENT);
+                text.insert_str(start, &self.indent_unit);
             }
         }
         let cursor = self.content.cursor();
@@ -887,6 +962,47 @@ mod tests {
 
     fn doc(text: &str) -> Document {
         Document::new(PathBuf::from("/t.php"), text.to_string())
+    }
+
+    fn styled(text: &str, style: crate::formatter::editorconfig::Style) -> Document {
+        let mut d = doc(text);
+        d.set_editorconfig(style);
+        d
+    }
+
+    #[test]
+    fn text_for_save_should_leave_text_alone_without_editorconfig() {
+        assert_eq!(doc("a  \nb").text_for_save().1, "a  \nb");
+    }
+
+    #[test]
+    fn text_for_save_should_trim_and_add_the_final_newline() {
+        let style = crate::formatter::editorconfig::Style {
+            trim_trailing_whitespace: Some(true),
+            insert_final_newline: Some(true),
+            ..Default::default()
+        };
+        assert_eq!(styled("a  \nb\t", style).text_for_save().0, "a\nb\n");
+    }
+
+    #[test]
+    fn text_for_save_should_write_crlf_to_disk_only() {
+        let style = crate::formatter::editorconfig::Style {
+            end_of_line: Some(crate::formatter::editorconfig::EndOfLine::CrLf),
+            ..Default::default()
+        };
+        assert_eq!(styled("a\nb", style).text_for_save().1, "a\r\nb");
+    }
+
+    #[test]
+    fn indent_should_insert_a_tab_when_editorconfig_asks_for_tabs() {
+        let style = crate::formatter::editorconfig::Style {
+            indent_style: Some(crate::formatter::editorconfig::IndentStyle::Tab),
+            ..Default::default()
+        };
+        let mut d = styled("x", style);
+        d.indent(false);
+        assert_eq!(d.text, "\tx");
     }
 
     #[test]
