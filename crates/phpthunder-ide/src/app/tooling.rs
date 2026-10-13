@@ -96,21 +96,18 @@ impl App {
         }
     }
 
-    /// Reformats the active PHP file with the project's formatter (`⌥⌘L`).
+    /// Reformats the active file (`⌥⌘L`) with the formatter for its type:
+    /// the project's own tool, a built-in one, or whitespace clean-up per
+    /// EditorConfig (see [`crate::formatter::format_file`]).
     pub(crate) fn reformat(&mut self) -> Task<Message> {
-        let (Some(root), Some(doc)) = (self.tree.root.clone(), self.doc().filter(|d| d.is_php()))
-        else {
+        let (Some(root), Some(doc)) = (self.tree.root.clone(), self.doc()) else {
             return Task::none();
         };
-        let (path, version, text, name) = (
-            doc.path.clone(),
-            doc.version(),
-            doc.text.clone(),
-            doc.title(),
-        );
+        let (path, version, text) = (doc.path.clone(), doc.version(), doc.text.clone());
+        let file = path.clone();
         Task::perform(
-            crate::formatter::format_php(root, name, text),
-            move |result| Message::Formatted(path.clone(), version, result),
+            crate::formatter::format_file(root, file, text),
+            move |result| Message::Formatted(path.clone(), version, result.map(Some)),
         )
     }
 
@@ -130,6 +127,9 @@ impl App {
             return;
         };
         let (text, notice) = match result {
+            Ok(Some((text, crate::formatter::Formatter::Whitespace))) => {
+                (text, tr!("notice-whitespace-trimmed"))
+            }
             Ok(Some((text, formatter))) => {
                 (text, tr!("notice-formatted", formatter = formatter.name()))
             }

@@ -1,6 +1,7 @@
-//! Laravel keys in the editor: the project's route names, views and config
-//! keys, completed and resolved inside `route('…')`, `view('…')`,
-//! `config('…')` and Blade directives.
+//! Laravel keys in the editor: the project's route names, views, config
+//! keys, translation keys and environment variables, completed and resolved
+//! inside `route('…')`, `view('…')`, `config('…')`, `__('…')`, `env('…')`
+//! and Blade directives.
 
 use super::*;
 use iced::Task;
@@ -14,8 +15,16 @@ use std::sync::Arc;
 /// Most key candidates offered at once.
 const MAX_KEY_CANDIDATES: usize = 200;
 
-/// Project folders whose files declare keys; saving one rescans.
-const KEY_DIRS: &[&str] = &["routes", "config", "resources/views"];
+/// Project folders and files that declare keys; saving one rescans.
+const KEY_DIRS: &[&str] = &[
+    "routes",
+    "config",
+    "resources/views",
+    "lang",
+    "resources/lang",
+    ".env",
+    ".env.example",
+];
 
 impl App {
     /// Scans the open project for Laravel keys in the background; answered
