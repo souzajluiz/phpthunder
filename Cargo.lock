@@ -2948,6 +2948,7 @@ version = "0.1.0"
 dependencies = [
  "iced",
  "phpthunder",
+ "regex",
  "rfd",
  "tokio",
  "tree-sitter",

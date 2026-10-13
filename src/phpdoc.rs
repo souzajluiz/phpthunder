@@ -1,6 +1,6 @@
 //! PHPDoc parsing: tags that carry type information, plus the summary line.
 
-use crate::syntax::{is_builtin_type, NameContext};
+use crate::syntax::{NameContext, is_builtin_type};
 
 /// Return/property type sentinel meaning "late static binding": `static` or `$this`.
 pub const STATIC_TYPE: &str = "static";
@@ -15,7 +15,10 @@ pub struct Ty {
 
 impl Ty {
     pub fn class(fqn: impl Into<String>) -> Self {
-        Self { class: Some(fqn.into()), elem: None }
+        Self {
+            class: Some(fqn.into()),
+            elem: None,
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -24,24 +27,55 @@ impl Ty {
 
     /// Fills whatever `self` lacks from `other` (native types win over docs).
     pub fn or(self, other: Ty) -> Ty {
-        Ty { class: self.class.or(other.class), elem: self.elem.or(other.elem) }
+        Ty {
+            class: self.class.or(other.class),
+            elem: self.elem.or(other.elem),
+        }
     }
 
     /// Replaces [`STATIC_TYPE`] with the class the member was accessed on.
     pub fn bind_static(self, receiver: &str) -> Ty {
-        let bind = |c: Option<String>| c.map(|c| if c == STATIC_TYPE { receiver.to_string() } else { c });
-        Ty { class: bind(self.class), elem: bind(self.elem) }
+        let bind = |c: Option<String>| {
+            c.map(|c| {
+                if c == STATIC_TYPE {
+                    receiver.to_string()
+                } else {
+                    c
+                }
+            })
+        };
+        Ty {
+            class: bind(self.class),
+            elem: bind(self.elem),
+        }
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Tag {
-    Return { ty: String },
-    Var { ty: String, var: Option<String> },
-    Param { ty: String, var: String },
-    Property { ty: Option<String>, name: String },
-    Method { is_static: bool, ty: Option<String>, name: String },
-    Mixin { class: String },
+    Return {
+        ty: String,
+    },
+    Var {
+        ty: String,
+        var: Option<String>,
+    },
+    Param {
+        ty: String,
+        var: String,
+    },
+    Property {
+        ty: Option<String>,
+        name: String,
+    },
+    Method {
+        is_static: bool,
+        ty: Option<String>,
+        name: String,
+    },
+    Mixin {
+        class: String,
+    },
 }
 
 /// A tag plus its byte offset inside the comment (for go to definition on
@@ -116,26 +150,40 @@ fn parse_tag(name: &str, body: &str) -> Option<Tag> {
         }
         "var" | "phpstan-var" | "psalm-var" => {
             let (ty, rest) = split_type(body);
-            if ty.starts_with('$') {
+            if let Some(name) = ty.strip_prefix('$') {
                 // `@var $name Type` (legacy order)
                 let (real, _) = split_type(rest);
-                return Some(Tag::Var { ty: real.into(), var: Some(ty[1..].into()) });
+                return Some(Tag::Var {
+                    ty: real.into(),
+                    var: Some(name.into()),
+                });
             }
             let var = first_word(rest).strip_prefix('$').map(str::to_string);
             (!ty.is_empty()).then(|| Tag::Var { ty: ty.into(), var })
         }
         "param" | "phpstan-param" | "psalm-param" => {
             let (ty, rest) = split_type(body);
-            let var = first_word(rest).trim_start_matches("...").strip_prefix('$')?;
-            Some(Tag::Param { ty: ty.into(), var: var.into() })
+            let var = first_word(rest)
+                .trim_start_matches("...")
+                .strip_prefix('$')?;
+            Some(Tag::Param {
+                ty: ty.into(),
+                var: var.into(),
+            })
         }
         "property" | "property-read" | "property-write" => {
             let (first, rest) = split_type(body);
             if let Some(name) = first.strip_prefix('$') {
-                return Some(Tag::Property { ty: None, name: name.into() });
+                return Some(Tag::Property {
+                    ty: None,
+                    name: name.into(),
+                });
             }
             let name = first_word(rest).strip_prefix('$')?;
-            Some(Tag::Property { ty: Some(first.into()), name: name.into() })
+            Some(Tag::Property {
+                ty: Some(first.into()),
+                name: name.into(),
+            })
         }
         "method" => {
             let head = &body[..body.find('(')?];
@@ -146,11 +194,17 @@ fn parse_tag(name: &str, body: &str) -> Option<Tag> {
                 [ty] => (false, Some(*ty)),
                 _ => (false, None),
             };
-            Some(Tag::Method { is_static, ty: ty.map(str::to_string), name: name.into() })
+            Some(Tag::Method {
+                is_static,
+                ty: ty.map(str::to_string),
+                name: name.into(),
+            })
         }
         "mixin" => {
             let class = first_word(body);
-            (!class.is_empty()).then(|| Tag::Mixin { class: class.into() })
+            (!class.is_empty()).then(|| Tag::Mixin {
+                class: class.into(),
+            })
         }
         _ => None,
     }
@@ -178,7 +232,11 @@ pub fn parse(comment: &str) -> DocBlock {
             };
             if let Some(tag) = parse_tag(name, body) {
                 let at = raw_line.find('@').unwrap_or(0);
-                doc.tags.push(TagAt { tag, offset: line_offset + at, line: line.to_string() });
+                doc.tags.push(TagAt {
+                    tag,
+                    offset: line_offset + at,
+                    line: line.to_string(),
+                });
             }
         } else if in_summary {
             if line.is_empty() {
@@ -221,7 +279,13 @@ fn resolve_name(name: &str, ctx: &NameContext, owner: Option<&str>) -> Option<St
         "static" | "$this" => Some(STATIC_TYPE.to_string()),
         _ if is_builtin_type(name) => None,
         _ if name.starts_with('$') || name.starts_with('\'') || name.starts_with('"') => None,
-        _ if name.chars().next().is_some_and(|c| c.is_ascii_digit() || c == '-') => None,
+        _ if name
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_digit() || c == '-') =>
+        {
+            None
+        }
         _ => Some(ctx.resolve_class(name)),
     }
 }
@@ -230,9 +294,15 @@ fn resolve_name(name: &str, ctx: &NameContext, owner: Option<&str>) -> Option<St
 pub fn resolve(ty: &str, ctx: &NameContext, owner: Option<&str>) -> Ty {
     let mut out = Ty::default();
     for part in union_parts(ty.trim().trim_start_matches('?')) {
-        let part = part.trim().trim_start_matches('?').trim_matches(|c| c == '(' || c == ')');
+        let part = part
+            .trim()
+            .trim_start_matches('?')
+            .trim_matches(|c| c == '(' || c == ')');
         let t = if let Some(elem) = part.strip_suffix("[]") {
-            Ty { class: None, elem: resolve(elem, ctx, owner).class }
+            Ty {
+                class: None,
+                elem: resolve(elem, ctx, owner).class,
+            }
         } else if let Some(open) = part.find('<') {
             let base = &part[..open];
             let args = part[open + 1..].trim_end_matches('>');
@@ -240,9 +310,15 @@ pub fn resolve(ty: &str, ctx: &NameContext, owner: Option<&str>) -> Ty {
                 .last()
                 .and_then(|a| a.rsplit(',').next())
                 .unwrap_or("");
-            Ty { class: resolve_name(base, ctx, owner), elem: resolve(last_arg, ctx, owner).class }
+            Ty {
+                class: resolve_name(base, ctx, owner),
+                elem: resolve(last_arg, ctx, owner).class,
+            }
         } else {
-            Ty { class: resolve_name(part, ctx, owner), elem: None }
+            Ty {
+                class: resolve_name(part, ctx, owner),
+                elem: None,
+            }
         };
         out = out.or(t);
         if out.class.is_some() && out.elem.is_some() {
@@ -266,26 +342,63 @@ mod tests {
         assert_eq!(doc.return_type(), Some("Collection<int, User>|null"));
         assert_eq!(doc.var_type(Some("foo")), Some("Foo"));
         let tags: Vec<&Tag> = doc.tags.iter().map(|t| &t.tag).collect();
-        assert!(tags.contains(&&Tag::Property { ty: Some("Address".into()), name: "address".into() }));
-        assert!(tags.contains(&&Tag::Property { ty: None, name: "loose".into() }));
-        assert!(tags.contains(&&Tag::Method { is_static: true, ty: Some("Builder".into()), name: "where".into() }));
-        assert!(tags.contains(&&Tag::Method { is_static: false, ty: None, name: "save".into() }));
-        assert!(tags.contains(&&Tag::Mixin { class: "\\Eloquent".into() }));
+        assert!(tags.contains(&&Tag::Property {
+            ty: Some("Address".into()),
+            name: "address".into()
+        }));
+        assert!(tags.contains(&&Tag::Property {
+            ty: None,
+            name: "loose".into()
+        }));
+        assert!(tags.contains(&&Tag::Method {
+            is_static: true,
+            ty: Some("Builder".into()),
+            name: "where".into()
+        }));
+        assert!(tags.contains(&&Tag::Method {
+            is_static: false,
+            ty: None,
+            name: "save".into()
+        }));
+        assert!(tags.contains(&&Tag::Mixin {
+            class: "\\Eloquent".into()
+        }));
     }
 
     #[test]
     fn resolves_type_expressions() {
-        let ctx = NameContext { namespace: "App".into(), ..Default::default() };
+        let ctx = NameContext {
+            namespace: "App".into(),
+            ..Default::default()
+        };
         assert_eq!(resolve("?User", &ctx, None), Ty::class("App\\User"));
         assert_eq!(resolve("null|User", &ctx, None), Ty::class("App\\User"));
-        assert_eq!(resolve("User[]", &ctx, None), Ty { class: None, elem: Some("App\\User".into()) });
+        assert_eq!(
+            resolve("User[]", &ctx, None),
+            Ty {
+                class: None,
+                elem: Some("App\\User".into())
+            }
+        );
         assert_eq!(
             resolve("\\Illuminate\\Support\\Collection<int, User>", &ctx, None),
-            Ty { class: Some("Illuminate\\Support\\Collection".into()), elem: Some("App\\User".into()) }
+            Ty {
+                class: Some("Illuminate\\Support\\Collection".into()),
+                elem: Some("App\\User".into())
+            }
         );
-        assert_eq!(resolve("array<string, User>", &ctx, None), Ty { class: None, elem: Some("App\\User".into()) });
+        assert_eq!(
+            resolve("array<string, User>", &ctx, None),
+            Ty {
+                class: None,
+                elem: Some("App\\User".into())
+            }
+        );
         assert_eq!(resolve("static", &ctx, None), Ty::class(STATIC_TYPE));
-        assert_eq!(resolve("self", &ctx, Some("App\\Model")), Ty::class("App\\Model"));
+        assert_eq!(
+            resolve("self", &ctx, Some("App\\Model")),
+            Ty::class("App\\Model")
+        );
         assert!(resolve("int|string", &ctx, None).is_empty());
     }
 }

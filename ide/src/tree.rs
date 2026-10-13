@@ -3,7 +3,15 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-const HIDDEN: &[&str] = &[".git", ".idea", ".vscode", ".DS_Store", "node_modules", "target", ".codegraph"];
+const HIDDEN: &[&str] = &[
+    ".git",
+    ".idea",
+    ".vscode",
+    ".DS_Store",
+    "node_modules",
+    "target",
+    ".codegraph",
+];
 
 #[derive(Clone, Debug)]
 pub struct Entry {
@@ -37,16 +45,27 @@ fn read_dir(dir: &Path) -> Vec<Entry> {
                 return None;
             }
             let is_dir = e.file_type().ok()?.is_dir();
-            Some(Entry { path: e.path(), name, is_dir })
+            Some(Entry {
+                path: e.path(),
+                name,
+                is_dir,
+            })
         })
         .collect();
-    entries.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+    entries.sort_by(|a, b| {
+        b.is_dir
+            .cmp(&a.is_dir)
+            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+    });
     entries
 }
 
 impl FileTree {
     pub fn open(root: PathBuf) -> Self {
-        let mut tree = Self { root: Some(root.clone()), ..Default::default() };
+        let mut tree = Self {
+            root: Some(root.clone()),
+            ..Default::default()
+        };
         tree.expand(&root);
         // Common source folders start expanded, like a fresh checkout in most IDEs.
         for name in ["src", "app"] {
@@ -73,8 +92,15 @@ impl FileTree {
 
     /// Expands every ancestor of `path` so it becomes visible.
     pub fn reveal(&mut self, path: &Path) {
-        let Some(root) = self.root.clone() else { return };
-        let mut dirs: Vec<PathBuf> = path.ancestors().skip(1).take_while(|a| a.starts_with(&root)).map(Path::to_path_buf).collect();
+        let Some(root) = self.root.clone() else {
+            return;
+        };
+        let mut dirs: Vec<PathBuf> = path
+            .ancestors()
+            .skip(1)
+            .take_while(|a| a.starts_with(&root))
+            .map(Path::to_path_buf)
+            .collect();
         dirs.reverse();
         for dir in dirs {
             if !self.expanded.contains(&dir) {
@@ -94,7 +120,11 @@ impl FileTree {
     fn collect<'a>(&'a self, dir: &Path, depth: usize, out: &mut Vec<Row<'a>>) {
         for entry in self.children.get(dir).into_iter().flatten() {
             let expanded = entry.is_dir && self.expanded.contains(&entry.path);
-            out.push(Row { entry, depth, expanded });
+            out.push(Row {
+                entry,
+                depth,
+                expanded,
+            });
             if expanded {
                 self.collect(&entry.path, depth + 1, out);
             }
@@ -105,5 +135,32 @@ impl FileTree {
 /// Current git branch, read from `.git/HEAD`.
 pub fn git_branch(root: &Path) -> Option<String> {
     let head = std::fs::read_to_string(root.join(".git/HEAD")).ok()?;
-    head.trim().strip_prefix("ref: refs/heads/").map(str::to_string)
+    head.trim()
+        .strip_prefix("ref: refs/heads/")
+        .map(str::to_string)
+}
+
+/// Every file under `root`, skipping hidden tool directories.
+pub fn list_files(root: &Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir)
+            .into_iter()
+            .flatten()
+            .filter_map(Result::ok)
+        {
+            let name = entry.file_name();
+            if HIDDEN.contains(&name.to_string_lossy().as_ref()) {
+                continue;
+            }
+            match entry.file_type() {
+                Ok(t) if t.is_dir() => stack.push(entry.path()),
+                Ok(t) if t.is_file() => out.push(entry.path()),
+                _ => {}
+            }
+        }
+    }
+    out.sort();
+    out
 }

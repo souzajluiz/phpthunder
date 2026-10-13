@@ -11,10 +11,10 @@
 
 use crate::index::Index;
 use crate::phpdoc::{self, Tag, Ty};
-use crate::stubs::{doc_of, resolve_type, Kind, MemberTag, Symbol};
+use crate::stubs::{Kind, MemberTag, Symbol, doc_of, resolve_type};
 use crate::syntax::{
-    context_at, import_insertion_point, is_class_like, parse, text, use_clauses, NameContext,
-    UseKind,
+    NameContext, UseKind, context_at, import_insertion_point, is_class_like, parse, text,
+    use_clauses,
 };
 use crate::text::{LineIndex, Span};
 use std::collections::HashSet;
@@ -26,7 +26,11 @@ pub enum Target {
     Class(String),
     /// Candidate FQNs in lookup order.
     Function(Vec<String>),
-    Member { class: String, tag: MemberTag, name: String },
+    Member {
+        class: String,
+        tag: MemberTag,
+        name: String,
+    },
 }
 
 /// A resolved declaration, owned so it can outlive the index lock.
@@ -49,7 +53,10 @@ pub fn resolve(index: &Index, target: &Target) -> Vec<Definition> {
         Target::Member { class, tag, name } => index.find_member(class, *tag, name),
     };
     hits.into_iter()
-        .map(|(p, s)| Definition { path: p.to_path_buf(), symbol: s.clone() })
+        .map(|(p, s)| Definition {
+            path: p.to_path_buf(),
+            symbol: s.clone(),
+        })
         .collect()
 }
 
@@ -87,7 +94,11 @@ impl<'a> Analyzer<'a> {
         let root = self.tree.root_node();
         [byte, byte.saturating_sub(1)].into_iter().find_map(|b| {
             let node = root.named_descendant_for_byte_range(b, b)?;
-            let node = if node.kind() == "variable_name" { node.named_child(0)? } else { node };
+            let node = if node.kind() == "variable_name" {
+                node.named_child(0)?
+            } else {
+                node
+            };
             (node.kind() == "name").then_some(node)
         })
     }
@@ -105,14 +116,21 @@ impl<'a> Analyzer<'a> {
         if let Some(p) = node.parent().filter(|p| p.kind() == "namespace_name") {
             node = p;
         }
-        if let Some(p) = node.parent().filter(|p| matches!(p.kind(), "qualified_name" | "relative_name")) {
+        if let Some(p) = node
+            .parent()
+            .filter(|p| matches!(p.kind(), "qualified_name" | "relative_name"))
+        {
             node = p;
         }
         let parent = node.parent()?;
         let raw = self.text(node);
         let ctx = self.ctx(node.start_byte());
         let member = |class: Option<String>, tag| {
-            Some(Target::Member { class: class?, tag, name: raw.to_string() })
+            Some(Target::Member {
+                class: class?,
+                tag,
+                name: raw.to_string(),
+            })
         };
         match parent.kind() {
             "member_call_expression" | "nullsafe_member_call_expression"
@@ -165,21 +183,33 @@ impl<'a> Analyzer<'a> {
             "const_element" => member(self.enclosing_class(parent, &ctx), MemberTag::Constant),
             "enum_case" => member(self.enclosing_class(parent, &ctx), MemberTag::Constant),
             "namespace_use_clause" => {
-                let decl = parent.parent().filter(|d| d.kind() == "namespace_use_declaration")
+                let decl = parent
+                    .parent()
+                    .filter(|d| d.kind() == "namespace_use_declaration")
                     .or_else(|| parent.parent()?.parent())?;
-                let clause = use_clauses(decl, self.src).into_iter().find(|c| {
-                    c.name_node.id() == node.id() || same(c.alias_node, node)
-                })?;
+                let clause = use_clauses(decl, self.src)
+                    .into_iter()
+                    .find(|c| c.name_node.id() == node.id() || same(c.alias_node, node))?;
                 match clause.kind {
                     UseKind::Class => Some(Target::Class(clause.fqn)),
                     UseKind::Function => Some(Target::Function(vec![clause.fqn])),
                     UseKind::Const => None,
                 }
             }
-            "named_type" | "base_clause" | "class_interface_clause" | "object_creation_expression"
-            | "binary_expression" | "type_list" | "catch_clause" | "attribute" | "use_declaration"
-            | "scoped_call_expression" | "scoped_property_access_expression" | "optional_type"
-            | "union_type" | "intersection_type" => self.class_ref(node, &ctx).map(Target::Class),
+            "named_type"
+            | "base_clause"
+            | "class_interface_clause"
+            | "object_creation_expression"
+            | "binary_expression"
+            | "type_list"
+            | "catch_clause"
+            | "attribute"
+            | "use_declaration"
+            | "scoped_call_expression"
+            | "scoped_property_access_expression"
+            | "optional_type"
+            | "union_type"
+            | "intersection_type" => self.class_ref(node, &ctx).map(Target::Class),
             _ => None,
         }
     }
@@ -191,7 +221,10 @@ impl<'a> Analyzer<'a> {
             "self" | "static" => self.enclosing_class(node, ctx),
             "parent" => {
                 let cls = self.enclosing_class(node, ctx)?;
-                self.index.classes(&cls).into_iter().find_map(|(_, s)| s.extends.clone())
+                self.index
+                    .classes(&cls)
+                    .into_iter()
+                    .find_map(|(_, s)| s.extends.clone())
             }
             _ => Some(ctx.resolve_class(raw)),
         }
@@ -229,23 +262,34 @@ impl<'a> Analyzer<'a> {
         }
         let d = depth + 1;
         let member_ty = |class: Option<String>, tag, name: Option<Node>| -> Ty {
-            let (Some(class), Some(name)) = (class, name) else { return Ty::default() };
+            let (Some(class), Some(name)) = (class, name) else {
+                return Ty::default();
+            };
             let found = self.index.find_member(&class, tag, self.text(name));
-            found.first().map(|(_, s)| s.ty.clone().bind_static(&class)).unwrap_or_default()
+            found
+                .first()
+                .map(|(_, s)| s.ty.clone().bind_static(&class))
+                .unwrap_or_default()
         };
         let child = |field: &str| expr.child_by_field_name(field);
         match expr.kind() {
             "variable_name" => {
                 let ctx = self.ctx(expr.start_byte());
                 match self.text(expr) {
-                    "$this" => Ty { class: self.enclosing_class(expr, &ctx), elem: None },
+                    "$this" => Ty {
+                        class: self.enclosing_class(expr, &ctx),
+                        elem: None,
+                    },
                     var => self.variable_type(expr, var, &ctx, d),
                 }
             }
             "object_creation_expression" => {
                 let mut c = expr.walk();
                 let class = expr.named_children(&mut c).find(|n| is_name(n.kind()));
-                Ty { class: class.and_then(|n| self.class_ref(n, &self.ctx(n.start_byte()))), elem: None }
+                Ty {
+                    class: class.and_then(|n| self.class_ref(n, &self.ctx(n.start_byte()))),
+                    elem: None,
+                }
             }
             "member_call_expression" | "nullsafe_member_call_expression" => member_ty(
                 child("object").and_then(|o| self.type_of(o, d)),
@@ -273,16 +317,24 @@ impl<'a> Analyzer<'a> {
                 expr.named_child(1),
             ),
             "function_call_expression" => {
-                let Some(f) = child("function") else { return Ty::default() };
+                let Some(f) = child("function") else {
+                    return Ty::default();
+                };
                 let ctx = self.ctx(f.start_byte());
                 let found = self.index.functions(&ctx.resolve_function(self.text(f)));
                 found.first().map(|(_, s)| s.ty.clone()).unwrap_or_default()
             }
             "subscript_expression" => {
                 let elem = expr.named_child(0).and_then(|a| self.ty_of(a, d).elem);
-                Ty { class: elem, elem: None }
+                Ty {
+                    class: elem,
+                    elem: None,
+                }
             }
-            "parenthesized_expression" => expr.named_child(0).map(|e| self.ty_of(e, d)).unwrap_or_default(),
+            "parenthesized_expression" => expr
+                .named_child(0)
+                .map(|e| self.ty_of(e, d))
+                .unwrap_or_default(),
             "assignment_expression" => child("right").map(|e| self.ty_of(e, d)).unwrap_or_default(),
             _ => Ty::default(),
         }
@@ -290,7 +342,10 @@ impl<'a> Analyzer<'a> {
 
     /// `@var` type in the docblock above the statement containing `node`.
     fn inline_var_doc(&self, node: Node, var: &str, ctx: &NameContext) -> Option<Ty> {
-        let stmt = node.parent().filter(|p| p.kind() == "expression_statement").unwrap_or(node);
+        let stmt = node
+            .parent()
+            .filter(|p| p.kind() == "expression_statement")
+            .unwrap_or(node);
         let doc = doc_of(stmt, self.src)?;
         let ty = doc.var_type(Some(var.trim_start_matches('$')))?;
         let owner = self.enclosing_class(node, ctx);
@@ -309,7 +364,8 @@ impl<'a> Analyzer<'a> {
                 best = Some((pos, n));
             }
         };
-        let is_var = |n: Option<Node>| n.is_some_and(|l| l.kind() == "variable_name" && self.text(l) == var);
+        let is_var =
+            |n: Option<Node>| n.is_some_and(|l| l.kind() == "variable_name" && self.text(l) == var);
         let mut stack = vec![scope];
         while let Some(n) = stack.pop() {
             if n.start_byte() >= usage.start_byte() {
@@ -317,12 +373,15 @@ impl<'a> Analyzer<'a> {
             }
             match n.kind() {
                 "assignment_expression"
-                    if n.end_byte() <= usage.start_byte() && is_var(n.child_by_field_name("left")) =>
+                    if n.end_byte() <= usage.start_byte()
+                        && is_var(n.child_by_field_name("left")) =>
                 {
                     consider(n.start_byte(), n)
                 }
                 "foreach_statement" if is_var(foreach_value(n)) => consider(n.start_byte(), n),
-                "catch_clause" if is_var(n.child_by_field_name("name")) => consider(n.start_byte(), n),
+                "catch_clause" if is_var(n.child_by_field_name("name")) => {
+                    consider(n.start_byte(), n)
+                }
                 "comment" if n.end_byte() <= usage.start_byte() => {
                     let raw = self.text(n);
                     if phpdoc::is_doc_comment(raw)
@@ -347,13 +406,22 @@ impl<'a> Analyzer<'a> {
         if let Some((_, n)) = best {
             return match n.kind() {
                 "assignment_expression" => self.inline_var_doc(n, var, ctx).unwrap_or_else(|| {
-                    n.child_by_field_name("right").map(|r| self.ty_of(r, depth)).unwrap_or_default()
+                    n.child_by_field_name("right")
+                        .map(|r| self.ty_of(r, depth))
+                        .unwrap_or_default()
                 }),
                 "foreach_statement" => {
-                    let documented = foreach_value(n).and_then(|_| self.inline_var_doc(n, var, ctx));
+                    let documented =
+                        foreach_value(n).and_then(|_| self.inline_var_doc(n, var, ctx));
                     documented.unwrap_or_else(|| {
-                        let iterated = n.named_child(0).map(|e| self.ty_of(e, depth)).unwrap_or_default();
-                        Ty { class: iterated.elem, elem: None }
+                        let iterated = n
+                            .named_child(0)
+                            .map(|e| self.ty_of(e, depth))
+                            .unwrap_or_default();
+                        Ty {
+                            class: iterated.elem,
+                            elem: None,
+                        }
                     })
                 }
                 "catch_clause" => n
@@ -364,17 +432,21 @@ impl<'a> Analyzer<'a> {
                     .unwrap_or_default(),
                 _ => {
                     let doc = phpdoc::parse(self.text(n));
-                    let ty = doc.var_type(Some(var.trim_start_matches('$'))).unwrap_or("");
+                    let ty = doc
+                        .var_type(Some(var.trim_start_matches('$')))
+                        .unwrap_or("");
                     phpdoc::resolve(ty, ctx, owner.as_deref())
                 }
             };
         }
-        let Some(params) = scope.child_by_field_name("parameters") else { return Ty::default() };
+        let Some(params) = scope.child_by_field_name("parameters") else {
+            return Ty::default();
+        };
         let mut c = params.walk();
-        let Some(param) = params
-            .named_children(&mut c)
-            .find(|p| p.child_by_field_name("name").is_some_and(|n| self.text(n) == var))
-        else {
+        let Some(param) = params.named_children(&mut c).find(|p| {
+            p.child_by_field_name("name")
+                .is_some_and(|n| self.text(n) == var)
+        }) else {
             return Ty::default();
         };
         let native = param
@@ -382,7 +454,10 @@ impl<'a> Analyzer<'a> {
             .map(|t| resolve_type(t, self.src, ctx, owner.as_deref()))
             .unwrap_or_default();
         let documented = doc_of(scope, self.src)
-            .and_then(|d| d.param_type(var.trim_start_matches('$')).map(|t| phpdoc::resolve(t, ctx, owner.as_deref())))
+            .and_then(|d| {
+                d.param_type(var.trim_start_matches('$'))
+                    .map(|t| phpdoc::resolve(t, ctx, owner.as_deref()))
+            })
             .unwrap_or_default();
         let ty = native.or(documented);
         match owner {
@@ -395,8 +470,16 @@ impl<'a> Analyzer<'a> {
 /// The value variable of `foreach ($xs as $v)` / `foreach ($xs as $k => $v)`.
 fn foreach_value(foreach: Node) -> Option<Node> {
     let value = foreach.named_child(1)?;
-    let value = if value.kind() == "pair" { value.named_child(u32::try_from(value.named_child_count().checked_sub(1)?).ok()?)? } else { value };
-    if value.kind() == "by_ref" { value.named_child(0) } else { Some(value) }
+    let value = if value.kind() == "pair" {
+        value.named_child(u32::try_from(value.named_child_count().checked_sub(1)?).ok()?)?
+    } else {
+        value
+    };
+    if value.kind() == "by_ref" {
+        value.named_child(0)
+    } else {
+        Some(value)
+    }
 }
 
 fn is_function_like(kind: &str) -> bool {
@@ -442,7 +525,9 @@ pub fn find_references(
     defs: &[Definition],
     load: impl Fn(&Path) -> Option<String>,
 ) -> Vec<Usage> {
-    let Some(first) = defs.first() else { return Vec::new() };
+    let Some(first) = defs.first() else {
+        return Vec::new();
+    };
     let word = first.symbol.name.as_str();
     let wanted: HashSet<(&Path, usize)> = defs.iter().map(Definition::identity).collect();
     let mut out = Vec::new();
@@ -458,7 +543,9 @@ pub fn find_references(
             if node.kind() != "name" || !text(node, &src).eq_ignore_ascii_case(word) {
                 continue;
             }
-            let Some(target) = analyzer.target_of(node) else { continue };
+            let Some(target) = analyzer.target_of(node) else {
+                continue;
+            };
             let hit = resolve(index, &target)
                 .iter()
                 .any(|d| wanted.contains(&d.identity()));
@@ -471,7 +558,13 @@ pub fn find_references(
             }
         }
     }
-    out.sort_by(|a, b| (&a.path, a.span.start.line, a.span.start.col).cmp(&(&b.path, b.span.start.line, b.span.start.col)));
+    out.sort_by(|a, b| {
+        (&a.path, a.span.start.line, a.span.start.col).cmp(&(
+            &b.path,
+            b.span.start.line,
+            b.span.start.col,
+        ))
+    });
     out
 }
 
@@ -505,7 +598,9 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
         return Vec::new();
     }
     let prefix = &patched[node.start_byte()..byte];
-    let Some(mut parent) = node.parent() else { return Vec::new() };
+    let Some(mut parent) = node.parent() else {
+        return Vec::new();
+    };
     if matches!(parent.kind(), "namespace_name" | "qualified_name") {
         // Namespaced names are completed as a whole; keep it simple.
         return Vec::new();
@@ -516,22 +611,46 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
     }
 
     let members = |class: Option<String>, statics: bool| -> Vec<Candidate> {
-        let Some(class) = class else { return Vec::new() };
+        let Some(class) = class else {
+            return Vec::new();
+        };
         index
             .members(&class)
             .into_iter()
             .filter(|(_, s)| s.name.to_lowercase().starts_with(&prefix.to_lowercase()))
-            .filter(|(_, s)| if statics { s.is_static } else { s.kind == Kind::Method || !s.is_static })
+            .filter(|(_, s)| {
+                if statics {
+                    s.is_static
+                } else {
+                    s.kind == Kind::Method || !s.is_static
+                }
+            })
             .map(|(_, s)| {
-                let name = if statics && s.kind == Kind::Property { format!("${}", s.name) } else { s.name.clone() };
-                let insert = if s.kind == Kind::Method { format!("{name}(") } else { name.clone() };
-                Candidate { label: name, kind: s.kind, detail: s.signature.clone(), insert_text: insert, import: None }
+                let name = if statics && s.kind == Kind::Property {
+                    format!("${}", s.name)
+                } else {
+                    s.name.clone()
+                };
+                let insert = if s.kind == Kind::Method {
+                    format!("{name}(")
+                } else {
+                    name.clone()
+                };
+                Candidate {
+                    label: name,
+                    kind: s.kind,
+                    detail: s.signature.clone(),
+                    insert_text: insert,
+                    import: None,
+                }
             })
             .collect()
     };
 
     match parent.kind() {
-        "member_call_expression" | "member_access_expression" | "nullsafe_member_call_expression"
+        "member_call_expression"
+        | "member_access_expression"
+        | "nullsafe_member_call_expression"
         | "nullsafe_member_access_expression" => {
             let object = parent.child_by_field_name("object");
             members(object.and_then(|o| analyzer.type_of(o, 0)), false)
@@ -540,7 +659,9 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
             let scope = parent.child_by_field_name("scope");
             members(scope.and_then(|s| analyzer.class_of_scope(s, 0)), true)
         }
-        "class_constant_access_expression" if parent.named_child(0).is_some_and(|s| s.id() != node.id()) => {
+        "class_constant_access_expression"
+            if parent.named_child(0).is_some_and(|s| s.id() != node.id()) =>
+        {
             let scope = parent.named_child(0).unwrap();
             let mut out = members(analyzer.class_of_scope(scope, 0), true);
             if "class".starts_with(&prefix.to_lowercase()) {
@@ -554,7 +675,17 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
             }
             out
         }
-        k if is_class_like(k) || matches!(k, "function_definition" | "method_declaration" | "const_element" | "namespace_definition") => Vec::new(),
+        k if is_class_like(k)
+            || matches!(
+                k,
+                "function_definition"
+                    | "method_declaration"
+                    | "const_element"
+                    | "namespace_definition"
+            ) =>
+        {
+            Vec::new()
+        }
         _ => complete_names(&analyzer, node, prefix, src, byte, parent.kind()),
     }
 }
@@ -563,7 +694,9 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
 pub fn ident_start(src: &str, byte: usize) -> usize {
     let bytes = src.as_bytes();
     let mut i = byte;
-    while i > 0 && (bytes[i - 1] == b'_' || bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] >= 0x80) {
+    while i > 0
+        && (bytes[i - 1] == b'_' || bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] >= 0x80)
+    {
         i -= 1;
     }
     i
@@ -618,8 +751,15 @@ fn complete_names(
     // Function calls are possible only where an expression is.
     let type_position = matches!(
         parent_kind,
-        "named_type" | "base_clause" | "class_interface_clause" | "object_creation_expression"
-            | "catch_clause" | "type_list" | "attribute" | "use_declaration" | "optional_type"
+        "named_type"
+            | "base_clause"
+            | "class_interface_clause"
+            | "object_creation_expression"
+            | "catch_clause"
+            | "type_list"
+            | "attribute"
+            | "use_declaration"
+            | "optional_type"
             | "union_type"
     );
     let original_tree = parse(original);
@@ -649,7 +789,13 @@ fn complete_names(
             if s.kind == Kind::Function {
                 insert.push('(');
             }
-            Candidate { label: short, kind: s.kind, detail: s.fqn.clone(), insert_text: insert, import }
+            Candidate {
+                label: short,
+                kind: s.kind,
+                detail: s.fqn.clone(),
+                insert_text: insert,
+                import,
+            }
         })
         .collect()
 }

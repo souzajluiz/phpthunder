@@ -33,18 +33,28 @@ impl LineIndex {
             .get(start..byte)
             .map(|s| s.encode_utf16().count())
             .unwrap_or(byte - start);
-        Pos { line: line as u32, col: col as u32 }
+        Pos {
+            line: line as u32,
+            col: col as u32,
+        }
     }
 
     pub fn span(&self, src: &str, start: usize, end: usize) -> Span {
-        Span { start: self.pos(src, start), end: self.pos(src, end) }
+        Span {
+            start: self.pos(src, start),
+            end: self.pos(src, end),
+        }
     }
 
     pub fn offset(&self, src: &str, pos: Pos) -> usize {
         let Some(&start) = self.starts.get(pos.line as usize) else {
             return src.len();
         };
-        let end = self.starts.get(pos.line as usize + 1).copied().unwrap_or(src.len());
+        let end = self
+            .starts
+            .get(pos.line as usize + 1)
+            .copied()
+            .unwrap_or(src.len());
         let mut units = 0u32;
         for (i, ch) in src[start..end].char_indices() {
             if units >= pos.col {

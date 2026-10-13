@@ -14,7 +14,11 @@ thread_local! {
 }
 
 pub fn parse(src: &str) -> Tree {
-    PARSER.with(|p| p.borrow_mut().parse(src, None).expect("parser has a language"))
+    PARSER.with(|p| {
+        p.borrow_mut()
+            .parse(src, None)
+            .expect("parser has a language")
+    })
 }
 
 pub fn text<'a>(node: Node, src: &'a str) -> &'a str {
@@ -32,8 +36,22 @@ pub fn is_class_like(kind: &str) -> bool {
 pub fn is_builtin_type(name: &str) -> bool {
     matches!(
         name.to_ascii_lowercase().as_str(),
-        "int" | "float" | "string" | "bool" | "array" | "callable" | "iterable" | "object"
-            | "mixed" | "void" | "null" | "never" | "false" | "true" | "integer" | "boolean"
+        "int"
+            | "float"
+            | "string"
+            | "bool"
+            | "array"
+            | "callable"
+            | "iterable"
+            | "object"
+            | "mixed"
+            | "void"
+            | "null"
+            | "never"
+            | "false"
+            | "true"
+            | "integer"
+            | "boolean"
             | "double"
     )
 }
@@ -84,7 +102,11 @@ impl NameContext {
             return vec![target.clone()];
         }
         let local = self.qualify(raw);
-        if local == raw { vec![local] } else { vec![local, raw.to_string()] }
+        if local == raw {
+            vec![local]
+        } else {
+            vec![local, raw.to_string()]
+        }
     }
 
     pub fn imports_class(&self, fqn: &str) -> bool {
@@ -100,11 +122,12 @@ pub enum UseKind {
 }
 
 fn use_kind(node: Node, src: &str) -> Option<UseKind> {
-    node.child_by_field_name("type").map(|t| match text(t, src) {
-        "function" => UseKind::Function,
-        "const" => UseKind::Const,
-        _ => UseKind::Class,
-    })
+    node.child_by_field_name("type")
+        .map(|t| match text(t, src) {
+            "function" => UseKind::Function,
+            "const" => UseKind::Const,
+            _ => UseKind::Class,
+        })
 }
 
 /// One clause of a `use` statement: `use A\B as C;` or one entry of `use A\{B, C};`.
@@ -183,7 +206,11 @@ fn add_uses(decl: Node, src: &str, ctx: &mut NameContext) {
 
 /// Visits every top-level statement (including those inside braced namespaces)
 /// together with the name context in effect at that statement.
-pub fn for_each_statement<'t>(root: Node<'t>, src: &str, mut f: impl FnMut(Node<'t>, &NameContext)) {
+pub fn for_each_statement<'t>(
+    root: Node<'t>,
+    src: &str,
+    mut f: impl FnMut(Node<'t>, &NameContext),
+) {
     let mut ctx = NameContext::default();
     let mut cursor = root.walk();
     for child in root.named_children(&mut cursor) {
@@ -192,7 +219,10 @@ pub fn for_each_statement<'t>(root: Node<'t>, src: &str, mut f: impl FnMut(Node<
                 .child_by_field_name("name")
                 .map(|n| text(n, src).to_string())
                 .unwrap_or_default();
-            let mut scoped = NameContext { namespace: name, ..Default::default() };
+            let mut scoped = NameContext {
+                namespace: name,
+                ..Default::default()
+            };
             if let Some(body) = child.child_by_field_name("body") {
                 let mut c = body.walk();
                 for stmt in body.named_children(&mut c) {
@@ -244,15 +274,17 @@ pub fn import_insertion_point(root: Node, byte: usize) -> usize {
             "namespace_definition" => {
                 point = None;
                 ns_end = Some(child.end_byte());
-                if let Some(body) = child.child_by_field_name("body") {
-                    if body.byte_range().contains(&byte) {
-                        let mut c = body.walk();
-                        let last_use = body
-                            .named_children(&mut c)
-                            .filter(|s| s.kind() == "namespace_use_declaration")
-                            .last();
-                        return last_use.map(|u| u.end_byte()).unwrap_or(body.start_byte() + 1);
-                    }
+                if let Some(body) = child.child_by_field_name("body")
+                    && body.byte_range().contains(&byte)
+                {
+                    let mut c = body.walk();
+                    let last_use = body
+                        .named_children(&mut c)
+                        .filter(|s| s.kind() == "namespace_use_declaration")
+                        .last();
+                    return last_use
+                        .map(|u| u.end_byte())
+                        .unwrap_or(body.start_byte() + 1);
                 }
             }
             "namespace_use_declaration" => point = Some(child.end_byte()),
@@ -280,6 +312,9 @@ mod tests {
         assert_eq!(ctx.resolve_class("Other"), "App\\Other");
         assert_eq!(ctx.resolve_class("\\Root"), "Root");
         assert_eq!(ctx.resolve_function("fmt"), vec!["Lib\\fmt"]);
-        assert_eq!(ctx.resolve_function("strlen"), vec!["App\\strlen", "strlen"]);
+        assert_eq!(
+            ctx.resolve_function("strlen"),
+            vec!["App\\strlen", "strlen"]
+        );
     }
 }

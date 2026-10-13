@@ -5,7 +5,7 @@
 //! Types come from native declarations first, then from PHPDoc.
 
 use crate::phpdoc::{self, DocBlock, Tag, Ty};
-use crate::syntax::{for_each_statement, is_builtin_type, is_class_like, text, NameContext};
+use crate::syntax::{NameContext, for_each_statement, is_builtin_type, is_class_like, text};
 use crate::text::{LineIndex, Span};
 use tree_sitter::Node;
 
@@ -27,11 +27,17 @@ pub enum Kind {
 
 impl Kind {
     pub fn is_class_like(self) -> bool {
-        matches!(self, Kind::Class | Kind::Interface | Kind::Trait | Kind::Enum)
+        matches!(
+            self,
+            Kind::Class | Kind::Interface | Kind::Trait | Kind::Enum
+        )
     }
 
     pub fn is_member(self) -> bool {
-        matches!(self, Kind::Method | Kind::Property | Kind::ClassConstant | Kind::EnumCase)
+        matches!(
+            self,
+            Kind::Method | Kind::Property | Kind::ClassConstant | Kind::EnumCase
+        )
     }
 }
 
@@ -81,7 +87,11 @@ pub struct Symbol {
 }
 
 pub fn build(root: Node, src: &str, lines: &LineIndex) -> Vec<Symbol> {
-    let mut b = Builder { src, lines, out: Vec::new() };
+    let mut b = Builder {
+        src,
+        lines,
+        out: Vec::new(),
+    };
     for_each_statement(root, src, |stmt, ctx| b.statement(stmt, ctx));
     b.out
 }
@@ -89,20 +99,25 @@ pub fn build(root: Node, src: &str, lines: &LineIndex) -> Vec<Symbol> {
 /// Resolves a native type node; `class` is `None` for builtin types.
 pub fn resolve_type(node: Node, src: &str, ctx: &NameContext, owner: Option<&str>) -> Ty {
     match node.kind() {
-        "optional_type" | "named_type" | "union_type" | "intersection_type"
+        "optional_type"
+        | "named_type"
+        | "union_type"
+        | "intersection_type"
         | "disjunctive_normal_form_type" => {
             let mut c = node.walk();
-            let found = node
-                .named_children(&mut c)
+
+            node.named_children(&mut c)
                 .map(|child| resolve_type(child, src, ctx, owner))
                 .find(|t| !t.is_empty())
-                .unwrap_or_default();
-            found
+                .unwrap_or_default()
         }
         "name" | "qualified_name" | "relative_name" => {
             let raw = text(node, src);
             match raw.to_ascii_lowercase().as_str() {
-                "self" => Ty { class: owner.map(str::to_string), elem: None },
+                "self" => Ty {
+                    class: owner.map(str::to_string),
+                    elem: None,
+                },
                 "static" | "$this" => Ty::class(STATIC_TYPE),
                 _ if is_builtin_type(raw) => Ty::default(),
                 _ => Ty::class(ctx.resolve_class(raw)),
@@ -126,8 +141,8 @@ pub fn doc_of(node: Node, src: &str) -> Option<DocBlock> {
 
 fn has_child(node: Node, kind: &str) -> bool {
     let mut c = node.walk();
-    let found = node.children(&mut c).any(|n| n.kind() == kind);
-    found
+
+    node.children(&mut c).any(|n| n.kind() == kind)
 }
 
 struct Builder<'a> {
@@ -146,7 +161,10 @@ impl Builder<'_> {
         let raw = raw.trim_end_matches([';', '{', ' ', '\n', '\r', '\t']);
         let mut s: String = raw.split_whitespace().collect::<Vec<_>>().join(" ");
         if s.len() > 240 {
-            let cut = (0..=240).rev().find(|&i| s.is_char_boundary(i)).unwrap_or(0);
+            let cut = (0..=240)
+                .rev()
+                .find(|&i| s.is_char_boundary(i))
+                .unwrap_or(0);
             s.truncate(cut);
             s.push('…');
         }
@@ -154,13 +172,19 @@ impl Builder<'_> {
     }
 
     fn push(&mut self, kind: Kind, decl: Node, name: Node, fqn: String) -> &mut Symbol {
-        let doc = doc_of(decl, self.src).map(|d| d.summary).unwrap_or_default();
+        let doc = doc_of(decl, self.src)
+            .map(|d| d.summary)
+            .unwrap_or_default();
         let symbol = Symbol {
             kind,
             name: text(name, self.src).trim_start_matches('$').to_string(),
             fqn,
-            span: self.lines.span(self.src, decl.start_byte(), decl.end_byte()),
-            name_span: self.lines.span(self.src, name.start_byte(), name.end_byte()),
+            span: self
+                .lines
+                .span(self.src, decl.start_byte(), decl.end_byte()),
+            name_span: self
+                .lines
+                .span(self.src, name.start_byte(), name.end_byte()),
             name_start: name.start_byte(),
             is_static: false,
             signature: self.header(decl),
@@ -190,14 +214,19 @@ impl Builder<'_> {
         match node.kind() {
             k if is_class_like(k) => self.class_like(node, ctx),
             "function_definition" => {
-                let Some(name) = node.child_by_field_name("name") else { return };
+                let Some(name) = node.child_by_field_name("name") else {
+                    return;
+                };
                 let fqn = ctx.qualify(text(name, self.src));
                 let ty = self.return_type(node, ctx, None);
                 self.push(Kind::Function, node, name, fqn).ty = ty;
             }
             "const_declaration" => {
                 let mut c = node.walk();
-                for el in node.named_children(&mut c).filter(|n| n.kind() == "const_element") {
+                for el in node
+                    .named_children(&mut c)
+                    .filter(|n| n.kind() == "const_element")
+                {
                     if let Some(name) = el.named_child(0).filter(|n| n.kind() == "name") {
                         let fqn = ctx.qualify(text(name, self.src));
                         self.push(Kind::Constant, el, name, fqn);
@@ -217,7 +246,9 @@ impl Builder<'_> {
     }
 
     fn class_like(&mut self, node: Node, ctx: &NameContext) {
-        let Some(name) = node.child_by_field_name("name") else { return };
+        let Some(name) = node.child_by_field_name("name") else {
+            return;
+        };
         let fqn = ctx.qualify(text(name, self.src));
         let kind = match node.kind() {
             "interface_declaration" => Kind::Interface,
@@ -250,7 +281,9 @@ impl Builder<'_> {
             sym.supers = supers;
         }
         self.virtual_members(node, ctx, &fqn, class_index);
-        let Some(body) = node.child_by_field_name("body") else { return };
+        let Some(body) = node.child_by_field_name("body") else {
+            return;
+        };
         let mut c = body.walk();
         for member in body.named_children(&mut c) {
             self.member(member, ctx, &fqn, class_index);
@@ -259,7 +292,9 @@ impl Builder<'_> {
 
     /// `@property`, `@method`, and `@mixin` from the class docblock.
     fn virtual_members(&mut self, class: Node, ctx: &NameContext, owner: &str, class_index: usize) {
-        let Some(comment) = doc_comment(class) else { return };
+        let Some(comment) = doc_comment(class) else {
+            return;
+        };
         let raw = text(comment, self.src);
         if !phpdoc::is_doc_comment(raw) {
             return;
@@ -267,7 +302,11 @@ impl Builder<'_> {
         for t in phpdoc::parse(raw).tags {
             let (kind, name, ty, is_static) = match &t.tag {
                 Tag::Property { ty, name } => (Kind::Property, name, ty, false),
-                Tag::Method { is_static, ty, name } => (Kind::Method, name, ty, *is_static),
+                Tag::Method {
+                    is_static,
+                    ty,
+                    name,
+                } => (Kind::Method, name, ty, *is_static),
                 Tag::Mixin { class } => {
                     self.out[class_index].supers.push(ctx.resolve_class(class));
                     continue;
@@ -286,7 +325,10 @@ impl Builder<'_> {
                 is_static,
                 signature: t.line.clone(),
                 doc: String::new(),
-                ty: ty.as_deref().map(|t| phpdoc::resolve(t, ctx, Some(owner))).unwrap_or_default(),
+                ty: ty
+                    .as_deref()
+                    .map(|t| phpdoc::resolve(t, ctx, Some(owner)))
+                    .unwrap_or_default(),
                 extends: None,
                 supers: Vec::new(),
                 is_virtual: true,
@@ -299,7 +341,9 @@ impl Builder<'_> {
         let is_static = has_child(node, "static_modifier");
         match node.kind() {
             "method_declaration" => {
-                let Some(name) = node.child_by_field_name("name") else { return };
+                let Some(name) = node.child_by_field_name("name") else {
+                    return;
+                };
                 let ty = self.return_type(node, ctx, Some(owner));
                 let sym = self.push(Kind::Method, node, name, owner.to_string());
                 sym.is_static = is_static;
@@ -307,13 +351,17 @@ impl Builder<'_> {
                 // Constructor property promotion: `__construct(private Foo $foo)`.
                 if text(name, src).eq_ignore_ascii_case("__construct") {
                     let doc = doc_of(node, src);
-                    let Some(params) = node.child_by_field_name("parameters") else { return };
+                    let Some(params) = node.child_by_field_name("parameters") else {
+                        return;
+                    };
                     let mut c = params.walk();
                     for p in params
                         .named_children(&mut c)
                         .filter(|p| p.kind() == "property_promotion_parameter")
                     {
-                        let Some(var) = p.child_by_field_name("name") else { continue };
+                        let Some(var) = p.child_by_field_name("name") else {
+                            continue;
+                        };
                         let native = p
                             .child_by_field_name("type")
                             .map(|t| resolve_type(t, src, ctx, Some(owner)))
@@ -323,7 +371,8 @@ impl Builder<'_> {
                             .and_then(|d| d.param_type(text(var, src).trim_start_matches('$')))
                             .map(|t| phpdoc::resolve(t, ctx, Some(owner)))
                             .unwrap_or_default();
-                        self.push(Kind::Property, p, var, owner.to_string()).ty = native.or(documented);
+                        self.push(Kind::Property, p, var, owner.to_string()).ty =
+                            native.or(documented);
                     }
                 }
             }
@@ -334,8 +383,13 @@ impl Builder<'_> {
                     .unwrap_or_default();
                 let doc = doc_of(node, src);
                 let mut c = node.walk();
-                for el in node.named_children(&mut c).filter(|n| n.kind() == "property_element") {
-                    let Some(var) = el.child_by_field_name("name") else { continue };
+                for el in node
+                    .named_children(&mut c)
+                    .filter(|n| n.kind() == "property_element")
+                {
+                    let Some(var) = el.child_by_field_name("name") else {
+                        continue;
+                    };
                     let name = text(var, src).trim_start_matches('$');
                     let documented = doc
                         .as_ref()
@@ -349,14 +403,20 @@ impl Builder<'_> {
             }
             "const_declaration" => {
                 let mut c = node.walk();
-                for el in node.named_children(&mut c).filter(|n| n.kind() == "const_element") {
+                for el in node
+                    .named_children(&mut c)
+                    .filter(|n| n.kind() == "const_element")
+                {
                     if let Some(name) = el.named_child(0).filter(|n| n.kind() == "name") {
-                        self.push(Kind::ClassConstant, node, name, owner.to_string()).is_static = true;
+                        self.push(Kind::ClassConstant, node, name, owner.to_string())
+                            .is_static = true;
                     }
                 }
             }
             "enum_case" => {
-                let Some(name) = node.child_by_field_name("name") else { return };
+                let Some(name) = node.child_by_field_name("name") else {
+                    return;
+                };
                 let sym = self.push(Kind::EnumCase, node, name, owner.to_string());
                 sym.is_static = true;
                 sym.ty = Ty::class(owner);
@@ -406,14 +466,30 @@ if (!function_exists('helper')) { function helper(): User {} }
         let user = find(Kind::Class, "User");
         assert_eq!(user.fqn, "App\\Models\\User");
         assert_eq!(user.extends.as_deref(), Some("App\\Models\\Model"));
-        assert_eq!(user.supers, ["App\\Models\\Model", "App\\Contracts\\HasName", "App\\Models\\Greets"]);
+        assert_eq!(
+            user.supers,
+            [
+                "App\\Models\\Model",
+                "App\\Contracts\\HasName",
+                "App\\Models\\Greets"
+            ]
+        );
 
-        assert_eq!(find(Kind::Property, "address").ty, Ty::class("App\\Models\\Address"));
-        assert_eq!(find(Kind::Property, "repo").ty, Ty::class("App\\Models\\Repo"));
+        assert_eq!(
+            find(Kind::Property, "address").ty,
+            Ty::class("App\\Models\\Address")
+        );
+        assert_eq!(
+            find(Kind::Property, "repo").ty,
+            Ty::class("App\\Models\\Repo")
+        );
         let create = find(Kind::Method, "create");
         assert!(create.is_static);
         assert_eq!(create.ty, Ty::class(STATIC_TYPE));
-        assert_eq!(create.signature, "public static function create(string $name): static");
+        assert_eq!(
+            create.signature,
+            "public static function create(string $name): static"
+        );
         assert_eq!(find(Kind::ClassConstant, "ROLE").fqn, "App\\Models\\User");
         assert_eq!(find(Kind::EnumCase, "Active").fqn, "App\\Models\\Status");
         assert_eq!(find(Kind::Function, "helper").fqn, "App\\Models\\helper");
@@ -456,14 +532,26 @@ class Post {
         let published = find(Kind::Method, "published");
         assert!(published.is_static && published.is_virtual);
         assert_eq!(published.ty, Ty::class("App\\Builder"));
-        assert_eq!(find(Kind::Property, "comments").ty, Ty { class: None, elem: Some("App\\Comment".into()) });
+        assert_eq!(
+            find(Kind::Property, "comments").ty,
+            Ty {
+                class: None,
+                elem: Some("App\\Comment".into())
+            }
+        );
         assert_eq!(
             find(Kind::Property, "tags").ty,
-            Ty { class: Some("Illuminate\\Support\\Collection".into()), elem: Some("App\\Tag".into()) }
+            Ty {
+                class: Some("Illuminate\\Support\\Collection".into()),
+                elem: Some("App\\Tag".into())
+            }
         );
         let latest = find(Kind::Method, "latest");
         assert_eq!(latest.ty, Ty::class(STATIC_TYPE));
         assert_eq!(latest.doc, "Latest post.");
-        assert_eq!(find(Kind::Method, "approved").ty.elem.as_deref(), Some("App\\Comment"));
+        assert_eq!(
+            find(Kind::Method, "approved").ty.elem.as_deref(),
+            Some("App\\Comment")
+        );
     }
 }

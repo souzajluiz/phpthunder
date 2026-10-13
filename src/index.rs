@@ -64,7 +64,11 @@ pub fn words(src: &str) -> HashSet<String> {
 pub fn member_key(owner: &str, tag: MemberTag, name: &str) -> String {
     match tag {
         // Method names are case-insensitive in PHP; properties and constants are not.
-        MemberTag::Method => format!("m:{}::{}", owner.to_ascii_lowercase(), name.to_ascii_lowercase()),
+        MemberTag::Method => format!(
+            "m:{}::{}",
+            owner.to_ascii_lowercase(),
+            name.to_ascii_lowercase()
+        ),
         MemberTag::Property => format!("p:{}::{}", owner.to_ascii_lowercase(), name),
         MemberTag::Constant => format!("k:{}::{}", owner.to_ascii_lowercase(), name),
     }
@@ -88,7 +92,11 @@ fn symbol_key(sym: &Symbol) -> String {
 }
 
 fn short_name(sym: &Symbol) -> String {
-    sym.fqn.rsplit('\\').next().unwrap_or(&sym.fqn).to_ascii_lowercase()
+    sym.fqn
+        .rsplit('\\')
+        .next()
+        .unwrap_or(&sym.fqn)
+        .to_ascii_lowercase()
 }
 
 /// Reference to a symbol stored in the index.
@@ -116,19 +124,27 @@ impl Index {
         self.remove(&path);
         for (i, sym) in entry.symbols.iter().enumerate() {
             let r = (path.clone(), i);
-            self.keys.entry(symbol_key(sym)).or_default().push(r.clone());
+            self.keys
+                .entry(symbol_key(sym))
+                .or_default()
+                .push(r.clone());
             if !sym.kind.is_member() {
                 self.names.entry(short_name(sym)).or_default().push(r);
             }
         }
         for w in &entry.words {
-            self.words.entry(w.clone()).or_default().insert(path.clone());
+            self.words
+                .entry(w.clone())
+                .or_default()
+                .insert(path.clone());
         }
         self.files.insert(path, entry);
     }
 
     pub fn remove(&mut self, path: &Path) {
-        let Some(old) = self.files.remove(path) else { return };
+        let Some(old) = self.files.remove(path) else {
+            return;
+        };
         for sym in &old.symbols {
             prune(&mut self.keys, &symbol_key(sym), path);
             if !sym.kind.is_member() {
@@ -151,12 +167,22 @@ impl Index {
         }
     }
 
+    /// Every indexed file with its symbols.
+    pub fn files(&self) -> impl Iterator<Item = (&Path, &[Symbol])> {
+        self.files
+            .iter()
+            .map(|(p, e)| (p.as_path(), e.symbols.as_slice()))
+    }
+
     pub fn get(&self, r: &SymRef) -> Option<&Symbol> {
         self.files.get(&r.0)?.symbols.get(r.1)
     }
 
     pub fn file_symbols(&self, path: &Path) -> &[Symbol] {
-        self.files.get(path).map(|e| e.symbols.as_slice()).unwrap_or(&[])
+        self.files
+            .get(path)
+            .map(|e| e.symbols.as_slice())
+            .unwrap_or(&[])
     }
 
     pub fn lookup(&self, key: &str) -> Vec<(&Path, &Symbol)> {
@@ -298,13 +324,23 @@ mod tests {
     #[test]
     fn members_follow_inheritance() {
         let mut idx = Index::default();
-        idx.update("/base.php".into(), index_source("<?php class Base { function a() {} function b() {} }"));
-        idx.update("/child.php".into(), index_source("<?php class Child extends Base { function B() {} }"));
+        idx.update(
+            "/base.php".into(),
+            index_source("<?php class Base { function a() {} function b() {} }"),
+        );
+        idx.update(
+            "/child.php".into(),
+            index_source("<?php class Child extends Base { function B() {} }"),
+        );
         let b = idx.find_member("Child", MemberTag::Method, "b");
         assert_eq!(b[0].0, Path::new("/child.php"));
         let a = idx.find_member("child", MemberTag::Method, "A");
         assert_eq!(a[0].0, Path::new("/base.php"));
-        let names: Vec<_> = idx.members("Child").iter().map(|(_, s)| s.name.clone()).collect();
+        let names: Vec<_> = idx
+            .members("Child")
+            .iter()
+            .map(|(_, s)| s.name.clone())
+            .collect();
         assert_eq!(names, ["B", "a"]);
     }
 }

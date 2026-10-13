@@ -2,11 +2,15 @@
 //!
 //! Usage: `phpthunder-ide [project-folder]`
 
+mod actions;
 mod app;
 mod document;
+mod find;
 mod highlight;
 mod icons;
+mod keymap;
 mod language;
+mod palette;
 mod theme;
 mod tree;
 mod view;
@@ -17,7 +21,10 @@ use iced::window;
 /// On macOS the native title bar is made transparent so the traffic-light
 /// buttons sit inside the app's own title bar, left of the logo.
 fn window_settings() -> window::Settings {
-    let mut settings = window::Settings { size: iced::Size::new(1440.0, 900.0), ..Default::default() };
+    let mut settings = window::Settings {
+        size: iced::Size::new(1440.0, 900.0),
+        ..Default::default()
+    };
     #[cfg(target_os = "macos")]
     {
         settings.platform_specific = window::settings::PlatformSpecific {

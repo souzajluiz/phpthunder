@@ -1,19 +1,28 @@
 //! Initial project scan: find PHP files and index them in parallel.
 
-use crate::index::{content_hash, index_source, FileEntry, Index};
+use crate::index::{FileEntry, Index, content_hash, index_source};
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
 /// Directories that never contain project sources worth indexing.
-const SKIPPED_DIRS: &[&str] = &[".git", ".idea", ".vscode", "node_modules", "target", ".codegraph"];
+const SKIPPED_DIRS: &[&str] = &[
+    ".git",
+    ".idea",
+    ".vscode",
+    "node_modules",
+    "target",
+    ".codegraph",
+];
 
 pub fn php_files(root: &Path) -> Vec<PathBuf> {
     walkdir::WalkDir::new(root)
         .into_iter()
         .filter_entry(|e| {
             !(e.file_type().is_dir()
-                && e.file_name().to_str().is_some_and(|n| SKIPPED_DIRS.contains(&n)))
+                && e.file_name()
+                    .to_str()
+                    .is_some_and(|n| SKIPPED_DIRS.contains(&n)))
         })
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
@@ -25,7 +34,11 @@ pub fn php_files(root: &Path) -> Vec<PathBuf> {
 /// Reads and indexes `paths` in parallel, applying results in batches so the
 /// index stays readable (partially) while the scan runs. Files whose content
 /// hash is unchanged are skipped. `progress(done, total)` is called per batch.
-pub fn index_files(index: &RwLock<Index>, paths: &[PathBuf], mut progress: impl FnMut(usize, usize)) {
+pub fn index_files(
+    index: &RwLock<Index>,
+    paths: &[PathBuf],
+    mut progress: impl FnMut(usize, usize),
+) {
     const BATCH: usize = 256;
     let mut done = 0;
     for chunk in paths.chunks(BATCH) {

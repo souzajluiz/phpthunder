@@ -1,8 +1,8 @@
 //! Thunder Dark: palette, fonts, and widget styles.
 
 use iced::font::Weight;
-use iced::widget::{button, container, scrollable, text_editor};
-use iced::{border, Background, Border, Color, Font, Shadow, Theme, Vector};
+use iced::widget::{button, container, scrollable, text_editor, text_input};
+use iced::{Background, Border, Color, Font, Shadow, Theme, Vector, border};
 
 pub const fn rgb(hex: u32) -> Color {
     Color::from_rgb8((hex >> 16) as u8, (hex >> 8) as u8, hex as u8)
@@ -45,8 +45,14 @@ pub const BADGE_CLASS: (Color, Color) = (rgb(0x3D3320), rgb(0xF2C14E));
 pub const BADGE_OTHER: (Color, Color) = (rgb(0x262B36), rgb(0xC3C8D2));
 
 pub const UI: Font = Font::with_name("Geist");
-pub const UI_MEDIUM: Font = Font { weight: Weight::Medium, ..UI };
-pub const UI_BOLD: Font = Font { weight: Weight::Semibold, ..UI };
+pub const UI_MEDIUM: Font = Font {
+    weight: Weight::Medium,
+    ..UI
+};
+pub const UI_BOLD: Font = Font {
+    weight: Weight::Semibold,
+    ..UI
+};
 pub const MONO: Font = Font::with_name("Geist Mono");
 
 /// Editor metrics. Geist Mono advances 600/1000 em for every glyph.
@@ -80,14 +86,28 @@ pub fn app_theme() -> Theme {
 }
 
 pub fn fill(color: Color) -> impl Fn(&Theme) -> container::Style {
-    move |_| container::Style { background: Some(color.into()), ..Default::default() }
+    move |_| container::Style {
+        background: Some(color.into()),
+        ..Default::default()
+    }
 }
 
 pub fn popup(_: &Theme) -> container::Style {
     container::Style {
         background: Some(POPUP.into()),
-        border: Border { color: BORDER_STRONG, width: 1.0, radius: 8.0.into() },
-        shadow: Shadow { color: Color { a: 0.45, ..Color::BLACK }, offset: Vector::new(0.0, 12.0), blur_radius: 32.0 },
+        border: Border {
+            color: BORDER_STRONG,
+            width: 1.0,
+            radius: 8.0.into(),
+        },
+        shadow: Shadow {
+            color: Color {
+                a: 0.45,
+                ..Color::BLACK
+            },
+            offset: Vector::new(0.0, 12.0),
+            blur_radius: 32.0,
+        },
         text_color: Some(TEXT),
         ..Default::default()
     }
@@ -154,7 +174,12 @@ pub fn ghost_button(_: &Theme, status: button::Status) -> button::Style {
 pub fn primary_button(_: &Theme, status: button::Status) -> button::Style {
     button::Style {
         background: Some(
-            if matches!(status, button::Status::Hovered) { rgb(0xFFD873) } else { ACCENT }.into(),
+            if matches!(status, button::Status::Hovered) {
+                rgb(0xFFD873)
+            } else {
+                ACCENT
+            }
+            .into(),
         ),
         text_color: rgb(0x14161C),
         border: border::rounded(6),
@@ -178,7 +203,11 @@ pub fn scrollbars(_: &Theme, status: scrollable::Status) -> scrollable::Style {
         background: None,
         border: Border::default(),
         scroller: scrollable::Scroller {
-            background: Color { a: if hovered { 0.35 } else { 0.18 }, ..rgb(0x8A91A0) }.into(),
+            background: Color {
+                a: if hovered { 0.35 } else { 0.18 },
+                ..rgb(0x8A91A0)
+            }
+            .into(),
             border: border::rounded(4),
         },
     };
@@ -193,5 +222,60 @@ pub fn scrollbars(_: &Theme, status: scrollable::Status) -> scrollable::Style {
             shadow: Shadow::default(),
             icon: MUTED,
         },
+    }
+}
+
+pub fn input(_: &Theme, _: text_input::Status) -> text_input::Style {
+    text_input::Style {
+        background: Color::TRANSPARENT.into(),
+        border: Border::default(),
+        icon: MUTED,
+        placeholder: rgb(0x5C6475),
+        value: TEXT_BRIGHT,
+        selection: rgb(0x2B3A5C),
+    }
+}
+
+/// A boxed input (find bar, dialogs).
+pub fn boxed_input(_: &Theme, status: text_input::Status) -> text_input::Style {
+    let focused = matches!(status, text_input::Status::Focused { .. });
+    text_input::Style {
+        background: rgb(0x151821).into(),
+        border: Border {
+            color: if focused { ACCENT } else { rgb(0x262B36) },
+            width: 1.0,
+            radius: 5.0.into(),
+        },
+        icon: MUTED,
+        placeholder: rgb(0x5C6475),
+        value: TEXT_BRIGHT,
+        selection: rgb(0x2B3A5C),
+    }
+}
+
+/// Small toggle button (regex / case / whole word).
+pub fn toggle_button(on: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
+    move |_, status| button::Style {
+        background: Some(
+            if on {
+                rgb(0x3D3320)
+            } else if matches!(status, button::Status::Hovered) {
+                rgb(0x1C2130)
+            } else {
+                Color::TRANSPARENT
+            }
+            .into(),
+        ),
+        text_color: if on { ACCENT } else { MUTED },
+        border: Border {
+            color: if on {
+                rgb(0x6B5420)
+            } else {
+                Color::TRANSPARENT
+            },
+            width: 1.0,
+            radius: 4.0.into(),
+        },
+        ..Default::default()
     }
 }

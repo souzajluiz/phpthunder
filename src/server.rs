@@ -6,7 +6,7 @@
 //! correct, waits until indexing is done.
 
 use crate::analysis::{self, Candidate, Definition};
-use crate::index::{index_source, Index};
+use crate::index::{Index, index_source};
 use crate::stubs::{Kind, Symbol};
 use crate::text::{LineIndex, Pos, Span};
 use crate::workspace;
@@ -55,20 +55,23 @@ impl Backend {
         }
     }
 
-    async fn blocking<T: Send + 'static>(&self, f: impl FnOnce(&Shared) -> T + Send + 'static) -> T {
+    async fn blocking<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(&Shared) -> T + Send + 'static,
+    ) -> T {
         let shared = self.shared.clone();
-        tokio::task::spawn_blocking(move || f(&shared)).await.expect("worker panicked")
+        tokio::task::spawn_blocking(move || f(&shared))
+            .await
+            .expect("worker panicked")
     }
 
     async fn reindex(&self, path: PathBuf) {
-        self.blocking(move |s| {
-            match s.load(&path) {
-                Some(text) => {
-                    let entry = index_source(&text);
-                    s.index.write().unwrap().update(path, entry);
-                }
-                None => s.index.write().unwrap().remove(&path),
+        self.blocking(move |s| match s.load(&path) {
+            Some(text) => {
+                let entry = index_source(&text);
+                s.index.write().unwrap().update(path, entry);
             }
+            None => s.index.write().unwrap().remove(&path),
         })
         .await;
     }
@@ -83,7 +86,9 @@ impl Backend {
         let token = NumberOrString::String("phpthunder/indexing".into());
         let progress_supported = self
             .client
-            .send_request::<WorkDoneProgressCreate>(WorkDoneProgressCreateParams { token: token.clone() })
+            .send_request::<WorkDoneProgressCreate>(WorkDoneProgressCreateParams {
+                token: token.clone(),
+            })
             .await
             .is_ok();
         let report = |value: WorkDoneProgress| {
@@ -139,7 +144,10 @@ impl Backend {
         self.client
             .log_message(
                 MessageType::INFO,
-                format!("phpthunder: indexed {total} PHP files in {:.2?}", started.elapsed()),
+                format!(
+                    "phpthunder: indexed {total} PHP files in {:.2?}",
+                    started.elapsed()
+                ),
             )
             .await;
     }
@@ -153,7 +161,10 @@ fn to_range(span: Span) -> Range {
 }
 
 fn location(path: &Path, span: Span) -> Option<Location> {
-    Some(Location::new(Url::from_file_path(path).ok()?, to_range(span)))
+    Some(Location::new(
+        Url::from_file_path(path).ok()?,
+        to_range(span),
+    ))
 }
 
 fn path_of(uri: &Url) -> Option<PathBuf> {
@@ -190,12 +201,23 @@ fn completion_kind(c: &Candidate) -> CompletionItemKind {
 
 fn hover_text(def: &Definition) -> String {
     let s: &Symbol = &def.symbol;
-    let owner = if s.kind.is_member() { format!("{}::", s.fqn) } else { String::new() };
-    let name = if s.kind.is_member() { s.name.clone() } else { s.fqn.clone() };
-    let doc = if s.doc.is_empty() { String::new() } else { format!("\n\n{}", s.doc) };
+    let owner = if s.kind.is_member() {
+        format!("{}::", s.fqn)
+    } else {
+        String::new()
+    };
+    let name = if s.kind.is_member() {
+        s.name.clone()
+    } else {
+        s.fqn.clone()
+    };
+    let doc = if s.doc.is_empty() {
+        String::new()
+    } else {
+        format!("\n\n{}", s.doc)
+    };
     format!("```php\n<?php\n{}\n```\n`{owner}{name}`{doc}", s.signature)
 }
-
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
@@ -218,7 +240,9 @@ impl LanguageServer for Backend {
                 version: Some(env!("CARGO_PKG_VERSION").into()),
             }),
             capabilities: ServerCapabilities {
-                text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
+                text_document_sync: Some(TextDocumentSyncCapability::Kind(
+                    TextDocumentSyncKind::FULL,
+                )),
                 definition_provider: Some(OneOf::Left(true)),
                 references_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
@@ -253,20 +277,36 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let Some(path) = path_of(&params.text_document.uri) else { return };
-        self.shared.docs.lock().unwrap().insert(path.clone(), params.text_document.text);
+        let Some(path) = path_of(&params.text_document.uri) else {
+            return;
+        };
+        self.shared
+            .docs
+            .lock()
+            .unwrap()
+            .insert(path.clone(), params.text_document.text);
         self.reindex(path).await;
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        let Some(path) = path_of(&params.text_document.uri) else { return };
-        let Some(change) = params.content_changes.into_iter().last() else { return };
-        self.shared.docs.lock().unwrap().insert(path.clone(), change.text);
+        let Some(path) = path_of(&params.text_document.uri) else {
+            return;
+        };
+        let Some(change) = params.content_changes.into_iter().last() else {
+            return;
+        };
+        self.shared
+            .docs
+            .lock()
+            .unwrap()
+            .insert(path.clone(), change.text);
         self.reindex(path).await;
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
-        let Some(path) = path_of(&params.text_document.uri) else { return };
+        let Some(path) = path_of(&params.text_document.uri) else {
+            return;
+        };
         self.shared.docs.lock().unwrap().remove(&path);
         self.reindex(path).await;
     }
@@ -279,18 +319,36 @@ impl LanguageServer for Backend {
         }
     }
 
-    async fn goto_definition(&self, params: GotoDefinitionParams) -> Result<Option<GotoDefinitionResponse>> {
+    async fn goto_definition(
+        &self,
+        params: GotoDefinitionParams,
+    ) -> Result<Option<GotoDefinitionResponse>> {
         let pos = params.text_document_position_params;
-        let Some(path) = path_of(&pos.text_document.uri) else { return Ok(None) };
+        let Some(path) = path_of(&pos.text_document.uri) else {
+            return Ok(None);
+        };
         let defs = self
             .blocking(move |s| {
                 let src = s.load(&path)?;
-                let byte = LineIndex::new(&src).offset(&src, Pos { line: pos.position.line, col: pos.position.character });
-                Some(analysis::definitions_at(&s.index.read().unwrap(), &src, byte))
+                let byte = LineIndex::new(&src).offset(
+                    &src,
+                    Pos {
+                        line: pos.position.line,
+                        col: pos.position.character,
+                    },
+                );
+                Some(analysis::definitions_at(
+                    &s.index.read().unwrap(),
+                    &src,
+                    byte,
+                ))
             })
             .await
             .unwrap_or_default();
-        let locations: Vec<Location> = defs.iter().filter_map(|d| location(&d.path, d.symbol.name_span)).collect();
+        let locations: Vec<Location> = defs
+            .iter()
+            .filter_map(|d| location(&d.path, d.symbol.name_span))
+            .collect();
         Ok((!locations.is_empty()).then_some(GotoDefinitionResponse::Array(locations)))
     }
 
@@ -298,11 +356,19 @@ impl LanguageServer for Backend {
         self.wait_until_indexed().await;
         let pos = params.text_document_position;
         let include_declaration = params.context.include_declaration;
-        let Some(path) = path_of(&pos.text_document.uri) else { return Ok(None) };
+        let Some(path) = path_of(&pos.text_document.uri) else {
+            return Ok(None);
+        };
         let usages = self
             .blocking(move |s| {
                 let src = s.load(&path)?;
-                let byte = LineIndex::new(&src).offset(&src, Pos { line: pos.position.line, col: pos.position.character });
+                let byte = LineIndex::new(&src).offset(
+                    &src,
+                    Pos {
+                        line: pos.position.line,
+                        col: pos.position.character,
+                    },
+                );
                 let index = s.index.read().unwrap();
                 let defs = analysis::definitions_at(&index, &src, byte);
                 Some(analysis::find_references(&index, &defs, |p| s.load(p)))
@@ -320,29 +386,52 @@ impl LanguageServer for Backend {
 
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let pos = params.text_document_position_params;
-        let Some(path) = path_of(&pos.text_document.uri) else { return Ok(None) };
+        let Some(path) = path_of(&pos.text_document.uri) else {
+            return Ok(None);
+        };
         let defs = self
             .blocking(move |s| {
                 let src = s.load(&path)?;
-                let byte = LineIndex::new(&src).offset(&src, Pos { line: pos.position.line, col: pos.position.character });
-                Some(analysis::definitions_at(&s.index.read().unwrap(), &src, byte))
+                let byte = LineIndex::new(&src).offset(
+                    &src,
+                    Pos {
+                        line: pos.position.line,
+                        col: pos.position.character,
+                    },
+                );
+                Some(analysis::definitions_at(
+                    &s.index.read().unwrap(),
+                    &src,
+                    byte,
+                ))
             })
             .await
             .unwrap_or_default();
         Ok(defs.first().map(|d| Hover {
-            contents: HoverContents::Markup(MarkupContent { kind: MarkupKind::Markdown, value: hover_text(d) }),
+            contents: HoverContents::Markup(MarkupContent {
+                kind: MarkupKind::Markdown,
+                value: hover_text(d),
+            }),
             range: None,
         }))
     }
 
     async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
         let pos = params.text_document_position;
-        let Some(path) = path_of(&pos.text_document.uri) else { return Ok(None) };
+        let Some(path) = path_of(&pos.text_document.uri) else {
+            return Ok(None);
+        };
         let items = self
             .blocking(move |s| {
                 let src = s.load(&path)?;
                 let lines = LineIndex::new(&src);
-                let byte = lines.offset(&src, Pos { line: pos.position.line, col: pos.position.character });
+                let byte = lines.offset(
+                    &src,
+                    Pos {
+                        line: pos.position.line,
+                        col: pos.position.character,
+                    },
+                );
                 let candidates = analysis::complete(&s.index.read().unwrap(), &src, byte);
                 let mut start = analysis::ident_start(&src, byte);
                 if start > 0 && src.as_bytes()[start - 1] == b'$' {
@@ -352,13 +441,21 @@ impl LanguageServer for Backend {
                     .into_iter()
                     .map(|c| {
                         // Replace the typed prefix; keep `$` only when the candidate has it.
-                        let from = if src[start..].starts_with('$') && !c.insert_text.starts_with('$') { start + 1 } else { start };
+                        let from =
+                            if src[start..].starts_with('$') && !c.insert_text.starts_with('$') {
+                                start + 1
+                            } else {
+                                start
+                            };
                         let edit_range = to_range(lines.span(&src, from, byte));
                         CompletionItem {
                             kind: Some(completion_kind(&c)),
                             detail: Some(c.detail.clone()),
                             filter_text: Some(c.label.clone()),
-                            text_edit: Some(CompletionTextEdit::Edit(TextEdit::new(edit_range, c.insert_text.clone()))),
+                            text_edit: Some(CompletionTextEdit::Edit(TextEdit::new(
+                                edit_range,
+                                c.insert_text.clone(),
+                            ))),
                             additional_text_edits: c.import.as_ref().map(|(at, text)| {
                                 let p = lines.pos(&src, *at);
                                 let p = Position::new(p.line, p.col);
@@ -379,8 +476,13 @@ impl LanguageServer for Backend {
         })))
     }
 
-    async fn document_symbol(&self, params: DocumentSymbolParams) -> Result<Option<DocumentSymbolResponse>> {
-        let Some(path) = path_of(&params.text_document.uri) else { return Ok(None) };
+    async fn document_symbol(
+        &self,
+        params: DocumentSymbolParams,
+    ) -> Result<Option<DocumentSymbolResponse>> {
+        let Some(path) = path_of(&params.text_document.uri) else {
+            return Ok(None);
+        };
         let uri = params.text_document.uri;
         let symbols = self
             .blocking(move |s| {
@@ -405,7 +507,10 @@ impl LanguageServer for Backend {
         Ok(Some(DocumentSymbolResponse::Flat(symbols)))
     }
 
-    async fn symbol(&self, params: WorkspaceSymbolParams) -> Result<Option<Vec<SymbolInformation>>> {
+    async fn symbol(
+        &self,
+        params: WorkspaceSymbolParams,
+    ) -> Result<Option<Vec<SymbolInformation>>> {
         let symbols = self
             .blocking(move |s| {
                 let index = s.index.read().unwrap();
@@ -433,4 +538,3 @@ impl LanguageServer for Backend {
 fn serde_json_value<T: serde::Serialize>(value: T) -> Option<serde_json::Value> {
     serde_json::to_value(value).ok()
 }
-
