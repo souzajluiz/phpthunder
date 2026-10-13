@@ -31,6 +31,8 @@ pub enum Icon {
     Warning,
     /// Type hierarchy (`network`).
     Hierarchy,
+    /// Tests tool in the rail (`flask-conical`).
+    Tests,
 }
 
 impl Icon {
@@ -49,6 +51,7 @@ impl Icon {
             Icon::Error => include_str!("../../assets/icons/circle-x.svg"),
             Icon::Warning => include_str!("../../assets/icons/triangle-alert.svg"),
             Icon::Hierarchy => include_str!("../../assets/icons/network.svg"),
+            Icon::Tests => include_str!("../../assets/icons/flask-conical.svg"),
         }
     }
 }

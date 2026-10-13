@@ -105,6 +105,18 @@ pub struct App {
     pub inspect_pending: bool,
     /// Generation of the latest inspection timer; older timers do nothing.
     pub inspect_generation: u64,
+    /// The integrated terminal's shell, once started.
+    pub terminal: Option<crate::terminal::Session>,
+    /// Whether keys go to the terminal (set by clicking it or `⌥F12`).
+    pub terminal_focused: bool,
+    /// Last measured terminal grid as (rows, columns).
+    pub terminal_grid: Option<(u16, u16)>,
+    /// Content of the Tests panel.
+    pub tests: Option<Tests>,
+    /// Scope of the last test run, for "run again".
+    pub last_test_scope: Option<crate::testing::Scope>,
+    /// Whether PHPStan is analysing a saved file.
+    pub phpstan_running: bool,
 }
 
 /// Whether `c` can be part of a PHP identifier; used to decide when
@@ -214,6 +226,12 @@ impl App {
             hierarchy: None,
             inspect_pending: false,
             inspect_generation: 0,
+            terminal: None,
+            terminal_focused: false,
+            terminal_grid: None,
+            tests: None,
+            last_test_scope: None,
+            phpstan_running: false,
         };
         let folder = std::env::args()
             .nth(1)
@@ -251,7 +269,15 @@ impl App {
     /// Listens to every keyboard event so shortcuts, double-Shift, and modal
     /// keys work even when the editor does not have focus.
     pub fn subscription(&self) -> Subscription<Message> {
-        event::listen_with(keyboard_events)
+        let keys = event::listen_with(keyboard_events);
+        match &self.terminal {
+            Some(session) => Subscription::batch([
+                keys,
+                Subscription::run_with(session.id, crate::terminal::output_events)
+                    .map(Message::TerminalOutput),
+            ]),
+            None => keys,
+        }
     }
 
     /// iced update entry point: applies one [`Message`] to the state and
@@ -398,6 +424,17 @@ impl App {
             }
             Message::SelectBottom(b) => {
                 self.bottom = Some(b);
+                if b == Bottom::Terminal {
+                    if self
+                        .terminal
+                        .as_ref()
+                        .is_none_or(crate::terminal::Session::has_exited)
+                    {
+                        self.start_terminal();
+                    }
+                    return self.focus_terminal();
+                }
+                self.terminal_focused = false;
                 Task::none()
             }
             Message::CloseBottom => {
@@ -517,6 +554,46 @@ impl App {
             Message::RenameSubmit => self.submit_rename(),
             Message::RenamePlanned(plan) => self.apply_rename(plan),
             Message::OpenHierarchy(i) => self.open_hierarchy_row(i),
+            Message::TerminalOutput(id) => {
+                // Output of a replaced session is stale: nothing to redraw.
+                if let Some(session) = self.terminal.as_ref().filter(|s| s.id == id) {
+                    session.acknowledge_output();
+                }
+                Task::none()
+            }
+            Message::TerminalResized(size) => {
+                self.terminal_resized(size);
+                Task::none()
+            }
+            Message::TerminalFocus => self.focus_terminal(),
+            Message::TerminalPaste(text) => {
+                self.terminal_paste(text);
+                Task::none()
+            }
+            Message::TerminalRestart => {
+                self.start_terminal();
+                self.focus_terminal()
+            }
+            Message::RunTests(target) => self.run_tests(target),
+            Message::TestsDone(result) => {
+                self.tests_done(result);
+                Task::none()
+            }
+            Message::OpenTest(i) => self.open_test(i),
+            Message::Formatted(path, version, result) => {
+                self.formatted(&path, version, result);
+                Task::none()
+            }
+            Message::PhpstanDone(path, result) => {
+                self.phpstan_done(&path, result);
+                Task::none()
+            }
+            Message::TerminalScroll(lines) => {
+                if let Some(session) = &mut self.terminal {
+                    session.scroll(lines);
+                }
+                Task::none()
+            }
         }
     }
 
@@ -526,6 +603,16 @@ impl App {
     /// commands for uncaptured keys. Escape with no popup open also hides the
     /// bottom panel.
     fn keyboard(&mut self, event: keyboard::Event, captured: bool) -> Task<Message> {
+        // The palette and dialogs still own their keys; otherwise a focused
+        // terminal gets everything but IDE shortcuts.
+        if self.palette.is_none()
+            && self.search_dialog.is_none()
+            && self.rename.is_none()
+            && let Some(task) = self.terminal_keyboard(&event)
+        {
+            self.last_shift = None;
+            return task;
+        }
         match event {
             keyboard::Event::ModifiersChanged(m) => {
                 let shift_down = m.shift()
@@ -722,10 +809,11 @@ impl App {
         if let Err(e) = std::fs::write(&doc.path, &doc.text) {
             let msg = format!("Could not save {}: {e}", doc.title());
             self.notice = Some(msg);
-        } else {
-            doc.mark_saved();
+            return Task::none();
         }
-        Task::none()
+        doc.mark_saved();
+        let path = doc.path.clone();
+        self.phpstan_after_save(path)
     }
 
     // ----- navigation history -------------------------------------------------
@@ -797,6 +885,9 @@ impl App {
         let clicked = matches!(action, Action::Click(_));
         let dragged = matches!(action, Action::Drag(_));
         let goto = clicked && self.modifiers.command();
+        if clicked {
+            self.terminal_focused = false;
+        }
         let Some(doc) = self.doc_mut() else {
             return Task::none();
         };

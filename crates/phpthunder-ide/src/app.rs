@@ -7,7 +7,10 @@ mod model;
 mod navigation;
 mod refactor;
 mod state;
+mod terminal;
+mod tooling;
 
 pub use model::*;
 pub use refactor::*;
 pub use state::*;
+pub use terminal::*;

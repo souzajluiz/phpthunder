@@ -3,22 +3,46 @@
 //! Usage: `phpthunder-ide [project-folder]`
 
 mod app;
+mod composer;
 mod editor;
+mod formatter;
 mod keymap;
 mod language;
 mod palette;
+mod phpstan;
 mod project;
 mod search;
+mod terminal;
+mod testing;
 mod ui;
 
 use app::App;
 use iced::window;
+
+/// Side length in pixels of the embedded window icon.
+const APP_ICON_SIZE: u32 = 128;
+
+/// Spider app icon as raw 128x128 RGBA pixels, pre-rendered from
+/// `assets/brand/app-icon.svg` so no image decoder is needed at runtime.
+const APP_ICON_RGBA: &[u8] = include_bytes!("../assets/brand/app-icon-128.rgba");
+
+/// Builds the window icon shown in the title bar and taskbar on Windows and
+/// Linux; used by `window_settings`. macOS ignores it and takes the Dock icon
+/// from the bundle's `app-icon.icns` instead.
+///
+/// Returns `None` if the embedded pixel buffer does not match
+/// `APP_ICON_SIZE`, so a bad asset falls back to the platform default icon
+/// rather than aborting startup.
+fn app_icon() -> Option<window::Icon> {
+    window::icon::from_rgba(APP_ICON_RGBA.to_vec(), APP_ICON_SIZE, APP_ICON_SIZE).ok()
+}
 
 /// On macOS the native title bar is made transparent so the traffic-light
 /// buttons sit inside the app's own title bar, left of the logo.
 fn window_settings() -> window::Settings {
     let mut settings = window::Settings {
         size: iced::Size::new(1440.0, 900.0),
+        icon: app_icon(),
         ..Default::default()
     };
     #[cfg(target_os = "macos")]

@@ -1,7 +1,7 @@
 //! Command handlers: editing commands, navigation popups, find/replace,
 //! and find in path.
 
-use crate::app::{App, Bottom, EDITOR_ID, Message, Search};
+use crate::app::{App, Bottom, EDITOR_ID, Message, Search, TestTarget};
 use crate::keymap::Cmd;
 use crate::palette::{self, Mode, Palette, Target};
 use crate::search::{self, SearchDialog};
@@ -86,6 +86,10 @@ impl App {
             Cmd::TypeHierarchy => self.show_type_hierarchy(),
             Cmd::FileStructure if has_doc => self.open_palette(Mode::Structure),
             Cmd::FileStructure => Task::none(),
+            Cmd::ToggleTerminal => self.toggle_terminal(),
+            Cmd::RunTests => self.run_tests(TestTarget::Context),
+            Cmd::Reformat => self.reformat(),
+            Cmd::Composer => self.open_composer(),
             Cmd::Problems => {
                 self.bottom = Some(Bottom::Problems);
                 Task::none()
@@ -169,6 +173,7 @@ impl App {
         match item.target {
             Target::File(path) => self.open(path, None),
             Target::Symbol(path, pos) => self.open(path, Some(pos)),
+            Target::Command(command) => self.run_in_terminal(&command),
             Target::Line(line, col) => {
                 let Some(doc) = self.doc() else {
                     return Task::none();

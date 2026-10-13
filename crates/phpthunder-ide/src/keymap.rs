@@ -83,6 +83,14 @@ pub enum Cmd {
     FileStructure,
     /// Show the Problems panel (`⌘6`).
     Problems,
+    /// Show or hide the terminal (`⌥F12`).
+    ToggleTerminal,
+    /// Run the tests for the caret's context (`⌃⇧R`).
+    RunTests,
+    /// Reformat the file with the project's formatter (`⌥⌘L`).
+    Reformat,
+    /// Pick a Composer script or command to run (`⌃⌥C`).
+    Composer,
 }
 
 /// Maps a key press and its modifiers to the bound `Cmd`, or `None` if
@@ -104,6 +112,7 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("d", false, false) => Duplicate,
             ("b", false, false) => GotoDeclaration,
             ("b", false, true) => GotoImplementation,
+            ("l", false, true) => Reformat,
             ("p", false, false) => ParameterInfo,
             ("6", false, false) => Problems,
             ("l", false, false) => GotoLine,
@@ -123,9 +132,14 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             _ => return None,
         },
         Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("o") => OptimizeImports,
+        Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("c") => Composer,
+        Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("r") => {
+            RunTests
+        }
         Key::Character(c) if m.control() && !cmd && c.eq_ignore_ascii_case("h") => TypeHierarchy,
         Key::Named(Named::Enter) if alt && !cmd => QuickFix,
         Key::Named(Named::F6) if shift => Rename,
+        Key::Named(Named::F12) if alt => ToggleTerminal,
         Key::Named(Named::F12) if cmd => FileStructure,
         Key::Named(Named::F12) if shift => FindUsages,
         Key::Named(Named::F12) => GotoDeclaration,
@@ -184,5 +198,9 @@ pub fn hint(cmd: Cmd) -> &'static str {
         TypeHierarchy => "⌃H",
         FileStructure => "⌘F12",
         Problems => "⌘6",
+        ToggleTerminal => "⌥F12",
+        RunTests => "⌃⇧R",
+        Reformat => "⌥⌘L",
+        Composer => "⌃⌥C",
     }
 }

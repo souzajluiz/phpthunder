@@ -2,8 +2,8 @@
 //! breadcrumb, editor with completion/hover popups, usages panel, status bar.
 
 use crate::app::{
-    App, Bottom, Completion, EDITOR_ID, EDITOR_SCROLL_ID, Hover, Indexing, Message, Search, Usages,
-    bindings,
+    App, Bottom, Completion, EDITOR_ID, EDITOR_SCROLL_ID, Hover, Indexing, Message, Search,
+    TestTarget, Usages, bindings,
 };
 use crate::editor::Document;
 use crate::keymap::{Cmd, hint};
@@ -237,10 +237,31 @@ impl App {
                 Some(Message::ToggleSidebar),
                 "Project  ⌘1"
             ),
-            item(Icon::Search, false, None, "Search — coming soon"),
-            item(Icon::Symbols, false, None, "Symbols — coming soon"),
+            item(
+                Icon::Search,
+                false,
+                Some(Message::Command(Cmd::FindInPath)),
+                "Find in path  ⇧⌘F"
+            ),
+            item(
+                Icon::Symbols,
+                false,
+                Some(Message::Command(Cmd::GotoSymbol)),
+                "Go to symbol  ⌥⌘O"
+            ),
+            item(
+                Icon::Tests,
+                self.bottom == Some(Bottom::Tests),
+                Some(Message::RunTests(TestTarget::Context)),
+                "Run tests  ⌃⇧R"
+            ),
+            item(
+                Icon::Terminal,
+                self.bottom == Some(Bottom::Terminal),
+                Some(Message::Command(Cmd::ToggleTerminal)),
+                "Terminal  ⌥F12"
+            ),
             item(Icon::Branch, false, None, "Git — coming soon"),
-            item(Icon::Terminal, false, None, "Terminal — coming soon"),
         ]
         .spacing(4)
         .padding(Padding {
@@ -667,6 +688,10 @@ impl App {
         if self.hierarchy.is_some() {
             tabs = tabs.push(tab(Bottom::Hierarchy, "Hierarchy"));
         }
+        if self.tests.is_some() {
+            tabs = tabs.push(tab(Bottom::Tests, "Tests"));
+        }
+        tabs = tabs.push(tab(Bottom::Terminal, "Terminal"));
         let close = button(icon(Icon::Close, 12.0, 2.0, MUTED))
             .padding(6)
             .style(ghost_button)
@@ -682,6 +707,8 @@ impl App {
             Bottom::Find => self.find_results_body(),
             Bottom::Problems => self.problems_body(),
             Bottom::Hierarchy => self.hierarchy_body(),
+            Bottom::Terminal => self.terminal_body(),
+            Bottom::Tests => self.tests_body(),
         };
         Some(
             container(column![header, hsep(), body])

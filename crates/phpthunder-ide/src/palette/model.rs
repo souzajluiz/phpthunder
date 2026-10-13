@@ -71,6 +71,8 @@ pub enum Target {
     Symbol(PathBuf, Pos),
     /// Move the caret in the active document to `(line, visual column)`, both 0-based.
     Line(usize, usize),
+    /// Run this command line in the integrated terminal.
+    Command(String),
 }
 
 /// One ranked palette result.

@@ -67,6 +67,13 @@ cargo run --release -p phpthunder-ide -- /path/to/php/project
 - Hover with signature, docblock summary and location
 - Go to declaration (`F12` / `⌘B`) and find usages (`⇧F12`) in a bottom panel
 - Background indexing with timing in the status bar
+- Integrated terminal (`⌥F12`): your shell in a real PTY with VT100 colors,
+  scrollback and bracketed paste
+- Tests (`⌃⇧R`): Pest or PHPUnit from `vendor/bin`, for the test at the
+  caret, the file or the suite; results with failures in the Tests panel
+- Reformat (`⌥⌘L`) with the project's Pint, PHP-CS-Fixer or PHPCBF
+- PHPStan on save, findings in Problems; Composer scripts (`⌃⌥C`) run in
+  the terminal
 
 Shortcuts: `⌘O` open folder, `⌘S` save, `⌘W` close tab, `⌘1` toggle project
 tree, `Esc` close popups/panel.

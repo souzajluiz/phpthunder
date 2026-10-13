@@ -198,3 +198,9 @@ pub fn list_files(root: &Path) -> Vec<PathBuf> {
     out.sort();
     out
 }
+
+/// The executable `vendor/bin/<name>` of the project, if installed.
+pub fn vendor_bin(root: &Path, name: &str) -> Option<PathBuf> {
+    let path = root.join("vendor").join("bin").join(name);
+    path.is_file().then_some(path)
+}

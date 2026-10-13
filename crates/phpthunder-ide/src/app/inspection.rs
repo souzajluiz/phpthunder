@@ -71,20 +71,20 @@ impl App {
     /// Error and warning counts of the active document, for the status bar.
     pub fn problem_counts(&self) -> (usize, usize) {
         let Some(doc) = self.doc() else { return (0, 0) };
-        let errors = doc
-            .diagnostics
+        let problems = doc.problems();
+        let errors = problems
             .iter()
             .filter(|d| d.severity == Severity::Error)
             .count();
-        (errors, doc.diagnostics.len() - errors)
+        (errors, problems.len() - errors)
     }
 
     /// The diagnostics touching byte `offset` of the active document.
     pub(crate) fn diagnostics_at(&self, offset: usize) -> Vec<Diagnostic> {
         self.doc()
             .map(|d| {
-                d.diagnostics
-                    .iter()
+                d.problems()
+                    .into_iter()
                     .filter(|x| x.start <= offset && offset <= x.end)
                     .cloned()
                     .collect()
@@ -97,7 +97,7 @@ impl App {
         let Some(doc) = self.doc() else {
             return Task::none();
         };
-        let Some(d) = doc.diagnostics.get(i) else {
+        let Some(d) = doc.problems().get(i).copied() else {
             return Task::none();
         };
         let (path, pos) = (doc.path.clone(), d.span.start);

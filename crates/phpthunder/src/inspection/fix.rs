@@ -44,7 +44,7 @@ pub fn quick_fixes(
         )
         .into_iter()
         .collect(),
-        Code::UndefinedFunction(_) | Code::UndefinedVariable(_) => Vec::new(),
+        Code::UndefinedFunction(_) | Code::UndefinedVariable(_) | Code::External(_) => Vec::new(),
     }
 }
 

@@ -143,6 +143,55 @@ pub enum Message {
     RenamePlanned(Result<RenamePlan, String>),
     /// Jump to the hierarchy panel row at this index.
     OpenHierarchy(usize),
+    // Terminal
+    /// The shell of this session wrote output (redraw).
+    TerminalOutput(u64),
+    /// The terminal panel was laid out at this size.
+    TerminalResized(iced::Size),
+    /// The terminal panel was clicked: keys now go to the shell.
+    TerminalFocus,
+    /// Clipboard contents to paste into the shell.
+    TerminalPaste(Option<String>),
+    /// Start a new shell after the previous one exited.
+    TerminalRestart,
+    /// Mouse wheel over the terminal, in lines (positive is up).
+    TerminalScroll(i32),
+    // Tools
+    /// Run tests in this scope.
+    RunTests(TestTarget),
+    /// A test run finished.
+    TestsDone(Result<crate::testing::TestRun, String>),
+    /// Open the test case at this index of the Tests panel.
+    OpenTest(usize),
+    /// The formatter finished: file, document version, result.
+    Formatted(
+        PathBuf,
+        u64,
+        Result<(String, crate::formatter::Formatter), String>,
+    ),
+    /// PHPStan finished analysing a saved file.
+    PhpstanDone(PathBuf, Result<Vec<crate::phpstan::Finding>, String>),
+}
+
+/// Which tests a [`Message::RunTests`] runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TestTarget {
+    /// The test at the caret, else the current test file, else everything.
+    Context,
+    /// The current file.
+    File,
+    /// The whole suite.
+    All,
+    /// The previous run again.
+    Again,
+}
+
+/// Content of the Tests panel.
+pub enum Tests {
+    /// A run is in progress for this scope label.
+    Running(String),
+    /// The last run.
+    Done(crate::testing::TestRun),
 }
 
 /// Tabs of the bottom panel.
@@ -156,6 +205,10 @@ pub enum Bottom {
     Problems,
     /// Supertypes and subtypes of a class.
     Hierarchy,
+    /// The integrated terminal.
+    Terminal,
+    /// Test results.
+    Tests,
 }
 
 /// State of the background project index, shown in the status bar.

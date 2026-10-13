@@ -39,6 +39,8 @@ pub enum Code {
     UnusedImport,
     /// A variable read in a function but never assigned there.
     UndefinedVariable(String),
+    /// Reported by an external analyser; carries its name (e.g. `PHPStan`).
+    External(String),
 }
 
 /// One problem in a file. Byte offsets are for applying fixes; `span` is for

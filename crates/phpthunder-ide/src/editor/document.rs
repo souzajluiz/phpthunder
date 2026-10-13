@@ -63,6 +63,8 @@ pub struct Document {
     pub diagnostics: Vec<phpthunder::inspection::Diagnostic>,
     /// Document version (see [`Self::version`]) the diagnostics belong to.
     pub diagnostics_version: u64,
+    /// Problems reported by external analysers (PHPStan) at the last save.
+    pub external_diagnostics: Vec<phpthunder::inspection::Diagnostic>,
 }
 
 /// Leading whitespace (indentation) of `line`, used to carry indentation onto new lines.
@@ -89,6 +91,7 @@ impl Document {
             last_edit: None,
             diagnostics: Vec::new(),
             diagnostics_version: 0,
+            external_diagnostics: Vec::new(),
         };
         doc.refresh_highlights();
         doc
@@ -271,6 +274,19 @@ impl Document {
         );
         let column = cursor.column.min(self.line_text(line).len());
         self.move_to(Position { line, column });
+    }
+
+    /// Every problem in the file, built-in inspections and external
+    /// analysers, ordered by position. The Problems panel lists them in this
+    /// order.
+    pub fn problems(&self) -> Vec<&phpthunder::inspection::Diagnostic> {
+        let mut all: Vec<_> = self
+            .diagnostics
+            .iter()
+            .chain(&self.external_diagnostics)
+            .collect();
+        all.sort_by_key(|d| (d.start, d.severity));
+        all
     }
 
     /// Monotonic version, bumped on every text change. Async results
