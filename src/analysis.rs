@@ -427,6 +427,7 @@ pub fn definitions_at(index: &Index, src: &str, byte: usize) -> Vec<Definition> 
         .unwrap_or_default()
 }
 
+#[derive(Clone, Debug)]
 pub struct Usage {
     pub path: PathBuf,
     pub span: Span,

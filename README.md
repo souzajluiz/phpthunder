@@ -49,6 +49,25 @@ Indexing runs in the background at startup with progress reporting. Definition,
 hover, and completion work on the partial index right away; find usages waits
 until indexing completes so results are never missing files.
 
+## IDE
+
+`ide/` is a native desktop IDE written in Rust with [iced](https://iced.rs),
+using phpthunder as a library in the same process (no server, no JSON-RPC).
+
+```sh
+cargo run --release -p phpthunder-ide -- /path/to/php/project
+```
+
+- Project tree, tabs, PHP syntax highlighting (tree-sitter), save
+- Completion popup (auto on `->`, `::`, `$` and new words; `⌃Space` to force),
+  with automatic `use` imports
+- Hover with signature, docblock summary and location
+- Go to declaration (`F12` / `⌘B`) and find usages (`⇧F12`) in a bottom panel
+- Background indexing with timing in the status bar
+
+Shortcuts: `⌘O` open folder, `⌘S` save, `⌘W` close tab, `⌘1` toggle project
+tree, `Esc` close popups/panel.
+
 ## Build
 
 ```sh
