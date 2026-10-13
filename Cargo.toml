@@ -24,3 +24,8 @@ all = { level = "deny", priority = 10 }
 redundant_clone = { level = "deny", priority = 9 }
 unwrap_used = { level = "deny", priority = 9 }
 missing_docs_in_private_items = { level = "warn", priority = 9 }
+
+# Dependencies (iced, wgpu, naga, …) are never stepped through: building them
+# without debug info keeps `target/debug` a fraction of the size.
+[profile.dev.package."*"]
+debug = false
