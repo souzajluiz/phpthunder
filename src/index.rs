@@ -15,12 +15,22 @@ use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 
+/// Everything the index stores for one file.
+///
+/// Built off-lock by [`index_source`] (in parallel during the initial scan) and
+/// installed with [`Index::update`].
 pub struct FileEntry {
+    /// [`content_hash`] of the source; lets rescans skip unchanged files.
     pub hash: u64,
+    /// Declaration stubs in source order; a [`SymRef`] indexes into this vec.
     pub symbols: Vec<Symbol>,
+    /// Lowercased identifiers in the file (its word index entries).
     pub words: HashSet<String>,
 }
 
+/// Hash of a file's content, compared by [`Index::is_current`] so the initial
+/// scan does not reparse unchanged files. Only stable within one process; never
+/// persist it.
 pub fn content_hash(src: &str) -> u64 {
     let mut h = std::collections::hash_map::DefaultHasher::new();
     src.hash(&mut h);
@@ -61,6 +71,11 @@ pub fn words(src: &str) -> HashSet<String> {
     out
 }
 
+/// Declaration-index key for member `name` of class `owner`.
+///
+/// The tag prefix keeps methods, properties, and constants apart. The owner and
+/// method names are case-insensitive, as in PHP; property and constant names
+/// stay case-sensitive.
 pub fn member_key(owner: &str, tag: MemberTag, name: &str) -> String {
     match tag {
         // Method names are case-insensitive in PHP; properties and constants are not.
@@ -74,14 +89,19 @@ pub fn member_key(owner: &str, tag: MemberTag, name: &str) -> String {
     }
 }
 
+/// Declaration-index key for a class-like; case-insensitive, as PHP class names are.
 pub fn class_key(fqn: &str) -> String {
     format!("c:{}", fqn.to_ascii_lowercase())
 }
 
+/// Declaration-index key for a function; case-insensitive, as PHP function names are.
 pub fn function_key(fqn: &str) -> String {
     format!("f:{}", fqn.to_ascii_lowercase())
 }
 
+/// Key a stub is stored under; must agree with the keys the lookups build
+/// ([`class_key`], [`function_key`], [`member_key`]). Global constants are
+/// keyed case-sensitively.
 fn symbol_key(sym: &Symbol) -> String {
     match sym.kind {
         Kind::Class | Kind::Interface | Kind::Trait | Kind::Enum => class_key(&sym.fqn),
@@ -95,6 +115,7 @@ fn symbol_key(sym: &Symbol) -> String {
     }
 }
 
+/// Lowercased last FQN segment of a top-level symbol; key of the name index used by completion and workspace symbols.
 fn short_name(sym: &Symbol) -> String {
     sym.fqn
         .rsplit('\\')
@@ -103,27 +124,44 @@ fn short_name(sym: &Symbol) -> String {
         .to_ascii_lowercase()
 }
 
-/// Reference to a symbol stored in the index.
+/// Reference to a symbol stored in the index: the file plus the position in
+/// its [`FileEntry::symbols`]. Invalid once that file is re-indexed.
 pub type SymRef = (PathBuf, usize);
 
+/// Project-wide declaration and word index.
+///
+/// Per-file entries are the source of truth; the lookup maps are derived from
+/// them and kept in sync by [`Index::update`] and [`Index::remove`]. Holds no
+/// lock itself: the server and [`crate::workspace::index_files`] wrap it in a
+/// `RwLock`.
 #[derive(Default)]
 pub struct Index {
+    /// Indexed files and their entries.
     files: HashMap<PathBuf, FileEntry>,
+    /// Declaration index: [`symbol_key`] -> declarations stored under it.
     keys: HashMap<String, Vec<SymRef>>,
     /// Lowercase short name of top-level symbols, ordered for prefix queries.
     names: BTreeMap<String, Vec<SymRef>>,
+    /// Word index: lowercased identifier -> files that contain it.
     words: HashMap<String, HashSet<PathBuf>>,
 }
 
 impl Index {
+    /// Number of indexed files.
     pub fn file_count(&self) -> usize {
         self.files.len()
     }
 
+    /// True when `path` is indexed with content hash `hash`, so it need not be reparsed.
     pub fn is_current(&self, path: &Path, hash: u64) -> bool {
         self.files.get(path).is_some_and(|e| e.hash == hash)
     }
 
+    /// Installs `entry` as the content of `path`.
+    ///
+    /// Drops the previous entry first, so stale declarations and words disappear.
+    /// Called on every open, edit, close, and watched-file change, and in batches
+    /// by the initial scan.
     pub fn update(&mut self, path: PathBuf, entry: FileEntry) {
         self.remove(&path);
         for (i, sym) in entry.symbols.iter().enumerate() {
@@ -145,6 +183,7 @@ impl Index {
         self.files.insert(path, entry);
     }
 
+    /// Drops `path` and everything derived from it; a no-op if it is not indexed. Called when a file is deleted or unreadable.
     pub fn remove(&mut self, path: &Path) {
         let Some(old) = self.files.remove(path) else {
             return;
@@ -178,10 +217,12 @@ impl Index {
             .map(|(p, e)| (p.as_path(), e.symbols.as_slice()))
     }
 
+    /// Resolves a [`SymRef`]; `None` if its file was removed or re-indexed with fewer symbols.
     pub fn get(&self, r: &SymRef) -> Option<&Symbol> {
         self.files.get(&r.0)?.symbols.get(r.1)
     }
 
+    /// Symbols declared in `path`, in source order; empty if the file is not indexed. Backs document symbols.
     pub fn file_symbols(&self, path: &Path) -> &[Symbol] {
         self.files
             .get(path)
@@ -189,6 +230,7 @@ impl Index {
             .unwrap_or(&[])
     }
 
+    /// All declarations stored under a raw key built with [`class_key`], [`function_key`], or [`member_key`], with their files.
     pub fn lookup(&self, key: &str) -> Vec<(&Path, &Symbol)> {
         self.keys
             .get(key)
@@ -198,11 +240,14 @@ impl Index {
             .collect()
     }
 
+    /// Class-like declarations named `fqn` (case-insensitive, no leading `\`); several when declared in more than one file.
     pub fn classes(&self, fqn: &str) -> Vec<(&Path, &Symbol)> {
         self.lookup(&class_key(fqn))
     }
 
-    /// First candidate FQN that has a declaration wins (PHP fallback order).
+    /// Declarations of the first candidate FQN that exists (PHP fallback order:
+    /// namespaced first, then global). Candidates come from
+    /// [`crate::syntax::NameContext::resolve_function`].
     pub fn functions(&self, candidates: &[String]) -> Vec<(&Path, &Symbol)> {
         candidates
             .iter()
@@ -212,6 +257,10 @@ impl Index {
     }
 
     /// Breadth-first walk over a class and all its supertypes.
+    ///
+    /// Starts with `fqn` itself, then parents, interfaces, traits, and `@mixin`
+    /// classes; cycles are cut. Classes missing from the index still appear but
+    /// contribute no supertypes.
     pub fn hierarchy(&self, fqn: &str) -> Vec<String> {
         let mut seen = HashSet::new();
         let mut order = Vec::new();
@@ -298,6 +347,7 @@ impl Index {
     }
 }
 
+/// Removes `path`'s references under `key`, dropping the key once empty so removed files leave no stale entries.
 fn prune(map: &mut HashMap<String, Vec<SymRef>>, key: &str, path: &Path) {
     if let Some(v) = map.get_mut(key) {
         v.retain(|(p, _)| p != path);

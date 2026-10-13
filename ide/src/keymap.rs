@@ -3,43 +3,76 @@
 
 use iced::keyboard::{Key, Modifiers, key::Named};
 
+/// A shortcut-triggered command. Produced by `command` and dispatched by the
+/// key handling in app.rs; `hint` gives its label.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Cmd {
     // Files and window
+    /// Write the active document to disk.
     Save,
+    /// Close the active tab.
     CloseTab,
+    /// Show or hide the project tree.
     ToggleSidebar,
+    /// Activate the tab to the right.
     NextTab,
+    /// Activate the tab to the left.
     PrevTab,
     // Editing
+    /// Undo the last edit.
     Undo,
+    /// Redo the last undone edit.
     Redo,
+    /// Comment or uncomment the selected lines.
     ToggleComment,
+    /// Duplicate the current line or selection.
     Duplicate,
+    /// Delete the current line.
     DeleteLine,
+    /// Move the current line up.
     MoveLineUp,
+    /// Move the current line down.
     MoveLineDown,
+    /// Open code completion at the caret.
     Complete,
     // Navigation
+    /// Jump to the declaration of the symbol at the caret.
     GotoDeclaration,
+    /// List usages of the symbol at the caret in the bottom panel.
     FindUsages,
+    /// Open the palette in go-to-line mode.
     GotoLine,
+    /// Open the palette in go-to-file mode.
     GotoFile,
+    /// Open the palette in go-to-class mode.
     GotoClass,
+    /// Open the palette in go-to-symbol mode.
     GotoSymbol,
+    /// Open the palette on recently opened files.
     RecentFiles,
+    /// Open the palette searching files and symbols together.
     SearchEverywhere,
+    /// Jump back through the navigation history.
     Back,
+    /// Jump forward through the navigation history.
     Forward,
     // Search
+    /// Open the find bar.
     Find,
+    /// Open the find bar with the replace row.
     Replace,
+    /// Go to the next find match.
     FindNext,
+    /// Go to the previous find match.
     FindPrevious,
+    /// Open the find-in-path dialog.
     FindInPath,
 }
 
-/// The command bound to a key press, if any.
+/// Maps a key press and its modifiers to the bound `Cmd`, or `None` if
+/// unbound. Called from both the editor's key binding and the window-level
+/// keyboard subscription in app.rs, so a shortcut works wherever focus is.
+/// `⌘` means `Modifiers::command`, which is Ctrl outside macOS.
 pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
     use Cmd::*;
     let cmd = m.command();
@@ -86,7 +119,8 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
     })
 }
 
-/// The labels shown in menus and hints.
+/// The glyph label for `cmd`'s shortcut (e.g. `⌘S`), shown in the empty-editor
+/// shortcut list in view.rs. Kept in sync with `command` by hand.
 pub fn hint(cmd: Cmd) -> &'static str {
     use Cmd::*;
     match cmd {

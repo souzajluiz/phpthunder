@@ -15,6 +15,11 @@ const SKIPPED_DIRS: &[&str] = &[
     ".codegraph",
 ];
 
+/// Recursively lists `*.php` files under `root`, skipping VCS, editor, and
+/// build directories (`.git`, `node_modules`, `target`, ...). Unreadable
+/// entries are ignored. Called once per workspace root by the
+/// server's initial scan; `vendor/` is included on purpose so library classes
+/// resolve.
 pub fn php_files(root: &Path) -> Vec<PathBuf> {
     walkdir::WalkDir::new(root)
         .into_iter()
@@ -34,6 +39,9 @@ pub fn php_files(root: &Path) -> Vec<PathBuf> {
 /// Reads and indexes `paths` in parallel, applying results in batches so the
 /// index stays readable (partially) while the scan runs. Files whose content
 /// hash is unchanged are skipped. `progress(done, total)` is called per batch.
+///
+/// Runs on a blocking worker during the server's initial scan; unreadable files
+/// are skipped silently.
 pub fn index_files(
     index: &RwLock<Index>,
     paths: &[PathBuf],

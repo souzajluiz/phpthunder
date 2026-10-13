@@ -8,44 +8,68 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+/// Maximum undo steps kept per document; the oldest step is dropped beyond this.
 const UNDO_LIMIT: usize = 300;
+/// Consecutive typing or deleting within this window merges into one undo step.
 const TYPING_GROUP: Duration = Duration::from_millis(1200);
+/// One indentation level (four spaces), used by Enter, Tab and Shift+Tab handling.
 pub const INDENT: &str = "    ";
 
+/// Saved editor state restored by undo/redo.
 #[derive(Clone)]
 struct Snapshot {
+    /// Full document text at the time of the snapshot.
     text: String,
+    /// Cursor and selection at the time of the snapshot.
     cursor: Cursor,
 }
 
+/// Category of the last edit, used to group consecutive edits into one undo step.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum EditKind {
+    /// Inserting non-whitespace characters.
     Typing,
+    /// Backspace or Delete.
     Deleting,
+    /// Any other edit (whitespace, paste, newline); never grouped.
     Other,
 }
 
+/// One open file in an editor tab, owned by the app's list of open documents.
 pub struct Document {
+    /// File on disk this document was opened from and saves to.
     pub path: PathBuf,
+    /// iced editor buffer that renders the text and owns the cursor.
     pub content: Content,
     /// Mirror of `content` as one string, refreshed after every edit.
     pub text: String,
+    /// Text as of the last load or save, compared against `text` to compute `dirty`.
     saved_text: String,
+    /// Whether the text differs from what is on disk; shown in the tab title.
     pub dirty: bool,
+    /// Per-line syntax highlight spans for the current text (empty for non-PHP files).
     pub highlights: Arc<LineSpans>,
+    /// Bumped whenever `highlights` changes so the highlighter knows to refresh.
     pub highlight_version: u64,
     /// Vertical scroll offset of the editor, restored when switching tabs.
     pub scroll_y: f32,
+    /// Undo stack, oldest first, capped at `UNDO_LIMIT`.
     undo: Vec<Snapshot>,
+    /// Redo stack; cleared by any new checkpoint.
     redo: Vec<Snapshot>,
+    /// Kind and time of the last grouped edit; `None` forces the next edit to start a new undo step.
     last_edit: Option<(EditKind, Instant)>,
 }
 
+/// Leading whitespace (indentation) of `line`, used to carry indentation onto new lines.
 fn leading_ws(line: &str) -> &str {
     &line[..line.len() - line.trim_start().len()]
 }
 
 impl Document {
+    /// Creates a document for a freshly opened file, treating `text` as the saved state.
+    ///
+    /// Computes the initial highlighting so the first render is already colored.
     pub fn new(path: PathBuf, text: String) -> Self {
         let mut doc = Self {
             path,
@@ -64,6 +88,7 @@ impl Document {
         doc
     }
 
+    /// File name shown in the tab strip, window title and save errors; empty if the path has no file name.
     pub fn title(&self) -> String {
         self.path
             .file_name()
@@ -71,10 +96,14 @@ impl Document {
             .unwrap_or_default()
     }
 
+    /// Whether the file has a `.php` extension; gates highlighting and PHP-only features.
     pub fn is_php(&self) -> bool {
         self.path.extension().is_some_and(|e| e == "php")
     }
 
+    /// Recomputes syntax highlighting after any text change and bumps `highlight_version`.
+    ///
+    /// Non-PHP files get no spans.
     fn refresh_highlights(&mut self) {
         self.highlights = Arc::new(if self.is_php() {
             highlight::compute(&self.text)
@@ -84,6 +113,9 @@ impl Document {
         self.highlight_version += 1;
     }
 
+    /// Highlighter settings handed to the iced editor widget when the view is built.
+    ///
+    /// Cloning the `Arc` is cheap; `version` lets the highlighter detect stale spans.
     pub fn highlight_settings(&self) -> highlight::Settings {
         highlight::Settings {
             version: self.highlight_version,
@@ -93,6 +125,7 @@ impl Document {
 
     // ----- history -------------------------------------------------------
 
+    /// Captures the current text and cursor for the undo/redo stacks.
     fn snapshot(&self) -> Snapshot {
         Snapshot {
             text: self.text.clone(),
@@ -110,6 +143,9 @@ impl Document {
         self.last_edit = None;
     }
 
+    /// Starts a new undo step unless this edit continues a recent run of the same kind.
+    ///
+    /// Called by `perform` before applying an editing action, so typing a word undoes as one step.
     fn record(&mut self, kind: EditKind) {
         let now = Instant::now();
         let continues = matches!(self.last_edit, Some((k, at)) if k == kind && kind != EditKind::Other && now - at < TYPING_GROUP);
@@ -119,6 +155,7 @@ impl Document {
         self.last_edit = Some((kind, now));
     }
 
+    /// Replaces the buffer with an undo/redo snapshot and refreshes derived state.
     fn restore(&mut self, snap: Snapshot) {
         self.content = Content::with_text(&snap.text);
         self.text = snap.text;
@@ -126,6 +163,9 @@ impl Document {
         self.after_change();
     }
 
+    /// Reverts to the previous undo step, pushing the current state onto the redo stack.
+    ///
+    /// Called by the Undo command; returns `false` when there is nothing to undo.
     pub fn undo(&mut self) -> bool {
         let Some(snap) = self.undo.pop() else {
             return false;
@@ -136,6 +176,9 @@ impl Document {
         true
     }
 
+    /// Reapplies the last undone step, pushing the current state back onto the undo stack.
+    ///
+    /// Called by the Redo command; returns `false` when there is nothing to redo.
     pub fn redo(&mut self) -> bool {
         let Some(snap) = self.redo.pop() else {
             return false;
@@ -168,11 +211,13 @@ impl Document {
         kind.is_some()
     }
 
+    /// Recomputes `dirty` and highlighting; runs after every text mutation.
     fn after_change(&mut self) {
         self.dirty = self.text != self.saved_text;
         self.refresh_highlights();
     }
 
+    /// Copies the editor buffer into `text` after iced mutated it, then refreshes derived state.
     fn sync_text(&mut self) {
         self.text = self.content.text();
         self.after_change();
@@ -235,6 +280,7 @@ impl Document {
         }
     }
 
+    /// Marks the current text as the on-disk state after a successful save, clearing `dirty`.
     pub fn mark_saved(&mut self) {
         self.saved_text = self.text.clone();
         self.dirty = false;
@@ -242,6 +288,7 @@ impl Document {
 
     // ----- positions -----------------------------------------------------
 
+    /// Current cursor position (line and byte column), ignoring any selection anchor.
     pub fn cursor(&self) -> Position {
         self.content.cursor().position
     }
@@ -254,10 +301,12 @@ impl Document {
         (a != b).then(|| (a.min(b), a.max(b)))
     }
 
+    /// Currently selected text, used to prefill the find bar and the find-in-path query.
     pub fn selected_text(&self) -> Option<&str> {
         self.selection().map(|(a, b)| &self.text[a..b])
     }
 
+    /// Byte offset where `line` starts; past the last line it returns the text length.
     pub fn line_start(&self, line: usize) -> usize {
         if line == 0 {
             return 0;
@@ -283,6 +332,7 @@ impl Document {
         }
     }
 
+    /// Text of `line` without its line terminator.
     pub fn line_text(&self, line: usize) -> &str {
         &self.text[self.line_start(line)..self.line_end(line)]
     }
@@ -293,6 +343,9 @@ impl Document {
         (start + pos.column).min(self.line_end(pos.line))
     }
 
+    /// Editor position (line, byte column) of a byte offset, clamped to the text length.
+    ///
+    /// Inverse of `offset`; used to turn match ranges and edits into cursor positions.
     pub fn position_of(&self, offset: usize) -> Position {
         let offset = offset.min(self.text.len());
         let line = self.text[..offset].matches('\n').count();
@@ -339,10 +392,14 @@ impl Document {
         }
     }
 
+    /// Number of lines as counted by the editor buffer.
     pub fn line_count(&self) -> usize {
         self.content.line_count()
     }
 
+    /// Moves the cursor to `position`, clearing any selection.
+    ///
+    /// Also ends the current undo group so the next edit starts a fresh step.
     pub fn move_to(&mut self, position: Position) {
         self.set_cursor(Cursor {
             position,
@@ -383,6 +440,9 @@ impl Document {
         }
     }
 
+    /// Selects the byte range `start..end`, leaving the cursor at `end`.
+    ///
+    /// Used to reveal find matches and search hits; ends the current undo group.
     pub fn select(&mut self, start: usize, end: usize) {
         let (anchor, head) = (self.position_of(start), self.position_of(end));
         self.content.move_to(Cursor {
@@ -392,10 +452,12 @@ impl Document {
         self.last_edit = None;
     }
 
+    /// Character starting at byte `offset`, if any; used by bracket and quote auto-pairing.
     fn char_after(&self, offset: usize) -> Option<char> {
         self.text[offset..].chars().next()
     }
 
+    /// Character ending at byte `offset`, if any; used by bracket and quote auto-pairing.
     fn char_before(&self, offset: usize) -> Option<char> {
         self.text[..offset].chars().next_back()
     }

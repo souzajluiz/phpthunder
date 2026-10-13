@@ -13,24 +13,40 @@ use std::ops::Range;
 use std::sync::Arc;
 use tree_sitter::Node;
 
+/// Highlight class of a span; `format` maps it to a theme color.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Token {
+    /// Keywords, modifiers, `true`/`false`/`null`, primitive types and PHP tags.
     Keyword,
+    /// Class, interface, trait, enum and namespace names in type position.
     Type,
+    /// Function and method names at declarations and calls.
     Function,
+    /// Variables, constants and enum cases.
     Variable,
+    /// String literals, heredocs and nowdocs, escapes included.
     String,
+    /// Integer and float literals.
     Number,
+    /// Line, block and doc comments.
     Comment,
+    /// `@tag` words inside `/** */` doc comments.
     DocTag,
+    /// Member and scope operators: `->`, `?->`, `::`, `=>`.
     Punct,
 }
 
+/// Per-line spans: the outer index is the line, ranges are byte offsets
+/// within that line, sorted and non-overlapping.
 pub type LineSpans = Vec<Vec<(Range<usize>, Token)>>;
 
+/// Highlighter settings handed to the editor; built by
+/// `Document::highlight_settings` from spans recomputed after every edit.
 #[derive(Clone)]
 pub struct Settings {
+    /// Bumped by the document on every recompute.
     pub version: u64,
+    /// The precomputed spans, shared without copying.
     pub lines: Arc<LineSpans>,
 }
 
@@ -43,8 +59,12 @@ impl PartialEq for Settings {
     }
 }
 
+/// iced highlighter that replays precomputed `LineSpans` instead of
+/// tokenizing each line itself.
 pub struct Highlighter {
+    /// Spans for the whole document, from the latest settings.
     lines: Arc<LineSpans>,
+    /// Next line the editor will ask for.
     current: usize,
 }
 
@@ -88,6 +108,8 @@ impl highlighter::Highlighter for Highlighter {
     }
 }
 
+/// Maps a `Token` to its Thunder Dark syntax color, leaving the font
+/// unchanged. Passed to `highlight_with` in view.rs `editor_area`.
 pub fn format(token: &Token, _theme: &Theme) -> Format<Font> {
     let color = match token {
         Token::Keyword => theme::SYN_KEYWORD,
@@ -106,6 +128,10 @@ pub fn format(token: &Token, _theme: &Theme) -> Format<Font> {
     }
 }
 
+/// Picks the token for a tree-sitter leaf (or a whole string/comment node)
+/// from its kind and its parent's kind; `None` leaves it uncolored. Anonymous
+/// alphabetic nodes are keywords; `name` nodes are resolved by context
+/// (declaration, call, type position, `Foo::` scope).
 fn classify(node: Node) -> Option<Token> {
     let kind = node.kind();
     let parent = node.parent().map(|p| p.kind()).unwrap_or("");
@@ -195,6 +221,9 @@ fn classify(node: Node) -> Option<Token> {
     }
 }
 
+/// Records `start..end` (document byte offsets) as `token`, split across the
+/// lines it covers. `starts` holds each line's start offset; newline bytes
+/// are never included in a span.
 fn push_span(
     lines: &mut LineSpans,
     starts: &[usize],
@@ -245,6 +274,10 @@ fn doc_tags(src: &str, start: usize, end: usize, out: &mut Vec<(usize, usize)>) 
     }
 }
 
+/// Computes highlight spans for a whole PHP source. Called by
+/// `Document::refresh_highlights` after every edit: parses with tree-sitter,
+/// classifies leaves, adds doc-comment tags, then flattens overlaps per line
+/// so nested spans (a tag inside a comment) split their parent.
 pub fn compute(src: &str) -> LineSpans {
     let starts: Vec<usize> = std::iter::once(0)
         .chain(src.match_indices('\n').map(|(i, _)| i + 1))

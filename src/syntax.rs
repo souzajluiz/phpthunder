@@ -13,6 +13,14 @@ thread_local! {
     });
 }
 
+/// Parses PHP source with a thread-local tree-sitter parser, reused across calls
+/// on the same thread (rayon workers each get their own).
+///
+/// Syntax errors become error nodes in the tree; it never fails on bad input.
+///
+/// # Panics
+///
+/// Only if the bundled grammar is ABI-incompatible with the tree-sitter runtime.
 pub fn parse(src: &str) -> Tree {
     PARSER.with(|p| {
         p.borrow_mut()
@@ -21,10 +29,16 @@ pub fn parse(src: &str) -> Tree {
     })
 }
 
+/// Source text of `node`.
+///
+/// # Panics
+///
+/// If `src` is not the text `node`'s tree was parsed from (out-of-range bytes).
 pub fn text<'a>(node: Node, src: &'a str) -> &'a str {
     &src[node.byte_range()]
 }
 
+/// True for the tree-sitter declaration kinds of class, interface, trait, and enum.
 pub fn is_class_like(kind: &str) -> bool {
     matches!(
         kind,
@@ -59,13 +73,16 @@ pub fn is_builtin_type(name: &str) -> bool {
 /// Everything needed to turn a name written in source into a fully qualified name.
 #[derive(Clone, Debug, Default)]
 pub struct NameContext {
+    /// Current namespace without leading `\`; empty in the global namespace.
     pub namespace: String,
     /// lowercase alias -> fully qualified name
     pub classes: HashMap<String, String>,
+    /// lowercase alias -> fully qualified name, from `use function`.
     pub functions: HashMap<String, String>,
 }
 
 impl NameContext {
+    /// Prefixes `name` with the current namespace. Used for names being declared, which `use` imports never affect.
     pub fn qualify(&self, name: &str) -> String {
         if self.namespace.is_empty() {
             name.to_string()
@@ -74,6 +91,12 @@ impl NameContext {
         }
     }
 
+    /// Resolves a class name as written to its FQN, following PHP rules.
+    ///
+    /// A leading `\` is absolute, `namespace\X` is relative to the current
+    /// namespace, a first segment matching an import is replaced by it, and
+    /// anything else is prefixed with the current namespace. `self`, `static`, and
+    /// `parent` are not handled here.
     pub fn resolve_class(&self, raw: &str) -> String {
         if let Some(abs) = raw.strip_prefix('\\') {
             return abs.to_string();
@@ -109,18 +132,24 @@ impl NameContext {
         }
     }
 
+    /// True when some `use` import already points at `fqn`; completion uses it to avoid a duplicate import.
     pub fn imports_class(&self, fqn: &str) -> bool {
         self.classes.values().any(|v| v.eq_ignore_ascii_case(fqn))
     }
 }
 
+/// What a `use` statement imports.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum UseKind {
+    /// `use A\B` (classes, interfaces, traits, enums, namespaces).
     Class,
+    /// `use function`.
     Function,
+    /// `use const`; recognized but not used for resolution.
     Const,
 }
 
+/// Explicit `function`/`const` keyword on a use declaration or clause; `None` when absent, so grouped clauses inherit the declaration's kind.
 fn use_kind(node: Node, src: &str) -> Option<UseKind> {
     node.child_by_field_name("type")
         .map(|t| match text(t, src) {
@@ -132,13 +161,21 @@ fn use_kind(node: Node, src: &str) -> Option<UseKind> {
 
 /// One clause of a `use` statement: `use A\B as C;` or one entry of `use A\{B, C};`.
 pub struct UseClause<'t> {
+    /// What is imported.
     pub kind: UseKind,
+    /// Imported FQN without leading `\`.
     pub fqn: String,
+    /// Local name: the `as` alias, else the FQN's last segment.
     pub alias: String,
+    /// Node of the imported name.
     pub name_node: Node<'t>,
+    /// Node of the alias, if `as` is used.
     pub alias_node: Option<Node<'t>>,
 }
 
+/// Expands a `namespace_use_declaration` into its clauses, including grouped
+/// `use A\{B, C}` forms. Feeds [`NameContext`] and lets names inside a `use`
+/// statement be resolved.
 pub fn use_clauses<'t>(decl: Node<'t>, src: &str) -> Vec<UseClause<'t>> {
     let decl_kind = use_kind(decl, src).unwrap_or(UseKind::Class);
     let mut prefix = String::new();
@@ -189,6 +226,7 @@ pub fn use_clauses<'t>(decl: Node<'t>, src: &str) -> Vec<UseClause<'t>> {
     out
 }
 
+/// Registers the class and function imports of a `use` declaration in `ctx`, keyed by lowercase alias.
 fn add_uses(decl: Node, src: &str, ctx: &mut NameContext) {
     for clause in use_clauses(decl, src) {
         let key = clause.alias.to_ascii_lowercase();
@@ -245,6 +283,9 @@ pub fn for_each_statement<'t>(
 }
 
 /// Name context in effect at `byte`.
+///
+/// Walks the file's top-level statements on every call, so callers that need it
+/// repeatedly for one position should keep the result.
 pub fn context_at(root: Node, src: &str, byte: usize) -> NameContext {
     let mut found = None;
     let mut last = NameContext::default();

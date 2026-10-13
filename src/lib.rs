@@ -4,8 +4,11 @@
 //! index (declarations + word index) -> resolve, find usages, completion.
 
 pub mod analysis;
+pub mod builtins;
+pub mod diagnostics;
 pub mod index;
 pub mod phpdoc;
+pub mod refactor;
 pub mod server;
 pub mod stubs;
 pub mod syntax;

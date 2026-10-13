@@ -11,21 +11,33 @@ use tree_sitter::Node;
 
 pub use crate::phpdoc::STATIC_TYPE;
 
+/// What a declaration is; stored on every [`Symbol`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
+    /// `class`.
     Class,
+    /// `interface`.
     Interface,
+    /// `trait`.
     Trait,
+    /// `enum`.
     Enum,
+    /// Top-level `function`.
     Function,
+    /// Global `const`.
     Constant,
+    /// Method, declared or `@method`.
     Method,
+    /// Property: declared, constructor-promoted, or `@property`.
     Property,
+    /// Class or interface `const`.
     ClassConstant,
+    /// Enum `case`.
     EnumCase,
 }
 
 impl Kind {
+    /// True for kinds that own members and can be extended, implemented, or used.
     pub fn is_class_like(self) -> bool {
         matches!(
             self,
@@ -33,6 +45,7 @@ impl Kind {
         )
     }
 
+    /// True for kinds declared inside a class; their [`Symbol::fqn`] is the owner's FQN.
     pub fn is_member(self) -> bool {
         matches!(
             self,
@@ -45,12 +58,16 @@ impl Kind {
 /// (enum cases share the constant namespace, as in PHP).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MemberTag {
+    /// Methods (case-insensitive names).
     Method,
+    /// Properties (case-sensitive names, without `$`).
     Property,
+    /// Class constants and enum cases.
     Constant,
 }
 
 impl MemberTag {
+    /// Lookup namespace of a member kind; `None` for top-level kinds.
     pub fn of(kind: Kind) -> Option<Self> {
         match kind {
             Kind::Method => Some(Self::Method),
@@ -61,16 +78,22 @@ impl MemberTag {
     }
 }
 
+/// Index entry for one declaration, built by [`build`].
 #[derive(Clone, Debug)]
 pub struct Symbol {
+    /// What was declared.
     pub kind: Kind,
     /// Declared name (properties without `$`).
     pub name: String,
     /// Fully qualified name for top-level symbols; owner FQN for members.
     pub fqn: String,
+    /// Range of the whole declaration.
     pub span: Span,
+    /// Range of the name; where go to declaration lands.
     pub name_span: Span,
+    /// Byte offset of the name; with the file path it identifies the declaration.
     pub name_start: usize,
+    /// Declared `static`; class constants and enum cases count as static.
     pub is_static: bool,
     /// Declaration header, e.g. `public static function create(string $name): self`.
     pub signature: String,
@@ -86,6 +109,13 @@ pub struct Symbol {
     pub is_virtual: bool,
 }
 
+/// Builds stubs for every declaration in a parsed file.
+///
+/// Covers classes with their members (including PHPDoc virtual members and
+/// promoted constructor properties), functions, and global constants, also
+/// inside braced namespaces and `if (!function_exists(...))` guards. A class
+/// always precedes its members. Pure function of the source; called by
+/// [`crate::index::index_source`].
 pub fn build(root: Node, src: &str, lines: &LineIndex) -> Vec<Symbol> {
     let mut b = Builder {
         src,
@@ -97,6 +127,9 @@ pub fn build(root: Node, src: &str, lines: &LineIndex) -> Vec<Symbol> {
 }
 
 /// Resolves a native type node; `class` is `None` for builtin types.
+///
+/// For unions and nullable types the first class wins. `owner` resolves `self`;
+/// `static` becomes [`STATIC_TYPE`].
 pub fn resolve_type(node: Node, src: &str, ctx: &NameContext, owner: Option<&str>) -> Ty {
     match node.kind() {
         "optional_type"
@@ -133,25 +166,33 @@ pub fn doc_comment(node: Node) -> Option<Node> {
     (prev.kind() == "comment").then_some(prev)
 }
 
+/// Parsed docblock directly above `node`; `None` without one or when the comment is not a `/** */` docblock.
 pub fn doc_of(node: Node, src: &str) -> Option<DocBlock> {
     let comment = doc_comment(node)?;
     let raw = text(comment, src);
     phpdoc::is_doc_comment(raw).then(|| phpdoc::parse(raw))
 }
 
+/// True when `node` has a direct child (named or not) of `kind`, e.g. `static_modifier`.
 fn has_child(node: Node, kind: &str) -> bool {
     let mut c = node.walk();
 
     node.children(&mut c).any(|n| n.kind() == kind)
 }
 
+/// Accumulates the stubs of one file while [`build`] walks it.
 struct Builder<'a> {
+    /// Source of the file being walked.
     src: &'a str,
+    /// Line index of `src`, for spans.
     lines: &'a LineIndex,
+    /// Stubs built so far, in source order.
     out: Vec<Symbol>,
 }
 
 impl Builder<'_> {
+    /// Declaration header shown on hover: source from `node` up to its body,
+    /// whitespace collapsed, trailing `{`/`;` dropped, cut at 240 bytes with `…`.
     fn header(&self, node: Node) -> String {
         let end = node
             .child_by_field_name("body")
@@ -171,6 +212,9 @@ impl Builder<'_> {
         s
     }
 
+    /// Appends a stub for `decl` named by `name` (`$` stripped), filling spans,
+    /// signature, and PHPDoc summary. Returns it so callers can set kind-specific
+    /// fields such as the type or `is_static`.
     fn push(&mut self, kind: Kind, decl: Node, name: Node, fqn: String) -> &mut Symbol {
         let doc = doc_of(decl, self.src)
             .map(|d| d.summary)
@@ -211,6 +255,7 @@ impl Builder<'_> {
         native.or(doc)
     }
 
+    /// Records the declarations of one top-level statement, recursing into conditional blocks so guarded declarations are indexed too.
     fn statement(&mut self, node: Node, ctx: &NameContext) {
         match node.kind() {
             k if is_class_like(k) => self.class_like(node, ctx),
@@ -246,6 +291,8 @@ impl Builder<'_> {
         }
     }
 
+    /// Records a named class-like with its `extends`/`implements` supertypes, then
+    /// its PHPDoc virtual members and body members. Anonymous classes are skipped.
     fn class_like(&mut self, node: Node, ctx: &NameContext) {
         let Some(name) = node.child_by_field_name("name") else {
             return;
@@ -337,6 +384,9 @@ impl Builder<'_> {
         }
     }
 
+    /// Records one class body member: methods (plus promoted constructor
+    /// properties), properties, constants, and enum cases. A trait `use` instead
+    /// adds the traits to the supertypes of the class at `class_index`.
     fn member(&mut self, node: Node, ctx: &NameContext, owner: &str, class_index: usize) {
         let src = self.src;
         let is_static = has_child(node, "static_modifier");

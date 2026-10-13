@@ -2,6 +2,7 @@
 //!
 //! Usage: `cargo run --example dump -- path/to/file.php`
 
+/// Prints `node` and its descendants, indented by depth; leaves show their text.
 fn walk(node: tree_sitter::Node, src: &[u8], depth: usize) {
     if node.is_named() {
         let leaf = if node.child_count() == 0 {

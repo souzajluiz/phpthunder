@@ -21,13 +21,17 @@ use tower_lsp::lsp_types::request::WorkDoneProgressCreate;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
 
+/// State shared between the async LSP handlers and blocking worker tasks.
 struct Shared {
+    /// Project index; written by reindexing, read by every request.
     index: RwLock<Index>,
     /// Open editor buffers; they take precedence over disk content.
     docs: Mutex<HashMap<PathBuf, String>>,
 }
 
 impl Shared {
+    /// Current content of `path`: the open editor buffer if any, else the file on
+    /// disk. `None` when neither exists, which reindexing treats as a deletion.
     fn load(&self, path: &Path) -> Option<String> {
         if let Some(text) = self.docs.lock().get(path) {
             return Some(text.clone());
@@ -36,14 +40,22 @@ impl Shared {
     }
 }
 
+/// The language server. `tower_lsp::LspService::new(Backend::new)` builds it (see
+/// the `phpthunder` binary); each [`LanguageServer`] method handles one LSP
+/// request or notification.
 pub struct Backend {
+    /// Connection to the editor, for progress, logs, and registrations.
     client: Client,
+    /// Index and open buffers, shared with blocking workers.
     shared: Arc<Shared>,
+    /// Workspace folders from `initialize`; scanned by the initial indexing.
     roots: Mutex<Vec<PathBuf>>,
+    /// Becomes `true` when the initial scan finishes; find usages waits for it.
     ready: watch::Sender<bool>,
 }
 
 impl Backend {
+    /// Creates a server with an empty index. Nothing is indexed until the client sends `initialized`.
     pub fn new(client: Client) -> Self {
         Self {
             client,
@@ -56,6 +68,12 @@ impl Backend {
         }
     }
 
+    /// Runs `f` on tokio's blocking pool, so parsing and index work never stall
+    /// the async LSP loop.
+    ///
+    /// # Panics
+    ///
+    /// If `f` panics.
     async fn blocking<T: Send + 'static>(
         &self,
         f: impl FnOnce(&Shared) -> T + Send + 'static,
@@ -66,6 +84,9 @@ impl Backend {
             .expect("worker panicked")
     }
 
+    /// Re-reads `path` (buffer or disk) and replaces its index entry, or removes it
+    /// when the file is gone. Called on open, change, close, and watched-file
+    /// events.
     async fn reindex(&self, path: PathBuf) {
         self.blocking(move |s| match s.load(&path) {
             Some(text) => {
@@ -77,11 +98,15 @@ impl Backend {
         .await;
     }
 
+    /// Resolves once the initial workspace scan has finished; immediately afterwards.
     async fn wait_until_indexed(&self) {
         let mut rx = self.ready.subscribe();
         let _ = rx.wait_for(|ready| *ready).await;
     }
 
+    /// Indexes every PHP file under the workspace roots, reporting work-done
+    /// progress when the client supports it. Sets `ready` and logs the elapsed
+    /// time when done. Runs once, from `initialized`.
     async fn index_workspace(&self) {
         let roots = self.roots.lock().clone();
         let token = NumberOrString::String("phpthunder/indexing".into());
@@ -154,6 +179,7 @@ impl Backend {
     }
 }
 
+/// Converts a [`Span`] (already in LSP line/UTF-16 coordinates) to an LSP range.
 fn to_range(span: Span) -> Range {
     Range {
         start: Position::new(span.start.line, span.start.col),
@@ -161,6 +187,7 @@ fn to_range(span: Span) -> Range {
     }
 }
 
+/// LSP location of `span` in `path`; `None` if the path cannot become a `file://` URL.
 fn location(path: &Path, span: Span) -> Option<Location> {
     Some(Location::new(
         Url::from_file_path(path).ok()?,
@@ -168,10 +195,12 @@ fn location(path: &Path, span: Span) -> Option<Location> {
     ))
 }
 
+/// File-system path of a `file://` URI; `None` for other schemes (untitled or remote buffers), which the server ignores.
 fn path_of(uri: &Url) -> Option<PathBuf> {
     uri.to_file_path().ok()
 }
 
+/// LSP symbol kind for document and workspace symbols; traits are shown as classes.
 fn symbol_kind(kind: Kind) -> SymbolKind {
     match kind {
         Kind::Class => SymbolKind::CLASS,
@@ -186,6 +215,7 @@ fn symbol_kind(kind: Kind) -> SymbolKind {
     }
 }
 
+/// LSP completion icon for a candidate; local variables (`Property` with detail `variable`) get the variable icon.
 fn completion_kind(c: &Candidate) -> CompletionItemKind {
     match c.kind {
         Kind::Class | Kind::Trait => CompletionItemKind::CLASS,
@@ -200,6 +230,8 @@ fn completion_kind(c: &Candidate) -> CompletionItemKind {
     }
 }
 
+/// Markdown hover for a declaration: its signature in a PHP code block, the
+/// qualified name (`Owner::member` for members), then the PHPDoc summary.
 fn hover_text(def: &Definition) -> String {
     let s: &Symbol = &def.symbol;
     let owner = if s.kind.is_member() {
@@ -523,6 +555,7 @@ impl LanguageServer for Backend {
     }
 }
 
+/// Serializes registration options for `register_capability`; `None` on failure, so the registration just carries no options.
 fn serde_json_value<T: serde::Serialize>(value: T) -> Option<serde_json::Value> {
     serde_json::to_value(value).ok()
 }

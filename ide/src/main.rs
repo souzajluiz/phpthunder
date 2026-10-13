@@ -36,6 +36,13 @@ fn window_settings() -> window::Settings {
     settings
 }
 
+/// Entry point: builds the iced application around `App` (boot, update, view,
+/// subscription), applies the Thunder Dark theme and default font, registers
+/// the embedded fonts and runs the event loop until the window closes.
+///
+/// # Errors
+///
+/// Returns iced's error if the window or graphics backend cannot be created.
 fn main() -> iced::Result {
     let mut application = iced::application(App::boot, App::update, App::view)
         .title(App::title)

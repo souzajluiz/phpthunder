@@ -10,22 +10,34 @@ use phpthunder::stubs::{Kind, Symbol};
 use phpthunder::text::Pos;
 use std::path::{Path, PathBuf};
 
+/// Widget id of the query input, focused by `open_palette` in actions.rs.
 pub const INPUT_ID: &str = "palette-input";
+/// Cap on ranked results kept per query.
 const MAX_ITEMS: usize = 60;
+/// Rows shown at once; the list window follows the selection.
 const VISIBLE_ROWS: usize = 12;
+/// Height in px of one result row.
 const ROW: f32 = 30.0;
 
+/// What the palette searches, chosen by the shortcut that opened it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
+    /// Project files, matched by name then by relative path.
     Files,
+    /// Class-like symbols: classes, interfaces, traits and enums.
     Classes,
+    /// Every non-virtual indexed symbol, members included.
     Symbols,
+    /// Recently opened files, most recent first.
     Recent,
+    /// A `line[:column]` in the active document.
     Line,
+    /// Files and symbols together, files slightly demoted.
     Everywhere,
 }
 
 impl Mode {
+    /// Mode name shown in the palette footer.
     fn title(self) -> &'static str {
         match self {
             Mode::Files => "Go to file",
@@ -37,6 +49,7 @@ impl Mode {
         }
     }
 
+    /// Placeholder text for the query input.
     fn placeholder(self) -> &'static str {
         match self {
             Mode::Line => "line[:column]",
@@ -46,27 +59,41 @@ impl Mode {
     }
 }
 
+/// Where picking an item navigates; handled by `palette_open_selected` in actions.rs.
 #[derive(Debug, Clone)]
 pub enum Target {
+    /// Open a file.
     File(PathBuf),
+    /// Open a file with the caret at a symbol's name.
     Symbol(PathBuf, Pos),
+    /// Move the caret in the active document to `(line, visual column)`, both 0-based.
     Line(usize, usize),
 }
 
+/// One ranked palette result.
 #[derive(Debug, Clone)]
 pub struct Item {
+    /// Kind marker in the left column (`▤` file, `#` line, or a symbol letter).
     pub badge: &'static str,
+    /// Main label; matched characters are drawn in the accent color.
     pub title: String,
     /// Character indices of `title` that matched the query.
     pub matched: Vec<usize>,
+    /// Right-aligned context: relative path, or namespace and `file:line`.
     pub detail: String,
+    /// Destination when the item is picked.
     pub target: Target,
 }
 
+/// State of the open navigation palette, held in `App::palette` while visible.
 pub struct Palette {
+    /// What is being searched.
     pub mode: Mode,
+    /// Current input text.
     pub query: String,
+    /// Ranked results for `query`, recomputed on every keystroke.
     pub items: Vec<Item>,
+    /// Index into `items` of the highlighted row.
     pub selected: usize,
 }
 
@@ -121,6 +148,8 @@ pub fn fuzzy(query: &str, candidate: &str) -> Option<(i32, Vec<usize>)> {
     Some((score, matched))
 }
 
+/// Displays `path` relative to the project `root` when inside it, else in
+/// full. Used for file details and as the fuzzy-match fallback key.
 fn rel(root: Option<&Path>, path: &Path) -> String {
     root.and_then(|r| path.strip_prefix(r).ok())
         .unwrap_or(path)
@@ -128,10 +157,13 @@ fn rel(root: Option<&Path>, path: &Path) -> String {
         .to_string()
 }
 
+/// Whether `path` lies under a `vendor` directory; such results get a score
+/// penalty so project code ranks first.
 fn is_vendor(path: &Path) -> bool {
     path.components().any(|c| c.as_os_str() == "vendor")
 }
 
+/// Kind letter for symbol items; matches the completion badges in view.rs.
 fn badge(kind: Kind) -> &'static str {
     match kind {
         Kind::Class | Kind::Trait => "C",
@@ -145,6 +177,11 @@ fn badge(kind: Kind) -> &'static str {
 }
 
 impl App {
+    /// Ranks the candidates for `mode` against `query` and returns the best
+    /// `MAX_ITEMS`. Called from actions.rs when the palette opens and on each
+    /// query change. Symbol modes return nothing for an empty query (they would
+    /// walk the whole index); Recent keeps most-recent-first order when empty;
+    /// Line yields one item for the active document, clamped to its line count.
     pub fn palette_items(&self, mode: Mode, query: &str) -> Vec<Item> {
         let root = self.tree.root.as_deref();
         let query = query.trim();
@@ -267,6 +304,10 @@ impl App {
         scored.into_iter().take(MAX_ITEMS).map(|(_, i)| i).collect()
     }
 
+    /// Renders the palette as a centered modal card: query input, a window of
+    /// `VISIBLE_ROWS` results around the selection with matched characters in
+    /// the accent color, and a footer with the mode and keys. Called from
+    /// `App::view`, which stacks it over a click-to-close backdrop.
     pub fn palette_view<'a>(&'a self, p: &'a Palette) -> Element<'a, Message> {
         let input = text_input(p.mode.placeholder(), &p.query)
             .id(Id::new(INPUT_ID))

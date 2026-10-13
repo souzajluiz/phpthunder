@@ -21,14 +21,23 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use tree_sitter::{Node, Tree};
 
+/// What an identifier refers to, before it is looked up in the index.
+///
+/// Produced by [`Analyzer::target_of`] from the identifier's syntax position and
+/// consumed by [`resolve`]. Names are already fully qualified.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Target {
+    /// A class, interface, trait, or enum, by fully qualified name.
     Class(String),
     /// Candidate FQNs in lookup order.
     Function(Vec<String>),
+    /// A method, property, or constant reached through `class`.
     Member {
+        /// FQN of the class the member is accessed on; lookup also walks its supertypes.
         class: String,
+        /// Which member namespace to search (methods, properties, or constants).
         tag: MemberTag,
+        /// Member name as written (properties without `$`).
         name: String,
     },
 }
@@ -36,16 +45,28 @@ pub enum Target {
 /// A resolved declaration, owned so it can outlive the index lock.
 #[derive(Clone, Debug)]
 pub struct Definition {
+    /// File that declares the symbol.
     pub path: PathBuf,
+    /// Declaration stub, cloned out of the index.
     pub symbol: Symbol,
 }
 
 impl Definition {
+    /// Key `(file, name start byte)` that identifies a declaration.
+    ///
+    /// [`find_references`] compares these instead of whole symbols to decide whether
+    /// an occurrence resolves to one of the searched declarations.
     fn identity(&self) -> (&Path, usize) {
         (&self.path, self.symbol.name_start)
     }
 }
 
+/// Looks up every declaration `target` may refer to.
+///
+/// Returns several when the name is declared more than once (for example the
+/// same class in two vendor packages) and an empty vec when nothing is indexed
+/// under it. Member targets walk the inheritance chain, nearest declaration
+/// first. Used by go to declaration, hover, and find usages.
 pub fn resolve(index: &Index, target: &Target) -> Vec<Definition> {
     let hits = match target {
         Target::Class(fqn) => index.classes(fqn),
@@ -60,31 +81,45 @@ pub fn resolve(index: &Index, target: &Target) -> Vec<Definition> {
         .collect()
 }
 
+/// Recursion cap for [`Analyzer::ty_of`]; guards against self-referencing
+/// assignments (`$a = $a->next()`) and pathological fluent chains.
 const MAX_INFERENCE_DEPTH: u8 = 8;
 
+/// Per-file analysis session: what names refer to and what types expressions have.
+///
+/// Borrows one parsed file plus the project index for cross-file lookups. Cheap
+/// to build; the server and [`find_references`] create one per file per request.
 pub struct Analyzer<'a> {
+    /// Project index used for class, function, and member lookups.
     pub index: &'a Index,
+    /// Source text that `tree` was parsed from.
     pub src: &'a str,
+    /// Syntax tree of `src`.
     pub tree: &'a Tree,
 }
 
+/// True for node kinds that spell a class or function name (plain, qualified, or `namespace\`-relative).
 fn is_name(kind: &str) -> bool {
     matches!(kind, "name" | "qualified_name" | "relative_name")
 }
 
+/// True when the optional field child `a` is exactly node `b`; tells which side of an expression a name sits on.
 fn same(a: Option<Node>, b: Node) -> bool {
     a.is_some_and(|a| a.id() == b.id())
 }
 
 impl<'a> Analyzer<'a> {
+    /// Wraps an already parsed file; does no work itself. `tree` must be `parse(src)`.
     pub fn new(index: &'a Index, src: &'a str, tree: &'a Tree) -> Self {
         Self { index, src, tree }
     }
 
+    /// Source text covered by `node`.
     fn text(&self, node: Node) -> &'a str {
         text(node, self.src)
     }
 
+    /// Namespace and `use` imports in effect at `byte`, needed to qualify names written there. Re-walks the file's top-level statements on each call.
     fn ctx(&self, byte: usize) -> NameContext {
         context_at(self.tree.root_node(), self.src, byte)
     }
@@ -230,6 +265,10 @@ impl<'a> Analyzer<'a> {
         }
     }
 
+    /// FQN of the innermost named class-like declaration around `node`.
+    ///
+    /// Backs `self`, `static`, `$this`, and member declarations. `None` at top
+    /// level and inside anonymous classes (they have no name to resolve).
     fn enclosing_class(&self, node: Node, ctx: &NameContext) -> Option<String> {
         let mut cur = node.parent();
         while let Some(n) = cur {
@@ -241,6 +280,9 @@ impl<'a> Analyzer<'a> {
         None
     }
 
+    /// Class referenced by the left side of `::`: a written name (`Foo`, `self`,
+    /// `parent`) is resolved directly, any other expression (`$obj::`) by type
+    /// inference.
     fn class_of_scope(&self, scope: Node, depth: u8) -> Option<String> {
         if is_name(scope.kind()) {
             self.class_ref(scope, &self.ctx(scope.start_byte()))
@@ -250,12 +292,19 @@ impl<'a> Analyzer<'a> {
     }
 
     /// Lightweight type inference: the class an expression evaluates to.
+    ///
+    /// `depth` is the current recursion depth (callers start at 0). Returns `None`
+    /// for scalars, unknown types, and when inference gives up.
     pub fn type_of(&self, expr: Node<'a>, depth: u8) -> Option<String> {
         self.ty_of(expr, depth).class
     }
 
-    /// Full inferred type of an expression, including element type of
+    /// Full inferred type of an expression, including the element type of
     /// arrays/collections (from PHPDoc) for `foreach` and `$xs[0]`.
+    ///
+    /// Follows variables, `new`, member and static calls, function calls, and
+    /// subscripts; `static` return types are bound to the receiver class. Returns
+    /// an empty [`Ty`] once `depth` exceeds `MAX_INFERENCE_DEPTH` (8).
     pub fn ty_of(&self, expr: Node<'a>, depth: u8) -> Ty {
         if depth > MAX_INFERENCE_DEPTH {
             return Ty::default();
@@ -482,6 +531,7 @@ fn foreach_value(foreach: Node) -> Option<Node> {
     }
 }
 
+/// Node kinds that delimit a variable scope: functions, methods, closures, and arrow functions.
 fn is_function_like(kind: &str) -> bool {
     matches!(
         kind,
@@ -489,6 +539,7 @@ fn is_function_like(kind: &str) -> bool {
     )
 }
 
+/// Innermost function-like ancestor of `node`, i.e. the scope its variables live in; `None` at file level.
 fn enclosing_function(node: Node) -> Option<Node> {
     let mut cur = node.parent();
     while let Some(n) = cur {
@@ -501,6 +552,10 @@ fn enclosing_function(node: Node) -> Option<Node> {
 }
 
 /// Go to declaration: resolve the identifier under the caret.
+///
+/// Parses `src` from scratch, so it works on unsaved buffers. Returns an empty
+/// vec when the caret is not on a resolvable name. Used by the server for
+/// definition, hover, and as the starting point of find usages.
 pub fn definitions_at(index: &Index, src: &str, byte: usize) -> Vec<Definition> {
     let tree = parse(src);
     let analyzer = Analyzer::new(index, src, &tree);
@@ -510,16 +565,24 @@ pub fn definitions_at(index: &Index, src: &str, byte: usize) -> Vec<Definition> 
         .unwrap_or_default()
 }
 
+/// One occurrence reported by [`find_references`].
 #[derive(Clone, Debug)]
 pub struct Usage {
+    /// File containing the occurrence.
     pub path: PathBuf,
+    /// Range of the identifier, in LSP coordinates.
     pub span: Span,
+    /// True when the occurrence is the declaration itself (for LSP `includeDeclaration`).
     pub is_declaration: bool,
 }
 
 /// Find usages of the declarations `defs`.
 ///
 /// `load` returns current file content (open editor buffers win over disk).
+/// Only files the word index lists for the name are parsed; each matching
+/// identifier is resolved and kept if it lands on one of `defs`. Results are
+/// sorted by path, then position. The result is only complete once the whole
+/// project is indexed, which is why the server waits for indexing first.
 pub fn find_references(
     index: &Index,
     defs: &[Definition],
@@ -568,19 +631,33 @@ pub fn find_references(
     out
 }
 
+/// Identifier that [`complete`] splices in at the caret so incomplete code
+/// (`$user->`) still parses with a `name` node where the caret is.
 pub const CARET_PLACEHOLDER: &str = "PhpThunderCaret";
 
+/// A completion proposal, independent of LSP types; the server turns it into a `CompletionItem`.
 #[derive(Clone, Debug)]
 pub struct Candidate {
+    /// Text shown in the list and used for filtering.
     pub label: String,
+    /// Declaration kind; local variables use [`Kind::Property`] with detail `variable`.
     pub kind: Kind,
+    /// Signature, FQN, or a short description shown next to the label.
     pub detail: String,
+    /// Text that replaces the typed prefix; methods and functions end with `(`.
     pub insert_text: String,
     /// `use` statement to add, as (byte offset, text).
     pub import: Option<(usize, String)>,
 }
 
-/// Completion at `byte`.
+/// Completion proposals for the caret at `byte` in `src`.
+///
+/// After `$`: variables of the enclosing function. After `->`, `?->`, or `::`:
+/// members of the inferred class. Elsewhere: top-level classes and functions
+/// matching the typed prefix, with an auto-import edit when needed. Returns an
+/// empty vec where nothing should be offered (declaration names, namespaced
+/// names). Called by the server for every completion request; it parses `src`
+/// with [`CARET_PLACEHOLDER`] inserted, so `src` is not modified.
 pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
     // Variables need no placeholder: half-typed `$x` often confuses error recovery.
     let word = ident_start(src, byte);
@@ -696,6 +773,9 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
 }
 
 /// Start of the identifier that ends at `byte` (without a leading `$`).
+///
+/// Used by [`complete`] to detect variables and by the server to compute the
+/// range of the typed prefix that a completion replaces.
 pub fn ident_start(src: &str, byte: usize) -> usize {
     let bytes = src.as_bytes();
     let mut i = byte;
@@ -744,6 +824,14 @@ fn complete_variables(src: &str, start: usize, byte: usize) -> Vec<Candidate> {
         .collect()
 }
 
+/// Top-level classes and functions whose short name starts with `prefix`, for
+/// a bare name at `node` inside the placeholder-patched tree.
+///
+/// In type positions (`new`, `extends`, type hints, ...) only class-likes are
+/// offered. A class from another namespace gets a `use` import edit, placed
+/// relative to `original` (the unpatched source) at `byte`; if the alias
+/// clashes, or for functions in another namespace, the FQN is inserted instead.
+/// Capped at 200 index hits.
 fn complete_names(
     analyzer: &Analyzer,
     node: Node,

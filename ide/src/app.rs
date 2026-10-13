@@ -20,156 +20,272 @@ use phpthunder::text::Pos;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+/// Widget id of the code `text_editor`; used to re-focus it after popups,
+/// dialogs, and jumps close.
 pub const EDITOR_ID: &str = "editor";
+/// Widget id of the scrollable wrapping the editor; target of [`scroll_to`].
 pub const EDITOR_SCROLL_ID: &str = "editor-scroll";
+/// How long the mouse must rest on a symbol before its hover popup shows.
 const HOVER_DELAY: Duration = Duration::from_millis(450);
+/// Maximum gap between two bare Shift presses to trigger Search Everywhere.
 const DOUBLE_SHIFT: Duration = Duration::from_millis(400);
 
+/// Every event the UI, async tasks, and subscriptions feed into [`App::update`].
 #[derive(Debug, Clone)]
 pub enum Message {
     // Project and files
+    /// Show the native folder picker.
     OpenFolderDialog,
+    /// Folder picker (or CLI argument) result; `None` when cancelled.
     FolderPicked(Option<PathBuf>),
+    /// Background file listing of the project finished.
     FilesListed(Vec<PathBuf>),
-    Indexed(IndexReport),
+    /// Background project indexing finished.
+    Indexed(Result<IndexReport, String>),
+    /// Expand or collapse a directory in the file tree.
     ToggleDir(PathBuf),
+    /// Open a file from the tree or palette, recording navigation history.
     OpenFile(PathBuf),
+    /// Async file read finished: path, contents or error, cursor target.
     FileLoaded(PathBuf, Result<String, String>, Option<Pos>),
+    /// Activate the editor tab at this index.
     SelectTab(usize),
+    /// Close the editor tab at this index.
     CloseTab(usize),
     // Editor
+    /// Raw `text_editor` action (typing, clicks, motions).
     Edit(Action),
+    /// IDE command resolved from a shortcut or menu.
     Command(Cmd),
+    /// Bracket or quote typed; auto-paired or skipped over.
     TypeChar(char),
+    /// Enter with auto-indent.
     SmartEnter,
+    /// Backspace that also deletes empty bracket pairs.
     Backspace,
+    /// Tab (`false`) or Shift+Tab outdent (`true`).
     Indent(bool),
+    /// Editor scrollable moved or resized.
     Scrolled(Viewport),
+    /// Move the completion selection by this delta (wraps around).
     CompletionMove(i32),
+    /// Insert the selected completion item.
     CompletionAccept,
+    /// Insert the completion item at this index (mouse click).
     CompletionPick(usize),
+    /// Escape: dismiss completion, hover, notice, and the find bar.
     CloseOverlays,
+    /// Mouse moved over the editor, in editor-local coordinates.
     MouseMoved(Point),
+    /// Mouse left the editor area.
     MouseLeft,
+    /// Hover delay elapsed for this generation; stale ones are ignored.
     HoverFire(u64),
     // Usages and bottom panel
+    /// Async find-usages finished; `None` when no symbol was under the cursor.
     UsagesFound(Option<(Definition, Vec<Usage>)>),
+    /// Jump to the usage row at this index.
     OpenUsage(usize),
+    /// Switch the bottom panel tab.
     SelectBottom(Bottom),
+    /// Hide the bottom panel.
     CloseBottom,
     // Palette
+    /// Palette input text changed.
     PaletteQuery(String),
+    /// Enter in the palette: open the selected entry.
     PaletteSubmit,
+    /// Open the palette entry at this index (mouse click).
     PalettePick(usize),
     // Find in file
+    /// Find bar search text changed.
     FindQuery(String),
+    /// Find bar replacement text changed.
     ReplaceText(String),
+    /// Flip a find-bar option (case, word, regex).
     FindToggle(Toggle),
+    /// Jump to the next (`true`) or previous (`false`) match.
     FindStep(bool),
+    /// Show or hide the replace row of the find bar.
     ToggleReplace,
+    /// Replace the current match and advance.
     ReplaceOne,
+    /// Replace every match in the active document.
     ReplaceAll,
+    /// Close the find bar and re-focus the editor.
     CloseFind,
     // Find in path
+    /// Find-in-path query text changed.
     SearchQuery(String),
+    /// Find-in-path file mask changed.
     SearchMask(String),
+    /// Flip a find-in-path option, including vendor inclusion.
     SearchToggle(Toggle),
+    /// Start the find-in-path search.
     SearchSubmit,
+    /// Background find-in-path finished, or the pattern was invalid.
     SearchDone(Result<SearchResults, String>),
+    /// Open the hit at (file index, hit index) in the results panel.
     OpenSearchHit(usize, usize),
+    /// Close the palette or find-in-path dialog.
     CloseModal,
     // Window
+    /// Show or hide the project sidebar.
     ToggleSidebar,
+    /// Start dragging the borderless window from the title bar.
     DragWindow,
+    /// Maximize or restore the window (title bar double-click).
     ToggleMaximize,
+    /// Global keyboard event; the flag is `true` when a widget captured it.
     Keyboard(keyboard::Event, bool),
 }
 
+/// Tabs of the bottom panel.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Bottom {
+    /// Find-usages results.
     Usages,
+    /// Find-in-path results.
     Find,
 }
 
+/// State of the background project index, shown in the status bar.
 pub enum Indexing {
+    /// No project opened yet.
     Idle,
+    /// Indexing task in flight.
     Running,
+    /// Indexing finished with these stats.
     Done(IndexReport),
 }
 
+/// Open completion popup state; rebuilt by [`App::refresh_completion`].
 pub struct Completion {
+    /// Candidates, best first.
     pub items: Vec<Candidate>,
+    /// Index of the highlighted candidate.
     pub selected: usize,
     /// Byte offset where the replaced prefix starts.
     pub start: usize,
     /// Visual position of the prefix start, for placing the popup.
     pub line: usize,
+    /// Visual column of the prefix start.
     pub col: usize,
 }
 
+/// Quick-documentation popup for the symbol under the mouse.
 pub struct Hover {
+    /// Editor line the popup anchors to.
     pub line: usize,
+    /// Visual column of the hovered identifier's start.
     pub col: usize,
+    /// Declaration signature, rendered as code.
     pub signature: String,
+    /// `Owner::member · file:line` of the declaration.
     pub location: String,
+    /// Doc comment text of the declaration.
     pub doc: String,
 }
 
+/// One line of the usages panel.
 pub struct UsageRow {
+    /// File containing the usage.
     pub path: PathBuf,
+    /// Start of the usage (UTF-16 position).
     pub pos: Pos,
+    /// `file:line` label.
     pub label: String,
+    /// Trimmed source line of the usage.
     pub preview: String,
+    /// Whether this row is the declaration rather than a use.
     pub is_declaration: bool,
 }
 
+/// Content of the usages panel.
 pub enum Usages {
+    /// Search for this symbol name is in flight.
     Searching(String),
+    /// Search finished.
     Found {
+        /// Summary header, e.g. `Foo::bar() — 3 usages in 2 files`.
         title: String,
+        /// One row per usage, declaration included.
         rows: Vec<UsageRow>,
+        /// Row last opened, highlighted in the panel.
         selected: Option<usize>,
     },
 }
 
+/// Content of the find-in-path results panel.
 pub enum Search {
+    /// Search for this query is in flight.
     Running(String),
+    /// Results plus the (file, hit) last opened.
     Done(SearchResults, Option<(usize, usize)>),
 }
 
 /// A place in a file, for back/forward navigation.
 #[derive(Debug, Clone)]
 pub struct Location {
+    /// File of the location.
     pub path: PathBuf,
+    /// Cursor position (UTF-16).
     pub pos: Pos,
 }
 
+/// Whole IDE state; iced's `boot`/`update`/`view` entry points live on it.
 pub struct App {
+    /// Language service: index, completion, definitions, usages.
     pub lang: Language,
+    /// Project file tree in the sidebar.
     pub tree: FileTree,
+    /// Current git branch of the project, if it is a repository.
     pub branch: Option<String>,
+    /// Project files outside `vendor/`, used by the palette and find-in-path.
     pub project_files: Vec<PathBuf>,
+    /// Files under `vendor/`, searched only when requested.
     pub vendor_files: Vec<PathBuf>,
+    /// Open editor tabs.
     pub docs: Vec<Document>,
+    /// Index of the active tab in `docs`.
     pub active: Option<usize>,
+    /// Recently activated files, most recent first (max 50).
     pub recent: Vec<PathBuf>,
+    /// Background indexing state.
     pub indexing: Indexing,
+    /// Whether the project sidebar is visible.
     pub sidebar: bool,
+    /// Last known editor viewport height, for scroll math.
     pub viewport_height: f32,
+    /// Open completion popup.
     pub completion: Option<Completion>,
+    /// Visible hover popup.
     pub hover: Option<Hover>,
+    /// Bumped on every mouse move so stale hover timers are ignored.
     hover_generation: u64,
+    /// Visual (line, column) under the mouse, if over text.
     hover_at: Option<(usize, usize)>,
+    /// Usages panel content.
     pub usages: Option<Usages>,
+    /// Find-in-path panel content.
     pub search: Option<Search>,
+    /// Visible bottom panel tab, `None` when hidden.
     pub bottom: Option<Bottom>,
+    /// Open command/file palette.
     pub palette: Option<Palette>,
+    /// Open find/replace bar for the active document.
     pub find: Option<FindBar>,
+    /// Open find-in-path dialog.
     pub search_dialog: Option<SearchDialog>,
+    /// Back navigation stack (max 100).
     pub nav_back: Vec<Location>,
+    /// Forward navigation stack; cleared on every new jump.
     pub nav_forward: Vec<Location>,
+    /// Transient toast message; cleared on the next edit or Escape.
     pub notice: Option<String>,
+    /// Currently held keyboard modifiers.
     pub modifiers: Modifiers,
+    /// When a bare Shift was last pressed, for double-Shift detection.
     last_shift: Option<Instant>,
     /// Settings of the last find-in-path, restored when the dialog reopens.
     pub last_search: Option<SearchDialog>,
@@ -177,6 +293,8 @@ pub struct App {
     pub pending_select: Option<(PathBuf, usize, usize, usize)>,
 }
 
+/// Whether `c` can be part of a PHP identifier; used to decide when
+/// completion keeps filtering, auto-opens, or closes.
 pub fn is_ident(c: char) -> bool {
     c == '_' || c.is_alphanumeric()
 }
@@ -215,6 +333,9 @@ pub fn bindings(key: KeyPress, completion_open: bool) -> Option<Binding<Message>
     Binding::from_key_press(key)
 }
 
+/// Global event filter for [`App::subscription`]: forwards keyboard events
+/// as [`Message::Keyboard`], tagging whether a focused widget already
+/// captured them, and drops everything else.
 fn keyboard_events(
     event: Event,
     status: event::Status,
@@ -227,6 +348,9 @@ fn keyboard_events(
 }
 
 impl App {
+    /// Builds the initial empty state; iced calls it once at startup. If the
+    /// first CLI argument is a directory, returns a task that opens it as the
+    /// project via [`Message::FolderPicked`].
     pub fn boot() -> (Self, Task<Message>) {
         let app = Self {
             lang: Language::default(),
@@ -269,6 +393,8 @@ impl App {
         (app, task)
     }
 
+    /// Window title: `file — project — phpthunder`, dropping parts that do
+    /// not exist yet. Polled by iced after every update.
     pub fn title(&self) -> String {
         match (&self.tree.root, self.doc()) {
             (Some(root), Some(doc)) => {
@@ -279,18 +405,25 @@ impl App {
         }
     }
 
+    /// Active editor tab, if any; the target of most editor commands.
     pub fn doc(&self) -> Option<&Document> {
         self.active.and_then(|i| self.docs.get(i))
     }
 
+    /// Mutable access to the active editor tab, if any.
     pub fn doc_mut(&mut self) -> Option<&mut Document> {
         self.active.and_then(|i| self.docs.get_mut(i))
     }
 
+    /// Listens to every keyboard event so shortcuts, double-Shift, and modal
+    /// keys work even when the editor does not have focus.
     pub fn subscription(&self) -> Subscription<Message> {
         event::listen_with(keyboard_events)
     }
 
+    /// iced update entry point: applies one [`Message`] to the state and
+    /// returns follow-up work (file reads, indexing, scrolling, focus).
+    /// Most arms delegate to the methods below or in `actions.rs`.
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::OpenFolderDialog => Task::perform(
@@ -312,7 +445,12 @@ impl App {
                 self.vendor_files = vendor;
                 Task::none()
             }
-            Message::Indexed(report) => {
+            Message::Indexed(Err(error)) => {
+                self.indexing = Indexing::Idle;
+                self.notice = Some(error);
+                Task::none()
+            }
+            Message::Indexed(Ok(report)) => {
                 self.indexing = Indexing::Done(report);
                 // Edits made while the scan ran win over what it read from disk.
                 for doc in self.docs.iter().filter(|d| d.dirty && d.is_php()) {
@@ -508,6 +646,11 @@ impl App {
         }
     }
 
+    /// Handles [`Message::Keyboard`]. Detects double-Shift for Search
+    /// Everywhere, lets open modals own arrows/Escape even while their input
+    /// has focus, routes Shift+Enter in the find bar, and runs keymap
+    /// commands for uncaptured keys. Escape with no popup open also hides the
+    /// bottom panel.
     fn keyboard(&mut self, event: keyboard::Event, captured: bool) -> Task<Message> {
         match event {
             keyboard::Event::ModifiersChanged(m) => {
@@ -572,6 +715,10 @@ impl App {
         }
     }
 
+    /// Switches to a new project root on [`Message::FolderPicked`]: resets
+    /// tabs, history, and panels, reads the git branch, then starts project
+    /// indexing and a blocking file listing in the background (answered by
+    /// [`Message::Indexed`] and [`Message::FilesListed`]).
     fn open_folder(&mut self, root: PathBuf) -> Task<Message> {
         let root = root.canonicalize().unwrap_or(root);
         self.tree = FileTree::open(root.clone());
@@ -600,6 +747,9 @@ impl App {
         ])
     }
 
+    /// Dismisses the transient popups (completion, hover, notice toast).
+    /// Called on Escape, tab switches, jumps, and project changes; leaves the
+    /// find bar, modals, and bottom panel alone.
     pub fn close_overlays(&mut self) {
         self.completion = None;
         self.hover = None;
@@ -642,6 +792,10 @@ impl App {
         Task::batch([scroll_to(y), operation::focus(Id::new(EDITOR_ID))])
     }
 
+    /// Activates tab `i`: closes popups if the tab changes, moves the file to
+    /// the front of `recent`, re-runs find-bar matching for the new buffer,
+    /// and restores that tab's scroll offset and editor focus. Out-of-range
+    /// indices are ignored.
     pub fn select(&mut self, i: usize) -> Task<Message> {
         if i >= self.docs.len() {
             return Task::none();
@@ -659,6 +813,8 @@ impl App {
         Task::batch([task, scroll_to(y), operation::focus(Id::new(EDITOR_ID))])
     }
 
+    /// Closes tab `i` without a save prompt, then activates the neighbour
+    /// that keeps the same visual position (or nothing if no tabs remain).
     fn close_tab(&mut self, i: usize) -> Task<Message> {
         if i >= self.docs.len() {
             return Task::none();
@@ -678,6 +834,8 @@ impl App {
         }
     }
 
+    /// Writes the active buffer to disk synchronously (`Cmd::Save`). On
+    /// failure the error is shown as a notice and the tab stays dirty.
     pub fn save(&mut self) -> Task<Message> {
         let Some(doc) = self.doc_mut() else {
             return Task::none();
@@ -693,6 +851,7 @@ impl App {
 
     // ----- navigation history -------------------------------------------------
 
+    /// Cursor location in the active tab, used to push navigation history.
     pub fn current_location(&self) -> Option<Location> {
         let doc = self.doc()?;
         Some(Location {
@@ -718,6 +877,9 @@ impl App {
         }
     }
 
+    /// Back (`true`) or forward (`false`) through navigation history
+    /// (`Cmd::Back`/`Cmd::Forward`). Pushes the current location onto the
+    /// opposite stack before jumping, so the move is reversible.
     pub fn navigate(&mut self, back: bool) -> Task<Message> {
         let (from, to) = if back {
             (&mut self.nav_back, &mut self.nav_forward)
@@ -742,6 +904,11 @@ impl App {
 
     // ----- editing ----------------------------------------------------------
 
+    /// Applies a raw `text_editor` action ([`Message::Edit`]). After the
+    /// change it reindexes and refreshes find matches, keeps the completion
+    /// popup in sync with typing (or auto-opens it after `->`, `::`, `$`, or
+    /// a new word), turns Cmd+click into go-to-declaration, and scrolls to
+    /// keep the cursor visible for keyboard actions.
     pub fn edit(&mut self, action: Action) -> Task<Message> {
         let inserted = match &action {
             Action::Edit(Edit::Insert(c)) => Some(*c),
@@ -814,6 +981,8 @@ impl App {
         let _ = self.refresh_find(false);
     }
 
+    /// Whether typing `c` should open completion unprompted: after `->`,
+    /// `::`, `$`, or the first character of a new identifier in PHP files.
     fn should_auto_complete(&self, c: char) -> bool {
         let Some(doc) = self.doc() else { return false };
         if !doc.is_php() {
@@ -834,6 +1003,11 @@ impl App {
         }
     }
 
+    /// Recomputes completion candidates at the cursor and opens or updates
+    /// the popup, keeping the current selection index where possible. The
+    /// replaced prefix includes a leading `$`. `explicit` is set for
+    /// `Cmd::Complete`, which shows a "No suggestions" notice when empty;
+    /// implicit refreshes from typing just close the popup.
     pub fn refresh_completion(&mut self, explicit: bool) {
         let Some(doc) = self.doc() else { return };
         let offset = doc.offset(doc.cursor());
@@ -866,6 +1040,10 @@ impl App {
         });
     }
 
+    /// Replaces the typed prefix with the selected candidate as one undo step.
+    /// Avoids doubling `$` for members, and inserts the candidate's `use`
+    /// import above the cursor when it has one, shifting the cursor down by
+    /// the inserted lines.
     fn accept_completion(&mut self) -> Task<Message> {
         let Some(completion) = self.completion.take() else {
             return Task::none();
@@ -899,6 +1077,8 @@ impl App {
         self.reveal_cursor()
     }
 
+    /// Scrolls the editor just enough to keep the cursor line visible, with
+    /// a line of margin above and two below. Called after keyboard edits.
     pub fn reveal_cursor(&self) -> Task<Message> {
         let Some(doc) = self.doc() else {
             return Task::none();
@@ -916,6 +1096,9 @@ impl App {
 
     // ----- hover --------------------------------------------------------------
 
+    /// Tracks the text cell under the mouse. When the cell changes it hides
+    /// the hover popup and starts a [`HOVER_DELAY`] timer tagged with a new
+    /// generation; only the latest [`Message::HoverFire`] shows a popup.
     fn mouse_moved(&mut self, p: Point) -> Task<Message> {
         let line = ((p.y - EDITOR_PAD_TOP) / CODE_LINE).floor();
         let col = ((p.x - EDITOR_PAD_LEFT) / CHAR_WIDTH).floor();
@@ -932,6 +1115,9 @@ impl App {
         })
     }
 
+    /// Resolves the declaration of the PHP symbol under the mouse and fills
+    /// [`Hover`] with its signature, location, and docs. Does nothing past
+    /// the end of a line or when no declaration is found.
     fn show_hover(&mut self) {
         let (Some((line, col)), Some(doc)) = (self.hover_at, self.doc()) else {
             return;
@@ -966,6 +1152,9 @@ impl App {
 
     // ----- declarations and usages --------------------------------------------
 
+    /// Jumps to the declaration of the symbol at the cursor
+    /// (`Cmd::GotoDeclaration` or Cmd+click), recording history first.
+    /// Shows a notice when nothing is found.
     pub fn goto_definition(&mut self) -> Task<Message> {
         let Some(doc) = self.doc() else {
             return Task::none();
@@ -984,6 +1173,10 @@ impl App {
         }
     }
 
+    /// Starts a background usages search for the symbol at the cursor
+    /// (`Cmd::FindUsages`), passing unsaved buffers so edits count. Opens the
+    /// usages panel in a "searching" state; results arrive as
+    /// [`Message::UsagesFound`].
     pub fn find_usages(&mut self) -> Task<Message> {
         let Some(doc) = self.doc() else {
             return Task::none();
@@ -1015,6 +1208,8 @@ impl App {
             .collect()
     }
 
+    /// Text of `path`, preferring an open tab's buffer over a blocking disk
+    /// read. Used to build usage previews.
     pub fn file_text(&self, path: &Path) -> Option<String> {
         self.docs
             .iter()
@@ -1023,6 +1218,9 @@ impl App {
             .or_else(|| std::fs::read_to_string(path).ok())
     }
 
+    /// Turns a usages search result into panel rows with source previews
+    /// (each file read once) and a `N usages in M files` title. `None` means
+    /// no symbol was under the cursor: the panel closes with a notice.
     fn show_usages(&mut self, found: Option<(Definition, Vec<Usage>)>) {
         let Some((def, usages)) = found else {
             self.usages = None;
@@ -1122,6 +1320,9 @@ impl App {
     }
 }
 
+/// Task that scrolls the editor scrollable to absolute offset `y`. The
+/// caller is responsible for storing the same value in `Document::scroll_y`
+/// when it should persist across tab switches.
 pub fn scroll_to(y: f32) -> Task<Message> {
     operation::scroll_to(
         Id::new(EDITOR_SCROLL_ID),
@@ -1132,12 +1333,16 @@ pub fn scroll_to(y: f32) -> Task<Message> {
     )
 }
 
+/// Last path component as a display string (empty for roots); used in
+/// titles, usage labels, and hover locations.
 pub fn file_name(path: &Path) -> String {
     path.file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default()
 }
 
+/// Display name of a symbol: `Class::member` for members (short class
+/// name), the fully qualified name otherwise.
 pub fn qualified(s: &Symbol) -> String {
     if s.kind.is_member() {
         let owner = s.fqn.rsplit('\\').next().unwrap_or(&s.fqn);

@@ -20,31 +20,44 @@ use iced::widget::{
 use iced::{Center, Color, Element, Fill, Font, Length, Padding, Shadow, Size, Theme, Vector};
 use phpthunder::stubs::Kind;
 
+/// Shorthand for an element producing app `Message`s.
 type El<'a> = Element<'a, Message>;
 
+/// Width of the line-number gutter; also the x origin for popups and find marks.
 const GUTTER_WIDTH: f32 = 56.0;
 /// Matches the macOS title bar so the window buttons are vertically centered.
 const TITLE_BAR_HEIGHT: f32 = 32.0;
+/// Left space reserved for the macOS window buttons inside the title bar.
 #[cfg(target_os = "macos")]
 const TRAFFIC_LIGHTS_INSET: f32 = 76.0;
+/// Small left margin where no window buttons overlay the title bar.
 #[cfg(not(target_os = "macos"))]
 const TRAFFIC_LIGHTS_INSET: f32 = 6.0;
+/// Height of a project tree, usages or find-result row.
 const ROW_HEIGHT: f32 = 26.0;
+/// Completion rows visible at once; the window follows the selection.
 const COMPLETION_ROWS: usize = 8;
+/// Height of one completion row.
 const COMPLETION_ROW: f32 = 28.0;
+/// Width of the completion list column.
 const COMPLETION_LIST_WIDTH: f32 = 340.0;
+/// Width of the completion details pane beside the list.
 const COMPLETION_DOC_WIDTH: f32 = 300.0;
+/// Width of the hover popup; also used to clamp it inside the editor.
 const HOVER_WIDTH: f32 = 460.0;
 
+/// Text at `size` px in `color`: the building block for labels in this module.
 fn label<'a>(s: impl text::IntoFragment<'a>, size: f32, color: Color) -> text::Text<'a> {
     text(s).size(size).color(color)
 }
 
-/// A 1px horizontal rule.
+/// A 1px horizontal rule. Public so the navigation palette (palette.rs) can
+/// separate its sections with the same line as the main layout.
 pub fn rule<'a>() -> El<'a> {
     hsep()
 }
 
+/// A full-width 1px separator in `BORDER` color between stacked panes.
 fn hsep<'a>() -> El<'a> {
     container(space())
         .width(Fill)
@@ -53,6 +66,7 @@ fn hsep<'a>() -> El<'a> {
         .into()
 }
 
+/// A full-height 1px separator between side-by-side panes and tabs.
 fn vsep<'a>() -> El<'a> {
     container(space())
         .width(1)
@@ -61,6 +75,8 @@ fn vsep<'a>() -> El<'a> {
         .into()
 }
 
+/// Formats indexing time for the status bar: milliseconds with one decimal
+/// below a second, seconds above.
 fn format_elapsed(d: std::time::Duration) -> String {
     let ms = d.as_secs_f64() * 1000.0;
     if ms < 1000.0 {
@@ -70,6 +86,7 @@ fn format_elapsed(d: std::time::Duration) -> String {
     }
 }
 
+/// Color of the file dot in the project tree: indigo for `.php`, muted otherwise.
 fn file_color(name: &str) -> Color {
     if name.ends_with(".php") {
         rgb(0x8892D6)
@@ -79,6 +96,10 @@ fn file_color(name: &str) -> Color {
 }
 
 impl App {
+    /// Root view, called by iced after every update (wired in main.rs). Shows the
+    /// welcome screen until a project is open; otherwise lays out title bar,
+    /// rail, optional sidebar, main area and status bar, and stacks the palette
+    /// or find-in-path dialog over a click-to-close backdrop when one is open.
     pub fn view(&self) -> El<'_> {
         if self.tree.root.is_none() {
             return self.welcome();
@@ -117,6 +138,9 @@ impl App {
         }
     }
 
+    /// Welcome screen shown before a project folder is open: logo and an "Open
+    /// Folder" button. Keeps a draggable strip on top because the native title
+    /// bar is hidden.
     fn welcome(&self) -> El<'_> {
         let content = column![
             icon(Icon::Bolt, 44.0, 1.8, ACCENT),
@@ -138,6 +162,9 @@ impl App {
             .into()
     }
 
+    /// Custom title bar: logo, project name and current git branch. Doubles as
+    /// the window drag area (double-click maximizes) since the native title bar
+    /// is transparent on macOS.
     fn title_bar(&self) -> El<'_> {
         let root = self
             .tree
@@ -181,6 +208,8 @@ impl App {
             .into()
     }
 
+    /// Narrow tool rail on the far left. Only the project button is wired (it
+    /// toggles the sidebar); the others are placeholders with tooltips.
     fn rail(&self) -> El<'_> {
         let item = |which: Icon, active: bool, msg: Option<Message>, tip: &'static str| -> El<'_> {
             let b = button(
@@ -225,6 +254,10 @@ impl App {
             .into()
     }
 
+    /// Project tree panel: one row per visible entry from `tree.rows()`,
+    /// indented by depth, with a chevron for directories and a colored dot for
+    /// files. Clicking toggles a directory or opens a file; the active
+    /// document's row is highlighted.
     fn sidebar(&self) -> El<'_> {
         let active = self.doc().map(|d| d.path.as_path());
         let rows = self.tree.rows().into_iter().map(|r| {
@@ -300,6 +333,9 @@ impl App {
             .into()
     }
 
+    /// Everything right of the sidebar: tabs, breadcrumb, optional find bar,
+    /// editor and optional bottom panel. With no open document it shows the
+    /// shortcut cheat sheet instead.
     fn main_area(&self) -> El<'_> {
         let Some(doc) = self.doc() else {
             let mut col = column![container(self.shortcuts()).center(Fill).style(fill(BG))];
@@ -327,6 +363,8 @@ impl App {
         col.width(Fill).height(Fill).into()
     }
 
+    /// Cheat sheet of navigation shortcuts for the empty editor area; key labels
+    /// come from `keymap::hint`.
     fn shortcuts(&self) -> El<'_> {
         let line = |cmd: Cmd, what: &'static str| {
             row![
@@ -349,6 +387,9 @@ impl App {
         .into()
     }
 
+    /// Tab strip of open documents. The active tab takes the editor background
+    /// with an accent top line; unsaved documents get a `●` prefix. Scrolls
+    /// horizontally without a visible scrollbar.
     fn tabs(&self) -> El<'_> {
         let tabs = self.docs.iter().enumerate().map(|(i, d)| -> El<'_> {
             let active = self.active == Some(i);
@@ -413,6 +454,7 @@ impl App {
         .into()
     }
 
+    /// Breadcrumb under the tabs (from `App::breadcrumb`), last segment emphasized.
     fn breadcrumb_bar(&self) -> El<'_> {
         let parts = self.breadcrumb();
         let last = parts.len().saturating_sub(1);
@@ -431,6 +473,10 @@ impl App {
             .into()
     }
 
+    /// The editor for `doc`: line-number gutter and `text_editor` with PHP
+    /// highlighting and the app's key bindings, with the caret-line band and
+    /// find marks drawn underneath, all in one scrollable. Mouse moves feed the
+    /// hover logic; popups are layered on top by `overlays`.
     fn editor_area<'a>(&'a self, doc: &'a Document) -> El<'a> {
         let completion_open = self.completion.is_some();
         let cursor_line = doc.cursor().line;
@@ -510,6 +556,10 @@ impl App {
         stack![scroller, overlays].width(Fill).height(Fill).into()
     }
 
+    /// Floating layers over the editor: the completion popup (or else the hover
+    /// popup) anchored to its line and column, flipped above the line or clamped
+    /// horizontally to stay inside `size`, plus a bottom-right toast for
+    /// `notice`. Built inside `responsive` so the editor's size is known.
     fn overlays<'a>(&'a self, doc: &'a Document, size: Size) -> El<'a> {
         let mut layers = Stack::new().width(Fill).height(Fill);
         let scroll = doc.scroll_y;
@@ -553,7 +603,8 @@ impl App {
         layers.into()
     }
 
-    /// Bottom tool panel: Usages and Find results, as tabs.
+    /// Bottom tool panel: Usages and Find results, as tabs. Returns `None` when
+    /// no panel is open; shown under the editor by `main_area`.
     fn bottom_panel(&self) -> Option<El<'_>> {
         let current = self.bottom?;
         let tab = |b: Bottom, name: &'static str| -> El<'_> {
@@ -608,6 +659,9 @@ impl App {
         )
     }
 
+    /// Usages tab body: a progress line while searching, then one clickable row
+    /// per usage (location, code preview, `declaration` tag), selection
+    /// highlighted.
     fn usages_body(&self) -> El<'_> {
         match &self.usages {
             None => space().into(),
@@ -661,6 +715,9 @@ impl App {
         }
     }
 
+    /// Find tab body for find-in-path: a summary line, then hits grouped by
+    /// file with line number and preview, the match highlighted. Clicking a hit
+    /// opens it.
     fn find_results_body(&self) -> El<'_> {
         match &self.search {
             None => space().into(),
@@ -760,7 +817,9 @@ impl App {
         }
     }
 
-    /// The find/replace bar above the editor.
+    /// The find/replace bar above the editor; `None` when find is closed. Holds
+    /// the query input, case/word/regex toggles, match count, previous/next
+    /// buttons and an expandable replace row.
     fn find_bar_view(&self) -> Option<El<'_>> {
         let f = self.find.as_ref()?;
         let toggle = |t: Toggle, on: bool, text_: &'static str, tip: &'static str| -> El<'_> {
@@ -869,7 +928,10 @@ impl App {
         )
     }
 
-    /// Highlight boxes for find matches visible in the viewport.
+    /// Highlight boxes for find matches visible in the viewport. Only lines
+    /// between the scroll offset and the viewport bottom are scanned (at most
+    /// 500 boxes); the current match is stronger. Pushed under the editor text
+    /// by `editor_area`.
     fn find_marks<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
         let Some(f) = &self.find else {
             return Vec::new();
@@ -917,7 +979,8 @@ impl App {
             .collect()
     }
 
-    /// The find-in-path dialog.
+    /// The find-in-path dialog: query, case/word/regex/vendor toggles, file mask
+    /// and a Find button. Shown as a modal by `view`.
     fn search_dialog_view(&self) -> El<'_> {
         let Some(d) = &self.search_dialog else {
             return space().into();
@@ -984,6 +1047,8 @@ impl App {
             .into()
     }
 
+    /// Bottom status bar: indexing progress or result on the left, and caret
+    /// position, encoding and language of the active document on the right.
     fn status_bar(&self) -> El<'_> {
         let indexing = match &self.indexing {
             Indexing::Idle => String::new(),
@@ -1026,6 +1091,7 @@ impl App {
     }
 }
 
+/// Colored one-letter badge for a completion item's symbol kind.
 fn kind_badge<'a>(kind: Kind) -> El<'a> {
     let (letter, colors) = match kind {
         Kind::Method => ("m", BADGE_METHOD),
@@ -1043,7 +1109,8 @@ fn kind_badge<'a>(kind: Kind) -> El<'a> {
 }
 
 /// The completion list (a window of rows around the selection) plus a
-/// details pane. Returns the popup and its size.
+/// details pane. Returns the popup and its size, which `overlays` needs to
+/// place it above or below the caret line.
 fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
     let first = c.selected.saturating_sub(COMPLETION_ROWS - 1);
     let rows = c
@@ -1127,6 +1194,8 @@ fn completion_popup(c: &Completion) -> (El<'_>, f32, f32) {
     )
 }
 
+/// Hover card for the symbol under the mouse: signature, doc text (if any)
+/// and declaration location. Placed by `overlays`.
 fn hover_popup(h: &Hover) -> El<'_> {
     let mut col = column![label(h.signature.clone(), 13.0, SYN_VARIABLE).font(MONO)].spacing(8);
     if !h.doc.is_empty() {

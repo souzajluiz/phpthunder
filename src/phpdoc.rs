@@ -9,11 +9,14 @@ pub const STATIC_TYPE: &str = "static";
 /// generic collections, the class of its elements.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Ty {
+    /// Class the value is an instance of; may be [`STATIC_TYPE`] until bound.
     pub class: Option<String>,
+    /// Element class of `T[]`, `array<K, T>`, and generic collections.
     pub elem: Option<String>,
 }
 
 impl Ty {
+    /// A type that is just the class `fqn`, with no element type.
     pub fn class(fqn: impl Into<String>) -> Self {
         Self {
             class: Some(fqn.into()),
@@ -21,6 +24,7 @@ impl Ty {
         }
     }
 
+    /// True when nothing is known about the type.
     pub fn is_empty(&self) -> bool {
         self.class.is_none() && self.elem.is_none()
     }
@@ -51,29 +55,49 @@ impl Ty {
     }
 }
 
+/// A PHPDoc tag that carries type information; [`parse`] drops all others.
+///
+/// Types are kept as written; [`resolve`] turns them into FQNs later.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Tag {
+    /// `@return Type` (also `@phpstan-return` and `@psalm-return`).
     Return {
+        /// Type expression as written.
         ty: String,
     },
+    /// `@var Type [$name]`, including the legacy `@var $name Type` order.
     Var {
+        /// Type expression as written.
         ty: String,
+        /// Variable name without `$`, if given.
         var: Option<String>,
     },
+    /// `@param Type $name` (also variadic `...$name`).
     Param {
+        /// Type expression as written.
         ty: String,
+        /// Parameter name without `$`.
         var: String,
     },
+    /// `@property`, `@property-read`, or `@property-write`: a virtual property.
     Property {
+        /// Type expression, if given.
         ty: Option<String>,
+        /// Property name without `$`.
         name: String,
     },
+    /// `@method [static] [Type] name(...)`: a virtual method.
     Method {
+        /// Declared with `static`.
         is_static: bool,
+        /// Return type expression, if given.
         ty: Option<String>,
+        /// Method name.
         name: String,
     },
+    /// `@mixin Class`: members of `class` are visible on the documented class.
     Mixin {
+        /// Class name as written.
         class: String,
     },
 }
@@ -82,18 +106,25 @@ pub enum Tag {
 /// virtual members) and its source line (for hover).
 #[derive(Clone, Debug)]
 pub struct TagAt {
+    /// The parsed tag.
     pub tag: Tag,
+    /// Byte offset of the `@` from the start of the comment.
     pub offset: usize,
+    /// The tag's line with comment decoration (`*`, `*/`) stripped.
     pub line: String,
 }
 
+/// A parsed `/** ... */` comment: summary plus the type-carrying tags.
 #[derive(Clone, Debug, Default)]
 pub struct DocBlock {
+    /// First paragraph of the description, lines joined with spaces; shown on hover.
     pub summary: String,
+    /// Recognized tags in source order.
     pub tags: Vec<TagAt>,
 }
 
 impl DocBlock {
+    /// Type expression of the first `@return`, unresolved.
     pub fn return_type(&self) -> Option<&str> {
         self.tags.iter().find_map(|t| match &t.tag {
             Tag::Return { ty } => Some(ty.as_str()),
@@ -111,6 +142,7 @@ impl DocBlock {
         })
     }
 
+    /// Type expression of the `@param` for `name` (without `$`), unresolved.
     pub fn param_type(&self, name: &str) -> Option<&str> {
         self.tags.iter().find_map(|t| match &t.tag {
             Tag::Param { ty, var } if var == name => Some(ty.as_str()),
@@ -119,6 +151,7 @@ impl DocBlock {
     }
 }
 
+/// True for `/** ... */` docblocks; `/**/` is an ordinary empty comment. Only docblocks are worth [`parse`]-ing.
 pub fn is_doc_comment(text: &str) -> bool {
     text.starts_with("/**") && text != "/**/"
 }
@@ -138,10 +171,12 @@ fn split_type(s: &str) -> (&str, &str) {
     (s, "")
 }
 
+/// First whitespace-separated word of `s`, or empty.
 fn first_word(s: &str) -> &str {
     s.split_whitespace().next().unwrap_or("")
 }
 
+/// Parses the body of one `@name` tag; `None` for unrecognized or malformed tags (e.g. `@param` without a variable).
 fn parse_tag(name: &str, body: &str) -> Option<Tag> {
     match name {
         "return" | "phpstan-return" | "psalm-return" => {
@@ -210,6 +245,11 @@ fn parse_tag(name: &str, body: &str) -> Option<Tag> {
     }
 }
 
+/// Parses a raw `/** ... */` comment.
+///
+/// Never fails: unknown tags and malformed lines are skipped. Called for
+/// declaration docblocks while building stubs and for inline `@var` comments
+/// during type inference.
 pub fn parse(comment: &str) -> DocBlock {
     let mut doc = DocBlock::default();
     let mut summary: Vec<&str> = Vec::new();
@@ -269,6 +309,11 @@ fn union_parts(ty: &str) -> Vec<&str> {
     parts
 }
 
+/// Resolves one class name from a PHPDoc type to an FQN relative to `ctx`.
+///
+/// `self` becomes `owner` and `static`/`$this` become [`STATIC_TYPE`]; builtins,
+/// pseudo-types (`array-key`, `class-string`, ...), literals, and variables
+/// yield `None`.
 fn resolve_name(name: &str, ctx: &NameContext, owner: Option<&str>) -> Option<String> {
     let name = name.trim();
     match name.to_ascii_lowercase().as_str() {
@@ -291,6 +336,9 @@ fn resolve_name(name: &str, ctx: &NameContext, owner: Option<&str>) -> Option<St
 }
 
 /// Resolves a PHPDoc type expression. The first class-like union member wins.
+///
+/// Understands `?T`, `T[]`, and `Generic<..., T>` (the last generic argument
+/// becomes the element type). `owner` is the class that `self` refers to.
 pub fn resolve(ty: &str, ctx: &NameContext, owner: Option<&str>) -> Ty {
     let mut out = Ty::default();
     for part in union_parts(ty.trim().trim_start_matches('?')) {

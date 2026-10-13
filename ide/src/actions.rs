@@ -10,6 +10,11 @@ use iced::widget::Id;
 use iced::widget::operation;
 
 impl App {
+    /// Dispatches a keymap command to its handler.
+    ///
+    /// Called from `update` for `Message::Command` and for shortcuts resolved by the
+    /// keyboard handler. Commands that need an open document or project are no-ops
+    /// without one; returns any focus/scroll task the handler produces.
     pub fn command(&mut self, cmd: Cmd) -> Task<Message> {
         let has_doc = self.doc().is_some();
         match cmd {
@@ -75,6 +80,10 @@ impl App {
 
     // ----- palette ------------------------------------------------------------
 
+    /// Opens the navigation palette in `mode` with an empty query and focuses its input.
+    ///
+    /// Closes other overlays first. No-op without an open project. In Recent mode the
+    /// second item is preselected so Enter switches to the previous file.
     fn open_palette(&mut self, mode: Mode) -> Task<Message> {
         if self.tree.root.is_none() {
             return Task::none();
@@ -97,6 +106,9 @@ impl App {
         operation::focus(Id::new(palette::INPUT_ID))
     }
 
+    /// Refilters the open palette for a new query and resets the selection to the top.
+    ///
+    /// Called on every keystroke in the palette input.
     pub fn palette_query(&mut self, query: String) -> Task<Message> {
         let Some(mode) = self.palette.as_ref().map(|p| p.mode) else {
             return Task::none();
@@ -110,6 +122,9 @@ impl App {
         Task::none()
     }
 
+    /// Moves the palette selection by `delta`, wrapping at both ends.
+    ///
+    /// Called for the Up/Down arrow keys while the palette is open.
     pub fn palette_move(&mut self, delta: i32) -> Task<Message> {
         if let Some(p) = &mut self.palette {
             let n = p.items.len() as i32;
@@ -120,6 +135,10 @@ impl App {
         Task::none()
     }
 
+    /// Closes the palette and jumps to the selected item's file, symbol or line.
+    ///
+    /// Records the current location in navigation history first. With no selectable
+    /// item it just returns focus to the editor.
     pub fn palette_open_selected(&mut self) -> Task<Message> {
         let Some(p) = self.palette.take() else {
             return Task::none();
@@ -143,6 +162,10 @@ impl App {
 
     // ----- find in file -------------------------------------------------------
 
+    /// Opens (or re-focuses) the find bar, optionally with the replace row.
+    ///
+    /// A single-line selection becomes the query. Matches are recomputed without
+    /// jumping, and the query input is focused with its text selected.
     fn open_find(&mut self, replace: bool) -> Task<Message> {
         let selected = self
             .doc()
@@ -163,6 +186,7 @@ impl App {
         ])
     }
 
+    /// Updates the find query as the user types and jumps to the nearest match.
     pub fn find_query(&mut self, query: String) -> Task<Message> {
         if let Some(f) = &mut self.find {
             f.query = query;
@@ -192,6 +216,7 @@ impl App {
         self.select_match(m)
     }
 
+    /// Selects the match range in the active document and scrolls it into view.
     fn select_match(&mut self, (start, end): (usize, usize)) -> Task<Message> {
         let Some(doc) = self.doc_mut() else {
             return Task::none();
@@ -200,6 +225,9 @@ impl App {
         self.reveal_cursor()
     }
 
+    /// Moves to the next or previous find match and selects it.
+    ///
+    /// Backs Find Next / Find Previous; does nothing while the find bar is closed.
     pub fn find_step(&mut self, forward: bool) -> Task<Message> {
         let Some(find) = &mut self.find else {
             // ⌘G without the bar: reuse the last query if there was one.
@@ -211,6 +239,10 @@ impl App {
         }
     }
 
+    /// Replaces the current match, then advances to the next one.
+    ///
+    /// If the current match is not what is selected yet, it only selects it, so the
+    /// first press shows what will be replaced. The replacement is its own undo step.
     pub fn replace_one(&mut self) -> Task<Message> {
         let (Some(find), Some(i)) = (self.find.as_ref(), self.active) else {
             return Task::none();
@@ -233,6 +265,9 @@ impl App {
         self.refresh_find(true)
     }
 
+    /// Replaces every match in the active document as one undo step.
+    ///
+    /// Shows a notice with the number of replacements; does nothing when there are none.
     pub fn replace_all(&mut self) -> Task<Message> {
         let (Some(find), Some(i)) = (self.find.as_ref(), self.active) else {
             return Task::none();
@@ -255,6 +290,9 @@ impl App {
 
     // ----- find in path -------------------------------------------------------
 
+    /// Opens the find-in-path dialog, restoring the last search's settings.
+    ///
+    /// A single-line selection becomes the query. No-op without an open project.
     fn open_search_dialog(&mut self) -> Task<Message> {
         if self.tree.root.is_none() {
             return Task::none();
@@ -279,6 +317,12 @@ impl App {
         ])
     }
 
+    /// Starts a find-in-path search from the dialog's settings on a blocking thread.
+    ///
+    /// Closes the dialog (remembering its settings), shows the bottom Find panel in a
+    /// running state, and returns focus to the editor. Searches files on disk, so
+    /// unsaved edits are not seen. The result arrives as `Message::SearchDone`.
+    /// An empty query keeps the dialog open and does nothing.
     pub fn run_search(&mut self) -> Task<Message> {
         let Some(dialog) = self.search_dialog.take() else {
             return Task::none();
@@ -319,6 +363,10 @@ impl App {
         ])
     }
 
+    /// Opens the file of hit `h` in result file `f` and selects the match.
+    ///
+    /// Marks the hit as selected in the panel and records navigation history. The
+    /// selection is stored as pending so it applies once the file finishes loading.
     pub fn open_search_hit(&mut self, f: usize, h: usize) -> Task<Message> {
         let Some(Search::Done(results, selected)) = &mut self.search else {
             return Task::none();
@@ -339,6 +387,10 @@ impl App {
         Task::batch([open, self.apply_pending_select()])
     }
 
+    /// Scrolls the editor so `line` sits about a third of the way down the viewport.
+    ///
+    /// Also stores the offset on the document so it survives tab switches, and
+    /// focuses the editor.
     fn place_selection_view(&mut self, line: usize) -> Task<Message> {
         let view = self.viewport_height;
         let y = (crate::theme::EDITOR_PAD_TOP + line as f32 * crate::theme::CODE_LINE - view / 3.0)
