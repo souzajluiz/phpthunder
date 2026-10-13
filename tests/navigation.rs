@@ -86,7 +86,7 @@ fn find_usages_across_files() {
         })
         .collect();
     // The interface method `HasName::getName` is a different declaration and is not included.
-    assert_eq!(found, ["Http/UserController.php:19", "Http/UserController.php:20", "Models/User.php:18 decl"]);
+    assert_eq!(found, ["Http/PostController.php:14", "Http/UserController.php:19", "Http/UserController.php:20", "Models/User.php:18 decl"]);
 }
 
 #[test]
@@ -157,4 +157,35 @@ fn completes_local_variables() {
     let src = read(CONTROLLER).replace("$status = Status::Active;", "$f");
     let got = complete(&idx, &src, at(&src, "$f\n", 2));
     assert_eq!(labels(&got), ["$fresh"]);
+}
+
+const POSTS: &str = "src/Http/PostController.php";
+
+#[test]
+fn phpdoc_types_drive_resolution() {
+    let idx = indexed();
+    // `@param Post $post` + `@property-read User $author`.
+    assert_eq!(goto(&idx, POSTS, "author->", 0), ["Models/Post.php:10 author"]);
+    assert_eq!(goto(&idx, POSTS, "getName()", 0), ["Models/User.php:18 getName"]);
+    // `foreach` over `@return Comment[]`, then `@return User` on writer().
+    assert_eq!(goto(&idx, POSTS, "writer()", 0), ["Models/Comment.php:15 writer"]);
+    assert_eq!(goto(&idx, POSTS, "greet()", 0), ["Support/Greets.php:7 greet"]);
+    // `$post->comments[0]` with `@var Comment[]`.
+    assert_eq!(goto(&idx, POSTS, "body()", 0), ["Models/Comment.php:7 body"]);
+    // Inline `/** @var Post $draft */`.
+    assert_eq!(goto(&idx, POSTS, "approved();", 0), ["Models/Post.php:23 approved"]);
+    // `@method static Builder published()` then `@return Post|null`.
+    assert_eq!(goto(&idx, POSTS, "published()", 0), ["Models/Post.php:11 published"]);
+    assert_eq!(goto(&idx, POSTS, "first()", 0), ["Support/Builder.php:10 first"]);
+    assert_eq!(goto(&idx, POSTS, "comments;", 0), ["Models/Post.php:16 comments"]);
+}
+
+#[test]
+fn completes_phpdoc_virtual_members() {
+    let idx = indexed();
+    let src = read(POSTS);
+    let got = complete(&idx, &src, at(&src, "$post->author", 7));
+    assert_eq!(labels(&got), ["approved", "author", "comments", "create", "published", "save"]);
+    let statics = complete(&idx, &src, at(&src, "Post::published", 6));
+    assert_eq!(labels(&statics), ["$table", "create", "published"]);
 }

@@ -5,6 +5,7 @@
 
 pub mod analysis;
 pub mod index;
+pub mod phpdoc;
 pub mod server;
 pub mod stubs;
 pub mod syntax;

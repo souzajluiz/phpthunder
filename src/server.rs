@@ -192,7 +192,8 @@ fn hover_text(def: &Definition) -> String {
     let s: &Symbol = &def.symbol;
     let owner = if s.kind.is_member() { format!("{}::", s.fqn) } else { String::new() };
     let name = if s.kind.is_member() { s.name.clone() } else { s.fqn.clone() };
-    format!("```php\n<?php\n{}\n```\n`{owner}{name}`", s.signature)
+    let doc = if s.doc.is_empty() { String::new() } else { format!("\n\n{}", s.doc) };
+    format!("```php\n<?php\n{}\n```\n`{owner}{name}`{doc}", s.signature)
 }
 
 

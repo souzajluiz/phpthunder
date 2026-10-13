@@ -2,10 +2,14 @@
 //!
 //! A compact description of every declaration in a file, enough to answer
 //! "where is X declared" and "what does X return" without reparsing the file.
+//! Types come from native declarations first, then from PHPDoc.
 
+use crate::phpdoc::{self, DocBlock, Tag, Ty};
 use crate::syntax::{for_each_statement, is_builtin_type, is_class_like, text, NameContext};
 use crate::text::{LineIndex, Span};
 use tree_sitter::Node;
+
+pub use crate::phpdoc::STATIC_TYPE;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
@@ -51,9 +55,6 @@ impl MemberTag {
     }
 }
 
-/// Return/property type sentinel meaning "late static binding": `static` or `$this`.
-pub const STATIC_TYPE: &str = "static";
-
 #[derive(Clone, Debug)]
 pub struct Symbol {
     pub kind: Kind,
@@ -67,25 +68,16 @@ pub struct Symbol {
     pub is_static: bool,
     /// Declaration header, e.g. `public static function create(string $name): self`.
     pub signature: String,
-    /// Resolved class FQN of the return type (functions/methods) or declared
-    /// type (properties); [`STATIC_TYPE`] for `static`/`$this`.
-    pub ty: Option<String>,
+    /// First paragraph of the PHPDoc comment.
+    pub doc: String,
+    /// Return type (functions/methods) or declared type (properties).
+    pub ty: Ty,
     /// Parent class (`extends`) for classes.
     pub extends: Option<String>,
-    /// Every supertype: parent class, interfaces, used traits.
+    /// Every supertype: parent class, interfaces, used traits, `@mixin` classes.
     pub supers: Vec<String>,
-}
-
-impl Symbol {
-    pub fn owner(&self) -> Option<&str> {
-        self.kind.is_member().then_some(self.fqn.as_str())
-    }
-}
-
-struct Builder<'a> {
-    src: &'a str,
-    lines: &'a LineIndex,
-    out: Vec<Symbol>,
+    /// Declared only in PHPDoc (`@property`, `@method`).
+    pub is_virtual: bool,
 }
 
 pub fn build(root: Node, src: &str, lines: &LineIndex) -> Vec<Symbol> {
@@ -94,33 +86,54 @@ pub fn build(root: Node, src: &str, lines: &LineIndex) -> Vec<Symbol> {
     b.out
 }
 
-/// Resolves a type node to a class FQN; `None` for builtin/primitive types.
-pub fn resolve_type(node: Node, src: &str, ctx: &NameContext, owner: Option<&str>) -> Option<String> {
+/// Resolves a native type node; `class` is `None` for builtin types.
+pub fn resolve_type(node: Node, src: &str, ctx: &NameContext, owner: Option<&str>) -> Ty {
     match node.kind() {
-        "optional_type" | "named_type" | "union_type" | "intersection_type" | "disjunctive_normal_form_type" => {
+        "optional_type" | "named_type" | "union_type" | "intersection_type"
+        | "disjunctive_normal_form_type" => {
             let mut c = node.walk();
             let found = node
                 .named_children(&mut c)
-                .find_map(|child| resolve_type(child, src, ctx, owner));
+                .map(|child| resolve_type(child, src, ctx, owner))
+                .find(|t| !t.is_empty())
+                .unwrap_or_default();
             found
         }
         "name" | "qualified_name" | "relative_name" => {
             let raw = text(node, src);
             match raw.to_ascii_lowercase().as_str() {
-                "self" => owner.map(str::to_string),
-                "static" | "$this" => Some(STATIC_TYPE.to_string()),
-                _ if is_builtin_type(raw) => None,
-                _ => Some(ctx.resolve_class(raw)),
+                "self" => Ty { class: owner.map(str::to_string), elem: None },
+                "static" | "$this" => Ty::class(STATIC_TYPE),
+                _ if is_builtin_type(raw) => Ty::default(),
+                _ => Ty::class(ctx.resolve_class(raw)),
             }
         }
-        _ => None,
+        _ => Ty::default(),
     }
+}
+
+/// The `/** ... */` comment directly above a declaration or statement.
+pub fn doc_comment(node: Node) -> Option<Node> {
+    let prev = node.prev_named_sibling()?;
+    (prev.kind() == "comment").then_some(prev)
+}
+
+pub fn doc_of(node: Node, src: &str) -> Option<DocBlock> {
+    let comment = doc_comment(node)?;
+    let raw = text(comment, src);
+    phpdoc::is_doc_comment(raw).then(|| phpdoc::parse(raw))
 }
 
 fn has_child(node: Node, kind: &str) -> bool {
     let mut c = node.walk();
     let found = node.children(&mut c).any(|n| n.kind() == kind);
     found
+}
+
+struct Builder<'a> {
+    src: &'a str,
+    lines: &'a LineIndex,
+    out: Vec<Symbol>,
 }
 
 impl Builder<'_> {
@@ -141,22 +154,36 @@ impl Builder<'_> {
     }
 
     fn push(&mut self, kind: Kind, decl: Node, name: Node, fqn: String) -> &mut Symbol {
-        let name_text = text(name, self.src).trim_start_matches('$').to_string();
+        let doc = doc_of(decl, self.src).map(|d| d.summary).unwrap_or_default();
         let symbol = Symbol {
             kind,
-            name: name_text,
+            name: text(name, self.src).trim_start_matches('$').to_string(),
             fqn,
             span: self.lines.span(self.src, decl.start_byte(), decl.end_byte()),
             name_span: self.lines.span(self.src, name.start_byte(), name.end_byte()),
             name_start: name.start_byte(),
             is_static: false,
             signature: self.header(decl),
-            ty: None,
+            doc,
+            ty: Ty::default(),
             extends: None,
             supers: Vec::new(),
+            is_virtual: false,
         };
         self.out.push(symbol);
         self.out.last_mut().unwrap()
+    }
+
+    /// Native return type, completed by `@return`.
+    fn return_type(&self, decl: Node, ctx: &NameContext, owner: Option<&str>) -> Ty {
+        let native = decl
+            .child_by_field_name("return_type")
+            .map(|t| resolve_type(t, self.src, ctx, owner))
+            .unwrap_or_default();
+        let doc = doc_of(decl, self.src)
+            .and_then(|d| d.return_type().map(|t| phpdoc::resolve(t, ctx, owner)))
+            .unwrap_or_default();
+        native.or(doc)
     }
 
     fn statement(&mut self, node: Node, ctx: &NameContext) {
@@ -165,9 +192,7 @@ impl Builder<'_> {
             "function_definition" => {
                 let Some(name) = node.child_by_field_name("name") else { return };
                 let fqn = ctx.qualify(text(name, self.src));
-                let ty = node
-                    .child_by_field_name("return_type")
-                    .and_then(|t| resolve_type(t, self.src, ctx, None));
+                let ty = self.return_type(node, ctx, None);
                 self.push(Kind::Function, node, name, fqn).ty = ty;
             }
             "const_declaration" => {
@@ -224,10 +249,48 @@ impl Builder<'_> {
             sym.extends = extends;
             sym.supers = supers;
         }
+        self.virtual_members(node, ctx, &fqn, class_index);
         let Some(body) = node.child_by_field_name("body") else { return };
         let mut c = body.walk();
         for member in body.named_children(&mut c) {
             self.member(member, ctx, &fqn, class_index);
+        }
+    }
+
+    /// `@property`, `@method`, and `@mixin` from the class docblock.
+    fn virtual_members(&mut self, class: Node, ctx: &NameContext, owner: &str, class_index: usize) {
+        let Some(comment) = doc_comment(class) else { return };
+        let raw = text(comment, self.src);
+        if !phpdoc::is_doc_comment(raw) {
+            return;
+        }
+        for t in phpdoc::parse(raw).tags {
+            let (kind, name, ty, is_static) = match &t.tag {
+                Tag::Property { ty, name } => (Kind::Property, name, ty, false),
+                Tag::Method { is_static, ty, name } => (Kind::Method, name, ty, *is_static),
+                Tag::Mixin { class } => {
+                    self.out[class_index].supers.push(ctx.resolve_class(class));
+                    continue;
+                }
+                _ => continue,
+            };
+            let start = comment.start_byte() + t.offset;
+            let end = start + t.line.len().min(raw.len() - t.offset);
+            self.out.push(Symbol {
+                kind,
+                name: name.clone(),
+                fqn: owner.to_string(),
+                span: self.lines.span(self.src, start, end),
+                name_span: self.lines.span(self.src, start, end),
+                name_start: start,
+                is_static,
+                signature: t.line.clone(),
+                doc: String::new(),
+                ty: ty.as_deref().map(|t| phpdoc::resolve(t, ctx, Some(owner))).unwrap_or_default(),
+                extends: None,
+                supers: Vec::new(),
+                is_virtual: true,
+            });
         }
     }
 
@@ -237,39 +300,51 @@ impl Builder<'_> {
         match node.kind() {
             "method_declaration" => {
                 let Some(name) = node.child_by_field_name("name") else { return };
-                let ty = node
-                    .child_by_field_name("return_type")
-                    .and_then(|t| resolve_type(t, src, ctx, Some(owner)));
+                let ty = self.return_type(node, ctx, Some(owner));
                 let sym = self.push(Kind::Method, node, name, owner.to_string());
                 sym.is_static = is_static;
                 sym.ty = ty;
                 // Constructor property promotion: `__construct(private Foo $foo)`.
                 if text(name, src).eq_ignore_ascii_case("__construct") {
-                    if let Some(params) = node.child_by_field_name("parameters") {
-                        let mut c = params.walk();
-                        for p in params
-                            .named_children(&mut c)
-                            .filter(|p| p.kind() == "property_promotion_parameter")
-                        {
-                            let Some(var) = p.child_by_field_name("name") else { continue };
-                            let ty = p
-                                .child_by_field_name("type")
-                                .and_then(|t| resolve_type(t, src, ctx, Some(owner)));
-                            self.push(Kind::Property, p, var, owner.to_string()).ty = ty;
-                        }
+                    let doc = doc_of(node, src);
+                    let Some(params) = node.child_by_field_name("parameters") else { return };
+                    let mut c = params.walk();
+                    for p in params
+                        .named_children(&mut c)
+                        .filter(|p| p.kind() == "property_promotion_parameter")
+                    {
+                        let Some(var) = p.child_by_field_name("name") else { continue };
+                        let native = p
+                            .child_by_field_name("type")
+                            .map(|t| resolve_type(t, src, ctx, Some(owner)))
+                            .unwrap_or_default();
+                        let documented = doc
+                            .as_ref()
+                            .and_then(|d| d.param_type(text(var, src).trim_start_matches('$')))
+                            .map(|t| phpdoc::resolve(t, ctx, Some(owner)))
+                            .unwrap_or_default();
+                        self.push(Kind::Property, p, var, owner.to_string()).ty = native.or(documented);
                     }
                 }
             }
             "property_declaration" => {
-                let ty = node
+                let native = node
                     .child_by_field_name("type")
-                    .and_then(|t| resolve_type(t, src, ctx, Some(owner)));
+                    .map(|t| resolve_type(t, src, ctx, Some(owner)))
+                    .unwrap_or_default();
+                let doc = doc_of(node, src);
                 let mut c = node.walk();
                 for el in node.named_children(&mut c).filter(|n| n.kind() == "property_element") {
                     let Some(var) = el.child_by_field_name("name") else { continue };
+                    let name = text(var, src).trim_start_matches('$');
+                    let documented = doc
+                        .as_ref()
+                        .and_then(|d| d.var_type(Some(name)))
+                        .map(|t| phpdoc::resolve(t, ctx, Some(owner)))
+                        .unwrap_or_default();
                     let sym = self.push(Kind::Property, node, var, owner.to_string());
                     sym.is_static = is_static;
-                    sym.ty = ty.clone();
+                    sym.ty = native.clone().or(documented);
                 }
             }
             "const_declaration" => {
@@ -284,7 +359,7 @@ impl Builder<'_> {
                 let Some(name) = node.child_by_field_name("name") else { return };
                 let sym = self.push(Kind::EnumCase, node, name, owner.to_string());
                 sym.is_static = true;
-                sym.ty = Some(owner.to_string());
+                sym.ty = Ty::class(owner);
             }
             "use_declaration" => {
                 let mut c = node.walk();
@@ -305,6 +380,11 @@ mod tests {
     use super::*;
     use crate::syntax::parse;
 
+    fn stubs(src: &str) -> Vec<Symbol> {
+        let tree = parse(src);
+        build(tree.root_node(), src, &LineIndex::new(src))
+    }
+
     #[test]
     fn builds_stubs_for_declarations() {
         let src = r#"<?php
@@ -320,9 +400,7 @@ final class User extends Model implements HasName {
 enum Status: string { case Active = 'a'; }
 if (!function_exists('helper')) { function helper(): User {} }
 "#;
-        let tree = parse(src);
-        let li = LineIndex::new(src);
-        let syms = build(tree.root_node(), src, &li);
+        let syms = stubs(src);
         let find = |k: Kind, n: &str| syms.iter().find(|s| s.kind == k && s.name == n).unwrap();
 
         let user = find(Kind::Class, "User");
@@ -330,14 +408,62 @@ if (!function_exists('helper')) { function helper(): User {} }
         assert_eq!(user.extends.as_deref(), Some("App\\Models\\Model"));
         assert_eq!(user.supers, ["App\\Models\\Model", "App\\Contracts\\HasName", "App\\Models\\Greets"]);
 
-        assert_eq!(find(Kind::Property, "address").ty.as_deref(), Some("App\\Models\\Address"));
-        assert_eq!(find(Kind::Property, "repo").ty.as_deref(), Some("App\\Models\\Repo"));
+        assert_eq!(find(Kind::Property, "address").ty, Ty::class("App\\Models\\Address"));
+        assert_eq!(find(Kind::Property, "repo").ty, Ty::class("App\\Models\\Repo"));
         let create = find(Kind::Method, "create");
         assert!(create.is_static);
-        assert_eq!(create.ty.as_deref(), Some(STATIC_TYPE));
+        assert_eq!(create.ty, Ty::class(STATIC_TYPE));
         assert_eq!(create.signature, "public static function create(string $name): static");
         assert_eq!(find(Kind::ClassConstant, "ROLE").fqn, "App\\Models\\User");
         assert_eq!(find(Kind::EnumCase, "Active").fqn, "App\\Models\\Status");
         assert_eq!(find(Kind::Function, "helper").fqn, "App\\Models\\helper");
+    }
+
+    #[test]
+    fn reads_types_from_phpdoc() {
+        let src = r#"<?php
+namespace App;
+use Illuminate\Support\Collection;
+/**
+ * A blog post.
+ * @property-read Author $author
+ * @method static Builder published()
+ * @mixin \Illuminate\Database\Eloquent\Builder
+ */
+class Post {
+    /** @var Comment[] */
+    public $comments;
+    /** @var Collection<int, Tag> */
+    private Collection $tags;
+    /**
+     * Latest post.
+     * @return static|null
+     */
+    public static function latest() {}
+    /** @return Comment[] */
+    public function approved(): array {}
+}
+"#;
+        let syms = stubs(src);
+        let find = |k: Kind, n: &str| syms.iter().find(|s| s.kind == k && s.name == n).unwrap();
+        let post = find(Kind::Class, "Post");
+        assert_eq!(post.doc, "A blog post.");
+        assert_eq!(post.supers, ["Illuminate\\Database\\Eloquent\\Builder"]);
+        let author = find(Kind::Property, "author");
+        assert!(author.is_virtual);
+        assert_eq!(author.ty, Ty::class("App\\Author"));
+        assert_eq!(author.name_span.start.line, 5);
+        let published = find(Kind::Method, "published");
+        assert!(published.is_static && published.is_virtual);
+        assert_eq!(published.ty, Ty::class("App\\Builder"));
+        assert_eq!(find(Kind::Property, "comments").ty, Ty { class: None, elem: Some("App\\Comment".into()) });
+        assert_eq!(
+            find(Kind::Property, "tags").ty,
+            Ty { class: Some("Illuminate\\Support\\Collection".into()), elem: Some("App\\Tag".into()) }
+        );
+        let latest = find(Kind::Method, "latest");
+        assert_eq!(latest.ty, Ty::class(STATIC_TYPE));
+        assert_eq!(latest.doc, "Latest post.");
+        assert_eq!(find(Kind::Method, "approved").ty.elem.as_deref(), Some("App\\Comment"));
     }
 }

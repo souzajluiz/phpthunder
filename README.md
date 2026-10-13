@@ -19,6 +19,16 @@ Variable types are inferred from `new`, parameter type hints, `$this`, promoted
 constructor properties, and declared return types (including `static`), so
 chains like `User::create()->address()->format()` resolve.
 
+PHPDoc is understood where native types are missing or too vague:
+
+- `@return`, `@var` (on properties and inline `/** @var Foo $x */`), `@param`
+- `@property`, `@property-read`, `@property-write`, `@method [static]` as
+  virtual members (go to definition jumps to the docblock line), `@mixin`
+- unions and nullables (`Foo|null`, `?Foo`), arrays and generic collections
+  (`Foo[]`, `array<int, Foo>`, `Collection<int, Foo>`): the element type flows
+  into `foreach` variables and `$items[0]`
+- the docblock summary is shown on hover
+
 ## How it works
 
 1. **Parse** each file with tree-sitter-php.
@@ -93,6 +103,7 @@ the sample project in `tests/fixtures/app`.
 
 ## Limitations
 
-- No PHPDoc type inference (`@var`, `@return`, generics) yet.
+- No `@template` generics: `Collection<int, User>` knows its element type,
+  but methods returning the template parameter (`first(): TValue`) do not.
 - No diagnostics, rename, or formatting yet.
 - The index lives in memory and is rebuilt on each start.

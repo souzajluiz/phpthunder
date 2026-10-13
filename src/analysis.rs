@@ -10,7 +10,8 @@
 //!   offer.
 
 use crate::index::Index;
-use crate::stubs::{resolve_type, Kind, MemberTag, Symbol, STATIC_TYPE};
+use crate::phpdoc::{self, Tag, Ty};
+use crate::stubs::{doc_of, resolve_type, Kind, MemberTag, Symbol};
 use crate::syntax::{
     context_at, import_insertion_point, is_class_like, parse, text, use_clauses, NameContext,
     UseKind,
@@ -216,85 +217,124 @@ impl<'a> Analyzer<'a> {
     }
 
     /// Lightweight type inference: the class an expression evaluates to.
-    pub fn type_of(&self, expr: Node, depth: u8) -> Option<String> {
+    pub fn type_of(&self, expr: Node<'a>, depth: u8) -> Option<String> {
+        self.ty_of(expr, depth).class
+    }
+
+    /// Full inferred type of an expression, including element type of
+    /// arrays/collections (from PHPDoc) for `foreach` and `$xs[0]`.
+    pub fn ty_of(&self, expr: Node<'a>, depth: u8) -> Ty {
         if depth > MAX_INFERENCE_DEPTH {
-            return None;
+            return Ty::default();
         }
         let d = depth + 1;
-        let member_type = |class: Option<String>, tag, name: Option<Node>| -> Option<String> {
-            let class = class?;
-            let name = self.text(name?);
-            let found = self.index.find_member(&class, tag, name);
-            let ty = found.first()?.1.ty.clone()?;
-            Some(if ty == STATIC_TYPE { class } else { ty })
+        let member_ty = |class: Option<String>, tag, name: Option<Node>| -> Ty {
+            let (Some(class), Some(name)) = (class, name) else { return Ty::default() };
+            let found = self.index.find_member(&class, tag, self.text(name));
+            found.first().map(|(_, s)| s.ty.clone().bind_static(&class)).unwrap_or_default()
         };
+        let child = |field: &str| expr.child_by_field_name(field);
         match expr.kind() {
             "variable_name" => {
                 let ctx = self.ctx(expr.start_byte());
                 match self.text(expr) {
-                    "$this" => self.enclosing_class(expr, &ctx),
+                    "$this" => Ty { class: self.enclosing_class(expr, &ctx), elem: None },
                     var => self.variable_type(expr, var, &ctx, d),
                 }
             }
             "object_creation_expression" => {
                 let mut c = expr.walk();
-                let class = expr.named_children(&mut c).find(|n| is_name(n.kind()))?;
-                self.class_ref(class, &self.ctx(class.start_byte()))
+                let class = expr.named_children(&mut c).find(|n| is_name(n.kind()));
+                Ty { class: class.and_then(|n| self.class_ref(n, &self.ctx(n.start_byte()))), elem: None }
             }
-            "member_call_expression" | "nullsafe_member_call_expression" => member_type(
-                self.type_of(expr.child_by_field_name("object")?, d),
+            "member_call_expression" | "nullsafe_member_call_expression" => member_ty(
+                child("object").and_then(|o| self.type_of(o, d)),
                 MemberTag::Method,
-                expr.child_by_field_name("name"),
+                child("name"),
             ),
-            "member_access_expression" | "nullsafe_member_access_expression" => member_type(
-                self.type_of(expr.child_by_field_name("object")?, d),
+            "member_access_expression" | "nullsafe_member_access_expression" => member_ty(
+                child("object").and_then(|o| self.type_of(o, d)),
                 MemberTag::Property,
-                expr.child_by_field_name("name"),
+                child("name"),
             ),
-            "scoped_call_expression" => member_type(
-                self.class_of_scope(expr.child_by_field_name("scope")?, d),
+            "scoped_call_expression" => member_ty(
+                child("scope").and_then(|s| self.class_of_scope(s, d)),
                 MemberTag::Method,
-                expr.child_by_field_name("name"),
+                child("name"),
             ),
-            "scoped_property_access_expression" => member_type(
-                self.class_of_scope(expr.child_by_field_name("scope")?, d),
+            "scoped_property_access_expression" => member_ty(
+                child("scope").and_then(|s| self.class_of_scope(s, d)),
                 MemberTag::Property,
-                expr.child_by_field_name("name")?.named_child(0),
+                child("name").and_then(|n| n.named_child(0)),
             ),
-            "class_constant_access_expression" => member_type(
-                self.class_of_scope(expr.named_child(0)?, d),
+            "class_constant_access_expression" => member_ty(
+                expr.named_child(0).and_then(|s| self.class_of_scope(s, d)),
                 MemberTag::Constant,
                 expr.named_child(1),
             ),
             "function_call_expression" => {
-                let f = expr.child_by_field_name("function")?;
+                let Some(f) = child("function") else { return Ty::default() };
                 let ctx = self.ctx(f.start_byte());
                 let found = self.index.functions(&ctx.resolve_function(self.text(f)));
-                found.first()?.1.ty.clone()
+                found.first().map(|(_, s)| s.ty.clone()).unwrap_or_default()
             }
-            "parenthesized_expression" => self.type_of(expr.named_child(0)?, d),
-            "assignment_expression" => self.type_of(expr.child_by_field_name("right")?, d),
-            _ => None,
+            "subscript_expression" => {
+                let elem = expr.named_child(0).and_then(|a| self.ty_of(a, d).elem);
+                Ty { class: elem, elem: None }
+            }
+            "parenthesized_expression" => expr.named_child(0).map(|e| self.ty_of(e, d)).unwrap_or_default(),
+            "assignment_expression" => child("right").map(|e| self.ty_of(e, d)).unwrap_or_default(),
+            _ => Ty::default(),
         }
     }
 
-    /// Type of `$var` at `usage`: last assignment before the usage in the same
-    /// function, otherwise the parameter's declared type.
-    fn variable_type(&self, usage: Node, var: &str, ctx: &NameContext, depth: u8) -> Option<String> {
+    /// `@var` type in the docblock above the statement containing `node`.
+    fn inline_var_doc(&self, node: Node, var: &str, ctx: &NameContext) -> Option<Ty> {
+        let stmt = node.parent().filter(|p| p.kind() == "expression_statement").unwrap_or(node);
+        let doc = doc_of(stmt, self.src)?;
+        let ty = doc.var_type(Some(var.trim_start_matches('$')))?;
+        let owner = self.enclosing_class(node, ctx);
+        Some(phpdoc::resolve(ty, ctx, owner.as_deref()))
+    }
+
+    /// Type of `$var` at `usage`. The source closest before the usage wins:
+    /// an assignment (or its `@var`), a `foreach` binding, a `catch` variable,
+    /// or a standalone `/** @var Type $var */`. Parameters (native type, then
+    /// `@param`) are the fallback.
+    fn variable_type(&self, usage: Node<'a>, var: &str, ctx: &NameContext, depth: u8) -> Ty {
         let scope = enclosing_function(usage).unwrap_or(self.tree.root_node());
-        let mut best: Option<Node> = None;
+        let mut best: Option<(usize, Node<'a>)> = None;
+        let mut consider = |pos: usize, n: Node<'a>| {
+            if best.is_none_or(|(b, _)| pos > b) {
+                best = Some((pos, n));
+            }
+        };
+        let is_var = |n: Option<Node>| n.is_some_and(|l| l.kind() == "variable_name" && self.text(l) == var);
         let mut stack = vec![scope];
         while let Some(n) = stack.pop() {
             if n.start_byte() >= usage.start_byte() {
                 continue;
             }
-            if n.kind() == "assignment_expression" && n.end_byte() <= usage.start_byte() {
-                let left = n.child_by_field_name("left");
-                if left.is_some_and(|l| l.kind() == "variable_name" && self.text(l) == var)
-                    && best.is_none_or(|b| n.start_byte() > b.start_byte())
+            match n.kind() {
+                "assignment_expression"
+                    if n.end_byte() <= usage.start_byte() && is_var(n.child_by_field_name("left")) =>
                 {
-                    best = Some(n);
+                    consider(n.start_byte(), n)
                 }
+                "foreach_statement" if is_var(foreach_value(n)) => consider(n.start_byte(), n),
+                "catch_clause" if is_var(n.child_by_field_name("name")) => consider(n.start_byte(), n),
+                "comment" if n.end_byte() <= usage.start_byte() => {
+                    let raw = self.text(n);
+                    if phpdoc::is_doc_comment(raw)
+                        && phpdoc::parse(raw)
+                            .tags
+                            .iter()
+                            .any(|t| matches!(&t.tag, Tag::Var { var: Some(v), .. } if format!("${v}") == var))
+                    {
+                        consider(n.start_byte(), n);
+                    }
+                }
+                _ => {}
             }
             let mut c = n.walk();
             for child in n.named_children(&mut c) {
@@ -303,18 +343,60 @@ impl<'a> Analyzer<'a> {
                 }
             }
         }
-        if let Some(assign) = best {
-            return self.type_of(assign.child_by_field_name("right")?, depth);
+        let owner = self.enclosing_class(usage, ctx);
+        if let Some((_, n)) = best {
+            return match n.kind() {
+                "assignment_expression" => self.inline_var_doc(n, var, ctx).unwrap_or_else(|| {
+                    n.child_by_field_name("right").map(|r| self.ty_of(r, depth)).unwrap_or_default()
+                }),
+                "foreach_statement" => {
+                    let documented = foreach_value(n).and_then(|_| self.inline_var_doc(n, var, ctx));
+                    documented.unwrap_or_else(|| {
+                        let iterated = n.named_child(0).map(|e| self.ty_of(e, depth)).unwrap_or_default();
+                        Ty { class: iterated.elem, elem: None }
+                    })
+                }
+                "catch_clause" => n
+                    .child_by_field_name("type")
+                    .and_then(|t| t.named_child(0))
+                    .and_then(|t| self.class_ref(t, ctx))
+                    .map(Ty::class)
+                    .unwrap_or_default(),
+                _ => {
+                    let doc = phpdoc::parse(self.text(n));
+                    let ty = doc.var_type(Some(var.trim_start_matches('$'))).unwrap_or("");
+                    phpdoc::resolve(ty, ctx, owner.as_deref())
+                }
+            };
         }
-        let params = scope.child_by_field_name("parameters")?;
+        let Some(params) = scope.child_by_field_name("parameters") else { return Ty::default() };
         let mut c = params.walk();
-        let param = params.named_children(&mut c).find(|p| {
-            p.child_by_field_name("name").is_some_and(|n| self.text(n) == var)
-        })?;
-        let owner = self.enclosing_class(param, ctx);
-        let ty = resolve_type(param.child_by_field_name("type")?, self.src, ctx, owner.as_deref())?;
-        if ty == STATIC_TYPE { owner } else { Some(ty) }
+        let Some(param) = params
+            .named_children(&mut c)
+            .find(|p| p.child_by_field_name("name").is_some_and(|n| self.text(n) == var))
+        else {
+            return Ty::default();
+        };
+        let native = param
+            .child_by_field_name("type")
+            .map(|t| resolve_type(t, self.src, ctx, owner.as_deref()))
+            .unwrap_or_default();
+        let documented = doc_of(scope, self.src)
+            .and_then(|d| d.param_type(var.trim_start_matches('$')).map(|t| phpdoc::resolve(t, ctx, owner.as_deref())))
+            .unwrap_or_default();
+        let ty = native.or(documented);
+        match owner {
+            Some(o) => ty.bind_static(&o),
+            None => ty,
+        }
     }
+}
+
+/// The value variable of `foreach ($xs as $v)` / `foreach ($xs as $k => $v)`.
+fn foreach_value(foreach: Node) -> Option<Node> {
+    let value = foreach.named_child(1)?;
+    let value = if value.kind() == "pair" { value.named_child(u32::try_from(value.named_child_count().checked_sub(1)?).ok()?)? } else { value };
+    if value.kind() == "by_ref" { value.named_child(0) } else { Some(value) }
 }
 
 fn is_function_like(kind: &str) -> bool {
