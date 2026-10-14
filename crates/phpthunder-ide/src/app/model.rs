@@ -164,6 +164,10 @@ pub enum Message {
     JumpToLine(usize),
     /// Re-read the Claude plan limits the panel's CLI last reported.
     ClaudeUsageTick,
+    /// A display frame while the About dialog is open (animates its spider).
+    AboutTick(std::time::Instant),
+    /// Open the project repository from the About dialog.
+    OpenRepository,
     /// Show or hide dot folders in the project tree.
     ToggleDotFolders,
     /// Show or hide `node_modules` and `vendor` in the project tree.
@@ -710,6 +714,22 @@ pub struct SignatureView {
     pub line: usize,
     /// Caret visual column.
     pub col: usize,
+}
+
+/// The open About dialog; its spider walks for the time since `opened`.
+pub struct About {
+    /// When the dialog opened.
+    pub opened: std::time::Instant,
+    /// Time of the last display frame, from `Message::AboutTick`.
+    pub now: std::time::Instant,
+}
+
+impl About {
+    /// Dialog state for one just opened (`Cmd::About`).
+    pub fn new() -> Self {
+        let now = std::time::Instant::now();
+        Self { opened: now, now }
+    }
 }
 
 /// The rename dialog (`⇧F6`).

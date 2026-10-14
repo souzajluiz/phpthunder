@@ -5,11 +5,12 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+authors = ["Junior Souza"]
 
 [dependencies]
 base64 = "0.23.1"
 fluent-bundle = "0.16.0"
-iced = { version = "0.14.0", features = ["svg", "tokio", "advanced", "image-without-codecs", "markdown"] }
+iced = { version = "0.14.0", features = ["svg", "canvas", "tokio", "advanced", "image-without-codecs", "markdown"] }
 # Image previews: only the common web formats, not every codec iced's
 # `image` feature would pull in.
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "ico"] }

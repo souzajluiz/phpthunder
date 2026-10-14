@@ -1,5 +1,6 @@
 //! Look and layout: the Thunder Purple theme, icons, and the workbench view.
 
+mod about;
 mod compare;
 mod console;
 mod debug;

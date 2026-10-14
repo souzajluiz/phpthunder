@@ -88,6 +88,22 @@ fn format_elapsed(d: std::time::Duration) -> String {
     }
 }
 
+/// Stacks `modal` over `base` behind a dimming backdrop whose click closes
+/// it (`Message::CloseModal`). Used by `App::view` for every dialog.
+fn with_modal<'a>(base: El<'a>, modal: El<'a>) -> El<'a> {
+    let backdrop = mouse_area(container(space()).width(Fill).height(Fill).style(fill(
+        iced::Color {
+            a: 0.35,
+            ..iced::Color::BLACK
+        },
+    )))
+    .on_press(Message::CloseModal);
+    stack![base, backdrop, modal]
+        .width(Fill)
+        .height(Fill)
+        .into()
+}
+
 impl App {
     /// Root view, called by iced after every update (wired in main.rs). Shows the
     /// welcome screen until a project is open; otherwise lays out title bar,
@@ -95,7 +111,7 @@ impl App {
     /// or find-in-path dialog over a click-to-close backdrop when one is open.
     pub fn view(&self) -> El<'_> {
         if self.tree.root.is_none() {
-            return self.welcome();
+            return self.with_about(self.welcome());
         }
         // Distraction-free: the editor alone, without rail and status bar.
         if self.zen.is_some() {
@@ -105,13 +121,15 @@ impl App {
                 bottom: ISLAND_GAP,
                 ..Padding::ZERO
             });
-            return container(
-                column![self.title_bar(), body.height(Fill)]
-                    .width(Fill)
-                    .height(Fill),
-            )
-            .style(fill(CHROME))
-            .into();
+            return self.with_about(
+                container(
+                    column![self.title_bar(), body.height(Fill)]
+                        .width(Fill)
+                        .height(Fill),
+                )
+                .style(fill(CHROME))
+                .into(),
+            );
         }
         let mut body = row![self.rail()].spacing(ISLAND_GAP).padding(Padding {
             right: ISLAND_GAP,
@@ -136,6 +154,7 @@ impl App {
         )
         .style(fill(CHROME));
         let modal: Option<El<'_>> = match (&self.palette, &self.search_dialog, &self.rename) {
+            _ if self.about.is_some() => Some(self.about_view()),
             (Some(p), _, _) => Some(self.palette_view(p)),
             (None, Some(_), _) => Some(self.search_dialog_view()),
             (None, None, Some(_)) => Some(self.rename_dialog_view()),
@@ -144,17 +163,18 @@ impl App {
             _ => None,
         };
         match modal {
-            Some(m) => {
-                let backdrop = mouse_area(container(space()).width(Fill).height(Fill).style(fill(
-                    iced::Color {
-                        a: 0.35,
-                        ..iced::Color::BLACK
-                    },
-                )))
-                .on_press(Message::CloseModal);
-                stack![base, backdrop, m].width(Fill).height(Fill).into()
-            }
+            Some(m) => with_modal(base.into(), m),
             None => base.into(),
+        }
+    }
+
+    /// `base` with the About dialog over it while one is open; used by the
+    /// welcome screen and distraction-free mode, which show no other modal.
+    fn with_about<'a>(&'a self, base: El<'a>) -> El<'a> {
+        if self.about.is_some() {
+            with_modal(base, self.about_view())
+        } else {
+            base
         }
     }
 
@@ -209,12 +229,17 @@ impl App {
         .padding([2, 6])
         .style(ghost_button)
         .on_press(Message::OpenFolderDialog);
-        let brand = row![
-            logo(Logo::Mark, 18.0),
-            label(crate::APP_NAME, 13.0, TEXT_BRIGHT).font(UI_BOLD),
-        ]
-        .spacing(8)
-        .align_y(Center);
+        let brand = button(
+            row![
+                logo(Logo::Mark, 18.0),
+                label(crate::APP_NAME, 13.0, TEXT_BRIGHT).font(UI_BOLD),
+            ]
+            .spacing(8)
+            .align_y(Center),
+        )
+        .padding([2, 6])
+        .style(ghost_button)
+        .on_press(Message::Command(Cmd::About));
         let mut bar = row![
             space().width(TRAFFIC_LIGHTS_INSET),
             brand,

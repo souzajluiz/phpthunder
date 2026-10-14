@@ -40,7 +40,12 @@ impl App {
         .style(primary_button)
         .on_press(Message::OpenFolderDialog);
         let intro = column![
-            logo(Logo::Lockup, 220.0),
+            // The logo opens the About dialog, the only way to it before a
+            // project is open.
+            button(logo(Logo::Lockup, 220.0))
+                .padding(0)
+                .style(|_, _| button::Style::default())
+                .on_press(Message::Command(Cmd::About)),
             text(tr!("welcome-hint"))
                 .size(14)
                 .color(MUTED)

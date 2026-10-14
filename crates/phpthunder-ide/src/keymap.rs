@@ -240,11 +240,13 @@ pub enum Cmd {
     QuickDefinition,
     /// Hide everything but the editor.
     ToggleDistractionFree,
+    /// Show the About dialog (version, commit, author, repository).
+    About,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 114] = {
+    pub const ALL: [Cmd; 115] = {
         use Cmd::*;
         [
             Save,
@@ -361,6 +363,7 @@ impl Cmd {
             IntroduceParameter,
             QuickDefinition,
             ToggleDistractionFree,
+            About,
         ]
     };
 
@@ -646,7 +649,7 @@ pub fn hint(cmd: Cmd) -> &'static str {
         IntroduceField => "⌥⌘F",
         IntroduceParameter => "⌥⌘P",
         QuickDefinition => "⌥Space",
-        ToggleDistractionFree => "",
+        ToggleDistractionFree | About => "",
     }
 }
 

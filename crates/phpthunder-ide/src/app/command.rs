@@ -178,6 +178,10 @@ impl App {
             Cmd::Annotate => self.toggle_annotate(),
             Cmd::QuickDefinition => self.quick_definition(),
             Cmd::ToggleDistractionFree => self.toggle_zen(),
+            Cmd::About => {
+                self.about = Some(crate::app::About::new());
+                Task::none()
+            }
             Cmd::IntroduceConstant => {
                 self.introduce_from_selection(crate::app::RefactorAction::IntroduceConstant)
             }

@@ -112,6 +112,8 @@ pub struct App {
     pub signature: Option<SignatureView>,
     /// Open rename dialog.
     pub rename: Option<RenameDialog>,
+    /// Open About dialog.
+    pub about: Option<About>,
     /// The remembered session (last project, tabs per project).
     pub session: SavedSession,
     /// Whether saved tabs are being read back (the session is not saved
@@ -342,6 +344,7 @@ impl App {
             intentions: None,
             signature: None,
             rename: None,
+            about: None,
             name_prompt: None,
             refactor_prompt: None,
             session: session::load_session(),
@@ -493,6 +496,10 @@ impl App {
                 iced::time::every(std::time::Duration::from_secs(5))
                     .map(|_| Message::ClaudeUsageTick),
             );
+        }
+        // The About spider walks only while the dialog is open.
+        if self.about.is_some() {
+            subscriptions.push(iced::window::frames().map(Message::AboutTick));
         }
         if let Some(root) = &self.tree.root {
             subscriptions.push(
@@ -850,6 +857,7 @@ impl App {
             Message::OpenSearchHit(f, h) => self.open_search_hit(f, h),
             Message::CloseModal => {
                 self.palette = None;
+                self.about = None;
                 self.search_dialog = None;
                 self.name_prompt = None;
                 self.refactor_prompt = None;
@@ -886,6 +894,16 @@ impl App {
                 };
                 let column = doc.line_text(line).len() - doc.line_text(line).trim_start().len();
                 self.place_cursor(iced::widget::text_editor::Position { line, column })
+            }
+            Message::AboutTick(now) => {
+                if let Some(about) = &mut self.about {
+                    about.now = now;
+                }
+                Task::none()
+            }
+            Message::OpenRepository => {
+                crate::packages::open_in_browser(env!("CARGO_PKG_REPOSITORY"));
+                Task::none()
             }
             Message::ClaudeUsageTick => {
                 self.claude_usage = crate::claude_usage::read(&crate::claude_usage::status_file());
@@ -1036,6 +1054,7 @@ impl App {
         if self.palette.is_none()
             && self.search_dialog.is_none()
             && self.rename.is_none()
+            && self.about.is_none()
             && let Some(task) = self.terminal_keyboard(&event)
         {
             self.last_shift = None;
@@ -1070,7 +1089,7 @@ impl App {
                         _ => Task::none(),
                     };
                 }
-                if self.search_dialog.is_some() || self.rename.is_some() {
+                if self.search_dialog.is_some() || self.rename.is_some() || self.about.is_some() {
                     return match key.as_ref() {
                         Key::Named(Named::Escape) => self.update(Message::CloseModal),
                         _ => Task::none(),
