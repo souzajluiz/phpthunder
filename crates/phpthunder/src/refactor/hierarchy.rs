@@ -18,19 +18,26 @@ pub fn missing_implementations(index: &Index, class: &str) -> Vec<Symbol> {
             .iter()
             .filter(|s| s.kind == Kind::Method && s.fqn.eq_ignore_ascii_case(&decl.fqn))
         {
-            let is_abstract = decl.kind == Kind::Interface
-                || member.signature.split_whitespace().any(|w| w == "abstract");
-            if !is_abstract {
+            // `@method` tags document magic methods; nothing must implement them.
+            if member.is_virtual || !(decl.kind == Kind::Interface || member.is_abstract) {
                 continue;
             }
-            let implemented = index
-                .find_member(class, MemberTag::Method, &member.name)
-                .iter()
-                .any(|(_, s)| {
-                    let owner_kind = index.classes(&s.fqn).first().map(|(_, c)| c.kind);
-                    owner_kind != Some(Kind::Interface)
-                        && !s.signature.split_whitespace().any(|w| w == "abstract")
-                });
+            // Any concrete declaration in the hierarchy implements it: a
+            // trait used by an ancestor counts even when an interface comes
+            // earlier in the walk.
+            let implemented = index.hierarchy(class).iter().any(|cls| {
+                index
+                    .lookup(&crate::index::member_key(
+                        cls,
+                        MemberTag::Method,
+                        &member.name,
+                    ))
+                    .iter()
+                    .any(|(_, s)| {
+                        let owner_kind = index.classes(&s.fqn).first().map(|(_, c)| c.kind);
+                        owner_kind != Some(Kind::Interface) && !s.is_abstract
+                    })
+            });
             if !implemented
                 && !missing
                     .iter()

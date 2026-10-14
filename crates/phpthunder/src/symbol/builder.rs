@@ -107,6 +107,31 @@ fn param_names(decl: Node, src: &str) -> Vec<String> {
         .collect()
 }
 
+/// The declared parameters of a function or method node; inspections
+/// compare them with the indexed declaration they override.
+pub fn params_of_node(decl: Node, src: &str) -> Vec<Param> {
+    let Some(params) = decl.child_by_field_name("parameters") else {
+        return Vec::new();
+    };
+    let mut c = params.walk();
+    params
+        .named_children(&mut c)
+        .filter(|p| p.kind().ends_with("parameter"))
+        .filter_map(|p| {
+            let name = p.child_by_field_name("name")?;
+            let written = text(p, src);
+            Some(Param {
+                name: text(name, src).trim_start_matches(['&', '$']).to_string(),
+                optional: p.child_by_field_name("default_value").is_some(),
+                variadic: p.kind() == "variadic_parameter",
+                by_ref: p.child_by_field_name("reference_modifier").is_some()
+                    || written.contains("&$")
+                    || written.contains("& $"),
+            })
+        })
+        .collect()
+}
+
 /// True when `node` has a direct child (named or not) of `kind`, e.g. `static_modifier`.
 fn has_child(node: Node, kind: &str) -> bool {
     let mut c = node.walk();
@@ -178,9 +203,28 @@ impl Builder<'_> {
             templates: Vec::new(),
             super_args: Vec::new(),
             class_string_params: Vec::new(),
+            is_abstract: false,
+            is_final: false,
+            is_readonly: false,
+            params: Vec::new(),
+            reads_extra_args: false,
         };
         let index = self.out.len();
-        self.out.push(symbol);
+        self.out.push(Symbol {
+            is_abstract: has_child(decl, "abstract_modifier"),
+            is_final: has_child(decl, "final_modifier"),
+            is_readonly: has_child(decl, "readonly_modifier")
+                || decl.child_by_field_name("readonly").is_some(),
+            params: if matches!(decl.kind(), "function_definition" | "method_declaration") {
+                params_of_node(decl, self.src)
+            } else {
+                Vec::new()
+            },
+            reads_extra_args: decl
+                .child_by_field_name("body")
+                .is_some_and(|b| text(b, self.src).contains("func_get_arg")),
+            ..symbol
+        });
         &mut self.out[index]
     }
 
@@ -393,6 +437,11 @@ impl Builder<'_> {
                 templates: Vec::new(),
                 super_args: Vec::new(),
                 class_string_params: Vec::new(),
+                is_abstract: false,
+                is_final: false,
+                is_readonly: false,
+                params: Vec::new(),
+                reads_extra_args: false,
             });
         }
     }
@@ -424,6 +473,11 @@ impl Builder<'_> {
                 templates: Vec::new(),
                 super_args: Vec::new(),
                 class_string_params: Vec::new(),
+                is_abstract: false,
+                is_final: false,
+                is_readonly: false,
+                params: Vec::new(),
+                reads_extra_args: false,
             });
         }
     }
@@ -457,6 +511,11 @@ impl Builder<'_> {
                 templates: Vec::new(),
                 super_args: Vec::new(),
                 class_string_params: Vec::new(),
+                is_abstract: false,
+                is_final: false,
+                is_readonly: false,
+                params: Vec::new(),
+                reads_extra_args: false,
             });
         }
     }
@@ -474,8 +533,10 @@ impl Builder<'_> {
                 };
                 let (ty, templates, class_strings) = self.callable_types(node, ctx, Some(owner));
                 let conventions = eloquent_members_of_method(node, src, ctx, &ty);
+                let in_interface = self.out[class_index].kind == Kind::Interface;
                 let sym = self.push(Kind::Method, node, name, owner.to_string());
                 sym.is_static = is_static;
+                sym.is_abstract |= in_interface;
                 sym.visibility = visibility_of(node, src);
                 sym.ty = ty;
                 sym.templates = templates;

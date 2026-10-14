@@ -11,7 +11,9 @@ use crate::symbol::{
     template_name,
 };
 use crate::symbol::{MemberTag, doc_of, resolve_type};
-use crate::syntax::{NameContext, UseKind, context_at, is_class_like, parse, text, use_clauses};
+use crate::syntax::{
+    NameContext, UseKind, for_each_statement, is_class_like, parse, text, use_clauses,
+};
 use std::collections::{HashMap, HashSet, VecDeque};
 use tree_sitter::{Node, Tree};
 
@@ -60,6 +62,35 @@ pub struct Analyzer<'a> {
     pub src: &'a str,
     /// Syntax tree of `src`.
     pub tree: &'a Tree,
+    /// Name contexts of the top-level statements, built on first use by
+    /// [`Analyzer::ctx`] (inspections ask for one per identifier).
+    contexts: std::cell::OnceCell<StatementContexts>,
+    /// Variable binding sites per scope (keyed by the scope node's id),
+    /// built on first use by [`Analyzer::variable_type`].
+    bindings: std::cell::RefCell<HashMap<usize, std::rc::Rc<Vec<Binding>>>>,
+}
+
+/// A place that gives a variable its type: an assignment, a `foreach`
+/// value, a `catch` variable, or a `@var` doc comment naming it. Plain
+/// byte ranges, so the cache does not tie the analyzer to node lifetimes.
+#[derive(Clone)]
+struct Binding {
+    /// Byte range of the binding node.
+    start: usize,
+    /// End byte of the binding node.
+    end: usize,
+    /// The variable it binds, with `$`.
+    var: String,
+}
+
+/// The name context of every top-level statement, in document order:
+/// `(start, end, index into contexts)`, with each distinct context once.
+#[derive(Default)]
+struct StatementContexts {
+    /// Statement ranges and their context.
+    statements: Vec<(usize, usize, usize)>,
+    /// Distinct contexts.
+    contexts: Vec<NameContext>,
 }
 
 /// True for node kinds that spell a class or function name (plain, qualified, or `namespace\`-relative).
@@ -75,7 +106,13 @@ pub(crate) fn same(a: Option<Node>, b: Node) -> bool {
 impl<'a> Analyzer<'a> {
     /// Wraps an already parsed file; does no work itself. `tree` must be `parse(src)`.
     pub fn new(index: &'a Index, src: &'a str, tree: &'a Tree) -> Self {
-        Self { index, src, tree }
+        Self {
+            index,
+            src,
+            tree,
+            contexts: std::cell::OnceCell::new(),
+            bindings: std::cell::RefCell::new(HashMap::new()),
+        }
     }
 
     /// Source text covered by `node`.
@@ -83,9 +120,36 @@ impl<'a> Analyzer<'a> {
         text(node, self.src)
     }
 
-    /// Namespace and `use` imports in effect at `byte`, needed to qualify names written there. Re-walks the file's top-level statements on each call.
+    /// Namespace and `use` imports in effect at `byte`, needed to qualify
+    /// names written there. Same answer as [`crate::syntax::context_at`], from contexts
+    /// computed once per analyzer.
     pub(crate) fn ctx(&self, byte: usize) -> NameContext {
-        context_at(self.tree.root_node(), self.src, byte)
+        let cache = self.contexts.get_or_init(|| {
+            let mut out = StatementContexts::default();
+            for_each_statement(self.tree.root_node(), self.src, |stmt, ctx| {
+                let same = out.contexts.last().is_some_and(|last| {
+                    last.namespace == ctx.namespace
+                        && last.classes == ctx.classes
+                        && last.functions == ctx.functions
+                });
+                if !same {
+                    out.contexts.push(ctx.clone());
+                }
+                let id = out.contexts.len() - 1;
+                out.statements
+                    .push((stmt.start_byte(), stmt.end_byte(), id));
+            });
+            out
+        });
+        let before = cache.statements.partition_point(|s| s.0 <= byte);
+        // The first statement containing `byte`, else the last one before it.
+        let containing = cache.statements[before.saturating_sub(2)..before]
+            .iter()
+            .find(|s| byte <= s.1);
+        containing
+            .or_else(|| before.checked_sub(1).map(|i| &cache.statements[i]))
+            .map(|s| cache.contexts[s.2].clone())
+            .unwrap_or_default()
     }
 
     /// The identifier node under the caret (the caret may sit just after it).
@@ -547,45 +611,43 @@ impl<'a> Analyzer<'a> {
         Some(resolve_doc_type(ty, ctx, owner.as_deref()))
     }
 
-    /// Type of `$var` at `usage`. The source closest before the usage wins:
-    /// an assignment (or its `@var`), a `foreach` binding, a `catch` variable,
-    /// or a standalone `/** @var Type $var */`. Parameters (native type, then
-    /// `@param`) are the fallback.
-    fn variable_type(&self, usage: Node<'a>, var: &str, ctx: &NameContext, depth: u8) -> Ty {
-        let scope = enclosing_function(usage).unwrap_or(self.tree.root_node());
-        let mut best: Option<(usize, Node<'a>)> = None;
-        let mut consider = |pos: usize, n: Node<'a>| {
-            if best.is_none_or(|(b, _)| pos > b) {
-                best = Some((pos, n));
-            }
+    /// Every binding site in `scope` (not inside nested functions), computed
+    /// once per scope: variable type lookups only filter it by name and
+    /// position.
+    fn scope_bindings(&self, scope: Node<'a>) -> std::rc::Rc<Vec<Binding>> {
+        if let Some(found) = self.bindings.borrow().get(&scope.id()) {
+            return found.clone();
+        }
+        let mut out = Vec::new();
+        let var_of = |n: Option<Node>| {
+            n.filter(|l| l.kind() == "variable_name")
+                .map(|l| self.text(l).to_string())
         };
-        let is_var =
-            |n: Option<Node>| n.is_some_and(|l| l.kind() == "variable_name" && self.text(l) == var);
         let mut stack = vec![scope];
         while let Some(n) = stack.pop() {
-            if n.start_byte() >= usage.start_byte() {
-                continue;
-            }
+            let mut bind = |var: String| {
+                out.push(Binding {
+                    start: n.start_byte(),
+                    end: n.end_byte(),
+                    var,
+                });
+            };
             match n.kind() {
-                "assignment_expression"
-                    if n.end_byte() <= usage.start_byte()
-                        && is_var(n.child_by_field_name("left")) =>
-                {
-                    consider(n.start_byte(), n)
-                }
-                "foreach_statement" if is_var(foreach_value(n)) => consider(n.start_byte(), n),
-                "catch_clause" if is_var(n.child_by_field_name("name")) => {
-                    consider(n.start_byte(), n)
-                }
-                "comment" if n.end_byte() <= usage.start_byte() => {
+                "assignment_expression" => var_of(n.child_by_field_name("left"))
+                    .map(&mut bind)
+                    .unwrap_or(()),
+                "foreach_statement" => var_of(foreach_value(n)).map(&mut bind).unwrap_or(()),
+                "catch_clause" => var_of(n.child_by_field_name("name"))
+                    .map(&mut bind)
+                    .unwrap_or(()),
+                "comment" => {
                     let raw = self.text(n);
-                    if is_doc_comment(raw)
-                        && parse_docblock(raw)
-                            .tags
-                            .iter()
-                            .any(|t| matches!(&t.tag, Tag::Var { var: Some(v), .. } if format!("${v}") == var))
-                    {
-                        consider(n.start_byte(), n);
+                    if is_doc_comment(raw) {
+                        for tag in parse_docblock(raw).tags {
+                            if let Tag::Var { var: Some(v), .. } = &tag.tag {
+                                bind(format!("${v}"));
+                            }
+                        }
                     }
                 }
                 _ => {}
@@ -597,6 +659,48 @@ impl<'a> Analyzer<'a> {
                 }
             }
         }
+        let out = std::rc::Rc::new(out);
+        self.bindings.borrow_mut().insert(scope.id(), out.clone());
+        out
+    }
+
+    /// The node of `kind` spanning exactly `start..end`.
+    fn node_spanning(&self, start: usize, end: usize, kinds: &[&str]) -> Option<Node<'a>> {
+        let mut n = self
+            .tree
+            .root_node()
+            .descendant_for_byte_range(start, end)?;
+        loop {
+            if n.start_byte() == start && n.end_byte() == end && kinds.contains(&n.kind()) {
+                return Some(n);
+            }
+            n = n.parent()?;
+        }
+    }
+
+    /// Type of `$var` at `usage`. The source closest before the usage wins:
+    /// an assignment (or its `@var`), a `foreach` binding, a `catch` variable,
+    /// or a standalone `/** @var Type $var */`. Parameters (native type, then
+    /// `@param`) are the fallback.
+    fn variable_type(&self, usage: Node<'a>, var: &str, ctx: &NameContext, depth: u8) -> Ty {
+        let scope = enclosing_function(usage).unwrap_or(self.tree.root_node());
+        let bindings = self.scope_bindings(scope);
+        let before = usage.start_byte();
+        let kinds = [
+            "assignment_expression",
+            "foreach_statement",
+            "catch_clause",
+            "comment",
+        ];
+        let best = bindings
+            .iter()
+            .filter(|b| b.var == var && b.start < before)
+            .filter_map(|b| Some((b.start, self.node_spanning(b.start, b.end, &kinds)?)))
+            .filter(|(_, n)| match n.kind() {
+                "assignment_expression" | "comment" => n.end_byte() <= before,
+                _ => true,
+            })
+            .max_by_key(|(pos, _)| *pos);
         let owner = self.enclosing_class(usage, ctx);
         if let Some((_, n)) = best {
             return match n.kind() {

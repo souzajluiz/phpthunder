@@ -123,6 +123,31 @@ pub struct Symbol {
     /// For methods and functions: `(parameter index, template)` for each
     /// `@param class-string<T>`, so `make(User::class)` binds `T` to `User`.
     pub class_string_params: Vec<(usize, String)>,
+    /// Declared `abstract`; interface methods count as abstract.
+    pub is_abstract: bool,
+    /// Declared `final`.
+    pub is_final: bool,
+    /// Declared `readonly` (a property, or every property of a class).
+    pub is_readonly: bool,
+    /// For functions and methods: the declared parameters, in order.
+    pub params: Vec<Param>,
+    /// For functions and methods: the body reads arguments beyond the
+    /// declared ones (`func_get_args()`), so extra arguments are expected.
+    pub reads_extra_args: bool,
+}
+
+/// One declared parameter of a function or method; argument-count and
+/// signature-compatibility inspections read it.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct Param {
+    /// Name without `$`.
+    pub name: String,
+    /// Has a default value, so callers may omit it.
+    pub optional: bool,
+    /// `...$rest`: takes any number of arguments.
+    pub variadic: bool,
+    /// `&$out`: passed by reference.
+    pub by_ref: bool,
 }
 
 /// Return/property type sentinel meaning "late static binding": `static` or `$this`.

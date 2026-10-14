@@ -141,6 +141,47 @@ pub enum Rule {
     AssertInstanceOf,
     /// `assertEquals($actual, 'expected')`: expected value comes first.
     AssertArgumentsOrder,
+
+    // Index-aware checks.
+    /// A concrete class missing abstract or interface methods.
+    MissingImplementation,
+    /// A class extending a `final` class.
+    ExtendsFinalClass,
+    /// A method overriding a `final` one.
+    OverridesFinalMethod,
+    /// `extends`/`implements` naming the wrong kind (a class implemented,
+    /// an interface extended by a class, …).
+    WrongSupertypeKind,
+    /// `new` on an abstract class, interface, trait or enum.
+    InstantiateAbstract,
+    /// An override with weaker visibility than the method it overrides.
+    WeakerAccess,
+    /// An override that adds or drops `static`.
+    StaticMismatch,
+    /// An override whose parameters cannot accept every call the parent can.
+    SignatureMismatch,
+    /// A call passing fewer arguments than the callee requires.
+    TooFewArguments,
+    /// A call passing more arguments than the callee declares.
+    TooManyArguments,
+    /// A private or protected member used where it is not accessible.
+    InaccessibleMember,
+    /// `Foo::bar()` on an instance method, outside `Foo`'s hierarchy.
+    StaticCallToInstanceMethod,
+    /// `Foo::BAR` naming no constant or case.
+    UndefinedClassConstant,
+    /// The result of a `void` function used as a value.
+    VoidResultUsed,
+    /// A `catch` that an earlier `catch` of a parent class already handles.
+    CatchOrder,
+    /// A `match` over enum cases with no `default` that misses cases.
+    EnumMatchNotExhaustive,
+    /// A constructor not calling its parent's constructor.
+    MissingParentConstructorCall,
+    /// A readonly property written outside its class.
+    ReadonlyModified,
+    /// A PHPUnit data provider naming no method.
+    UndefinedDataProvider,
 }
 
 impl Rule {
@@ -209,6 +250,25 @@ impl Rule {
             Rule::AssertContains => "assert-contains",
             Rule::AssertInstanceOf => "assert-instance-of",
             Rule::AssertArgumentsOrder => "assert-arguments-order",
+            Rule::MissingImplementation => "missing-implementation",
+            Rule::ExtendsFinalClass => "extends-final-class",
+            Rule::OverridesFinalMethod => "overrides-final-method",
+            Rule::WrongSupertypeKind => "wrong-supertype-kind",
+            Rule::InstantiateAbstract => "instantiate-abstract",
+            Rule::WeakerAccess => "weaker-access",
+            Rule::StaticMismatch => "static-mismatch",
+            Rule::SignatureMismatch => "signature-mismatch",
+            Rule::TooFewArguments => "too-few-arguments",
+            Rule::TooManyArguments => "too-many-arguments",
+            Rule::InaccessibleMember => "inaccessible-member",
+            Rule::StaticCallToInstanceMethod => "static-call-to-instance-method",
+            Rule::UndefinedClassConstant => "undefined-class-constant",
+            Rule::VoidResultUsed => "void-result-used",
+            Rule::CatchOrder => "catch-order",
+            Rule::EnumMatchNotExhaustive => "enum-match-not-exhaustive",
+            Rule::MissingParentConstructorCall => "missing-parent-constructor-call",
+            Rule::ReadonlyModified => "readonly-modified",
+            Rule::UndefinedDataProvider => "undefined-data-provider",
         }
     }
 
@@ -217,6 +277,20 @@ impl Rule {
     pub fn severity(self) -> Severity {
         match self {
             Rule::NestedTernary
+            | Rule::MissingImplementation
+            | Rule::ExtendsFinalClass
+            | Rule::OverridesFinalMethod
+            | Rule::WrongSupertypeKind
+            | Rule::InstantiateAbstract
+            | Rule::WeakerAccess
+            | Rule::StaticMismatch
+            | Rule::SignatureMismatch
+            | Rule::TooFewArguments
+            | Rule::InaccessibleMember
+            | Rule::StaticCallToInstanceMethod
+            | Rule::UndefinedClassConstant
+            | Rule::ReadonlyModified
+            | Rule::UndefinedDataProvider
             | Rule::RemovedCast
             | Rule::MagicMethodStatic
             | Rule::MagicMethodNotPublic => Severity::Error,
@@ -235,7 +309,11 @@ impl Rule {
             | Rule::SearchResultAsBoolean
             | Rule::FormatArgumentsMismatch
             | Rule::ValueImmediatelyRewritten
-            | Rule::PhpDocUnknownParameter => Severity::Warning,
+            | Rule::PhpDocUnknownParameter
+            | Rule::TooManyArguments
+            | Rule::VoidResultUsed
+            | Rule::CatchOrder
+            | Rule::EnumMatchNotExhaustive => Severity::Warning,
             _ => Severity::Weak,
         }
     }
@@ -346,6 +424,29 @@ impl Rule {
             Rule::AssertContains => format!("Can be {detail}()"),
             Rule::AssertInstanceOf => format!("Can be {detail}()"),
             Rule::AssertArgumentsOrder => "Expected value should come first".into(),
+            Rule::MissingImplementation => format!("Class must implement {detail}"),
+            Rule::ExtendsFinalClass => format!("Cannot extend final class {detail}"),
+            Rule::OverridesFinalMethod => format!("Cannot override final method {detail}"),
+            Rule::WrongSupertypeKind => format!("{detail} cannot be used here"),
+            Rule::InstantiateAbstract => format!("Cannot instantiate {detail}"),
+            Rule::WeakerAccess => {
+                format!("Visibility must be {detail} or weaker, as in the parent")
+            }
+            Rule::StaticMismatch => format!("Override of {detail} changes static"),
+            Rule::SignatureMismatch => format!("Declaration must be compatible with {detail}"),
+            Rule::TooFewArguments => format!("Expects at least {detail} arguments"),
+            Rule::TooManyArguments => format!("Expects at most {detail} arguments"),
+            Rule::InaccessibleMember => format!("Member {detail} is not accessible here"),
+            Rule::StaticCallToInstanceMethod => {
+                format!("Non-static method {detail} called statically")
+            }
+            Rule::UndefinedClassConstant => format!("Undefined class constant {detail}"),
+            Rule::VoidResultUsed => format!("{detail} returns void; its result is always null"),
+            Rule::CatchOrder => format!("Already caught by the earlier catch of {detail}"),
+            Rule::EnumMatchNotExhaustive => format!("match misses enum cases: {detail}"),
+            Rule::MissingParentConstructorCall => "Missing parent constructor call".into(),
+            Rule::ReadonlyModified => format!("Readonly property {detail} cannot be modified here"),
+            Rule::UndefinedDataProvider => format!("Data provider {detail} not found"),
         }
     }
 
@@ -395,6 +496,8 @@ impl Rule {
             | Rule::AssertContains
             | Rule::AssertInstanceOf => "Replace assertion",
             Rule::AssertArgumentsOrder => "Swap arguments",
+            Rule::MissingImplementation => "Implement methods",
+            Rule::WeakerAccess => "Use the parent's visibility",
             _ => return None,
         })
     }

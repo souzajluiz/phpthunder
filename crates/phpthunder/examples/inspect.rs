@@ -71,6 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .filter(|p| !p.components().any(|c| c.as_os_str() == "vendor"));
     let mut inspected = 0;
+    let mut timings: Vec<(std::time::Duration, String)> = Vec::new();
     for path in own {
         let Ok(src) = std::fs::read_to_string(path) else {
             continue;
@@ -81,7 +82,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap_or(path)
             .display()
             .to_string();
-        for d in diagnostics(&index, &src) {
+        let file_started = Instant::now();
+        let found = diagnostics(&index, &src);
+        timings.push((file_started.elapsed(), rel.clone()));
+        for d in found {
             by_kind.entry(kind(&d.code)).or_default().push(format!(
                 "{rel}:{} {}",
                 d.span.start.line + 1,
@@ -93,6 +97,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "inspected {inspected} project files in {:.2?}",
         started.elapsed()
     );
+    timings.sort_by_key(|t| std::cmp::Reverse(t.0));
+    println!("slowest files:");
+    for (took, rel) in timings.iter().take(5) {
+        println!("  {took:.2?} {rel}");
+    }
     for (kind, items) in &by_kind {
         println!("\n{kind}: {}", items.len());
         for item in items.iter().take(if show_all { usize::MAX } else { 15 }) {

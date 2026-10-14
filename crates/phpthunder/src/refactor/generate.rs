@@ -357,6 +357,11 @@ mod tests {
             templates: Vec::new(),
             super_args: Vec::new(),
             class_string_params: Vec::new(),
+            is_abstract: false,
+            is_final: false,
+            is_readonly: false,
+            params: Vec::new(),
+            reads_extra_args: false,
         };
         assert!(override_stub(&m).contains("return parent::save($options);"));
         m.signature = "protected function boot(): void".into();

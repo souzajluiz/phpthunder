@@ -91,13 +91,10 @@ pub fn quick_fixes(
         }],
         Code::Rule(rule, detail) => rule
             .fix_title()
-            .zip(rule_fix(
-                *rule,
-                src,
-                diagnostic.start,
-                diagnostic.end,
-                detail,
-            ))
+            .zip(
+                semantic_fix(index, *rule, src, diagnostic.start, detail)
+                    .or_else(|| rule_fix(*rule, src, diagnostic.start, diagnostic.end, detail)),
+            )
             .map(|(title, edits)| Fix {
                 title: title.into(),
                 edits,

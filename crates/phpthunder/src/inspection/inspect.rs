@@ -240,6 +240,7 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
     simplify_checks(root, src, &mut findings);
     psr_checks(root, src, &mut findings);
     phpunit_checks(root, src, &mut findings);
+    semantic_checks(index, &analyzer, root, src, &mut findings);
     findings.report(src, &lines, &mut out);
     out.sort_by_key(|d| (d.start, d.severity));
     out
