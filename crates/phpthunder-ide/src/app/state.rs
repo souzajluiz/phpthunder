@@ -1184,6 +1184,10 @@ impl App {
                 Task::none()
             }
             Message::HttpResponse(name, result) => self.http_response(&name, result),
+            Message::Deployed(name, result) => {
+                self.deployed(&name, result);
+                Task::none()
+            }
             Message::Profiled(result) => match result {
                 Ok(path) => self.open(path, None),
                 Err(error) => {
@@ -1531,9 +1535,11 @@ impl App {
         self.blame.remove(&path);
         let rescan = self.rescan_laravel_after_save(&path);
         let watchers = self.run_watchers(&path);
+        let deploy = self.deploy_after_save(&path);
         Task::batch([
             rescan,
             watchers,
+            deploy,
             self.refresh_git(),
             self.quality_after_save(path),
         ])

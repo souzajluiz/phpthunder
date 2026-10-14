@@ -293,6 +293,8 @@ pub enum Message {
     DebuggerValidated(Result<String, String>),
     /// A profiled run finished: the report's path, or the error.
     Profiled(Result<PathBuf, String>),
+    /// An upload to the named deployment server finished.
+    Deployed(String, Result<(), String>),
     /// The response of a `.http` request (by name), or curl's error.
     HttpResponse(String, Result<String, String>),
     /// Where to write the settings export, if chosen.

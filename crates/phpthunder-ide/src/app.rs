@@ -5,6 +5,7 @@ mod command;
 mod compare;
 mod completion;
 mod debug;
+mod deploy;
 mod dock;
 mod files;
 mod frameworks;

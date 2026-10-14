@@ -104,6 +104,8 @@ impl App {
             Cmd::SyncSettings => self.sync_settings(),
             Cmd::RunHttpRequest => self.run_http_request(),
             Cmd::HttpEnvironment => self.choose_http_environment(),
+            Cmd::DeployProject => self.choose_deploy_server(true),
+            Cmd::DeployFile => self.choose_deploy_server(false),
             Cmd::NewFromTemplate => {
                 let dir = self
                     .doc()
@@ -474,6 +476,7 @@ impl App {
                 self.activate_task(target)
             }
             Target::HttpEnvironment(name) => self.set_http_environment(name),
+            Target::Deploy(name, whole) => self.deploy(name, whole),
             Target::Paste(text) => self.edit_with(
                 |d| {
                     d.checkpoint();

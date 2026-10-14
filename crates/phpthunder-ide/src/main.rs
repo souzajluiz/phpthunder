@@ -7,6 +7,7 @@ mod claude_usage;
 mod composer;
 mod copyright;
 mod debug;
+mod deploy;
 mod editor;
 mod emmet;
 mod file_templates;

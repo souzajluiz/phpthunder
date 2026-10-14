@@ -120,6 +120,9 @@ pub enum Target {
     ActivateIssue(u64, String, String),
     /// Use this environment for `.http` requests.
     HttpEnvironment(String),
+    /// Upload to this deployment server: the project (`true`) or the
+    /// active file.
+    Deploy(String, bool),
 }
 
 /// One ranked palette result.

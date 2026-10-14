@@ -106,6 +106,8 @@ pub struct ProjectConfig {
     pub copyright: Option<String>,
     /// Commands run when a matching file is saved.
     pub watcher: Vec<crate::watchers::Watcher>,
+    /// Servers the project deploys to.
+    pub deploy: Vec<crate::deploy::Server>,
 }
 
 /// The project's settings; defaults when the file is missing or invalid
@@ -150,6 +152,17 @@ pub const PROJECT_TEMPLATE: &str = r#"# PhpThunder project settings. Commit this
 # name = "Sass"
 # files = "*.scss"
 # command = "npx sass $file $dir/$stem.css"
+
+# Deployment servers: protocol "rsync" (host = "user@host", path), "sftp",
+# "ftp" or "webdav" (host = base URL). credentials_env names a variable
+# holding "user:password". upload_on_save sends each saved file.
+# [[deploy]]
+# name = "Staging"
+# protocol = "rsync"
+# host = "deploy@staging.example.com"
+# path = "/var/www/app"
+# exclude = [".git", "node_modules", ".env"]
+# upload_on_save = false
 "#;
 
 /// Splits a command line into words, honouring single and double quotes.
