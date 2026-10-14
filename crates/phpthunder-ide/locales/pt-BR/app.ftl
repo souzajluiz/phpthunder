@@ -258,6 +258,10 @@ cmd-update-copyright = Atualizar cabeçalho de copyright
 cmd-update-copyright-everywhere = Atualizar cabeçalhos de copyright no projeto
 cmd-open-log = Abrir arquivo de log…
 cmd-copy-structure-path = Copiar JSONPath / XPath
+cmd-evaluate-query = Avaliar JSONPath / XPath…
+action-query = JSONPath / XPath
+palette-placeholder-query = $.paths..get   ou   //item[@id='a']
+query-invalid = Não é um JSONPath ou XPath que este avaliador entende
 cmd-file-structure = Estrutura do arquivo
 cmd-problems = Problemas
 cmd-toggle-terminal = Terminal

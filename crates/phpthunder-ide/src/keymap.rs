@@ -92,6 +92,8 @@ pub enum Cmd {
     OpenLog,
     /// Copy the JSONPath or XPath of the caret.
     CopyStructurePath,
+    /// Evaluate a JSONPath or XPath on the active file and list matches.
+    EvaluateQuery,
     /// Popup with the symbols of the current file (`⌘F12`).
     FileStructure,
     /// Show the Problems panel (`⌘6`).
@@ -375,7 +377,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 179] = {
+    pub const ALL: [Cmd; 180] = {
         use Cmd::*;
         [
             Save,
@@ -418,6 +420,7 @@ impl Cmd {
             UpdateCopyrightEverywhere,
             OpenLog,
             CopyStructurePath,
+            EvaluateQuery,
             FileStructure,
             Problems,
             ToggleTerminal,
@@ -889,7 +892,8 @@ pub fn hint(cmd: Cmd) -> &'static str {
         | UpdateCopyright
         | UpdateCopyrightEverywhere
         | OpenLog
-        | CopyStructurePath => "",
+        | CopyStructurePath
+        | EvaluateQuery => "",
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",

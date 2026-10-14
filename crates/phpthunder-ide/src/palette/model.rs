@@ -36,6 +36,9 @@ pub enum Mode {
     /// A fixed list of targets to choose from (e.g. implementations);
     /// the list and its title live in [`Palette::fixed`].
     Choose,
+    /// A JSONPath (JSON, YAML) or XPath (XML, HTML) evaluated on the
+    /// active document; the matches are listed.
+    Query,
 }
 
 impl Mode {
@@ -50,6 +53,7 @@ impl Mode {
             Mode::Everywhere => tr!("action-search-everywhere"),
             Mode::Structure => tr!("action-file-structure"),
             Mode::Choose => tr!("action-choose"),
+            Mode::Query => tr!("action-query"),
         }
     }
 
@@ -58,6 +62,7 @@ impl Mode {
         match self {
             Mode::Line => tr!("palette-placeholder-line"),
             Mode::Recent => tr!("palette-placeholder-recent"),
+            Mode::Query => tr!("palette-placeholder-query"),
             _ => tr!("palette-placeholder"),
         }
     }

@@ -176,6 +176,30 @@ impl App {
                 }
             }
             Mode::Choose => {}
+            Mode::Query => {
+                if let Some(doc) = self.doc() {
+                    let found = crate::structured::query(&doc.text, doc.file_type, query);
+                    let lines = phpthunder::syntax::LineIndex::new(&doc.text);
+                    for (rank, at) in found.into_iter().enumerate() {
+                        let pos = lines.pos(&doc.text, at);
+                        let line = pos.line as usize;
+                        scored.push((
+                            -(rank as i32),
+                            Item {
+                                badge: "◇",
+                                title: doc.line_text(line).trim().chars().take(80).collect(),
+                                matched: Vec::new(),
+                                detail: tr!(
+                                    "palette-line-item",
+                                    line = line + 1,
+                                    column = pos.col + 1
+                                ),
+                                target: Target::Line(line, pos.col as usize),
+                            },
+                        ));
+                    }
+                }
+            }
             Mode::Line => {
                 let mut parts = query.split(':');
                 let line = parts.next().and_then(|l| l.trim().parse::<usize>().ok());

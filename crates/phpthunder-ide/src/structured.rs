@@ -400,6 +400,379 @@ pub fn xpath_at(src: &str, offset: usize) -> String {
         .collect()
 }
 
+// ----- queries ------------------------------------------------------------------
+
+/// Offsets that the JSONPath or XPath `expr` selects in `src`, read as
+/// `file_type`; empty for other types and malformed queries (the palette
+/// then lists nothing).
+pub fn query(src: &str, file_type: crate::filetype::FileType, expr: &str) -> Vec<usize> {
+    use crate::filetype::FileType;
+    if expr.trim().is_empty() {
+        return Vec::new();
+    }
+    match file_type {
+        FileType::Json => eval_json_path(expr, &json_nodes(src)),
+        FileType::Yaml => eval_json_path(expr, &yaml_nodes(src)),
+        FileType::Xml | FileType::Html => eval_xpath(expr, &xml_elements(src)),
+        _ => Ok(Vec::new()),
+    }
+    .unwrap_or_default()
+}
+
+/// Every key and list item of JSON `src`, with its path and offset.
+pub fn json_nodes(src: &str) -> Vec<(Vec<Segment>, usize)> {
+    let mut nodes = Vec::new();
+    walk_json(src, usize::MAX, |path, start| {
+        nodes.push((path.to_vec(), start))
+    });
+    // List items without a key: the first value after `[` or `,`.
+    let b = src.as_bytes();
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'"' => {
+                i = json_string(src, i).0;
+                continue;
+            }
+            b'[' | b',' => {
+                let rest = &src[i + 1..];
+                let at = i + 1 + (rest.len() - rest.trim_start().len());
+                let path = json_path_at(src, at);
+                let is_item = matches!(path.last(), Some(Segment::Index(_)))
+                    && !matches!(b.get(at), Some(b']' | b'}') | None);
+                if is_item && !nodes.iter().any(|(p, _)| *p == path) {
+                    nodes.push((path, at));
+                }
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    nodes.sort_by_key(|(_, at)| *at);
+    nodes
+}
+
+/// Every key and list item of YAML `src`, with its path and offset.
+pub fn yaml_nodes(src: &str) -> Vec<(Vec<Segment>, usize)> {
+    let mut nodes: Vec<(Vec<Segment>, usize)> = Vec::new();
+    walk_yaml(src, |path, start, _| {
+        if !path.is_empty() && !nodes.iter().any(|(p, _)| p == path) {
+            nodes.push((path.to_vec(), start));
+        }
+    });
+    nodes
+}
+
+/// One step of a JSONPath: `.key`, `[n]` or `*`, optionally `..` (any
+/// depth).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Step {
+    /// Preceded by `..`.
+    descend: bool,
+    /// The key, `None` for `*`.
+    key: Option<String>,
+    /// A list position.
+    index: Option<usize>,
+}
+
+/// Parses a JSONPath (`$.a..b[0]['c d'].*`); `None` when it is malformed.
+fn parse_json_path(expr: &str) -> Option<Vec<Step>> {
+    let mut rest = expr.trim().strip_prefix('$').unwrap_or(expr.trim());
+    let mut steps = Vec::new();
+    while !rest.is_empty() {
+        let descend = rest.starts_with("..");
+        if descend {
+            rest = &rest[2..];
+        } else if let Some(r) = rest.strip_prefix('.') {
+            rest = r;
+        }
+        if let Some(r) = rest.strip_prefix('[') {
+            let close = r.find(']')?;
+            let inner = r[..close].trim();
+            rest = &r[close + 1..];
+            let step = if inner == "*" {
+                Step {
+                    descend,
+                    key: None,
+                    index: None,
+                }
+            } else if let Ok(n) = inner.parse() {
+                Step {
+                    descend,
+                    key: None,
+                    index: Some(n),
+                }
+            } else {
+                let key = inner.trim_matches(['\'', '"']).to_string();
+                Step {
+                    descend,
+                    key: Some(key),
+                    index: None,
+                }
+            };
+            steps.push(step);
+            continue;
+        }
+        let end = rest.find(['.', '[']).unwrap_or(rest.len());
+        let name = &rest[..end];
+        if name.is_empty() {
+            return None;
+        }
+        rest = &rest[end..];
+        steps.push(Step {
+            descend,
+            key: (name != "*").then(|| name.to_string()),
+            index: None,
+        });
+    }
+    Some(steps)
+}
+
+/// Whether `segment` is what `step` asks for.
+fn step_matches(step: &Step, segment: &Segment) -> bool {
+    match (segment, &step.key, step.index) {
+        (Segment::Index(i), None, Some(n)) => *i == n,
+        (_, None, None) => true,
+        (Segment::Key(k), Some(want), None) => k == want,
+        _ => false,
+    }
+}
+
+/// Whether the path `segments` matches `steps` exactly.
+fn path_matches(steps: &[Step], segments: &[Segment]) -> bool {
+    let Some((step, rest)) = steps.split_first() else {
+        return segments.is_empty();
+    };
+    if step.descend {
+        (0..segments.len())
+            .any(|i| step_matches(step, &segments[i]) && path_matches(rest, &segments[i + 1..]))
+    } else {
+        segments
+            .split_first()
+            .is_some_and(|(first, tail)| step_matches(step, first) && path_matches(rest, tail))
+    }
+}
+
+/// Offsets of the `nodes` the JSONPath `expr` selects.
+///
+/// # Errors
+/// Returns a message when `expr` is not a JSONPath this evaluator reads.
+pub fn eval_json_path(expr: &str, nodes: &[(Vec<Segment>, usize)]) -> Result<Vec<usize>, String> {
+    let steps = parse_json_path(expr).ok_or_else(|| tr!("query-invalid"))?;
+    Ok(nodes
+        .iter()
+        .filter(|(path, _)| path_matches(&steps, path))
+        .map(|(_, at)| *at)
+        .collect())
+}
+
+/// One element of an XML document.
+#[derive(Debug, Clone)]
+pub struct Element {
+    /// Tag name.
+    name: String,
+    /// Position among same-named siblings, from 1.
+    index: usize,
+    /// Attributes, as written.
+    attributes: Vec<(String, String)>,
+    /// The enclosing element.
+    parent: Option<usize>,
+    /// Offset of `<`.
+    pub offset: usize,
+}
+
+/// Attributes of an opening tag's text (`a="1" b='2'`).
+fn attributes(tag: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let mut rest = tag;
+    while let Some(eq) = rest.find('=') {
+        let name = rest[..eq]
+            .trim_end()
+            .rsplit(char::is_whitespace)
+            .next()
+            .unwrap_or_default()
+            .to_string();
+        let after = rest[eq + 1..].trim_start();
+        let Some(quote) = after.chars().next().filter(|c| *c == '"' || *c == '\'') else {
+            break;
+        };
+        let Some(end) = after[1..].find(quote) else {
+            break;
+        };
+        out.push((name, after[1..1 + end].to_string()));
+        rest = &after[end + 2..];
+    }
+    out
+}
+
+/// Every element of XML `src`, in document order.
+pub fn xml_elements(src: &str) -> Vec<Element> {
+    let mut out: Vec<Element> = Vec::new();
+    let mut open: Vec<usize> = Vec::new();
+    let mut counts: Vec<std::collections::HashMap<String, usize>> = vec![Default::default()];
+    let mut i = 0;
+    while let Some(lt) = src[i..].find('<') {
+        let at = i + lt;
+        let rest = &src[at..];
+        let skip = if rest.starts_with("<!--") {
+            rest.find("-->").map_or(rest.len(), |e| e + 3)
+        } else if rest.starts_with("<![CDATA[") {
+            rest.find("]]>").map_or(rest.len(), |e| e + 3)
+        } else {
+            rest.find('>').map_or(rest.len(), |e| e + 1)
+        };
+        let tag = &rest[..skip];
+        if let Some(name) = tag.strip_prefix("</") {
+            let name = name.trim_end_matches('>').trim();
+            if let Some(pos) = open.iter().rposition(|&e| out[e].name == name) {
+                open.truncate(pos);
+                counts.truncate(pos + 1);
+            }
+        } else if !tag.starts_with("<?") && !tag.starts_with("<!") {
+            let name: String = tag[1..]
+                .chars()
+                .take_while(|c| !c.is_whitespace() && *c != '>' && *c != '/')
+                .collect();
+            let index = counts.last_mut().map_or(1, |c| {
+                let n = c.entry(name.clone()).or_insert(0);
+                *n += 1;
+                *n
+            });
+            out.push(Element {
+                attributes: attributes(&tag[1 + name.len()..]),
+                name,
+                index,
+                parent: open.last().copied(),
+                offset: at,
+            });
+            if !tag.ends_with("/>") {
+                open.push(out.len() - 1);
+                counts.push(Default::default());
+            }
+        }
+        i = at + skip.max(1);
+    }
+    out
+}
+
+/// One step of an XPath: a name (or `*`), with an optional position or
+/// `[@attribute='value']` test, optionally after `//`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct XStep {
+    /// Preceded by `//`.
+    descend: bool,
+    /// The tag name, `None` for `*`.
+    name: Option<String>,
+    /// `[n]`.
+    index: Option<usize>,
+    /// `[@a]` or `[@a='v']`.
+    attribute: Option<(String, Option<String>)>,
+}
+
+/// Parses an XPath (`/a//b[2]/*[@id='x']`); `None` when it is malformed.
+fn parse_xpath(expr: &str) -> Option<Vec<XStep>> {
+    let expr = expr.trim();
+    let mut steps = Vec::new();
+    let mut rest = expr;
+    let relative = !rest.starts_with('/');
+    let mut first = true;
+    while !rest.is_empty() {
+        let descend = if rest.starts_with("//") {
+            rest = &rest[2..];
+            true
+        } else if let Some(r) = rest.strip_prefix('/') {
+            rest = r;
+            false
+        } else {
+            // A relative path matches at any depth.
+            first && relative
+        };
+        first = false;
+        let end = rest.find('/').unwrap_or(rest.len());
+        let step = &rest[..end];
+        rest = &rest[end..];
+        let (name, predicate) = match step.split_once('[') {
+            Some((n, p)) => (n, Some(p.strip_suffix(']')?)),
+            None => (step, None),
+        };
+        if name.is_empty() {
+            return None;
+        }
+        let mut x = XStep {
+            descend,
+            name: (name != "*").then(|| name.to_string()),
+            index: None,
+            attribute: None,
+        };
+        match predicate.map(str::trim) {
+            Some(p) if p.starts_with('@') => {
+                let (a, v) = match p[1..].split_once('=') {
+                    Some((a, v)) => (
+                        a.trim(),
+                        Some(v.trim().trim_matches(['\'', '"']).to_string()),
+                    ),
+                    None => (p[1..].trim(), None),
+                };
+                x.attribute = Some((a.to_string(), v));
+            }
+            Some(p) => x.index = Some(p.parse().ok()?),
+            None => {}
+        }
+        steps.push(x);
+    }
+    (!steps.is_empty()).then_some(steps)
+}
+
+/// Whether `element` is what `step` asks for.
+fn xstep_matches(step: &XStep, element: &Element) -> bool {
+    step.name.as_ref().is_none_or(|n| *n == element.name)
+        && step.index.is_none_or(|i| i == element.index)
+        && step.attribute.as_ref().is_none_or(|(a, v)| {
+            element
+                .attributes
+                .iter()
+                .any(|(k, val)| k == a && v.as_ref().is_none_or(|v| v == val))
+        })
+}
+
+/// Whether the chain of elements (root first) matches `steps` exactly.
+fn chain_matches(steps: &[XStep], chain: &[&Element]) -> bool {
+    let Some((step, rest)) = steps.split_first() else {
+        return chain.is_empty();
+    };
+    if step.descend {
+        (0..chain.len())
+            .any(|i| xstep_matches(step, chain[i]) && chain_matches(rest, &chain[i + 1..]))
+    } else {
+        chain
+            .split_first()
+            .is_some_and(|(first, tail)| xstep_matches(step, first) && chain_matches(rest, tail))
+    }
+}
+
+/// Offsets of the `elements` the XPath `expr` selects.
+///
+/// # Errors
+/// Returns a message when `expr` is not an XPath this evaluator reads.
+pub fn eval_xpath(expr: &str, elements: &[Element]) -> Result<Vec<usize>, String> {
+    let steps = parse_xpath(expr).ok_or_else(|| tr!("query-invalid"))?;
+    Ok(elements
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| {
+            let mut chain = Vec::new();
+            let mut at = Some(*i);
+            while let Some(e) = at {
+                chain.push(&elements[e]);
+                at = elements[e].parent;
+            }
+            chain.reverse();
+            chain_matches(&steps, &chain)
+        })
+        .map(|(_, e)| e.offset)
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -468,5 +841,42 @@ mod tests {
         let src = "<?xml version=\"1.0\"?>\n<root><item/><item><name>x</name></item></root>";
         let at = src.find(">x<").unwrap() + 1;
         assert_eq!(xpath_at(src, at), "/root/item[2]/name");
+    }
+
+    #[test]
+    fn json_path_queries_should_select_nodes() {
+        let nodes = json_nodes(JSON);
+        let found = eval_json_path("$..tags[*]", &nodes).unwrap();
+        assert_eq!(found.len(), 2);
+        let title = eval_json_path("$.info.title", &nodes).unwrap();
+        assert!(JSON[title[0]..].starts_with("\"title\""));
+    }
+
+    #[test]
+    fn yaml_queries_should_use_the_same_paths() {
+        let found = eval_json_path("$.components.schemas.*", &yaml_nodes(YAML)).unwrap();
+        assert!(YAML[found[0]..].starts_with("User:"));
+    }
+
+    #[test]
+    fn xpath_queries_should_follow_names_positions_and_attributes() {
+        let src = "<root><item id=\"a\"/><item id=\"b\"><name>x</name></item></root>";
+        let elements = xml_elements(src);
+        let count = |q: &str| eval_xpath(q, &elements).unwrap().len();
+        assert_eq!(
+            [
+                count("/root/item"),
+                count("//name"),
+                count("/root/item[2]"),
+                count("//item[@id='a']"),
+                count("item")
+            ],
+            [2, 1, 1, 1, 2]
+        );
+    }
+
+    #[test]
+    fn malformed_queries_should_be_errors() {
+        assert!(eval_xpath("/a[x", &[]).is_err());
     }
 }

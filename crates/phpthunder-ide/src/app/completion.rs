@@ -77,6 +77,20 @@ fn is_markup(file_type: crate::filetype::FileType) -> bool {
     matches!(file_type, FileType::Blade | FileType::Html | FileType::Vue)
 }
 
+/// Whether the project uses Tailwind CSS: a config file or the package in
+/// `node_modules` (v4 needs no config).
+fn uses_tailwind(root: &std::path::Path) -> bool {
+    [
+        "tailwind.config.js",
+        "tailwind.config.ts",
+        "tailwind.config.cjs",
+        "tailwind.config.mjs",
+        "node_modules/tailwindcss/package.json",
+    ]
+    .iter()
+    .any(|f| root.join(f).is_file())
+}
+
 /// Script files completed as JavaScript.
 fn is_script(file_type: crate::filetype::FileType) -> bool {
     use crate::filetype::FileType;
@@ -92,6 +106,11 @@ impl App {
     pub(crate) fn should_auto_complete(&self, c: char) -> bool {
         let Some(doc) = self.doc() else { return false };
         let offset = doc.offset(doc.cursor());
+        if self.tailwind_context(&doc.text, offset, doc.file_type)
+            && (is_ident(c) || matches!(c, '-' | ':'))
+        {
+            return true;
+        }
         if is_markup(doc.file_type) {
             // Alpine contexts open on any name character, `@`, `:`, `.`
             // and `$`; Blade ones as Blade completion decides.
@@ -134,6 +153,27 @@ impl App {
         }
     }
 
+    /// Whether `offset` sits in a `class` attribute of a template or JSX
+    /// file of a Tailwind project.
+    fn tailwind_context(
+        &self,
+        text: &str,
+        offset: usize,
+        file_type: crate::filetype::FileType,
+    ) -> bool {
+        use crate::filetype::FileType;
+        matches!(
+            file_type,
+            FileType::Blade
+                | FileType::Html
+                | FileType::Vue
+                | FileType::Twig
+                | FileType::JavaScript
+                | FileType::TypeScript
+        ) && self.tree.root.as_deref().is_some_and(uses_tailwind)
+            && phpthunder::web::in_class_attribute(text, offset)
+    }
+
     /// Recomputes completion proposals at the cursor and opens or updates
     /// the popup, ranked best first. The selection follows the previously
     /// selected proposal when it is still listed, else the top one.
@@ -150,7 +190,10 @@ impl App {
         }
         let offset = doc.offset(doc.cursor());
         let found = self
-            .laravel_candidates(&doc.text, offset)
+            .tailwind_context(&doc.text, offset, doc.file_type)
+            .then(|| phpthunder::web::tailwind_completions(&doc.text, offset))
+            .flatten()
+            .or_else(|| self.laravel_candidates(&doc.text, offset))
             .or_else(|| {
                 is_markup(doc.file_type)
                     .then(|| phpthunder::web::alpine_completions(&doc.text, offset))
