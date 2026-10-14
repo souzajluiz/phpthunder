@@ -1,7 +1,10 @@
-//! A debug session: runs a test command under Xdebug, accepts its
-//! connection, and drives it from UI commands, reporting events back.
+//! A debug session: runs a PHP command under Xdebug (through the project's
+//! interpreter, translating paths for containers), or listens for the
+//! connections of web requests, and drives each from UI commands,
+//! reporting events back.
 
 use super::*;
+use crate::interpreter::Interpreter;
 use crate::tr;
 use iced::futures::Stream;
 use std::collections::HashMap;
@@ -11,7 +14,7 @@ use std::process::Stdio;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::process::{Child, Command};
+use tokio::process::Child;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
 /// How long to wait for Xdebug to connect after the process starts.
@@ -20,15 +23,54 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
 /// Herd Pro's bundled Xdebug builds, tried when PHP has none loaded.
 const HERD_XDEBUG_DIR: &str = "/Applications/Herd.app/Contents/Resources/xdebug";
 
+/// What a session debugs.
+#[derive(Debug, Clone)]
+pub enum DebugTarget {
+    /// Runs `php` with these arguments (e.g. `vendor/bin/pest tests/UserTest.php
+    /// --filter …`, or a script) and debugs it.
+    Run(Vec<OsString>),
+    /// Listens on this port for Xdebug connections from web requests
+    /// (`XDEBUG_SESSION` cookie or `xdebug.start_with_request`), one at a
+    /// time, until stopped.
+    Listen(u16),
+}
+
 /// What to run under the debugger.
 #[derive(Debug, Clone)]
 pub struct DebugLaunch {
     /// Working directory (the project root).
     pub root: PathBuf,
-    /// Arguments after `php` (e.g. `vendor/bin/pest tests/UserTest.php --filter …`).
-    pub program: Vec<OsString>,
+    /// The command to run, or the port to listen on.
+    pub target: DebugTarget,
     /// Line breakpoints: file and 0-based line.
     pub breakpoints: Vec<(PathBuf, usize)>,
+    /// Stop at the first line of the script instead of running to the
+    /// first breakpoint.
+    pub break_at_first_line: bool,
+    /// Where PHP runs; paths are translated for it.
+    pub interpreter: Interpreter,
+}
+
+/// Translates paths between the project on this machine and the
+/// interpreter's view of it.
+struct PathMap<'a> {
+    /// Project root on this machine.
+    root: &'a Path,
+    /// The project's interpreter.
+    interpreter: &'a Interpreter,
+}
+
+impl PathMap<'_> {
+    /// A local path as the interpreter sees it.
+    fn remote(&self, local: &Path) -> PathBuf {
+        PathBuf::from(self.interpreter.to_remote(self.root, local))
+    }
+
+    /// A path reported by Xdebug, on this machine.
+    fn local(&self, remote: &Path) -> PathBuf {
+        self.interpreter
+            .to_local(self.root, &remote.to_string_lossy())
+    }
 }
 
 /// Starts a session in the background. Returns the command sender for the
@@ -57,15 +99,19 @@ pub fn start_session(
 ///
 /// # Errors
 /// Returns a message when no Xdebug can be found.
-async fn xdebug_arguments(root: &Path) -> Result<Vec<String>, String> {
+pub(crate) async fn xdebug_arguments(
+    root: &Path,
+    interpreter: &Interpreter,
+) -> Result<Vec<String>, String> {
     let probe = |extra: Vec<String>| async move {
-        Command::new("php")
-            .current_dir(root)
-            .args(extra)
-            .args([
-                "-r",
-                "echo extension_loaded('xdebug') ? 'yes' : PHP_MAJOR_VERSION . PHP_MINOR_VERSION;",
-            ])
+        let mut args: Vec<OsString> = extra.into_iter().map(OsString::from).collect();
+        args.extend([
+            "-r".into(),
+            "echo extension_loaded('xdebug') ? 'yes' : PHP_MAJOR_VERSION . PHP_MINOR_VERSION;"
+                .into(),
+        ]);
+        interpreter
+            .command(root, "php", &args)
             .output()
             .await
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
@@ -74,6 +120,10 @@ async fn xdebug_arguments(root: &Path) -> Result<Vec<String>, String> {
     let loaded = probe(Vec::new()).await?;
     if loaded == "yes" {
         return Ok(Vec::new());
+    }
+    // Herd's builds only exist on this machine.
+    if !interpreter.is_local() {
+        return Err(tr!("debug-no-xdebug"));
     }
     let mut candidates: Vec<PathBuf> = std::env::var_os("PHPTHUNDER_XDEBUG")
         .map(PathBuf::from)
@@ -110,32 +160,81 @@ where
     });
 }
 
-/// Runs the whole session: start the process, accept Xdebug, set the
-/// breakpoints, run, and serve UI commands until the script ends.
+/// Runs the whole session: for a command, start it under Xdebug, accept
+/// its connection and serve it; when listening, serve each incoming
+/// connection in turn until the UI stops.
 ///
 /// # Errors
-/// Returns a message when Xdebug is missing, the process cannot start, or
-/// Xdebug never connects.
+/// Returns a message when Xdebug is missing, the process cannot start,
+/// the port is taken, or Xdebug never connects.
 async fn run_session(
     launch: DebugLaunch,
     mut commands: UnboundedReceiver<DebugCommand>,
     events: UnboundedSender<DebugEvent>,
 ) -> Result<(), String> {
-    let xdebug = xdebug_arguments(&launch.root).await?;
-    let listener = TcpListener::bind("127.0.0.1:0")
+    let map = PathMap {
+        root: &launch.root,
+        interpreter: &launch.interpreter,
+    };
+    let first = if launch.break_at_first_line {
+        "step_into"
+    } else {
+        "run"
+    };
+    match &launch.target {
+        DebugTarget::Run(program) => {
+            run_program(&launch, program, &map, first, &mut commands, &events).await
+        }
+        DebugTarget::Listen(port) => {
+            listen(
+                *port,
+                launch.breakpoints.clone(),
+                &map,
+                first,
+                &mut commands,
+                &events,
+            )
+            .await
+        }
+    }
+}
+
+/// Starts `program` under Xdebug and serves its connection.
+///
+/// # Errors
+/// See [`run_session`].
+async fn run_program(
+    launch: &DebugLaunch,
+    program: &[OsString],
+    map: &PathMap<'_>,
+    first: &'static str,
+    commands: &mut UnboundedReceiver<DebugCommand>,
+    events: &UnboundedSender<DebugEvent>,
+) -> Result<(), String> {
+    let interpreter = &launch.interpreter;
+    // A container reaches this machine through Docker's host alias.
+    let (bind, client_host) = match interpreter {
+        Interpreter::Local { .. } => ("127.0.0.1", "127.0.0.1"),
+        Interpreter::Docker { .. } | Interpreter::Compose { .. } => {
+            ("0.0.0.0", "host.docker.internal")
+        }
+        Interpreter::Ssh { .. } => return Err(tr!("debug-ssh-unsupported")),
+    };
+    let xdebug = xdebug_arguments(&launch.root, interpreter).await?;
+    let listener = TcpListener::bind((bind, 0))
         .await
         .map_err(|e| e.to_string())?;
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
-    let mut child = Command::new("php")
-        .current_dir(&launch.root)
-        .args(&xdebug)
-        .args([
-            "-dxdebug.mode=debug".to_string(),
-            "-dxdebug.start_with_request=yes".to_string(),
-            "-dxdebug.client_host=127.0.0.1".to_string(),
-            format!("-dxdebug.client_port={port}"),
-        ])
-        .args(&launch.program)
+    let mut args: Vec<OsString> = xdebug.into_iter().map(OsString::from).collect();
+    args.extend([
+        "-dxdebug.mode=debug".into(),
+        "-dxdebug.start_with_request=yes".into(),
+        format!("-dxdebug.client_host={client_host}").into(),
+        format!("-dxdebug.client_port={port}").into(),
+    ]);
+    args.extend(program.iter().cloned());
+    let mut child = interpreter
+        .command(&launch.root, "php", &args)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -168,10 +267,12 @@ async fn run_session(
     let mut connection = Connection::new(stream);
     drive(
         &mut connection,
-        launch.breakpoints,
-        &mut commands,
-        &events,
-        &mut child,
+        launch.breakpoints.clone(),
+        commands,
+        events,
+        Some(&mut child),
+        map,
+        first,
     )
     .await?;
     // Let the script finish without stopping at more breakpoints.
@@ -185,6 +286,62 @@ async fn run_session(
     Ok(())
 }
 
+/// Listens on `port` and serves each Xdebug connection (a web request)
+/// in turn; breakpoints set while waiting apply to the next one.
+///
+/// # Errors
+/// Returns a message when the port cannot be opened.
+async fn listen(
+    port: u16,
+    mut breakpoints: Vec<(PathBuf, usize)>,
+    map: &PathMap<'_>,
+    first: &'static str,
+    commands: &mut UnboundedReceiver<DebugCommand>,
+    events: &UnboundedSender<DebugEvent>,
+) -> Result<(), String> {
+    let listener = TcpListener::bind(("0.0.0.0", port))
+        .await
+        .map_err(|e| tr!("debug-listen-failed", port = port, error = e.to_string()))?;
+    let _ = events.send(DebugEvent::Output(tr!("debug-listening", port = port)));
+    loop {
+        let stream = tokio::select! {
+            accepted = listener.accept() => match accepted {
+                Ok((stream, _)) => stream,
+                Err(e) => return Err(e.to_string()),
+            },
+            command = commands.recv() => match command {
+                Some(DebugCommand::Stop) | None => return Ok(()),
+                Some(DebugCommand::AddBreakpoint(file, line)) => {
+                    breakpoints.push((file, line));
+                    continue;
+                }
+                Some(DebugCommand::RemoveBreakpoint(file, line)) => {
+                    breakpoints.retain(|b| *b != (file.clone(), line));
+                    continue;
+                }
+                Some(_) => continue,
+            },
+        };
+        let mut connection = Connection::new(stream);
+        let served = drive(
+            &mut connection,
+            breakpoints.clone(),
+            commands,
+            events,
+            None,
+            map,
+            first,
+        )
+        .await;
+        let _ = connection.call("detach", "", None).await;
+        let _ = events.send(DebugEvent::Output(tr!("debug-request-done")));
+        if served.is_err() {
+            continue;
+        }
+        let _ = events.send(DebugEvent::Running);
+    }
+}
+
 /// Serves one Xdebug connection: reads `init`, configures features and
 /// breakpoints, runs, and then answers UI commands until the script ends
 /// or the UI stops it.
@@ -196,7 +353,9 @@ async fn drive(
     initial_breakpoints: Vec<(PathBuf, usize)>,
     commands: &mut UnboundedReceiver<DebugCommand>,
     events: &UnboundedSender<DebugEvent>,
-    child: &mut Child,
+    mut child: Option<&mut Child>,
+    map: &PathMap<'_>,
+    first: &'static str,
 ) -> Result<(), String> {
     connection.read_packet().await?; // the `init` packet
     let _ = events.send(DebugEvent::Connected);
@@ -212,21 +371,24 @@ async fn drive(
     let mut breakpoints = HashMap::new();
     for (file, line) in initial_breakpoints {
         connection
-            .add_breakpoint(&mut breakpoints, file, line)
+            .add_breakpoint(&mut breakpoints, file, line, map)
             .await?;
     }
     let mut pending: Vec<DebugCommand> = Vec::new();
-    let mut next = Some("run");
+    let mut next = Some(first);
     loop {
         if let Some(step) = next.take() {
             let _ = events.send(DebugEvent::Running);
             match connection
-                .continue_with(step, commands, &mut pending, child)
+                .continue_with(step, commands, &mut pending, child.as_deref_mut())
                 .await?
             {
                 Paused::Stopped => break,
                 Paused::At => {
-                    let frames = parse_stack(&connection.call("stack_get", "", None).await?);
+                    let mut frames = parse_stack(&connection.call("stack_get", "", None).await?);
+                    for frame in &mut frames {
+                        frame.file = map.local(&frame.file);
+                    }
                     let _ = events.send(DebugEvent::Paused(frames));
                     let context = connection.call("context_get", "-d 0", None).await?;
                     let _ = events.send(DebugEvent::Variables(0, parse_context(&context)));
@@ -270,7 +432,7 @@ async fn drive(
             }
             DebugCommand::AddBreakpoint(file, line) => {
                 connection
-                    .add_breakpoint(&mut breakpoints, file, line)
+                    .add_breakpoint(&mut breakpoints, file, line, map)
                     .await?;
             }
             DebugCommand::RemoveBreakpoint(file, line) => {
@@ -390,8 +552,13 @@ impl Connection {
         ids: &mut HashMap<(PathBuf, usize), String>,
         file: PathBuf,
         line: usize,
+        map: &PathMap<'_>,
     ) -> Result<(), String> {
-        let args = format!("-t line -f {} -n {}", file_uri(&file), line + 1);
+        let args = format!(
+            "-t line -f {} -n {}",
+            file_uri(&map.remote(&file)),
+            line + 1
+        );
         let response = self.call("breakpoint_set", &args, None).await?;
         if let Some(id) = response.attr("id") {
             ids.insert((file, line), id.to_string());
@@ -409,7 +576,7 @@ impl Connection {
         step: &str,
         commands: &mut UnboundedReceiver<DebugCommand>,
         pending: &mut Vec<DebugCommand>,
-        child: &mut Child,
+        child: Option<&mut Child>,
     ) -> Result<Paused, String> {
         let id = self.transaction.to_string();
         self.send(step, "", None).await?;
@@ -431,7 +598,9 @@ impl Connection {
                 }
                 command = commands.recv() => match command {
                     Some(DebugCommand::Stop) | None => {
-                        let _ = child.kill().await;
+                        if let Some(child) = child {
+                            let _ = child.kill().await;
+                        }
                         return Ok(Paused::Stopped);
                     }
                     Some(DebugCommand::AddBreakpoint(..) | DebugCommand::RemoveBreakpoint(..)) => {
@@ -450,6 +619,7 @@ impl Connection {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::process::Command;
 
     /// Writes one DBGp packet as Xdebug frames it.
     async fn reply(stream: &mut TcpStream, xml: &str) {
@@ -558,12 +728,19 @@ mod tests {
             log
         });
         let breakpoints = vec![(PathBuf::from("/app/tests/UserTest.php"), 5)];
+        let interpreter = Interpreter::default();
+        let map = PathMap {
+            root: Path::new("/app"),
+            interpreter: &interpreter,
+        };
         drive(
             &mut connection,
             breakpoints,
             &mut commands,
             &events_tx,
-            &mut child,
+            Some(&mut child),
+            &map,
+            "run",
         )
         .await
         .unwrap();

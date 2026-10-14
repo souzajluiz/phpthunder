@@ -249,6 +249,10 @@ pub enum Message {
     OpenTest(usize),
     /// Hide the coverage marks of the last run with coverage.
     ClearCoverage,
+    /// The Xdebug configuration report (or why PHP could not start).
+    DebuggerValidated(Result<String, String>),
+    /// A profiled run finished: the report's path, or the error.
+    Profiled(Result<PathBuf, String>),
     /// The formatter finished: file, document version, result (`None` when
     /// the project has no formatter).
     Formatted(
@@ -359,6 +363,8 @@ pub struct DebugView {
     pub eval: String,
     /// Past evaluations, most recent last.
     pub evaluations: Vec<(String, Result<crate::debug::Variable, String>)>,
+    /// The session listens for web requests instead of running a command.
+    pub listening: bool,
 }
 
 impl DebugView {

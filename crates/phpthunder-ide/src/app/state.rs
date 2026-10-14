@@ -196,6 +196,8 @@ pub struct App {
     pub breakpoints: std::collections::HashMap<PathBuf, std::collections::BTreeSet<usize>>,
     /// The debugger panel and its session, once one was started.
     pub debug: Option<DebugView>,
+    /// Debug sessions stop at the first line of the script.
+    pub debug_break_first: bool,
     /// Last mouse y over the line-number gutter, in content pixels.
     pub gutter_y: f32,
     /// How often each completion proposal was picked, for ranking.
@@ -389,6 +391,7 @@ impl App {
             commit: CommitPanel::default(),
             breakpoints: Default::default(),
             debug: None,
+            debug_break_first: false,
             gutter_y: 0.0,
             completion_stats: completion::load_completion_stats(),
         };
@@ -1041,6 +1044,20 @@ impl App {
                 Task::none()
             }
             Message::OpenTest(i) => self.open_test(i),
+            Message::DebuggerValidated(result) => {
+                match result {
+                    Ok(report) => self.notice = Some(report),
+                    Err(error) => self.fail(error),
+                }
+                Task::none()
+            }
+            Message::Profiled(result) => match result {
+                Ok(path) => self.open(path, None),
+                Err(error) => {
+                    self.fail(error);
+                    Task::none()
+                }
+            },
             Message::ClearCoverage => {
                 self.coverage.clear();
                 Task::none()

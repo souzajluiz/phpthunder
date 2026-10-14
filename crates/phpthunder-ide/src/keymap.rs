@@ -95,6 +95,16 @@ pub enum Cmd {
     Composer,
     /// Pick a run configuration to start in the terminal (`⌃⌥R`).
     RunConfiguration,
+    /// Debug the active PHP file as a script.
+    DebugCurrentFile,
+    /// Start or stop listening for Xdebug connections from web requests.
+    DebugListen,
+    /// Toggle stopping at the first line of debugged scripts.
+    DebugBreakAtFirstLine,
+    /// Report how Xdebug is set up for the project's PHP.
+    ValidateDebugger,
+    /// Profile the active PHP file with Xdebug and open the report.
+    ProfileCurrentFile,
     /// Open the project settings file (interpreter, run configurations).
     EditProjectSettings,
     /// Generate code in the class at the caret (`⌘N`).
@@ -250,7 +260,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 117] = {
+    pub const ALL: [Cmd; 122] = {
         use Cmd::*;
         [
             Save,
@@ -296,6 +306,11 @@ impl Cmd {
             Composer,
             RunConfiguration,
             EditProjectSettings,
+            DebugCurrentFile,
+            DebugListen,
+            DebugBreakAtFirstLine,
+            ValidateDebugger,
+            ProfileCurrentFile,
             Generate,
             InsertTemplate,
             Commit,
@@ -634,7 +649,13 @@ pub fn hint(cmd: Cmd) -> &'static str {
         NextError => "F2",
         PreviousError => "⇧F2",
         QuickDoc => "F1",
-        ToggleWhitespace | EditProjectSettings => "",
+        ToggleWhitespace
+        | EditProjectSettings
+        | DebugCurrentFile
+        | DebugListen
+        | DebugBreakAtFirstLine
+        | ValidateDebugger
+        | ProfileCurrentFile => "",
         MoveStatementUp => "⇧⌘↑",
         MoveStatementDown => "⇧⌘↓",
         MoveElementLeft => "⌥⇧⌘←",
