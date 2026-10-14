@@ -54,6 +54,17 @@ composer-update = Update dependencies to their latest allowed versions
 composer-dump-autoload = Regenerate the autoloader
 composer-outdated = List outdated direct dependencies
 composer-validate = Check composer.json
+composer-require = Add a package
+composer-require-dev = Add a development package
+composer-remove = Remove a package
+composer-update-package = Update one package and its dependencies
+composer-show-tree = Show the dependency tree
+composer-licenses = List the licenses of dependencies
+composer-platform = Check PHP version and extensions
+composer-diagnose = Diagnose Composer problems
+composer-clear-cache = Clear Composer's cache
+composer-not-installed = { $package } is not installed; run composer install
+composer-duplicated = { $package } is also in require
 composer-script = script
 composer-steps = { $count ->
     [one] 1 step

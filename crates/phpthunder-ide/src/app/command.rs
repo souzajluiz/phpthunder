@@ -371,6 +371,7 @@ impl App {
             Target::File(path) => self.open(path, None),
             Target::Symbol(path, pos) => self.open(path, Some(pos)),
             Target::Command(command) => self.run_in_terminal(&command),
+            Target::TerminalDraft(command) => self.type_in_terminal(&command),
             Target::Generate(generation) => self.generate(generation),
             Target::Template(abbreviation) => self.insert_template(abbreviation),
             Target::Checkout(branch) => self.git_checkout(branch),

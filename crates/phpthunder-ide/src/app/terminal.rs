@@ -207,6 +207,17 @@ impl App {
         self.focus_terminal()
     }
 
+    /// Types a command line in the terminal (starting it if needed)
+    /// without running it, for the user to complete.
+    pub(crate) fn type_in_terminal(&mut self, command: &str) -> Task<Message> {
+        self.show_panel(Bottom::Terminal);
+        if self.terminal.as_ref().is_none_or(Session::has_exited) {
+            self.start_terminal();
+        }
+        self.terminal_input(command.as_bytes());
+        self.focus_terminal()
+    }
+
     /// Key handling while the terminal has focus; returns `None` to fall
     /// through to the IDE's own shortcuts.
     pub(crate) fn terminal_keyboard(&mut self, event: &keyboard::Event) -> Option<Task<Message>> {

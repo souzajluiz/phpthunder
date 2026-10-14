@@ -53,6 +53,17 @@ composer-update = Atualizar dependências para as últimas versões permitidas
 composer-dump-autoload = Regenerar o autoloader
 composer-outdated = Listar dependências diretas desatualizadas
 composer-validate = Verificar o composer.json
+composer-require = Adicionar pacote
+composer-require-dev = Adicionar pacote de desenvolvimento
+composer-remove = Remover pacote
+composer-update-package = Atualizar um pacote e dependências
+composer-show-tree = Mostrar árvore de dependências
+composer-licenses = Listar licenças das dependências
+composer-platform = Checar versão do PHP e extensões
+composer-diagnose = Diagnosticar problemas do Composer
+composer-clear-cache = Limpar cache do Composer
+composer-not-installed = { $package } não está instalado; rode composer install
+composer-duplicated = { $package } também está em require
 composer-script = script
 composer-steps = { $count ->
     [one] 1 passo

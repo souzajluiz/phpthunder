@@ -1270,6 +1270,7 @@ impl App {
         if self.docs[i].diagnostics_version != self.docs[i].version() {
             self.inspect_pending = true;
         }
+        self.refresh_composer_problems();
         let task = self.refresh_find(false);
         let y = self.docs[i].scroll_y;
         Task::batch([task, scroll_to(y), operation::focus(Id::new(EDITOR_ID))])

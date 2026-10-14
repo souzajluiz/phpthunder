@@ -209,6 +209,10 @@ impl App {
             self.refresh_interpreter();
             return Task::none();
         }
+        if path.file_name().is_some_and(|n| n == "composer.json") {
+            self.refresh_composer_problems();
+            return Task::none();
+        }
         if path.extension().is_none_or(|e| e != "php")
             || path.to_string_lossy().ends_with(".blade.php")
         {
@@ -269,6 +273,47 @@ impl App {
         }
     }
 
+    /// Recomputes the problems of the active `composer.json` (packages not
+    /// installed, required twice); other documents are left alone.
+    pub(crate) fn refresh_composer_problems(&mut self) {
+        let Some(root) = self.tree.root.clone() else {
+            return;
+        };
+        let Some(doc) = self.doc_mut() else {
+            return;
+        };
+        if doc.path != root.join("composer.json") {
+            return;
+        }
+        let problems = crate::composer::json_problems(&root, &doc.text);
+        doc.external_diagnostics
+            .retain(|d| !matches!(&d.code, Code::External(t) if t == "Composer"));
+        for p in problems {
+            let span = phpthunder::syntax::Span {
+                start: doc.utf16_pos(doc.position_of(p.start)),
+                end: doc.utf16_pos(doc.position_of(p.end)),
+            };
+            let (severity, message) = match p.kind {
+                crate::composer::JsonProblemKind::NotInstalled => (
+                    phpthunder::inspection::Severity::Warning,
+                    tr!("composer-not-installed", package = p.package.as_str()),
+                ),
+                crate::composer::JsonProblemKind::Duplicated => (
+                    phpthunder::inspection::Severity::Warning,
+                    tr!("composer-duplicated", package = p.package.as_str()),
+                ),
+            };
+            doc.external_diagnostics.push(Diagnostic {
+                span,
+                start: p.start,
+                end: p.end,
+                severity,
+                message,
+                code: Code::External("Composer".into()),
+            });
+        }
+    }
+
     /// Opens a picker with the project's Composer scripts and common
     /// commands; the choice runs in the terminal (`⌃⌥C`).
     pub(crate) fn open_composer(&mut self) -> Task<Message> {
@@ -280,12 +325,17 @@ impl App {
             .into_iter()
             .map(|c| {
                 let args: Vec<String> = c.args.split_whitespace().map(str::to_string).collect();
+                let line = interpreter.shell_line(&root, "composer", &args);
                 Item {
                     badge: "›",
-                    title: format!("composer {}", c.args),
+                    title: format!("composer {}", c.args.trim_end()),
                     matched: Vec::new(),
+                    target: if c.is_draft() {
+                        Target::TerminalDraft(format!("{line} "))
+                    } else {
+                        Target::Command(line)
+                    },
                     detail: c.description,
-                    target: Target::Command(interpreter.shell_line(&root, "composer", &args)),
                 }
             })
             .collect();
