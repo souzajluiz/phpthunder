@@ -236,3 +236,5 @@ Thin translucent gray scrollers (18% alpha, 35% on hover), 4px rounded, no track
 - **Don't** introduce fonts beyond Geist and Geist Mono.
 - **Don't** use web-style effects (gradients, blur, glow); the GUI is native iced.
 - **Don't** make selection lilac; selection stays Selection Blue.
+
+
