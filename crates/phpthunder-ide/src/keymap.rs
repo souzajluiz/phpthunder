@@ -120,6 +120,10 @@ pub enum Cmd {
     DeployProject,
     /// Upload the active file to a deployment server.
     DeployFile,
+    /// Run the SQL at the caret or the selection on the project database.
+    RunSql,
+    /// List the database's tables.
+    DatabaseTables,
     /// Popup with the symbols of the current file (`⌘F12`).
     FileStructure,
     /// Show the Problems panel (`⌘6`).
@@ -403,7 +407,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 192] = {
+    pub const ALL: [Cmd; 194] = {
         use Cmd::*;
         [
             Save,
@@ -459,6 +463,8 @@ impl Cmd {
             HttpEnvironment,
             DeployProject,
             DeployFile,
+            RunSql,
+            DatabaseTables,
             FileStructure,
             Problems,
             ToggleTerminal,
@@ -954,7 +960,9 @@ pub fn hint(cmd: Cmd) -> &'static str {
         | RunHttpRequest
         | HttpEnvironment
         | DeployProject
-        | DeployFile => "",
+        | DeployFile
+        | RunSql
+        | DatabaseTables => "",
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",

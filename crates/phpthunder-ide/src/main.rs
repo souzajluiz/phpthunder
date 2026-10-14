@@ -6,6 +6,7 @@ mod app;
 mod claude_usage;
 mod composer;
 mod copyright;
+mod database;
 mod debug;
 mod deploy;
 mod editor;

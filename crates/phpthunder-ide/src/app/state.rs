@@ -1188,6 +1188,8 @@ impl App {
                 self.deployed(&name, result);
                 Task::none()
             }
+            Message::SqlResult(sql, driver, result) => self.sql_result(&sql, driver, result),
+            Message::TablesLoaded(driver, result) => self.tables_loaded(driver, result),
             Message::Profiled(result) => match result {
                 Ok(path) => self.open(path, None),
                 Err(error) => {

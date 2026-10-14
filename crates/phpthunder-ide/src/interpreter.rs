@@ -108,6 +108,8 @@ pub struct ProjectConfig {
     pub watcher: Vec<crate::watchers::Watcher>,
     /// Servers the project deploys to.
     pub deploy: Vec<crate::deploy::Server>,
+    /// Database connections for the SQL console (the `.env` one is added).
+    pub database: Vec<crate::database::Connection>,
 }
 
 /// The project's settings; defaults when the file is missing or invalid
@@ -163,6 +165,16 @@ pub const PROJECT_TEMPLATE: &str = r#"# PhpThunder project settings. Commit this
 # path = "/var/www/app"
 # exclude = [".git", "node_modules", ".env"]
 # upload_on_save = false
+
+# Database connections for Run SQL; the one in .env is used when none is set.
+# [[database]]
+# name = "Local"
+# driver = "mysql"            # "mysql", "pgsql" or "sqlite"
+# host = "127.0.0.1"
+# port = 3306
+# database = "app"
+# username = "root"
+# password_env = "DB_PASSWORD"
 "#;
 
 /// Splits a command line into words, honouring single and double quotes.

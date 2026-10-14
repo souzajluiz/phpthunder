@@ -106,6 +106,8 @@ impl App {
             Cmd::HttpEnvironment => self.choose_http_environment(),
             Cmd::DeployProject => self.choose_deploy_server(true),
             Cmd::DeployFile => self.choose_deploy_server(false),
+            Cmd::RunSql => self.run_sql(),
+            Cmd::DatabaseTables => self.database_tables(),
             Cmd::NewFromTemplate => {
                 let dir = self
                     .doc()
@@ -477,6 +479,7 @@ impl App {
             }
             Target::HttpEnvironment(name) => self.set_http_environment(name),
             Target::Deploy(name, whole) => self.deploy(name, whole),
+            Target::QueryTable(table) => self.query_table(table),
             Target::Paste(text) => self.edit_with(
                 |d| {
                     d.checkpoint();

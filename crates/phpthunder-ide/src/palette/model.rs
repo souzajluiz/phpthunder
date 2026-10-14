@@ -123,6 +123,8 @@ pub enum Target {
     /// Upload to this deployment server: the project (`true`) or the
     /// active file.
     Deploy(String, bool),
+    /// Show the first rows of this database table.
+    QueryTable(String),
 }
 
 /// One ranked palette result.

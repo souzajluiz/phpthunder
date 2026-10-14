@@ -4,6 +4,7 @@ mod carets;
 mod command;
 mod compare;
 mod completion;
+mod database;
 mod debug;
 mod deploy;
 mod dock;
