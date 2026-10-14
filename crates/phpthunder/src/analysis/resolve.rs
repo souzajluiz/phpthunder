@@ -678,6 +678,124 @@ impl<'a> Analyzer<'a> {
         }
     }
 
+    /// The class `cond` proves `var` to be when it holds (`negated`:
+    /// when it fails): `$var instanceof Foo`, either side of `&&` (or, when
+    /// negated, of `||`), and `!` flipping between the two.
+    fn instanceof_fact(&self, cond: Node<'a>, var: &str, negated: bool, ctx: &NameContext) -> Option<String> {
+        match cond.kind() {
+            "parenthesized_expression" => self.instanceof_fact(cond.named_child(0)?, var, negated, ctx),
+            "unary_op_expression" if self.text(cond).starts_with('!') => {
+                self.instanceof_fact(cond.child_by_field_name("argument")?, var, !negated, ctx)
+            }
+            "binary_expression" => {
+                let op = self.text(cond.child_by_field_name("operator")?).to_ascii_lowercase();
+                let (left, right) = (cond.child_by_field_name("left")?, cond.child_by_field_name("right")?);
+                match (op.as_str(), negated) {
+                    ("instanceof", false) if self.text(left) == var => self.class_ref(right, ctx),
+                    ("&&" | "and", false) | ("||" | "or", true) => self
+                        .instanceof_fact(left, var, negated, ctx)
+                        .or_else(|| self.instanceof_fact(right, var, negated, ctx)),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// The nearest `instanceof` narrowing of `var` that applies at `usage`
+    /// within `scope`, with the byte where it takes effect: an enclosing
+    /// `if`/`elseif` body, the `else` of a negated check, the right side of
+    /// `&&`, a ternary branch, or an earlier guard (`if (!$x instanceof
+    /// Foo) { return; }`, `assert($x instanceof Foo)`) in an enclosing block.
+    fn narrowing(&self, usage: Node<'a>, scope: Node<'a>, var: &str, ctx: &NameContext) -> Option<(usize, String)> {
+        let mut child = usage;
+        while let Some(parent) = child.parent() {
+            if parent.id() == scope.id() && parent.kind() != "program" {
+                break;
+            }
+            let is = |field: &str| parent.child_by_field_name(field).is_some_and(|n| n.id() == child.id());
+            let fact = match parent.kind() {
+                "if_statement" | "else_if_clause" if is("body") => parent
+                    .child_by_field_name("condition")
+                    .and_then(|c| self.instanceof_fact(c, var, false, ctx)),
+                "else_clause" => parent.parent().and_then(|stmt| {
+                    let mut c = stmt.walk();
+                    let only_else = !stmt
+                        .children_by_field_name("alternative", &mut c)
+                        .any(|a| a.kind() == "else_if_clause");
+                    only_else
+                        .then(|| stmt.child_by_field_name("condition"))
+                        .flatten()
+                        .and_then(|c| self.instanceof_fact(c, var, true, ctx))
+                }),
+                "binary_expression" if is("right") => {
+                    let op = parent
+                        .child_by_field_name("operator")
+                        .map(|o| self.text(o).to_ascii_lowercase());
+                    let left = parent.child_by_field_name("left");
+                    match (op.as_deref(), left) {
+                        (Some("&&" | "and"), Some(l)) => self.instanceof_fact(l, var, false, ctx),
+                        (Some("||" | "or"), Some(l)) => self.instanceof_fact(l, var, true, ctx),
+                        _ => None,
+                    }
+                }
+                "conditional_expression" if is("body") => parent
+                    .child_by_field_name("condition")
+                    .and_then(|c| self.instanceof_fact(c, var, false, ctx)),
+                "conditional_expression" if is("alternative") => parent
+                    .child_by_field_name("condition")
+                    .and_then(|c| self.instanceof_fact(c, var, true, ctx)),
+                "compound_statement" | "program" | "colon_block" => self.guard(parent, child, var, ctx),
+                _ => None,
+            };
+            if let Some(class) = fact {
+                return Some((child.start_byte(), class));
+            }
+            if is_function_like(parent.kind()) {
+                break;
+            }
+            child = parent;
+        }
+        None
+    }
+
+    /// A guard before `statement` in `block` that leaves unless `var` is
+    /// an instance of some class: `if (!$x instanceof Foo) { return; }` or
+    /// `assert($x instanceof Foo);`. Assignments in between are handled by
+    /// the caller (the later binding wins).
+    fn guard(&self, block: Node<'a>, statement: Node<'a>, var: &str, ctx: &NameContext) -> Option<String> {
+        let mut c = block.walk();
+        let earlier: Vec<Node> = block
+            .named_children(&mut c)
+            .take_while(|s| s.id() != statement.id())
+            .collect();
+        earlier.into_iter().rev().find_map(|s| match s.kind() {
+            "if_statement" => {
+                let mut ac = s.walk();
+                let no_else = s.children_by_field_name("alternative", &mut ac).next().is_none();
+                let leaves = s.child_by_field_name("body").is_some_and(|b| {
+                    crate::inspection::ends_flow(b, self.src)
+                });
+                (no_else && leaves)
+                    .then(|| s.child_by_field_name("condition"))
+                    .flatten()
+                    .and_then(|c| self.instanceof_fact(c, var, true, ctx))
+            }
+            "expression_statement" => {
+                let call = s.named_child(0)?;
+                let is_assert = call.kind() == "function_call_expression"
+                    && call
+                        .child_by_field_name("function")
+                        .is_some_and(|f| self.text(f).trim_start_matches('\\').eq_ignore_ascii_case("assert"));
+                let arg = call.child_by_field_name("arguments")?.named_child(0)?.named_child(0)?;
+                is_assert
+                    .then(|| self.instanceof_fact(arg, var, false, ctx))
+                    .flatten()
+            }
+            _ => None,
+        })
+    }
+
     /// Type of `$var` at `usage`. The source closest before the usage wins:
     /// an assignment (or its `@var`), a `foreach` binding, a `catch` variable,
     /// or a standalone `/** @var Type $var */`. Parameters (native type, then
@@ -701,6 +819,13 @@ impl<'a> Analyzer<'a> {
                 _ => true,
             })
             .max_by_key(|(pos, _)| *pos);
+        // An `instanceof` check between the last assignment and the usage
+        // narrows the variable to the checked class.
+        if let Some((at, class)) = self.narrowing(usage, scope, var, ctx)
+            && best.is_none_or(|(pos, _)| pos < at)
+        {
+            return Ty::class(class);
+        }
         let owner = self.enclosing_class(usage, ctx);
         if let Some((_, n)) = best {
             return match n.kind() {
@@ -873,4 +998,86 @@ fn generic_bindings(
         }
     }
     HashMap::new()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::index::index_source;
+    use std::path::PathBuf;
+
+    /// The inferred class of the variable at the `‸` marker in `marked`.
+    fn type_at(marked: &str) -> Option<String> {
+        let at = marked.find('‸').expect("marker");
+        let src = marked.replacen('‸', "", 1);
+        let mut index = Index::default();
+        index.update(
+            PathBuf::from("/lib.php"),
+            index_source("<?php class Shape {} class Circle extends Shape { function radius() {} }"),
+        );
+        let tree = parse(&src);
+        let analyzer = Analyzer::new(&index, &src, &tree);
+        let var = tree
+            .root_node()
+            .named_descendant_for_byte_range(at, at)?
+            .parent()
+            .filter(|p| p.kind() == "variable_name")?;
+        analyzer.type_of(var, 0)
+    }
+
+    #[test]
+    fn instanceof_should_narrow_inside_if() {
+        assert_eq!(
+            type_at("<?php function f(Shape $s) { if ($s instanceof Circle) { $‸s->radius(); } }").as_deref(),
+            Some("Circle")
+        );
+    }
+
+    #[test]
+    fn instanceof_should_narrow_right_of_and() {
+        assert_eq!(
+            type_at("<?php function f(Shape $s) { return $s instanceof Circle && $‸s->radius(); }").as_deref(),
+            Some("Circle")
+        );
+    }
+
+    #[test]
+    fn negated_check_should_narrow_else() {
+        assert_eq!(
+            type_at("<?php function f(Shape $s) { if (!$s instanceof Circle) { return; } else { $‸s->radius(); } }").as_deref(),
+            Some("Circle")
+        );
+    }
+
+    #[test]
+    fn guard_clause_should_narrow_following_statements() {
+        assert_eq!(
+            type_at("<?php function f(Shape $s) { if (!($s instanceof Circle)) { throw new E(); } $‸s->radius(); }").as_deref(),
+            Some("Circle")
+        );
+    }
+
+    #[test]
+    fn assert_should_narrow_following_statements() {
+        assert_eq!(
+            type_at("<?php function f(Shape $s) { assert($s instanceof Circle); $‸s->radius(); }").as_deref(),
+            Some("Circle")
+        );
+    }
+
+    #[test]
+    fn assignment_after_check_should_win() {
+        assert_eq!(
+            type_at("<?php function f(Shape $s) { if ($s instanceof Circle) { $s = new Shape(); $‸s->radius(); } }").as_deref(),
+            Some("Shape")
+        );
+    }
+
+    #[test]
+    fn check_in_other_branch_should_not_narrow() {
+        assert_eq!(
+            type_at("<?php function f(Shape $s) { if ($s instanceof Circle) { } $‸s->radius(); }").as_deref(),
+            Some("Shape")
+        );
+    }
 }
