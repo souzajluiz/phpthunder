@@ -285,7 +285,10 @@ impl App {
             rows.push(row(class_depth + 1, &fqn, Some((path, sub))));
         }
         self.hierarchy = Some(Hierarchy {
-            title: tr!("method-hierarchy-title", name = format!("{}()", qualified(&method))),
+            title: tr!(
+                "method-hierarchy-title",
+                name = format!("{}()", qualified(&method))
+            ),
             rows,
         });
         self.show_panel(Bottom::Hierarchy);
@@ -364,7 +367,11 @@ impl App {
                 .and_then(|d| d.symbol.ty.class)
         };
         self.notice = Some(
-            match self.lang.expression_type(&doc.text, offset).or_else(declared) {
+            match self
+                .lang
+                .expression_type(&doc.text, offset)
+                .or_else(declared)
+            {
                 Some(ty) => tr!("notice-expression-type", ty = ty),
                 None => tr!("notice-type-unknown"),
             },

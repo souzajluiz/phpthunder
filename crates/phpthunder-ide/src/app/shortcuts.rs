@@ -361,15 +361,27 @@ impl App {
         let (splitter, delta) = match toward {
             Direction::Up | Direction::Down if self.bottom.is_some() => (
                 Splitter::Bottom,
-                if toward == Direction::Up { STRETCH } else { -STRETCH },
+                if toward == Direction::Up {
+                    STRETCH
+                } else {
+                    -STRETCH
+                },
             ),
             Direction::Left | Direction::Right if self.right.is_some() => (
                 Splitter::Right,
-                if toward == Direction::Left { STRETCH } else { -STRETCH },
+                if toward == Direction::Left {
+                    STRETCH
+                } else {
+                    -STRETCH
+                },
             ),
             Direction::Left | Direction::Right if self.sidebar => (
                 Splitter::Sidebar,
-                if toward == Direction::Right { STRETCH } else { -STRETCH },
+                if toward == Direction::Right {
+                    STRETCH
+                } else {
+                    -STRETCH
+                },
             ),
             _ => return Task::none(),
         };
@@ -441,8 +453,8 @@ impl App {
             .map(|n| dir.join(format!("scratch_{n}.php")))
             .find(|p| !p.exists())
             .unwrap_or_else(|| dir.join("scratch.php"));
-        let created = std::fs::create_dir_all(&dir)
-            .and_then(|()| std::fs::write(&path, "<?php\n\n"));
+        let created =
+            std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&path, "<?php\n\n"));
         if let Err(error) = created {
             self.fail(tr!("notice-scratch-failed", error = error.to_string()));
             return Task::none();
@@ -459,7 +471,8 @@ impl App {
         let Some(doc) = self.doc() else {
             return Task::none();
         };
-        let mut dialog = rfd::AsyncFileDialog::new().set_file_name(crate::app::file_name(&doc.path));
+        let mut dialog =
+            rfd::AsyncFileDialog::new().set_file_name(crate::app::file_name(&doc.path));
         if let Some(dir) = doc.path.parent() {
             dialog = dialog.set_directory(dir);
         }

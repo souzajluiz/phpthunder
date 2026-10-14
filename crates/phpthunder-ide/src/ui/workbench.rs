@@ -813,9 +813,7 @@ impl App {
                 doc.highlight_settings(),
                 crate::editor::format_token,
             )
-            .key_binding(move |key| {
-                bindings(key, completion_open, intentions_open, column_mode)
-            })
+            .key_binding(move |key| bindings(key, completion_open, intentions_open, column_mode))
             .style(editor);
 
         let current_line = pin(container(space())

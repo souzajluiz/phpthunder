@@ -1026,7 +1026,13 @@ fn describe_ty(ty: &Ty) -> Option<String> {
             let args: Vec<String> = ty
                 .args
                 .iter()
-                .map(|a| if a.is_empty() { "mixed".into() } else { short(a) })
+                .map(|a| {
+                    if a.is_empty() {
+                        "mixed".into()
+                    } else {
+                        short(a)
+                    }
+                })
                 .collect();
             Some(format!("{}<{}>", short(class), args.join(", ")))
         }
@@ -1133,7 +1139,10 @@ mod tests {
         );
         let src = "<?php $c = new Circle(); $c->radius();";
         let at = src.rfind("$c").expect("variable") + 1;
-        assert_eq!(expression_type_at(&index, src, at).as_deref(), Some("Circle"));
+        assert_eq!(
+            expression_type_at(&index, src, at).as_deref(),
+            Some("Circle")
+        );
     }
 
     #[test]
