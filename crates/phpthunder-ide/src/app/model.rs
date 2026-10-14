@@ -293,6 +293,9 @@ pub enum Message {
     DebuggerValidated(Result<String, String>),
     /// A profiled run finished: the report's path, or the error.
     Profiled(Result<PathBuf, String>),
+    /// Locations found for a framework string (WordPress hook calls), with
+    /// the picker title.
+    FrameworkSites(String, Vec<(PathBuf, Pos)>),
     /// A file watcher's command finished; the error names the watcher.
     WatcherDone(Result<(), String>),
     /// The formatter finished: file, document version, result (`None` when

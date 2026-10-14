@@ -331,6 +331,7 @@ pub fn compute_file_highlights(src: &str, file_type: FileType) -> LineSpans {
         FileType::Php => compute_highlights(src),
         FileType::Markdown => to_lines(src, markdown(src)),
         FileType::Log => to_lines(src, log(src)),
+        FileType::Twig => compute_twig_highlights(src),
         other => match spec(other) {
             Some(spec) => to_lines(src, scan(src, &spec)),
             None => vec![Vec::new(); src.matches('\n').count() + 1],
@@ -896,6 +897,8 @@ mod tests {
             FileType::Ignore,
             FileType::Markdown,
             FileType::Html,
+            FileType::Twig,
+            FileType::Log,
             FileType::Text,
         ] {
             let lines = compute_file_highlights(nasty, ft);

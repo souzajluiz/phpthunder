@@ -308,6 +308,14 @@ const SQL_CALLS: &[&str] = &[
     "fromraw",
     "statement",
     "unprepared",
+    // Doctrine: DQL and DBAL.
+    "createquery",
+    "createnativequery",
+    "executequery",
+    "executestatement",
+    "fetchallassociative",
+    "fetchassociative",
+    "fetchone",
 ];
 
 /// The callee name of the call `string` is the first argument of, lowercased.

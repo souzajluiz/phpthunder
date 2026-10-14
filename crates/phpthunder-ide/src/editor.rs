@@ -7,6 +7,7 @@ mod document;
 mod highlight;
 mod javascript;
 mod lexer;
+mod twig;
 mod wrap;
 
 pub use actions::*;
@@ -15,4 +16,5 @@ pub use carets::*;
 pub use document::*;
 pub use highlight::*;
 pub use lexer::*;
+pub use twig::*;
 pub use wrap::*;

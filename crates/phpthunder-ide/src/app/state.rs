@@ -1172,6 +1172,7 @@ impl App {
                 }
                 Task::none()
             }
+            Message::FrameworkSites(title, found) => self.open_found(title, found),
             Message::Profiled(result) => match result {
                 Ok(path) => self.open(path, None),
                 Err(error) => {
@@ -1822,6 +1823,12 @@ impl App {
             crate::packages::open_in_browser(&url);
             return Task::none();
         }
+        if let Some(task) = self.framework_definition() {
+            return task;
+        }
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
         if let Some((path, pos)) = self.laravel_definition(&doc.text, offset) {
             self.close_overlays();
             self.record_nav();

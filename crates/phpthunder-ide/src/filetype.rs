@@ -19,6 +19,8 @@ pub enum FileType {
     Php,
     /// Blade template (`*.blade.php`).
     Blade,
+    /// Twig template (`*.twig`, `*.html.twig`): Symfony, Drupal, Craft.
+    Twig,
     /// HTML.
     Html,
     /// XML, including `phpunit.xml(.dist)`, SVG and XLIFF.
@@ -117,6 +119,13 @@ const EXTENSIONS: &[(&str, FileType)] = &[
     // Laravel `make:*` stubs: PHP with `{{ placeholder }}`s.
     ("stub", FileType::Php),
     ("inc", FileType::Php),
+    // Drupal modules, install files, themes, profiles and theme engines.
+    ("module", FileType::Php),
+    ("install", FileType::Php),
+    ("theme", FileType::Php),
+    ("profile", FileType::Php),
+    ("engine", FileType::Php),
+    ("twig", FileType::Twig),
     ("html", FileType::Html),
     ("htm", FileType::Html),
     ("xml", FileType::Xml),
@@ -260,6 +269,7 @@ impl FileType {
             FileType::Makefile => "Makefile",
             FileType::Csv => "CSV",
             FileType::Log => "Log",
+            FileType::Twig => "Twig",
             FileType::Image => "Image",
             FileType::Binary => "Binary",
             FileType::Text => "Text",

@@ -11,6 +11,7 @@ mod editor;
 mod emmet;
 mod filetype;
 mod formatter;
+mod frameworks;
 mod git;
 mod i18n;
 mod interpreter;

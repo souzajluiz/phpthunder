@@ -50,6 +50,28 @@ impl App {
         if root.join("artisan").is_file() {
             items.push(item("▷", "artisan serve".into(), "php artisan serve"));
         }
+        if root.join("bin/console").is_file() {
+            items.push(item(
+                "▷",
+                "console cache:clear".into(),
+                "php bin/console cache:clear",
+            ));
+            items.push(item(
+                "▷",
+                "console debug:router".into(),
+                "php bin/console debug:router",
+            ));
+        }
+        if root.join("vendor/bin/drush").is_file() {
+            items.push(item(
+                "▷",
+                "drush cache:rebuild".into(),
+                "vendor/bin/drush cr",
+            ));
+        }
+        if root.join("wp-config.php").is_file() || root.join("wp-config-sample.php").is_file() {
+            items.push(item("▷", "wp server".into(), "wp server"));
+        }
         if interpreter.is_local() {
             let docroot = if root.join("public").is_dir() {
                 "public"

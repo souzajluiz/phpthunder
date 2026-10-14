@@ -7,6 +7,7 @@ mod completion;
 mod debug;
 mod dock;
 mod files;
+mod frameworks;
 mod generate;
 mod git;
 mod history;

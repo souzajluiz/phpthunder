@@ -27,6 +27,8 @@ copyright-updated = { $count ->
 }
 log-none = Nenhum arquivo de log em storage/logs, var/log ou logs
 log-title = Arquivos de log
+twig-templates-title = Templates chamados { $name }
+hook-sites-title = Chamadas do hook { $name }
 notice-caret-on-name = Posicione o cursor em um nome para renomear
 notice-no-implementations = Nenhuma implementação de { $name } encontrada
 notice-no-parameter-info = Sem informação de parâmetros aqui
