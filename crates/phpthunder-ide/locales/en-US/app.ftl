@@ -77,6 +77,7 @@ generate-getters = Getters
 generate-setters = Setters
 generate-getters-setters = Getters and setters
 generate-override = Override methods…
+generate-create-test = Test class
 generate-test-method = Test method
 generate-fixture = { $name } fixture
 generate-override-title = Override method

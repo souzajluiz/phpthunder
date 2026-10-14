@@ -580,6 +580,8 @@ pub enum Generation {
     TestMethod,
     /// A PHPUnit `setUp` or `tearDown` fixture (the method name).
     Fixture(&'static str),
+    /// A new test class file for the class at the caret.
+    CreateTest,
 }
 
 impl Generation {
@@ -595,6 +597,7 @@ impl Generation {
             Generation::Override(name) => name.clone(),
             Generation::TestMethod => tr!("generate-test-method"),
             Generation::Fixture(name) => tr!("generate-fixture", name = *name),
+            Generation::CreateTest => tr!("generate-create-test"),
         }
     }
 }

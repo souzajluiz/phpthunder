@@ -47,6 +47,8 @@ impl App {
                     entries.push(Generation::Fixture(fixture));
                 }
             }
+        } else if self.tree.root.is_some() {
+            entries.push(Generation::CreateTest);
         }
         if entries.is_empty() {
             self.notice = Some(tr!("notice-nothing-to-generate"));
@@ -77,6 +79,7 @@ impl App {
             Generation::Setters => refactor::accessors_source(&outline, false, true),
             Generation::GettersAndSetters => refactor::accessors_source(&outline, true, true),
             Generation::ImplementMethods => return self.implement_methods(&outline.fqn),
+            Generation::CreateTest => return self.create_test(&outline),
             Generation::OverrideMethods => return self.open_overrides(&outline),
             Generation::Override(name) => self
                 .lang
@@ -104,6 +107,48 @@ impl App {
         let position = doc.position_of(caret);
         self.after_change(true);
         self.place_cursor(position)
+    }
+
+    /// Creates (or opens, when it exists) the unit test of the class at the
+    /// caret: `Tests\Unit` plus the class's namespace without its root,
+    /// placed by the project's PSR-4 map (`tests/Unit/…` otherwise), with one
+    /// empty test per public method.
+    fn create_test(&mut self, outline: &ClassOutline) -> Task<Message> {
+        let Some(root) = self.tree.root.clone() else {
+            return Task::none();
+        };
+        let (namespace, name) = refactor::test_class_name(&outline.fqn);
+        let folder =
+            super::refactorings::folder_for_namespace(&root, &namespace).unwrap_or_else(|| {
+                namespace
+                    .split('\\')
+                    .skip(1)
+                    .fold(root.join("tests"), |dir, part| dir.join(part))
+            });
+        let path = folder.join(format!("{name}.php"));
+        if !path.exists() {
+            let source = refactor::test_class_source(
+                &namespace,
+                &name,
+                &outline.fqn,
+                &self.lang.test_base_class(),
+                &self.lang.public_methods(&outline.fqn),
+            );
+            match super::files::create_file(&path, &source) {
+                Ok(_) => {
+                    self.lang.update_file(&path, &source);
+                    self.tree.refresh(&folder);
+                    if let Err(at) = self.project_files.binary_search(&path) {
+                        self.project_files.insert(at, path.clone());
+                    }
+                }
+                Err(error) => {
+                    self.fail(error);
+                    return Task::none();
+                }
+            }
+        }
+        self.open(path, None)
     }
 
     /// Second step of "Override methods": pick one parent method.

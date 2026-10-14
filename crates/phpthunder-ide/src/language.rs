@@ -290,6 +290,36 @@ impl Language {
         inspection::quick_fixes(&self.index.read(), text, diagnostic, |p| load_with(open, p))
     }
 
+    /// Public methods `class` declares itself (magic ones excluded), in
+    /// declaration order, for "Create test".
+    pub fn public_methods(&self, class: &str) -> Vec<String> {
+        let index = self.index.read();
+        let mut methods: Vec<&Symbol> = index
+            .members(class)
+            .into_iter()
+            .map(|(_, s)| s)
+            .filter(|s| {
+                s.kind == phpthunder::symbol::Kind::Method
+                    && s.fqn.eq_ignore_ascii_case(class)
+                    && s.visibility == phpthunder::symbol::Visibility::Public
+                    && !s.is_virtual
+                    && !s.name.starts_with("__")
+            })
+            .collect();
+        methods.sort_by_key(|s| s.name_start);
+        methods.into_iter().map(|s| s.name.clone()).collect()
+    }
+
+    /// The base class for new tests: the project's `Tests\TestCase` when it
+    /// has one (Laravel), else PHPUnit's.
+    pub fn test_base_class(&self) -> String {
+        if self.index.read().classes("Tests\\TestCase").is_empty() {
+            "PHPUnit\\Framework\\TestCase".into()
+        } else {
+            "Tests\\TestCase".into()
+        }
+    }
+
     /// Whether the class is a test case (Generate offers test methods).
     pub fn is_test_class(&self, outline: &refactor::ClassOutline) -> bool {
         refactor::is_test_class(&self.index.read(), outline)

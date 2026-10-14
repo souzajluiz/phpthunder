@@ -207,6 +207,49 @@ pub fn test_method_source(outline: &ClassOutline) -> String {
     format!("\n    public function {name}(): void\n    {{\n    }}\n")
 }
 
+/// Namespace and class name of the unit test for `class_fqn`: the root
+/// namespace is replaced by `Tests\Unit` (`App\Models\User` gives
+/// `Tests\Unit\Models` and `UserTest`).
+pub fn test_class_name(class_fqn: &str) -> (String, String) {
+    let mut parts: Vec<&str> = class_fqn.split('\\').filter(|p| !p.is_empty()).collect();
+    let short = parts.pop().unwrap_or("Example");
+    let mut namespace = vec!["Tests", "Unit"];
+    namespace.extend(parts.into_iter().skip(1));
+    (namespace.join("\\"), format!("{short}Test"))
+}
+
+/// Source of a new test class for `class_fqn` extending `base` (an FQN),
+/// with one empty test per method in `methods`.
+pub fn test_class_source(
+    namespace: &str,
+    name: &str,
+    class_fqn: &str,
+    base: &str,
+    methods: &[String],
+) -> String {
+    let base_short = base.rsplit('\\').next().unwrap_or(base);
+    let mut uses = vec![class_fqn.to_string(), base.to_string()];
+    uses.sort();
+    uses.dedup();
+    let uses: String = uses.iter().map(|u| format!("use {u};\n")).collect();
+    let tests: Vec<String> = if methods.is_empty() {
+        vec!["testExample".to_string()]
+    } else {
+        methods
+            .iter()
+            .map(|m| format!("test{}", capitalize(m)))
+            .collect()
+    };
+    let bodies: Vec<String> = tests
+        .iter()
+        .map(|t| format!("    public function {t}(): void\n    {{\n    }}\n"))
+        .collect();
+    format!(
+        "<?php\n\nnamespace {namespace};\n\n{uses}\nclass {name} extends {base_short}\n{{\n{}}}\n",
+        bodies.join("\n")
+    )
+}
+
 /// A `setUp` or `tearDown` fixture calling its parent; `None` when the
 /// class declares it already.
 pub fn fixture_source(outline: &ClassOutline, name: &str) -> Option<String> {
@@ -353,6 +396,24 @@ mod tests {
         assert!(test_method_source(&o).contains("function testExample2(): void"));
         assert_eq!(fixture_source(&o, "setUp"), None);
         assert!(fixture_source(&o, "tearDown").is_some_and(|s| s.contains("parent::tearDown();")));
+    }
+
+    #[test]
+    fn test_class_should_mirror_the_class_namespace() {
+        assert_eq!(
+            test_class_name("App\\Models\\User"),
+            ("Tests\\Unit\\Models".to_string(), "UserTest".to_string())
+        );
+        assert_eq!(
+            test_class_source(
+                "Tests\\Unit\\Models",
+                "UserTest",
+                "App\\Models\\User",
+                "Tests\\TestCase",
+                &["save".to_string()]
+            ),
+            "<?php\n\nnamespace Tests\\Unit\\Models;\n\nuse App\\Models\\User;\nuse Tests\\TestCase;\n\nclass UserTest extends TestCase\n{\n    public function testSave(): void\n    {\n    }\n}\n"
+        );
     }
 
     #[test]
