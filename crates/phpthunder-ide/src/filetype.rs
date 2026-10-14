@@ -92,6 +92,8 @@ const NAMES: &[(&str, FileType)] = &[
 /// longest first so `*.blade.php` wins over `*.php`.
 const PATTERNS: &[(&str, FileType)] = &[
     ("*.blade.php", FileType::Blade),
+    // Class diagrams drawn by the IDE: shown, not edited as XML.
+    ("*.diagram.svg", FileType::Image),
     ("*.xml.dist", FileType::Xml),
     ("*.neon.dist", FileType::Yaml),
     ("*.yml.dist", FileType::Yaml),

@@ -7,7 +7,7 @@ use crate::app::{App, Message};
 use crate::editor::Document;
 use crate::filetype::FileType;
 use crate::tr;
-use iced::widget::{column, container, image, scrollable};
+use iced::widget::{column, container, image, scrollable, svg};
 use iced::{Center, ContentFit, Element, Fill};
 use std::path::Path;
 
@@ -31,6 +31,27 @@ impl Preview {
                 .flatten(),
             bytes: std::fs::metadata(path).map(|m| m.len()).unwrap_or(0),
         }
+    }
+}
+
+/// `#rrggbb` for an opaque theme color.
+fn hex(color: iced::Color) -> String {
+    let [r, g, b, _] = color.into_rgba8();
+    format!("#{r:02x}{g:02x}{b:02x}")
+}
+
+/// Colors of class diagrams drawn for the preview, taken from the editor
+/// theme so a diagram tab looks like the rest of the window.
+pub fn diagram_style() -> phpthunder::diagram::Style {
+    phpthunder::diagram::Style {
+        background: hex(BG),
+        fill: hex(POPUP),
+        focus_fill: hex(SELECTED),
+        line: hex(MUTED),
+        text: hex(TEXT),
+        muted: hex(MUTED),
+        accent: hex(ACCENT),
+        font: "Menlo, Consolas, 'DejaVu Sans Mono', monospace".into(),
     }
 }
 
@@ -59,10 +80,23 @@ impl App {
         let size = human_size(info.bytes);
         match doc.file_type {
             FileType::Image => {
-                let picture = image(image::Handle::from_path(&doc.path))
-                    .content_fit(ContentFit::ScaleDown)
-                    .width(Fill)
-                    .height(Fill);
+                let is_svg = doc
+                    .path
+                    .extension()
+                    .is_some_and(|e| e.eq_ignore_ascii_case("svg"));
+                let picture: Element<'a, Message> = if is_svg {
+                    svg(svg::Handle::from_path(&doc.path))
+                        .content_fit(ContentFit::ScaleDown)
+                        .width(Fill)
+                        .height(Fill)
+                        .into()
+                } else {
+                    image(image::Handle::from_path(&doc.path))
+                        .content_fit(ContentFit::ScaleDown)
+                        .width(Fill)
+                        .height(Fill)
+                        .into()
+                };
                 let caption = match info.dimensions {
                     Some((w, h)) => format!("{w} × {h} px · {size}"),
                     None => size,

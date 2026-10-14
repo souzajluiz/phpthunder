@@ -79,6 +79,11 @@ pub enum Cmd {
     GotoImplementation,
     /// Show the type hierarchy panel (`⌃H`).
     TypeHierarchy,
+    /// Open a UML class diagram of the class at the caret or of the
+    /// active file's folder (`⌥⇧⌘U`).
+    ShowDiagram,
+    /// Open the same class diagram as PlantUML text.
+    ShowDiagramPlantUml,
     /// Popup with the symbols of the current file (`⌘F12`).
     FileStructure,
     /// Show the Problems panel (`⌘6`).
@@ -362,7 +367,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 173] = {
+    pub const ALL: [Cmd; 175] = {
         use Cmd::*;
         [
             Save,
@@ -399,6 +404,8 @@ impl Cmd {
             OptimizeImports,
             GotoImplementation,
             TypeHierarchy,
+            ShowDiagram,
+            ShowDiagramPlantUml,
             FileStructure,
             Problems,
             ToggleTerminal,
@@ -605,6 +612,7 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("]", false, true) => BlockEnd,
             ("/", false, true) | ("÷", false, true) => BlockComment,
             ("u", true, false) => ToggleCase,
+            ("u", true, true) => ShowDiagram,
             ("t", false, true) => SurroundWith,
             ("a", true, false) => FindAction,
             ("c", false, true) => IntroduceConstant,
@@ -864,6 +872,8 @@ pub fn hint(cmd: Cmd) -> &'static str {
         OptimizeImports => "⌃⌥O",
         GotoImplementation => "⌥⌘B",
         TypeHierarchy => "⌃H",
+        ShowDiagram => "⌥⇧⌘U",
+        ShowDiagramPlantUml => "",
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",

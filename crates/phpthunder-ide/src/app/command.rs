@@ -88,6 +88,8 @@ impl App {
             Cmd::OptimizeImports => self.optimize_imports(),
             Cmd::GotoImplementation => self.goto_implementation(),
             Cmd::TypeHierarchy => self.show_type_hierarchy(),
+            Cmd::ShowDiagram => self.show_diagram(false),
+            Cmd::ShowDiagramPlantUml => self.show_diagram(true),
             Cmd::FileStructure if has_doc => self.open_palette(Mode::Structure),
             Cmd::FileStructure => Task::none(),
             Cmd::ToggleTerminal => self.toggle_terminal(),

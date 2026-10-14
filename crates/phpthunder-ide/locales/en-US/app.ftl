@@ -19,6 +19,7 @@ notice-replaced = Replaced { $count ->
 
 notice-caret-class-or-method = Place the caret on a class or method
 notice-caret-in-class = Place the caret on or inside a class
+notice-diagram-empty = No classes to draw here
 notice-caret-on-name = Place the caret on a name to rename
 notice-no-implementations = No implementations of { $name } found
 notice-no-parameter-info = No parameter info here
@@ -240,6 +241,8 @@ cmd-rename = Rename
 cmd-optimize-imports = Optimize imports
 cmd-goto-implementation = Go to implementation
 cmd-type-hierarchy = Type hierarchy
+cmd-show-diagram = Show class diagram
+cmd-show-diagram-plant-uml = Show class diagram as PlantUML
 cmd-file-structure = File structure
 cmd-problems = Problems
 cmd-toggle-terminal = Terminal

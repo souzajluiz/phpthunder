@@ -92,24 +92,12 @@ impl App {
     /// Fills the Hierarchy panel for the class at the caret (or around it):
     /// supertypes above, subtypes below (`⌃H`).
     pub(crate) fn show_type_hierarchy(&mut self) -> Task<Message> {
-        let Some(doc) = self.doc() else {
+        if self.doc().is_none() {
             return Task::none();
-        };
-        let offset = doc.offset(doc.cursor());
-        let at_caret = self
-            .lang
-            .definitions(&doc.text, offset)
-            .into_iter()
-            .find(|d| d.symbol.kind.is_class_like());
-        let class = match at_caret {
-            Some(def) => def.symbol.fqn,
-            None => match phpthunder::refactor::enclosing_class_fqn(&doc.text, offset) {
-                Some(fqn) => fqn,
-                None => {
-                    self.notice = Some(tr!("notice-caret-in-class"));
-                    return Task::none();
-                }
-            },
+        }
+        let Some(class) = self.class_at_caret() else {
+            self.notice = Some(tr!("notice-caret-in-class"));
+            return Task::none();
         };
         let root = self.tree.root.clone();
         let row = |depth: usize, fqn: &str, decl: Option<(PathBuf, Symbol)>| {
@@ -154,6 +142,68 @@ impl App {
         });
         self.show_panel(Bottom::Hierarchy);
         Task::none()
+    }
+
+    /// Class named at the caret, or else the class around it; `None` outside
+    /// classes. Shared by the type hierarchy and the class diagram.
+    fn class_at_caret(&self) -> Option<String> {
+        let doc = self.doc()?;
+        let offset = doc.offset(doc.cursor());
+        self.lang
+            .definitions(&doc.text, offset)
+            .into_iter()
+            .find(|d| d.symbol.kind.is_class_like())
+            .map(|d| d.symbol.fqn)
+            .or_else(|| phpthunder::refactor::enclosing_class_fqn(&doc.text, offset))
+    }
+
+    /// Opens a UML class diagram: of the class at the caret with its
+    /// supertypes and subtypes, or else of the classes in the active
+    /// file's folder. Drawn as SVG in a preview tab, or with `plantuml`
+    /// written as PlantUML text to paste into documentation.
+    pub(crate) fn show_diagram(&mut self, plantuml: bool) -> Task<Message> {
+        let Some(path) = self.doc().map(|d| d.path.clone()) else {
+            return Task::none();
+        };
+        let (name, diagram) = match self.class_at_caret() {
+            Some(class) => (
+                class.rsplit('\\').next().unwrap_or(&class).to_string(),
+                self.lang.hierarchy_diagram(&class),
+            ),
+            None => {
+                let Some(dir) = path.parent() else {
+                    return Task::none();
+                };
+                let name = dir
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                (name, self.lang.folder_diagram(dir))
+            }
+        };
+        if diagram.nodes.is_empty() {
+            self.notice = Some(tr!("notice-diagram-empty"));
+            return Task::none();
+        }
+        let (text, extension) = if plantuml {
+            (phpthunder::diagram::to_plantuml(&diagram), "puml")
+        } else {
+            (
+                phpthunder::diagram::to_svg(&diagram, &crate::ui::diagram_style()),
+                "diagram.svg",
+            )
+        };
+        // Named by content: the preview caches images by path, so a changed
+        // diagram needs a new name.
+        let hash = phpthunder::index::content_hash(&text);
+        let dir = std::env::temp_dir().join("phpthunder-diagrams");
+        let file = dir.join(format!("{name}-{hash:016x}.{extension}"));
+        if let Err(error) = std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&file, text))
+        {
+            self.fail(error.to_string());
+            return Task::none();
+        }
+        self.open(file, None)
     }
 
     /// Opens the declaration of the `i`-th hierarchy row.

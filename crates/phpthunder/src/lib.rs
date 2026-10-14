@@ -5,6 +5,7 @@
 //! inspections and refactorings. Used by the language server and the IDE.
 
 pub mod analysis;
+pub mod diagram;
 pub mod index;
 pub mod inspection;
 pub mod intention;

@@ -624,6 +624,27 @@ impl Language {
             .collect()
     }
 
+    /// UML diagram of `class` with its supertypes and subtypes, for the
+    /// Show Diagram command.
+    pub fn hierarchy_diagram(&self, class: &str) -> phpthunder::diagram::Diagram {
+        phpthunder::diagram::hierarchy_diagram(&self.index.read(), class)
+    }
+
+    /// UML diagram of every class, interface, trait and enum declared in
+    /// files directly inside `dir`, for Show Diagram outside a class.
+    pub fn folder_diagram(&self, dir: &Path) -> phpthunder::diagram::Diagram {
+        let index = self.index.read();
+        let mut classes: Vec<String> = index
+            .files()
+            .filter(|(path, _)| path.parent() == Some(dir))
+            .flat_map(|(_, symbols)| symbols.iter())
+            .filter(|s| s.kind.is_class_like())
+            .map(|s| s.fqn.clone())
+            .collect();
+        classes.sort();
+        phpthunder::diagram::classes_diagram(&index, &classes)
+    }
+
     /// Find usages; `open` holds the text of open editors, which wins over disk.
     pub async fn usages(
         self,
