@@ -94,6 +94,8 @@ pub enum Cmd {
     CopyStructurePath,
     /// Evaluate a JSONPath or XPath on the active file and list matches.
     EvaluateQuery,
+    /// Create a file from a template next to the active file.
+    NewFromTemplate,
     /// Popup with the symbols of the current file (`⌘F12`).
     FileStructure,
     /// Show the Problems panel (`⌘6`).
@@ -377,7 +379,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 180] = {
+    pub const ALL: [Cmd; 181] = {
         use Cmd::*;
         [
             Save,
@@ -421,6 +423,7 @@ impl Cmd {
             OpenLog,
             CopyStructurePath,
             EvaluateQuery,
+            NewFromTemplate,
             FileStructure,
             Problems,
             ToggleTerminal,
@@ -893,7 +896,8 @@ pub fn hint(cmd: Cmd) -> &'static str {
         | UpdateCopyrightEverywhere
         | OpenLog
         | CopyStructurePath
-        | EvaluateQuery => "",
+        | EvaluateQuery
+        | NewFromTemplate => "",
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",

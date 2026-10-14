@@ -9,6 +9,7 @@ mod copyright;
 mod debug;
 mod editor;
 mod emmet;
+mod file_templates;
 mod filetype;
 mod formatter;
 mod frameworks;

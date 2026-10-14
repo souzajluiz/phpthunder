@@ -875,6 +875,11 @@ pub enum FileAction {
     /// Create a PHP class in this folder, namespaced from Composer's PSR-4
     /// autoload (asks for the class name).
     NewClass(PathBuf),
+    /// List the file templates for creating a file in this folder.
+    ChooseTemplate(PathBuf),
+    /// Create a file in this folder from the named template (asks for the
+    /// file name).
+    NewFromTemplate(PathBuf, String),
     /// Rename or move this file or folder (asks for the new relative path).
     Rename(PathBuf),
     /// Move this file or folder to the Trash.

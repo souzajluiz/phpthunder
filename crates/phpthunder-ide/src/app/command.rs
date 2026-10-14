@@ -95,6 +95,16 @@ impl App {
             Cmd::OpenLog => self.open_log_picker(),
             Cmd::CopyStructurePath => self.copy_structure_path(),
             Cmd::EvaluateQuery => self.open_palette(Mode::Query),
+            Cmd::NewFromTemplate => {
+                let dir = self
+                    .doc()
+                    .and_then(|d| d.path.parent().map(std::path::Path::to_path_buf))
+                    .or_else(|| self.tree.root.clone());
+                match dir {
+                    Some(dir) => self.run_file_action(crate::app::FileAction::ChooseTemplate(dir)),
+                    None => Task::none(),
+                }
+            }
             Cmd::FileStructure if has_doc => self.open_palette(Mode::Structure),
             Cmd::FileStructure => Task::none(),
             Cmd::ToggleTerminal => self.toggle_terminal(),

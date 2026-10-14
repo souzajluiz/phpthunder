@@ -221,7 +221,16 @@ impl App {
                 tr!("file-new-folder"),
                 FileAction::NewFolder(dir.clone()),
             ),
-            item("C", tr!("file-new-class"), FileAction::NewClass(dir)),
+            item(
+                "C",
+                tr!("file-new-class"),
+                FileAction::NewClass(dir.clone()),
+            ),
+            item(
+                "▤",
+                tr!("file-new-from-template"),
+                FileAction::ChooseTemplate(dir),
+            ),
             item("✎", tr!("file-rename"), FileAction::Rename(path.clone())),
             item("⌫", tr!("file-delete"), FileAction::Delete(path.clone())),
             item("◎", tr!("file-reveal"), FileAction::Reveal(path.clone())),
@@ -261,6 +270,33 @@ impl App {
                 tr!("file-new-class-in", dir = self.relative(dir)),
                 String::new(),
             ),
+            FileAction::NewFromTemplate(dir, template) => (
+                tr!(
+                    "file-new-from-template-in",
+                    template = template.as_str(),
+                    dir = self.relative(dir)
+                ),
+                String::new(),
+            ),
+            FileAction::ChooseTemplate(dir) => {
+                let Some(root) = self.tree.root.clone() else {
+                    return Task::none();
+                };
+                let items = crate::file_templates::all(&root)
+                    .into_iter()
+                    .map(|t| crate::palette::Item {
+                        badge: "▤",
+                        detail: format!(".{}", t.extension),
+                        title: t.name.clone(),
+                        matched: Vec::new(),
+                        target: crate::palette::Target::FileAction(FileAction::NewFromTemplate(
+                            dir.clone(),
+                            t.name,
+                        )),
+                    })
+                    .collect();
+                return self.open_choice(tr!("file-templates-title"), items);
+            }
             FileAction::Rename(path) => (
                 tr!("file-rename-title", path = self.relative(path)),
                 self.relative(path),
@@ -332,6 +368,23 @@ impl App {
                     &dir.join(format!("{name}.php")),
                     &class_source(namespace.as_deref(), name),
                 )
+            }
+            FileAction::NewFromTemplate(dir, name) => {
+                match crate::file_templates::all(&root)
+                    .into_iter()
+                    .find(|t| t.name == name)
+                {
+                    Some(template) => {
+                        let stem = value
+                            .strip_suffix(&format!(".{}", template.extension))
+                            .unwrap_or(&value)
+                            .to_string();
+                        let path = dir.join(format!("{stem}.{}", template.extension));
+                        let text = render_template(&root, &dir, &path, &stem, &template);
+                        create_file(&path, &text)
+                    }
+                    None => Err(tr!("file-template-missing", template = name)),
+                }
             }
             FileAction::Rename(from) => {
                 let to = root.join(&value);
@@ -414,6 +467,45 @@ impl App {
             self.project_files.insert(at, to.to_path_buf());
         }
     }
+}
+
+/// The text of a file created at `path` from `template`: variables
+/// filled in (`stem` as the name, the folder's PSR-4 namespace), then the
+/// project's copyright header when it sets one.
+fn render_template(
+    root: &Path,
+    dir: &Path,
+    path: &Path,
+    stem: &str,
+    template: &crate::file_templates::FileTemplate,
+) -> String {
+    let namespace = namespace_for(root, dir);
+    let project = root
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let user = std::env::var("USER").unwrap_or_default();
+    let date = crate::file_templates::today();
+    let text = crate::file_templates::render(
+        template,
+        &crate::file_templates::Variables {
+            name: stem.rsplit('/').next().unwrap_or(stem),
+            namespace: namespace.as_deref(),
+            year: crate::copyright::current_year(),
+            date: &date,
+            user: &user,
+            project: &project,
+        },
+    );
+    let notice = crate::interpreter::project_config(root).copyright.map(|t| {
+        let file = crate::app::file_name(path);
+        crate::copyright::render(&t, crate::copyright::current_year(), &project, &file)
+    });
+    notice
+        .and_then(|n| {
+            crate::copyright::apply(&text, crate::filetype::FileType::detect(path, None), &n)
+        })
+        .unwrap_or(text)
 }
 
 /// Creates `path` (and missing folders) with `content`, refusing to
