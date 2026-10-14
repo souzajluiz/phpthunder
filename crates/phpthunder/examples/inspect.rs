@@ -41,6 +41,7 @@ fn kind(code: &Code) -> &'static str {
         Code::AbstractInConcreteClass => "abstract in concrete class",
         Code::ThisInStatic => "this in static",
         Code::RedundantElse => "redundant else",
+        Code::Rule(rule, _) => rule.slug(),
         Code::External(_) => "external",
     }
 }

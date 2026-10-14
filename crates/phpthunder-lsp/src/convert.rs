@@ -63,6 +63,7 @@ fn code_name(code: &Code) -> &'static str {
         Code::AbstractInConcreteClass => "abstract-in-concrete-class",
         Code::ThisInStatic => "this-in-static",
         Code::RedundantElse => "redundant-else",
+        Code::Rule(rule, _) => rule.slug(),
         Code::External(_) => "external",
     }
 }
@@ -79,18 +80,19 @@ pub fn diagnostic(d: &EngineDiagnostic) -> Diagnostic {
         severity: Some(match d.severity {
             Severity::Error => DiagnosticSeverity::ERROR,
             Severity::Warning => DiagnosticSeverity::WARNING,
+            Severity::Weak => DiagnosticSeverity::HINT,
         }),
         code: Some(NumberOrString::String(code_name(&d.code).into())),
         source: Some("phpthunder".into()),
         message: d.message.clone(),
-        tags: matches!(
+        tags: (matches!(
             d.code,
             Code::UnusedImport(_)
                 | Code::UnusedVariable(_)
                 | Code::UnusedPrivateMember(_)
                 | Code::UnusedClosureUse(_)
                 | Code::UnreachableCode
-        )
+        ) || matches!(&d.code, Code::Rule(rule, _) if rule.unnecessary()))
         .then(|| vec![DiagnosticTag::UNNECESSARY]),
         ..Default::default()
     }

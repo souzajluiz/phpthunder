@@ -179,7 +179,7 @@ pub(crate) fn unused_variables(
 
 /// Whether executing `node` always ends in `return`, `throw`, `exit` or an
 /// endless loop.
-fn always_exits(node: Node, src: &str, never: &dyn Fn(Node) -> bool) -> bool {
+pub(crate) fn always_exits(node: Node, src: &str, never: &dyn Fn(Node) -> bool) -> bool {
     match node.kind() {
         "return_statement" | "exit_statement" => true,
         "expression_statement" => node.named_child(0).is_some_and(|e| {

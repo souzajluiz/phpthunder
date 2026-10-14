@@ -89,6 +89,22 @@ pub fn quick_fixes(
             edits: vec![unwrap_else_edit(src, diagnostic.start, diagnostic.end)],
             kind: FixKind::RemoveRedundantElse,
         }],
+        Code::Rule(rule, detail) => rule
+            .fix_title()
+            .zip(rule_fix(
+                *rule,
+                src,
+                diagnostic.start,
+                diagnostic.end,
+                detail,
+            ))
+            .map(|(title, edits)| Fix {
+                title: title.into(),
+                edits,
+                kind: FixKind::Rule(*rule),
+            })
+            .into_iter()
+            .collect(),
         Code::UndefinedFunction(_)
         | Code::EmptyBody
         | Code::DuplicateCase(_)
@@ -113,7 +129,7 @@ pub fn quick_fixes(
 
 /// An edit deleting `start..end` together with its line when nothing else
 /// is on it (with the statement's `;` when it follows directly).
-fn remove_lines_edit(src: &str, start: usize, end: usize) -> Edit {
+pub(crate) fn remove_lines_edit(src: &str, start: usize, end: usize) -> Edit {
     let end = if src[end..].starts_with(';') {
         end + 1
     } else {

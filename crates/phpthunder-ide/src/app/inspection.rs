@@ -123,11 +123,8 @@ impl App {
     pub fn problem_counts(&self) -> (usize, usize) {
         let Some(doc) = self.doc() else { return (0, 0) };
         let problems = doc.problems();
-        let errors = problems
-            .iter()
-            .filter(|d| d.severity == Severity::Error)
-            .count();
-        (errors, problems.len() - errors)
+        let count = |severity| problems.iter().filter(|d| d.severity == severity).count();
+        (count(Severity::Error), count(Severity::Warning))
     }
 
     /// The diagnostics touching byte `offset` of the active document.

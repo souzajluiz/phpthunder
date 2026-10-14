@@ -10,11 +10,13 @@ use iced::widget::{button, column, container, pin, row, scrollable, space};
 use iced::{Center, Color, Element, Fill, Padding, Theme};
 use phpthunder::inspection::Severity;
 
-/// Squiggle color for a severity: red for errors, amber for warnings.
+/// Squiggle color for a severity: red for errors, amber for warnings,
+/// a quiet gray-blue for style hints.
 pub(crate) fn severity_color(severity: Severity) -> Color {
     match severity {
         Severity::Error => rgb(0xF7768E),
         Severity::Warning => rgb(0xE0AF68),
+        Severity::Weak => rgb(0x737AA2),
     }
 }
 

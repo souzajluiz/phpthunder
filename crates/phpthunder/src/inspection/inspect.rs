@@ -234,6 +234,13 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
     missing_returns(index, &analyzer, tree.root_node(), src, &mut push);
     return_mismatches(index, &analyzer, tree.root_node(), src, &mut push);
     style_checks(tree.root_node(), src, &mut push);
+    let mut findings = Findings::default();
+    let root = tree.root_node();
+    bug_checks(root, src, &mut findings);
+    simplify_checks(root, src, &mut findings);
+    psr_checks(root, src, &mut findings);
+    phpunit_checks(root, src, &mut findings);
+    findings.report(src, &lines, &mut out);
     out.sort_by_key(|d| (d.start, d.severity));
     out
 }
@@ -541,6 +548,7 @@ mod tests {
         diagnostics(index, src)
             .into_iter()
             .map(|d| d.code)
+            .filter(|c| !matches!(c, Code::Rule(..)))
             .collect()
     }
 

@@ -66,6 +66,11 @@ pub fn diagnostic_message(diagnostic: &Diagnostic) -> String {
         Code::UnusedPrivateMember(name) => {
             tr!("diagnostic-unused-private-member", name = name.as_str())
         }
+        Code::Rule(rule, detail) => {
+            let mut args = fluent_bundle::FluentArgs::new();
+            args.set("detail", detail.as_str());
+            crate::i18n::translate(&format!("diagnostic-{}", rule.slug()), Some(&args))
+        }
         Code::External(_) => diagnostic.message.clone(),
     }
 }
@@ -84,6 +89,7 @@ pub fn fix_title(fix: &Fix) -> String {
         FixKind::UseStrictComparison => tr!("fix-use-strict-comparison"),
         FixKind::RemoveStatement => tr!("fix-remove-statement"),
         FixKind::RemoveRedundantElse => tr!("fix-remove-redundant-else"),
+        FixKind::Rule(rule) => crate::i18n::translate(&format!("fix-{}", rule.slug()), None),
         FixKind::AddMethod { class, name } => {
             tr!("fix-add-method", name = name.as_str(), class = short(class))
         }

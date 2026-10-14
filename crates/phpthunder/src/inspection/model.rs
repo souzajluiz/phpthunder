@@ -1,5 +1,6 @@
 //! Inspection results: diagnostics, quick fixes and the text edits they apply.
 
+use super::Rule;
 use crate::syntax::Span;
 use std::path::PathBuf;
 
@@ -10,6 +11,9 @@ pub enum Severity {
     Error,
     /// Code that is suspicious but may work (unknown member, unused import).
     Warning,
+    /// Style or simplification hints: shown subtly, never counted as
+    /// problems in the status bar.
+    Weak,
 }
 
 /// Machine-readable reason for a diagnostic, used to offer quick fixes.
@@ -95,6 +99,8 @@ pub enum Code {
     ThisInStatic,
     /// An `else` after an `if` branch that always leaves.
     RedundantElse,
+    /// A rule-based inspection (see [`Rule`]) with its message detail.
+    Rule(Rule, String),
     /// Reported by an external analyser; carries its name (e.g. `PHPStan`).
     External(String),
 }
@@ -176,6 +182,8 @@ pub enum FixKind {
     RemoveStatement,
     /// Drops an `else` after an `if` that always leaves, keeping its body.
     RemoveRedundantElse,
+    /// The quick fix of a rule-based inspection.
+    Rule(Rule),
     /// Adds a property to a class.
     AddProperty {
         /// Class FQN.
