@@ -65,7 +65,7 @@ fn is_name_byte(b: u8) -> bool {
 }
 
 /// Scans template text, appending spans in document order.
-fn scan_template(src: &str, out: &mut Vec<Span>) {
+pub(super) fn scan_template(src: &str, out: &mut Vec<Span>) {
     let b = src.as_bytes();
     let mut i = 0;
     while i < b.len() {

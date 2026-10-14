@@ -681,15 +681,28 @@ impl<'a> Analyzer<'a> {
     /// The class `cond` proves `var` to be when it holds (`negated`:
     /// when it fails): `$var instanceof Foo`, either side of `&&` (or, when
     /// negated, of `||`), and `!` flipping between the two.
-    fn instanceof_fact(&self, cond: Node<'a>, var: &str, negated: bool, ctx: &NameContext) -> Option<String> {
+    fn instanceof_fact(
+        &self,
+        cond: Node<'a>,
+        var: &str,
+        negated: bool,
+        ctx: &NameContext,
+    ) -> Option<String> {
         match cond.kind() {
-            "parenthesized_expression" => self.instanceof_fact(cond.named_child(0)?, var, negated, ctx),
+            "parenthesized_expression" => {
+                self.instanceof_fact(cond.named_child(0)?, var, negated, ctx)
+            }
             "unary_op_expression" if self.text(cond).starts_with('!') => {
                 self.instanceof_fact(cond.child_by_field_name("argument")?, var, !negated, ctx)
             }
             "binary_expression" => {
-                let op = self.text(cond.child_by_field_name("operator")?).to_ascii_lowercase();
-                let (left, right) = (cond.child_by_field_name("left")?, cond.child_by_field_name("right")?);
+                let op = self
+                    .text(cond.child_by_field_name("operator")?)
+                    .to_ascii_lowercase();
+                let (left, right) = (
+                    cond.child_by_field_name("left")?,
+                    cond.child_by_field_name("right")?,
+                );
                 match (op.as_str(), negated) {
                     ("instanceof", false) if self.text(left) == var => self.class_ref(right, ctx),
                     ("&&" | "and", false) | ("||" | "or", true) => self
@@ -707,13 +720,23 @@ impl<'a> Analyzer<'a> {
     /// `if`/`elseif` body, the `else` of a negated check, the right side of
     /// `&&`, a ternary branch, or an earlier guard (`if (!$x instanceof
     /// Foo) { return; }`, `assert($x instanceof Foo)`) in an enclosing block.
-    fn narrowing(&self, usage: Node<'a>, scope: Node<'a>, var: &str, ctx: &NameContext) -> Option<(usize, String)> {
+    fn narrowing(
+        &self,
+        usage: Node<'a>,
+        scope: Node<'a>,
+        var: &str,
+        ctx: &NameContext,
+    ) -> Option<(usize, String)> {
         let mut child = usage;
         while let Some(parent) = child.parent() {
             if parent.id() == scope.id() && parent.kind() != "program" {
                 break;
             }
-            let is = |field: &str| parent.child_by_field_name(field).is_some_and(|n| n.id() == child.id());
+            let is = |field: &str| {
+                parent
+                    .child_by_field_name(field)
+                    .is_some_and(|n| n.id() == child.id())
+            };
             let fact = match parent.kind() {
                 "if_statement" | "else_if_clause" if is("body") => parent
                     .child_by_field_name("condition")
@@ -745,7 +768,9 @@ impl<'a> Analyzer<'a> {
                 "conditional_expression" if is("alternative") => parent
                     .child_by_field_name("condition")
                     .and_then(|c| self.instanceof_fact(c, var, true, ctx)),
-                "compound_statement" | "program" | "colon_block" => self.guard(parent, child, var, ctx),
+                "compound_statement" | "program" | "colon_block" => {
+                    self.guard(parent, child, var, ctx)
+                }
                 _ => None,
             };
             if let Some(class) = fact {
@@ -763,7 +788,13 @@ impl<'a> Analyzer<'a> {
     /// an instance of some class: `if (!$x instanceof Foo) { return; }` or
     /// `assert($x instanceof Foo);`. Assignments in between are handled by
     /// the caller (the later binding wins).
-    fn guard(&self, block: Node<'a>, statement: Node<'a>, var: &str, ctx: &NameContext) -> Option<String> {
+    fn guard(
+        &self,
+        block: Node<'a>,
+        statement: Node<'a>,
+        var: &str,
+        ctx: &NameContext,
+    ) -> Option<String> {
         let mut c = block.walk();
         let earlier: Vec<Node> = block
             .named_children(&mut c)
@@ -772,10 +803,13 @@ impl<'a> Analyzer<'a> {
         earlier.into_iter().rev().find_map(|s| match s.kind() {
             "if_statement" => {
                 let mut ac = s.walk();
-                let no_else = s.children_by_field_name("alternative", &mut ac).next().is_none();
-                let leaves = s.child_by_field_name("body").is_some_and(|b| {
-                    crate::inspection::ends_flow(b, self.src)
-                });
+                let no_else = s
+                    .children_by_field_name("alternative", &mut ac)
+                    .next()
+                    .is_none();
+                let leaves = s
+                    .child_by_field_name("body")
+                    .is_some_and(|b| crate::inspection::ends_flow(b, self.src));
                 (no_else && leaves)
                     .then(|| s.child_by_field_name("condition"))
                     .flatten()
@@ -784,10 +818,15 @@ impl<'a> Analyzer<'a> {
             "expression_statement" => {
                 let call = s.named_child(0)?;
                 let is_assert = call.kind() == "function_call_expression"
-                    && call
-                        .child_by_field_name("function")
-                        .is_some_and(|f| self.text(f).trim_start_matches('\\').eq_ignore_ascii_case("assert"));
-                let arg = call.child_by_field_name("arguments")?.named_child(0)?.named_child(0)?;
+                    && call.child_by_field_name("function").is_some_and(|f| {
+                        self.text(f)
+                            .trim_start_matches('\\')
+                            .eq_ignore_ascii_case("assert")
+                    });
+                let arg = call
+                    .child_by_field_name("arguments")?
+                    .named_child(0)?
+                    .named_child(0)?;
                 is_assert
                     .then(|| self.instanceof_fact(arg, var, false, ctx))
                     .flatten()
@@ -1013,7 +1052,9 @@ mod tests {
         let mut index = Index::default();
         index.update(
             PathBuf::from("/lib.php"),
-            index_source("<?php class Shape {} class Circle extends Shape { function radius() {} }"),
+            index_source(
+                "<?php class Shape {} class Circle extends Shape { function radius() {} }",
+            ),
         );
         let tree = parse(&src);
         let analyzer = Analyzer::new(&index, &src, &tree);
@@ -1028,7 +1069,8 @@ mod tests {
     #[test]
     fn instanceof_should_narrow_inside_if() {
         assert_eq!(
-            type_at("<?php function f(Shape $s) { if ($s instanceof Circle) { $‸s->radius(); } }").as_deref(),
+            type_at("<?php function f(Shape $s) { if ($s instanceof Circle) { $‸s->radius(); } }")
+                .as_deref(),
             Some("Circle")
         );
     }
@@ -1036,7 +1078,8 @@ mod tests {
     #[test]
     fn instanceof_should_narrow_right_of_and() {
         assert_eq!(
-            type_at("<?php function f(Shape $s) { return $s instanceof Circle && $‸s->radius(); }").as_deref(),
+            type_at("<?php function f(Shape $s) { return $s instanceof Circle && $‸s->radius(); }")
+                .as_deref(),
             Some("Circle")
         );
     }
@@ -1060,7 +1103,8 @@ mod tests {
     #[test]
     fn assert_should_narrow_following_statements() {
         assert_eq!(
-            type_at("<?php function f(Shape $s) { assert($s instanceof Circle); $‸s->radius(); }").as_deref(),
+            type_at("<?php function f(Shape $s) { assert($s instanceof Circle); $‸s->radius(); }")
+                .as_deref(),
             Some("Circle")
         );
     }
@@ -1076,7 +1120,8 @@ mod tests {
     #[test]
     fn check_in_other_branch_should_not_narrow() {
         assert_eq!(
-            type_at("<?php function f(Shape $s) { if ($s instanceof Circle) { } $‸s->radius(); }").as_deref(),
+            type_at("<?php function f(Shape $s) { if ($s instanceof Circle) { } $‸s->radius(); }")
+                .as_deref(),
             Some("Shape")
         );
     }

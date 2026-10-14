@@ -5,6 +5,7 @@
 //! well under a millisecond) and hand them over through the highlighter
 //! settings, versioned so the editor re-highlights only when they change.
 
+use super::{Embedded, embedded_spans};
 use crate::ui::{
     MONO_BOLD, SYN_COMMENT, SYN_DOC_TAG, SYN_FIELD, SYN_FUNCTION, SYN_KEYWORD, SYN_NUMBER,
     SYN_PUNCT, SYN_SEPARATOR, SYN_STRING, SYN_TYPE,
@@ -285,6 +286,139 @@ fn doc_tags(src: &str, start: usize, end: usize, out: &mut Vec<(usize, usize)>) 
     }
 }
 
+/// SQL statements a string literal may start with.
+const SQL_STARTS: &[&str] = &[
+    "select", "insert", "update", "delete", "with", "create", "alter", "drop", "replace",
+    "truncate",
+];
+
+/// Words that, after an SQL start, confirm a query (so "Update your
+/// profile" stays a plain string).
+const SQL_CONFIRMS: &[&str] = &[
+    " from ", " into ", " set ", " table ", " where ", " values", " join ", " as (",
+];
+
+/// Calls whose first argument is SQL whatever it looks like.
+const SQL_CALLS: &[&str] = &[
+    "raw",
+    "selectraw",
+    "whereraw",
+    "orwhereraw",
+    "havingraw",
+    "orhavingraw",
+    "orderbyraw",
+    "groupbyraw",
+    "fromraw",
+    "statement",
+    "unprepared",
+];
+
+/// The callee name of the call `string` is the first argument of, lowercased.
+fn first_argument_of(string: Node, src: &str) -> Option<String> {
+    let argument = string.parent().filter(|p| p.kind() == "argument")?;
+    let arguments = argument.parent()?;
+    if arguments.named_child(0)?.id() != argument.id() {
+        return None;
+    }
+    let call = arguments.parent()?;
+    let name = call
+        .child_by_field_name("name")
+        .or_else(|| call.child_by_field_name("function"))?;
+    Some(
+        src[name.byte_range()]
+            .trim_start_matches('\\')
+            .to_ascii_lowercase(),
+    )
+}
+
+/// The language written inside a string literal, if any.
+fn embedded_language(string: Node, content: &str, src: &str) -> Option<Embedded> {
+    let callee = first_argument_of(string, src);
+    if callee
+        .as_deref()
+        .is_some_and(|c| c.starts_with("preg_") && c != "preg_quote")
+    {
+        return Some(Embedded::Regex);
+    }
+    if callee.as_deref().is_some_and(|c| SQL_CALLS.contains(&c)) {
+        return Some(Embedded::Sql);
+    }
+    let trimmed = content.trim_start();
+    let lower = trimmed.to_ascii_lowercase();
+    let first = lower
+        .split(|c: char| !c.is_ascii_alphabetic())
+        .next()
+        .unwrap_or("");
+    if SQL_STARTS.contains(&first) && SQL_CONFIRMS.iter().any(|w| lower.contains(w)) {
+        return Some(Embedded::Sql);
+    }
+    let tag = trimmed.strip_prefix('<').and_then(|r| r.chars().next());
+    if tag.is_some_and(|c| c.is_ascii_alphabetic() || c == '/' || c == '!') && trimmed.contains('>')
+    {
+        return Some(Embedded::Html);
+    }
+    None
+}
+
+/// Spans of the language embedded in a string literal, as document
+/// ranges; each piece of literal text is scanned on its own (around
+/// interpolations).
+fn injected(node: Node, src: &str) -> Vec<(usize, usize, Token)> {
+    let pieces: Vec<(usize, usize)> = match node.kind() {
+        "string" | "nowdoc" if node.end_byte() >= node.start_byte() + 2 => {
+            let mut c = node.walk();
+            let contents: Vec<(usize, usize)> = node
+                .named_children(&mut c)
+                .filter(|n| matches!(n.kind(), "string_content" | "nowdoc_body"))
+                .map(|n| (n.start_byte(), n.end_byte()))
+                .collect();
+            if contents.is_empty() {
+                vec![(node.start_byte() + 1, node.end_byte() - 1)]
+            } else {
+                contents
+            }
+        }
+        _ => {
+            let mut out = Vec::new();
+            let mut stack = vec![node];
+            while let Some(n) = stack.pop() {
+                if n.kind() == "string_content" {
+                    out.push((n.start_byte(), n.end_byte()));
+                    continue;
+                }
+                let mut c = n.walk();
+                stack.extend(n.named_children(&mut c));
+            }
+            out.sort_unstable();
+            out
+        }
+    };
+    let content: String = pieces.iter().map(|&(s, e)| &src[s..e]).collect();
+    let Some(language) = embedded_language(node, &content, src) else {
+        return Vec::new();
+    };
+    // A pattern is scanned whole: its delimiters are at both ends.
+    if language == Embedded::Regex {
+        let (Some(&(start, _)), Some(&(_, end))) = (pieces.first(), pieces.last()) else {
+            return Vec::new();
+        };
+        return embedded_spans(&src[start..end], language)
+            .into_iter()
+            .map(|(s, e, t)| (start + s, start + e, t))
+            .collect();
+    }
+    pieces
+        .into_iter()
+        .flat_map(|(start, end)| {
+            embedded_spans(&src[start..end], language)
+                .into_iter()
+                .map(move |(s, e, t)| (start + s, start + e, t))
+        })
+        // The scanner's own string color would just repeat the literal's.
+        .filter(|(_, _, t)| *t != Token::String)
+        .collect()
+}
+
 /// Computes highlight spans for a whole PHP source. Called by
 /// `Document::refresh_highlights` after every edit: parses with tree-sitter,
 /// classifies leaves, adds doc-comment tags, then flattens overlaps per line
@@ -318,6 +452,14 @@ pub fn compute_highlights(src: &str) -> LineSpans {
             node.end_byte(),
             token,
         );
+        if matches!(
+            node.kind(),
+            "string" | "encapsed_string" | "heredoc" | "nowdoc"
+        ) {
+            for (s, e, t) in injected(node, src) {
+                push_span(&mut lines, &starts, src, s, e, t);
+            }
+        }
         if node.kind() == "comment" && src[node.byte_range()].starts_with("/**") {
             let mut tags = Vec::new();
             doc_tags(src, node.start_byte(), node.end_byte(), &mut tags);
@@ -372,6 +514,41 @@ mod tests {
                     .map(move |(r, t)| (src[base + r.start..base + r.end].to_string(), *t))
             })
             .collect()
+    }
+
+    #[test]
+    fn sql_in_string_should_be_highlighted() {
+        let t = tokens("<?php $q = \"SELECT id FROM users WHERE id = $id\";");
+        assert!(t.iter().any(|(x, k)| x == "SELECT" && *k == Token::Keyword));
+        assert!(t.iter().any(|(x, k)| x == "FROM" && *k == Token::Keyword));
+    }
+
+    #[test]
+    fn plain_sentence_should_not_be_sql() {
+        let t = tokens("<?php $q = 'Update your profile';");
+        assert!(!t.iter().any(|(x, k)| x == "Update" && *k == Token::Keyword));
+    }
+
+    #[test]
+    fn raw_query_argument_should_be_sql() {
+        let t = tokens("<?php $q->whereRaw('id > ? and active = 1');");
+        assert!(t.iter().any(|(x, k)| x == "and" && *k == Token::Keyword));
+    }
+
+    #[test]
+    fn preg_pattern_should_be_highlighted() {
+        let t = tokens("<?php preg_match('/^[a-z]+\\d{2}$/i', $s);");
+        let has = |s: &str, tok: Token| t.iter().any(|(x, k)| x == s && *k == tok);
+        assert!(has("[a-z]", Token::Type));
+        assert!(has("\\d", Token::Number));
+        assert!(has("{2}", Token::Punct));
+        assert!(has("/i", Token::Keyword));
+    }
+
+    #[test]
+    fn html_in_string_should_be_highlighted() {
+        let t = tokens("<?php $h = '<div class=\"x\">hi</div>';");
+        assert!(t.iter().any(|(x, _)| x == "div"));
     }
 
     #[test]

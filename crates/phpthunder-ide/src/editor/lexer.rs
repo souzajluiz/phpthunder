@@ -340,6 +340,112 @@ pub fn compute_file_highlights(src: &str, file_type: FileType) -> LineSpans {
 /// A scanned span: byte range of the document and its token.
 type Span = (usize, usize, Token);
 
+/// A language written inside a PHP string literal.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Embedded {
+    /// An SQL query (`"SELECT …"`, arguments of `whereRaw`, `DB::select`).
+    Sql,
+    /// An HTML fragment (`'<div class="x">'`).
+    Html,
+    /// A PCRE pattern (the first argument of `preg_*`).
+    Regex,
+}
+
+/// Highlight spans of `snippet` (the content of a string literal) as
+/// `language`, relative to the snippet.
+///
+/// Called by `compute_highlights` for string literals it recognizes.
+pub fn embedded_spans(snippet: &str, language: Embedded) -> Vec<Span> {
+    match language {
+        Embedded::Sql => spec(FileType::Sql)
+            .map(|s| scan(snippet, &s))
+            .unwrap_or_default(),
+        Embedded::Html => {
+            let mut out = Vec::new();
+            super::blade::scan_template(snippet, &mut out);
+            out
+        }
+        Embedded::Regex => regex_spans(snippet),
+    }
+}
+
+/// Spans of a PCRE pattern with its delimiters: delimiters and modifiers,
+/// character classes, escapes, groups, quantifiers and anchors.
+fn regex_spans(pattern: &str) -> Vec<Span> {
+    let b = pattern.as_bytes();
+    let mut out = Vec::new();
+    let Some(&open) = b.first() else {
+        return out;
+    };
+    let close = match open {
+        b'(' => b')',
+        b'{' => b'}',
+        b'[' => b']',
+        b'<' => b'>',
+        other => other,
+    };
+    let Some(end) = b.iter().rposition(|&c| c == close).filter(|&e| e > 0) else {
+        return out;
+    };
+    out.push((0, 1, Token::Keyword));
+    out.push((end, b.len(), Token::Keyword));
+    let mut i = 1;
+    while i < end {
+        match b[i] {
+            b'\\' => {
+                let next = (i + 2).min(end);
+                out.push((i, next, Token::Number));
+                i = next;
+            }
+            b'[' => {
+                let start = i;
+                i += 1;
+                while i < end && b[i] != b']' {
+                    i += if b[i] == b'\\' { 2 } else { 1 };
+                }
+                i = (i + 1).min(end);
+                out.push((start, i, Token::Type));
+            }
+            b'(' => {
+                let start = i;
+                i += 1;
+                // `(?:`, `(?=`, `(?P<name>`: the group prefix is part of the paren.
+                if b.get(i) == Some(&b'?') {
+                    while i < end && !matches!(b[i], b':' | b'>' | b'=' | b'!' | b')') {
+                        i += 1;
+                    }
+                    if i < end && b[i] != b')' {
+                        i += 1;
+                    }
+                }
+                out.push((start, i, Token::Function));
+            }
+            b')' => {
+                out.push((i, i + 1, Token::Function));
+                i += 1;
+            }
+            b'*' | b'+' | b'?' | b'|' => {
+                out.push((i, i + 1, Token::Punct));
+                i += 1;
+            }
+            b'{' => {
+                let start = i;
+                while i < end && b[i] != b'}' {
+                    i += 1;
+                }
+                i = (i + 1).min(end);
+                out.push((start, i, Token::Punct));
+            }
+            b'^' | b'$' | b'.' => {
+                out.push((i, i + 1, Token::Keyword));
+                i += 1;
+            }
+            _ => i += 1,
+        }
+    }
+    out
+}
+
 /// Splits document spans into per-line spans.
 fn to_lines(src: &str, spans: Vec<Span>) -> LineSpans {
     let starts: Vec<usize> = std::iter::once(0)
