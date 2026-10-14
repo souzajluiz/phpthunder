@@ -230,3 +230,6 @@ diagnostic-duplicate-arm-body = Mesmo resultado do braço de { $detail }
 diagnostic-unnecessary-stop-statement = { $detail } desnecessário
 fix-unnecessary-stop-statement = Remover instrução
 diagnostic-duplicate-class-declaration = Classe também declarada em { $detail }
+spelling-typo = Erro de digitação: { $word }
+spelling-change-to = Trocar por { $word }
+spelling-learn = Salvar { $word } no dicionário

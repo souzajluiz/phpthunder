@@ -27,6 +27,7 @@ pub(crate) fn intentions_popup(menu: &Intentions) -> (Element<'_, Message>, f32)
             Intention::Fix(_) => ("◆", ACCENT),
             Intention::ImplementMethods { .. } => ("+", SYN_TYPE),
             Intention::OptimizeImports => ("≡", MUTED),
+            Intention::Spell { .. } | Intention::LearnWord(_) => ("✓", MUTED),
             Intention::Refactor(_) | Intention::InlineVariable | Intention::Member(_) => {
                 ("↻", SYN_FUNCTION)
             }

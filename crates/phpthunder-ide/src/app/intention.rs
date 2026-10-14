@@ -38,6 +38,21 @@ impl App {
             .flat_map(|d| self.lang.quick_fixes(&doc.text, d, &open))
             .map(Intention::Fix)
             .collect();
+        for d in self.diagnostics_at(offset) {
+            if matches!(&d.code, phpthunder::inspection::Code::External(t) if t == "Spelling") {
+                let word = doc.text[d.start..d.end].to_string();
+                items.extend(
+                    crate::spelling::suggestions(&word)
+                        .into_iter()
+                        .map(|replacement| Intention::Spell {
+                            start: d.start,
+                            end: d.end,
+                            replacement,
+                        }),
+                );
+                items.push(Intention::LearnWord(word));
+            }
+        }
         let (start, end) = doc.selection().unwrap_or((offset, offset));
         for action in self.lang.intentions(&doc.text, start, end) {
             // A quick fix may already make the same change.
@@ -101,6 +116,32 @@ impl App {
             Intention::Refactor(action) => self.start_refactor(action),
             Intention::InlineVariable => self.inline_variable(),
             Intention::Member(kind) => self.member_refactoring(kind),
+            Intention::Spell {
+                start,
+                end,
+                replacement,
+            } => {
+                if let Some(doc) = self.doc_mut() {
+                    doc.apply_edits(&[Edit {
+                        path: None,
+                        start,
+                        end,
+                        text: replacement,
+                    }]);
+                }
+                self.after_change(true);
+                self.reveal_cursor()
+            }
+            Intention::LearnWord(word) => {
+                crate::spelling::learn(&word);
+                if let Some(doc) = self.doc_mut() {
+                    doc.diagnostics.retain(|d| {
+                        !(matches!(&d.code, phpthunder::inspection::Code::External(t) if t == "Spelling")
+                            && doc.text.get(d.start..d.end) == Some(word.as_str()))
+                    });
+                }
+                Task::none()
+            }
         }
     }
 

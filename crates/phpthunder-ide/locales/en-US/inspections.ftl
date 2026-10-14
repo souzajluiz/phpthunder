@@ -231,3 +231,6 @@ diagnostic-duplicate-arm-body = Same result as the arm for { $detail }
 diagnostic-unnecessary-stop-statement = Unnecessary { $detail }
 fix-unnecessary-stop-statement = Remove statement
 diagnostic-duplicate-class-declaration = Class is also declared in { $detail }
+spelling-typo = Typo: { $word }
+spelling-change-to = Change to { $word }
+spelling-learn = Save { $word } to dictionary

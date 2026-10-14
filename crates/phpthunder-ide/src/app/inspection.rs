@@ -31,12 +31,26 @@ impl App {
         if generation != self.inspect_generation {
             return Task::none();
         }
-        let Some(doc) = self
-            .doc()
-            .filter(|d| d.is_php() || d.file_type == crate::filetype::FileType::Blade)
-        else {
+        let Some(doc) = self.doc().filter(|d| {
+            d.is_php()
+                || matches!(
+                    d.file_type,
+                    crate::filetype::FileType::Blade
+                        | crate::filetype::FileType::Markdown
+                        | crate::filetype::FileType::Text
+                )
+        }) else {
             return Task::none();
         };
+        let spelling = crate::settings::settings()
+            .spellcheck
+            .then(|| match doc.file_type {
+                crate::filetype::FileType::Markdown => Some(crate::spelling::Kind::Markdown),
+                crate::filetype::FileType::Text => Some(crate::spelling::Kind::Text),
+                _ if doc.is_php() => Some(crate::spelling::Kind::Php),
+                _ => None,
+            })
+            .flatten();
         let (path, version, text, lang, php) = (
             doc.path.clone(),
             doc.version(),
@@ -61,8 +75,11 @@ impl App {
                     } else {
                         Vec::new()
                     };
+                    if let Some(kind) = spelling {
+                        found.extend(crate::spelling::diagnostics(&text, kind));
+                    }
                     let mut markers = Vec::new();
-                    if let Some(project) = laravel {
+                    if let Some(project) = laravel.filter(|_| php || spelling.is_none()) {
                         found.extend(phpthunder::laravel::key_diagnostics(&project, &text));
                         if php {
                             found.extend(phpthunder::laravel::order_by_diagnostics(&text));

@@ -26,6 +26,7 @@ mod quality;
 mod search;
 mod settings;
 mod shell_env;
+mod spelling;
 mod template;
 mod terminal;
 mod testing;

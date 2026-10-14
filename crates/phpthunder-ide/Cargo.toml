@@ -35,6 +35,11 @@ vt100 = "0.16.2"
 # Desktop notifications; on Linux over D-Bus with the tokio runtime the IDE
 # already ships instead of a second async executor.
 notify-rust = { version = "4.18.2", default-features = false, features = ["z-with-tokio"] }
+# Spell checking of comments, strings and names with Hunspell dictionaries,
+# in pure Rust.
+spellbook = "0.4.2"
+# Unpacks the bundled Portuguese dictionary (already in the tree via png).
+flate2 = "1.1.10"
 
 # The macOS app menu's About item (see `native_menu`); same versions winit
 # and rfd already pull in.

@@ -44,6 +44,11 @@ claude_command = "claude"
 # the background.
 notifications = true
 
+# Spell check comments, strings and names in PHP, and Markdown and text
+# files. Extra Hunspell dictionaries (pt_BR.aff + pt_BR.dic, …) go in
+# ~/.config/phpthunder/dictionaries; saved words in dictionary.txt there.
+spellcheck = true
+
 # Project tree filters, toggled by the buttons above the tree.
 hide_dot_folders = false
 hide_dependencies = false
@@ -73,6 +78,8 @@ pub struct Settings {
     pub claude_command: String,
     /// Desktop notifications while the window is in the background.
     pub notifications: bool,
+    /// Spell check comments, strings, names and text files.
+    pub spellcheck: bool,
     /// Hide folders whose name starts with a dot from the project tree.
     pub hide_dot_folders: bool,
     /// Hide `node_modules` and `vendor` from the project tree.
@@ -95,6 +102,7 @@ impl Default for Settings {
             shell: None,
             claude_command: "claude".to_string(),
             notifications: true,
+            spellcheck: true,
             hide_dot_folders: false,
             hide_dependencies: false,
             sidebar_width: None,

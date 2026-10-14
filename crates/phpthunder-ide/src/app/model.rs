@@ -713,6 +713,17 @@ pub enum Intention {
     InlineVariable,
     /// A member refactoring that needs no input.
     Member(crate::language::MemberRefactoring),
+    /// Replace a misspelled word (`start..end`) with a correction.
+    Spell {
+        /// Start byte of the word.
+        start: usize,
+        /// End byte of the word.
+        end: usize,
+        /// The correction.
+        replacement: String,
+    },
+    /// Save a word to the user's dictionary.
+    LearnWord(String),
 }
 
 /// A refactoring that needs input from a prompt.
@@ -780,6 +791,10 @@ impl Intention {
             Intention::Refactor(RefactorAction::ExtractInterface(_)) => {
                 tr!("refactor-extract-interface")
             }
+            Intention::Spell { replacement, .. } => {
+                tr!("spelling-change-to", word = replacement.as_str())
+            }
+            Intention::LearnWord(word) => tr!("spelling-learn", word = word.as_str()),
             Intention::Member(kind) => match kind {
                 crate::language::MemberRefactoring::SafeDelete => tr!("refactor-safe-delete"),
                 crate::language::MemberRefactoring::MakeStatic => tr!("refactor-make-static"),
