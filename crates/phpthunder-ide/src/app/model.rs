@@ -329,6 +329,10 @@ pub enum Message {
     GitShowBranches,
     /// The branch list for the picker arrived.
     GitBranches(Result<Vec<crate::git::Branch>, String>),
+    /// The stash list arrived (for the stash picker).
+    GitStashes(Result<Vec<crate::git::Stash>, String>),
+    /// `origin` and the current branch arrived; open a page built from them.
+    GitRemote(RemotePage, Result<(String, String), String>),
     /// A Git operation finished.
     GitDone(GitOp, Result<String, String>),
     // Debugger
@@ -426,12 +430,50 @@ pub enum GitOp {
     Checkout,
     /// Creating a branch.
     CreateBranch,
+    /// Stashing local changes.
+    Stash,
+    /// Restoring (or dropping) a stash.
+    Unstash,
+    /// Rebasing onto or merging a branch.
+    Integrate,
+    /// Continuing or aborting a rebase or merge.
+    Resolve,
+}
+
+/// A page of the hosting service to open in the browser.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RemotePage {
+    /// A file (relative to the repository) at a 1-based line.
+    File(String, usize),
+    /// A new pull (merge) request from the current branch.
+    PullRequest,
+}
+
+/// What picking a branch in the branch picker does.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum BranchMode {
+    /// Check it out (or create a new one).
+    #[default]
+    Checkout,
+    /// Rebase the current branch onto it.
+    Rebase,
+    /// Merge it into the current branch.
+    Merge,
 }
 
 impl GitOp {
     /// Whether the operation may change files on disk (open tabs reload).
     pub fn changes_files(&self) -> bool {
-        matches!(self, GitOp::Pull | GitOp::Discard | GitOp::Checkout)
+        matches!(
+            self,
+            GitOp::Pull
+                | GitOp::Discard
+                | GitOp::Checkout
+                | GitOp::Stash
+                | GitOp::Unstash
+                | GitOp::Integrate
+                | GitOp::Resolve
+        )
     }
 
     /// Progress label while it runs.
@@ -443,6 +485,8 @@ impl GitOp {
             GitOp::Pull => tr!("git-pulling"),
             GitOp::Discard => tr!("git-discarding"),
             GitOp::Checkout | GitOp::CreateBranch => tr!("git-switching"),
+            GitOp::Stash | GitOp::Unstash => tr!("git-stashing"),
+            GitOp::Integrate | GitOp::Resolve => tr!("git-integrating"),
         }
     }
 }

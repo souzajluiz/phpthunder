@@ -85,6 +85,14 @@ pub enum Target {
     Checkout(crate::git::Branch),
     /// Create and check out a Git branch with this name.
     CreateBranch(String),
+    /// Rebase the current branch onto this one.
+    Rebase(String),
+    /// Merge this branch into the current one.
+    Merge(String),
+    /// Apply and drop this stash (`pop`).
+    Unstash(usize),
+    /// Delete this stash.
+    DropStash(usize),
     /// Run a file operation from the project tree.
     FileAction(crate::app::FileAction),
     /// Open a file with the caret at the start of a 0-based line.

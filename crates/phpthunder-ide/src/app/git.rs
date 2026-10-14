@@ -303,8 +303,10 @@ impl App {
         })
     }
 
-    /// Loads the branches for the picker ([`Message::GitBranches`]).
-    pub(crate) fn git_show_branches(&mut self) -> Task<Message> {
+    /// Loads the branches for the picker ([`Message::GitBranches`]);
+    /// `mode` decides what picking one does.
+    pub(crate) fn git_pick_branch(&mut self, mode: BranchMode) -> Task<Message> {
+        self.branch_mode = mode;
         match self.git_root() {
             Some(root) => Task::perform(git::branches(root), Message::GitBranches),
             None => {
@@ -326,8 +328,10 @@ impl App {
                 return Task::none();
             }
         };
+        let mode = self.branch_mode;
         let items = branches
             .into_iter()
+            .filter(|b| mode == BranchMode::Checkout || !b.current)
             .map(|b| Item {
                 badge: if b.current { "●" } else { "⎇" },
                 title: b.name.clone(),
@@ -339,14 +343,180 @@ impl App {
                 } else {
                     String::new()
                 },
-                target: Target::Checkout(b),
+                target: match mode {
+                    BranchMode::Checkout => Target::Checkout(b),
+                    BranchMode::Rebase => Target::Rebase(b.name),
+                    BranchMode::Merge => Target::Merge(b.name),
+                },
             })
             .collect();
-        let task = self.open_choice(tr!("git-branches-title"), items);
-        if let Some(p) = &mut self.palette {
+        let title = match mode {
+            BranchMode::Checkout => tr!("git-branches-title"),
+            BranchMode::Rebase => tr!("git-rebase-title"),
+            BranchMode::Merge => tr!("git-merge-title"),
+        };
+        let task = self.open_choice(title, items);
+        if mode == BranchMode::Checkout
+            && let Some(p) = &mut self.palette
+        {
             p.extra = Some(create_branch_item);
         }
         task
+    }
+
+    /// Rebases the current branch onto `branch` (`rebase`), or merges it.
+    pub(crate) fn git_integrate(&mut self, branch: String, rebase: bool) -> Task<Message> {
+        let Some(root) = self.git_root() else {
+            return Task::none();
+        };
+        self.save_all_php();
+        self.run_git_op(GitOp::Integrate, async move {
+            if rebase {
+                git::rebase(root, branch).await
+            } else {
+                git::merge(root, branch).await
+            }
+            .map(|()| String::new())
+        })
+    }
+
+    /// Continues (or with `abort`, aborts) the rebase or merge in progress.
+    pub(crate) fn git_resolve(&mut self, abort: bool) -> Task<Message> {
+        let Some(root) = self.git_root() else {
+            return Task::none();
+        };
+        self.run_git_op(GitOp::Resolve, async move {
+            git::continue_or_abort(root, abort)
+                .await
+                .map(|()| String::new())
+        })
+    }
+
+    /// Stashes every local change, untracked files included.
+    pub(crate) fn git_stash(&mut self) -> Task<Message> {
+        let Some(root) = self.git_root() else {
+            return Task::none();
+        };
+        self.save_all_php();
+        self.run_git_op(GitOp::Stash, async move {
+            git::stash(root, String::new())
+                .await
+                .map(|()| String::new())
+        })
+    }
+
+    /// Loads the stash list for the picker.
+    pub(crate) fn git_show_stashes(&mut self) -> Task<Message> {
+        match self.git_root() {
+            Some(root) => Task::perform(git::stashes(root), Message::GitStashes),
+            None => {
+                self.notice = Some(tr!("git-not-repository"));
+                Task::none()
+            }
+        }
+    }
+
+    /// Opens the stash picker: each stash can be restored (`pop`) or
+    /// deleted.
+    pub(crate) fn git_stashes_arrived(
+        &mut self,
+        result: Result<Vec<git::Stash>, String>,
+    ) -> Task<Message> {
+        let stashes = match result {
+            Ok(s) => s,
+            Err(error) => {
+                self.fail(tr!("git-failed", error = shorten(&error)));
+                return Task::none();
+            }
+        };
+        if stashes.is_empty() {
+            self.notice = Some(tr!("git-no-stashes"));
+            return Task::none();
+        }
+        let items = stashes
+            .iter()
+            .map(|s| Item {
+                badge: "↥",
+                title: s.message.clone(),
+                matched: Vec::new(),
+                detail: tr!("git-stash-pop"),
+                target: Target::Unstash(s.index),
+            })
+            .chain(stashes.iter().map(|s| Item {
+                badge: "✕",
+                title: s.message.clone(),
+                matched: Vec::new(),
+                detail: tr!("git-stash-drop"),
+                target: Target::DropStash(s.index),
+            }))
+            .collect();
+        self.open_choice(tr!("git-stashes-title"), items)
+    }
+
+    /// Restores stash `index` (`pop`), or with `drop` deletes it.
+    pub(crate) fn git_unstash(&mut self, index: usize, drop: bool) -> Task<Message> {
+        let Some(root) = self.git_root() else {
+            return Task::none();
+        };
+        self.run_git_op(GitOp::Unstash, async move {
+            if drop {
+                git::drop_stash(root, index).await
+            } else {
+                git::unstash(root, index, false).await
+            }
+            .map(|()| String::new())
+        })
+    }
+
+    /// Opens the active file at the caret line on GitHub, GitLab or
+    /// Bitbucket, or (`pull_request`) a new pull request from the current
+    /// branch.
+    pub(crate) fn git_open_remote(&mut self, pull_request: bool) -> Task<Message> {
+        let Some(root) = self.git_root() else {
+            self.notice = Some(tr!("git-not-repository"));
+            return Task::none();
+        };
+        let page = if pull_request {
+            RemotePage::PullRequest
+        } else {
+            let Some(doc) = self.doc() else {
+                return Task::none();
+            };
+            let rel = doc
+                .path
+                .strip_prefix(&root)
+                .unwrap_or(&doc.path)
+                .to_string_lossy()
+                .replace('\\', "/");
+            RemotePage::File(rel, doc.cursor().line + 1)
+        };
+        Task::perform(git::origin_and_branch(root), move |result| {
+            Message::GitRemote(page, result)
+        })
+    }
+
+    /// Opens the page for `page` once `origin` and the branch are known.
+    pub(crate) fn git_remote_arrived(
+        &mut self,
+        page: RemotePage,
+        result: Result<(String, String), String>,
+    ) -> Task<Message> {
+        let (origin, branch) = match result {
+            Ok(found) => found,
+            Err(error) => {
+                self.fail(tr!("git-failed", error = shorten(&error)));
+                return Task::none();
+            }
+        };
+        let url = match page {
+            RemotePage::File(path, line) => git::remote_file_url(&origin, &branch, &path, line),
+            RemotePage::PullRequest => git::pull_request_url(&origin, &branch),
+        };
+        match url {
+            Some(url) => crate::packages::open_in_browser(&url),
+            None => self.notice = Some(tr!("git-unknown-host", origin = origin)),
+        }
+        Task::none()
     }
 
     /// Checks out `branch` (no-op for the current one).
@@ -399,6 +569,9 @@ impl App {
             }
             GitOp::Discard => self.notice = Some(tr!("git-discarded")),
             GitOp::Checkout | GitOp::CreateBranch => self.notice = Some(tr!("git-switched")),
+            GitOp::Stash => self.notice = Some(tr!("git-stashed")),
+            GitOp::Unstash => self.notice = Some(tr!("git-unstashed")),
+            GitOp::Integrate | GitOp::Resolve => self.notice = Some(tr!("git-integrated")),
         }
         if op.changes_files() {
             self.reload_unmodified_docs();

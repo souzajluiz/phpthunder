@@ -202,6 +202,8 @@ pub struct App {
     pub git_marks: std::collections::HashMap<PathBuf, Vec<crate::git::LineChange>>,
     /// Commit panel state.
     pub commit: CommitPanel,
+    /// What the branch picker does with the chosen branch.
+    pub branch_mode: BranchMode,
     /// Line breakpoints (0-based lines) by file.
     pub breakpoints: std::collections::HashMap<PathBuf, std::collections::BTreeSet<usize>>,
     /// The debugger panel and its session, once one was started.
@@ -404,6 +406,7 @@ impl App {
             git_base: Default::default(),
             git_marks: Default::default(),
             commit: CommitPanel::default(),
+            branch_mode: BranchMode::Checkout,
             breakpoints: Default::default(),
             debug: None,
             debug_break_first: false,
@@ -628,7 +631,9 @@ impl App {
             Message::GitDiscard(path) => self.git_discard(path),
             Message::GitPull => self.git_pull(),
             Message::GitPush => self.git_push(),
-            Message::GitShowBranches => self.git_show_branches(),
+            Message::GitShowBranches => self.git_pick_branch(BranchMode::Checkout),
+            Message::GitStashes(result) => self.git_stashes_arrived(result),
+            Message::GitRemote(page, result) => self.git_remote_arrived(page, result),
             Message::GitBranches(result) => self.git_branches_arrived(result),
             Message::GitDone(op, result) => self.git_done(op, result),
             Message::DebugTest => self.debug_test(),

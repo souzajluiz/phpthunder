@@ -93,6 +93,22 @@ pub enum Cmd {
     Reformat,
     /// Pick a Composer script or command to run (`⌃⌥C`).
     Composer,
+    /// Stash local changes (untracked included).
+    GitStash,
+    /// Restore or delete a stash.
+    GitStashes,
+    /// Rebase the current branch onto another.
+    GitRebase,
+    /// Merge another branch into the current one.
+    GitMerge,
+    /// Continue the rebase or merge in progress.
+    GitContinue,
+    /// Abort the rebase or merge in progress.
+    GitAbort,
+    /// Open the file at the caret line on GitHub, GitLab or Bitbucket.
+    OpenOnRemote,
+    /// Open a new pull request from the current branch.
+    CreatePullRequest,
     /// Pick a run configuration to start in the terminal (`⌃⌥R`).
     RunConfiguration,
     /// Debug the active PHP file as a script.
@@ -260,7 +276,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 122] = {
+    pub const ALL: [Cmd; 130] = {
         use Cmd::*;
         [
             Save,
@@ -304,6 +320,14 @@ impl Cmd {
             RunTests,
             Reformat,
             Composer,
+            GitStash,
+            GitStashes,
+            GitRebase,
+            GitMerge,
+            GitContinue,
+            GitAbort,
+            OpenOnRemote,
+            CreatePullRequest,
             RunConfiguration,
             EditProjectSettings,
             DebugCurrentFile,
@@ -650,6 +674,14 @@ pub fn hint(cmd: Cmd) -> &'static str {
         PreviousError => "⇧F2",
         QuickDoc => "F1",
         ToggleWhitespace
+        | GitStash
+        | GitStashes
+        | GitRebase
+        | GitMerge
+        | GitContinue
+        | GitAbort
+        | OpenOnRemote
+        | CreatePullRequest
         | EditProjectSettings
         | DebugCurrentFile
         | DebugListen

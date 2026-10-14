@@ -188,9 +188,217 @@ pub async fn create_branch(root: PathBuf, name: String) -> Result<(), String> {
     run(&root, &["switch", "--create", &name]).await.map(|_| ())
 }
 
+/// One stash entry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Stash {
+    /// Position in `git stash list` (0 is the newest).
+    pub index: usize,
+    /// Its message (`WIP on main: …` or the given one).
+    pub message: String,
+}
+
+/// Stashes the working tree and index, untracked files included.
+///
+/// # Errors
+/// Returns git's error text (nothing to stash, …).
+pub async fn stash(root: PathBuf, message: String) -> Result<(), String> {
+    let mut args = vec!["stash", "push", "--include-untracked"];
+    if !message.trim().is_empty() {
+        args.extend(["--message", message.trim()]);
+    }
+    run(&root, &args).await.map(|_| ())
+}
+
+/// The stashes, newest first.
+///
+/// # Errors
+/// Returns git's error text.
+pub async fn stashes(root: PathBuf) -> Result<Vec<Stash>, String> {
+    let out = run(&root, &["stash", "list", "--format=%gs"]).await?;
+    Ok(out
+        .lines()
+        .enumerate()
+        .map(|(index, message)| Stash {
+            index,
+            message: message.to_string(),
+        })
+        .collect())
+}
+
+/// Applies stash `index` and drops it (`pop`), or only applies it.
+///
+/// # Errors
+/// Returns git's error text (conflicts, …).
+pub async fn unstash(root: PathBuf, index: usize, keep: bool) -> Result<(), String> {
+    let reference = format!("stash@{{{index}}}");
+    let verb = if keep { "apply" } else { "pop" };
+    run(&root, &["stash", verb, &reference]).await.map(|_| ())
+}
+
+/// Deletes stash `index`.
+///
+/// # Errors
+/// Returns git's error text.
+pub async fn drop_stash(root: PathBuf, index: usize) -> Result<(), String> {
+    let reference = format!("stash@{{{index}}}");
+    run(&root, &["stash", "drop", &reference]).await.map(|_| ())
+}
+
+/// Rebases the current branch onto `onto`.
+///
+/// # Errors
+/// Returns git's error text; a conflict stops the rebase in progress
+/// (continue or abort it).
+pub async fn rebase(root: PathBuf, onto: String) -> Result<(), String> {
+    run(&root, &["rebase", &onto]).await.map(|_| ())
+}
+
+/// Merges `branch` into the current one (no fast-forward commit editor).
+///
+/// # Errors
+/// Returns git's error text; conflicts leave the merge in progress.
+pub async fn merge(root: PathBuf, branch: String) -> Result<(), String> {
+    run(&root, &["merge", "--no-edit", &branch])
+        .await
+        .map(|_| ())
+}
+
+/// Continues (`--continue`) or aborts (`--abort`) the rebase or merge in
+/// progress.
+///
+/// # Errors
+/// Returns git's error text (unresolved conflicts, nothing in progress).
+pub async fn continue_or_abort(root: PathBuf, abort: bool) -> Result<(), String> {
+    let flag = if abort { "--abort" } else { "--continue" };
+    let git_dir = root.join(".git");
+    let verb = if git_dir.join("rebase-merge").exists() || git_dir.join("rebase-apply").exists() {
+        "rebase"
+    } else {
+        "merge"
+    };
+    let output = tokio::process::Command::new("git")
+        .current_dir(&root)
+        .args([verb, flag])
+        // `rebase --continue` would open an editor for the message.
+        .env("GIT_EDITOR", "true")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .output()
+        .await
+        .map_err(|e| tr!("error-git-start", error = e.to_string()))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
+    }
+}
+
+/// The web page of `path` (relative to the repository) at `line` on
+/// GitHub, GitLab or Bitbucket, from the `origin` URL and the current
+/// branch; `None` for other hosts.
+pub fn remote_file_url(origin: &str, branch: &str, path: &str, line: usize) -> Option<String> {
+    let (host, repo) = remote_parts(origin)?;
+    Some(if host.contains("gitlab") {
+        format!("https://{host}/{repo}/-/blob/{branch}/{path}#L{line}")
+    } else if host.contains("bitbucket") {
+        format!("https://{host}/{repo}/src/{branch}/{path}#lines-{line}")
+    } else {
+        format!("https://{host}/{repo}/blob/{branch}/{path}#L{line}")
+    })
+}
+
+/// The page opening a pull (merge) request from `branch`.
+pub fn pull_request_url(origin: &str, branch: &str) -> Option<String> {
+    let (host, repo) = remote_parts(origin)?;
+    Some(if host.contains("gitlab") {
+        format!(
+            "https://{host}/{repo}/-/merge_requests/new?merge_request%5Bsource_branch%5D={branch}"
+        )
+    } else if host.contains("bitbucket") {
+        format!("https://{host}/{repo}/pull-requests/new?source={branch}")
+    } else {
+        format!("https://{host}/{repo}/compare/{branch}?expand=1")
+    })
+}
+
+/// Host and `owner/repo` of a remote URL: `git@host:owner/repo.git`,
+/// `ssh://git@host/owner/repo.git` or `https://host/owner/repo(.git)`.
+fn remote_parts(origin: &str) -> Option<(String, String)> {
+    let origin = origin.trim().trim_end_matches('/').trim_end_matches(".git");
+    let rest = origin
+        .strip_prefix("https://")
+        .or_else(|| origin.strip_prefix("http://"))
+        .or_else(|| origin.strip_prefix("ssh://"))
+        .map(|r| r.to_string())
+        .or_else(|| origin.split_once('@').map(|(_, r)| r.replacen(':', "/", 1)))?;
+    let rest = rest.rsplit_once('@').map_or(rest.as_str(), |(_, r)| r);
+    let (host, repo) = rest.split_once('/')?;
+    let host = host.split(':').next().unwrap_or(host);
+    (!repo.is_empty()).then(|| (host.to_string(), repo.to_string()))
+}
+
+/// The `origin` URL and the current branch.
+///
+/// # Errors
+/// Returns git's error text (no `origin`, detached `HEAD`).
+pub async fn origin_and_branch(root: PathBuf) -> Result<(String, String), String> {
+    let origin = run(&root, &["remote", "get-url", "origin"]).await?;
+    let branch = run(&root, &["rev-parse", "--abbrev-ref", "HEAD"]).await?;
+    Ok((origin.trim().to_string(), branch.trim().to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn remote_urls_should_follow_each_host() {
+        assert_eq!(
+            remote_file_url("git@github.com:me/shop.git", "main", "app/User.php", 12).as_deref(),
+            Some("https://github.com/me/shop/blob/main/app/User.php#L12")
+        );
+        assert_eq!(
+            remote_file_url("https://gitlab.com/team/shop.git", "dev", "a.php", 3).as_deref(),
+            Some("https://gitlab.com/team/shop/-/blob/dev/a.php#L3")
+        );
+        assert_eq!(
+            pull_request_url("ssh://git@github.com/me/shop.git", "feature").as_deref(),
+            Some("https://github.com/me/shop/compare/feature?expand=1")
+        );
+        assert_eq!(remote_file_url("nonsense", "main", "a", 1), None);
+    }
+
+    #[tokio::test]
+    async fn stash_should_round_trip_local_changes_and_merge_branches() {
+        let dir = std::env::temp_dir().join(format!("phpthunder-stash-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        git(&dir, &["init", "--quiet", "--initial-branch=main"]);
+        git(&dir, &["config", "user.email", "test@example.com"]);
+        git(&dir, &["config", "user.name", "Test"]);
+        let file = dir.join("a.php");
+        std::fs::write(&file, "one\n").unwrap();
+        git(&dir, &["add", "."]);
+        git(&dir, &["commit", "--quiet", "-m", "one"]);
+
+        std::fs::write(&file, "two\n").unwrap();
+        stash(dir.clone(), "wip".into()).await.unwrap();
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "one\n");
+        let list = stashes(dir.clone()).await.unwrap();
+        assert_eq!((list.len(), list[0].message.contains("wip")), (1, true));
+        unstash(dir.clone(), 0, false).await.unwrap();
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "two\n");
+        assert!(stashes(dir.clone()).await.unwrap().is_empty());
+
+        git(&dir, &["checkout", "--quiet", "--", "."]);
+        git(&dir, &["switch", "--quiet", "--create", "side"]);
+        std::fs::write(dir.join("b.php"), "b\n").unwrap();
+        git(&dir, &["add", "."]);
+        git(&dir, &["commit", "--quiet", "-m", "side"]);
+        git(&dir, &["switch", "--quiet", "main"]);
+        merge(dir.clone(), "side".into()).await.unwrap();
+        assert!(dir.join("b.php").exists());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 
     /// Runs `git args` in `dir` synchronously, for test setup.
     fn git(dir: &Path, args: &[&str]) {
