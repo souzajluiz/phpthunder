@@ -36,8 +36,9 @@ impl Framework {
         }
     }
 
-    /// Whether the framework can write a Clover coverage report.
-    pub fn has_coverage(self) -> bool {
+    /// Whether the framework writes a Clover coverage report itself; the
+    /// others get coverage from a prepended collector script.
+    pub fn writes_clover(self) -> bool {
         matches!(
             self,
             Framework::Pest | Framework::PhpUnit | Framework::Codeception
@@ -237,7 +238,9 @@ fn framework_arguments(
 
 /// Runs `scope` with the right test framework (see [`framework_for`]) and
 /// parses its JUnit report; with `coverage`, collects line coverage too
-/// (Xdebug in coverage mode or PCOV). Runs asynchronously.
+/// (Xdebug in coverage mode or PCOV): a Clover report for PHPUnit, Pest and
+/// Codeception, a prepended collector script for Behat and PHPSpec. Runs
+/// asynchronously.
 ///
 /// # Errors
 /// Returns a message when no framework is installed or the process cannot
@@ -256,10 +259,32 @@ pub async fn run_tests(root: PathBuf, scope: Scope, coverage: bool) -> Result<Te
     } else {
         scratch.join("junit.xml")
     };
-    let clover = (coverage && framework.has_coverage()).then(|| scratch.join("clover.xml"));
+    let clover = (coverage && framework.writes_clover()).then(|| scratch.join("clover.xml"));
+    // Behat and PHPSpec: a prepended script collects line coverage.
+    let lines = (coverage && !framework.writes_clover()).then(|| scratch.join("coverage.json"));
     let mut args: Vec<std::ffi::OsString> = Vec::new();
-    if clover.is_some() {
+    if coverage {
+        // Herd's Xdebug when PHP loads none (PCOV projects need none).
+        if let Ok(xdebug) = crate::debug::xdebug_arguments(&root, &interpreter).await {
+            args.extend(xdebug.into_iter().map(Into::into));
+        }
         args.push("-dxdebug.mode=coverage".into());
+        args.push(format!("-dpcov.directory={}", interpreter.to_remote(&root, &root)).into());
+    }
+    if let Some(out) = &lines {
+        let script = scratch.join("coverage-prepend.php");
+        let source = prepend_script(
+            &interpreter.to_remote(&root, &root),
+            &interpreter.to_remote(&root, out),
+        );
+        std::fs::write(&script, source).map_err(|e| e.to_string())?;
+        args.push(
+            format!(
+                "-dauto_prepend_file={}",
+                interpreter.to_remote(&root, &script)
+            )
+            .into(),
+        );
     }
     args.push(bin.into_os_string());
     let remote = |p: &Path| interpreter.to_remote(&root, p);
@@ -305,19 +330,22 @@ pub async fn run_tests(root: PathBuf, scope: Scope, coverage: bool) -> Result<Te
             case.file = Some(interpreter.to_local(&root, &file.to_string_lossy()));
         }
     }
-    let coverage = match &clover {
-        Some(path) => {
+    let parsed = match (&clover, &lines) {
+        (Some(path), _) => {
             let xml = interpreter.read_back(&root, path).await.unwrap_or_default();
-            let parsed = parse_clover(&xml).unwrap_or_default();
-            Some(
-                parsed
-                    .into_iter()
-                    .map(|(p, c)| (interpreter.to_local(&root, &p.to_string_lossy()), c))
-                    .collect(),
-            )
+            Some(parse_clover(&xml).unwrap_or_default())
         }
-        None => None,
+        (None, Some(path)) => {
+            let json = interpreter.read_back(&root, path).await.unwrap_or_default();
+            Some(parse_line_json(&json).unwrap_or_default())
+        }
+        _ => None,
     };
+    let coverage = parsed.map(|c| {
+        c.into_iter()
+            .map(|(p, c)| (interpreter.to_local(&root, &p.to_string_lossy()), c))
+            .collect()
+    });
     let _ = std::fs::remove_dir_all(&scratch);
     Ok(TestRun {
         scope,

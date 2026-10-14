@@ -1,5 +1,8 @@
-//! Code coverage from Clover XML reports (`--coverage-clover`, Codeception
-//! `--coverage-xml`): covered and uncovered statement lines per file.
+//! Code coverage: from Clover XML reports (`--coverage-clover`, Codeception
+//! `--coverage-xml`), or, for runners without coverage support (Behat,
+//! PHPSpec), from a script PHP prepends to the run that collects line
+//! coverage with PCOV or Xdebug and writes it as JSON when the process
+//! ends.
 
 use quick_xml::Reader;
 use quick_xml::events::Event;
@@ -82,9 +85,102 @@ pub fn parse_clover(xml: &str) -> Result<Coverage, String> {
     Ok(out)
 }
 
+/// The `auto_prepend_file` script collecting line coverage of the
+/// project's own files (under `root`, outside `vendor/`) with PCOV, else
+/// Xdebug, and writing `{file: {line: 0|1}}` JSON to `out` at shutdown.
+/// Paths are as the interpreter sees them. Without either extension it
+/// does nothing.
+pub fn prepend_script(root: &str, out: &str) -> String {
+    let quote = |s: &str| format!("'{}'", s.replace('\\', "\\\\").replace('\'', "\\'"));
+    format!(
+        r#"<?php
+(static function () {{
+    $out = {out};
+    $root = rtrim({root}, '/') . '/';
+    if (extension_loaded('pcov')) {{
+        \pcov\start();
+        $driver = 'pcov';
+    }} elseif (function_exists('xdebug_start_code_coverage')) {{
+        xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
+        $driver = 'xdebug';
+    }} else {{
+        return;
+    }}
+    register_shutdown_function(static function () use ($out, $root, $driver) {{
+        if ($driver === 'pcov') {{
+            \pcov\stop();
+            $data = \pcov\collect(\pcov\inclusive);
+        }} else {{
+            $data = xdebug_get_code_coverage();
+            xdebug_stop_code_coverage(false);
+        }}
+        $result = [];
+        foreach ($data as $file => $lines) {{
+            if (strpos($file, $root) !== 0 || strpos($file, '/vendor/') !== false || $file === __FILE__) {{
+                continue;
+            }}
+            foreach ($lines as $line => $hits) {{
+                if ($hits !== -2) {{
+                    $result[$file][$line] = $hits > 0 ? 1 : 0;
+                }}
+            }}
+        }}
+        file_put_contents($out, json_encode($result));
+    }});
+}})();
+"#,
+        out = quote(out),
+        root = quote(root),
+    )
+}
+
+/// Reads the JSON the prepend script writes: executable lines per file,
+/// `1` when they ran.
+///
+/// # Errors
+/// Returns the JSON error when the text is not such a report.
+pub fn parse_line_json(text: &str) -> Result<Coverage, String> {
+    let json: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    let mut out = Coverage::new();
+    for (file, lines) in json.as_object().into_iter().flatten() {
+        let entry = out.entry(PathBuf::from(file)).or_default();
+        for (line, hit) in lines.as_object().into_iter().flatten() {
+            let Ok(line) = line.parse::<u32>() else {
+                continue;
+            };
+            if hit.as_u64().unwrap_or(0) > 0 {
+                entry.covered.push(line);
+            } else {
+                entry.uncovered.push(line);
+            }
+        }
+        entry.covered.sort_unstable();
+        entry.uncovered.sort_unstable();
+    }
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn line_json_should_split_covered_and_uncovered_lines() {
+        let c = parse_line_json(r#"{"/app/src/Cart.php":{"4":1,"5":0,"9":1}}"#).unwrap();
+        let f = &c[&PathBuf::from("/app/src/Cart.php")];
+        assert_eq!(
+            (f.covered.clone(), f.uncovered.clone()),
+            (vec![4, 9], vec![5])
+        );
+    }
+
+    #[test]
+    fn prepend_script_should_quote_paths() {
+        let script = prepend_script("/var/www/it's", "/tmp/cov.json");
+        assert!(script.contains(r"$root = rtrim('/var/www/it\'s', '/')"));
+        assert!(script.contains("$out = '/tmp/cov.json';"));
+        assert!(script.contains(r"\pcov\start();"));
+    }
 
     #[test]
     fn clover_should_split_covered_and_uncovered_statements() {
