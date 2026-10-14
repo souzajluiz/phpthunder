@@ -172,6 +172,10 @@ pub struct App {
     pub laravel: LaravelScan,
     /// Bookmarked lines (0-based) by file (`F3`).
     pub bookmarks: std::collections::BTreeMap<PathBuf, std::collections::BTreeSet<usize>>,
+    /// Numbered bookmarks `0`–`9` (`⌃⇧digit`): file and 0-based line.
+    pub numbered_bookmarks: std::collections::BTreeMap<u8, (PathBuf, usize)>,
+    /// What `⇧⌘F12` hid, restored by its next press.
+    pub hidden_tools: Option<HiddenTools>,
     /// Latest edit locations as (file, line), oldest first.
     pub edit_locations: Vec<(PathBuf, usize)>,
     /// How far back the last `⇧⌘⌫` went; reset by the next edit.
@@ -250,8 +254,17 @@ pub fn bindings(
             _ => {}
         }
     }
+    if let Some((digit, set)) = keymap::numbered_bookmark(&key.key, m) {
+        return custom(Message::NumberedBookmark(digit, set));
+    }
     if let Some(cmd) = keymap::command(&key.key, m) {
         return custom(Message::Command(cmd));
+    }
+    // Alternate editing keys: `⌘Home`/`⌘End`, emacs `⌃N`/`⌃P`/`⌃⌥F`/`⌃⌥B`,
+    // `⇧⌦` cut, `⌘Insert` copy, `⇧Insert` and `⌥⇧⌘V` paste, `⌃K` cut to
+    // line end.
+    if let Some(binding) = extra_editing_binding(&key) {
+        return Some(binding);
     }
     // Copy and cut also feed the clipboard history (`⇧⌘V`).
     if m.command()
@@ -286,6 +299,56 @@ pub fn bindings(
         return custom(Message::TypeChar(c));
     }
     Binding::from_key_press(key)
+}
+
+/// Editing keys iced's default bindings lack, for `bindings`.
+fn extra_editing_binding(key: &KeyPress) -> Option<Binding<Message>> {
+    use iced::widget::text_editor::Motion;
+    let m = key.modifiers;
+    let ctrl_only = m.control() && !m.command() && !m.alt();
+    let moved = |motion: Motion| {
+        Some(if m.shift() {
+            Binding::Select(motion)
+        } else {
+            Binding::Move(motion)
+        })
+    };
+    match key.key.as_ref() {
+        Key::Named(Named::Home) if m.command() => moved(Motion::DocumentStart),
+        Key::Named(Named::End) if m.command() => moved(Motion::DocumentEnd),
+        Key::Named(Named::Delete) if m.shift() && !m.command() && !m.alt() => {
+            Some(Binding::Sequence(vec![
+                Binding::Custom(Message::RememberSelection),
+                Binding::Cut,
+            ]))
+        }
+        Key::Named(Named::Insert) if m.command() => Some(Binding::Sequence(vec![
+            Binding::Custom(Message::RememberSelection),
+            Binding::Copy,
+        ])),
+        Key::Named(Named::Insert) if m.shift() => Some(Binding::Paste),
+        Key::Character(c) if m.command() && m.alt() && m.shift() && c.eq_ignore_ascii_case("v") => {
+            Some(Binding::Paste)
+        }
+        Key::Character(c) if ctrl_only => match c.to_ascii_lowercase().as_str() {
+            "n" => moved(Motion::Down),
+            "p" => moved(Motion::Up),
+            "k" if !m.shift() => Some(Binding::Sequence(vec![
+                Binding::Select(Motion::End),
+                Binding::Custom(Message::RememberSelection),
+                Binding::Cut,
+            ])),
+            _ => None,
+        },
+        Key::Character(c) if m.control() && m.alt() && !m.command() => {
+            match c.to_ascii_lowercase().as_str() {
+                "f" => moved(Motion::WordRight),
+                "b" => moved(Motion::WordLeft),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 /// Global event filter for [`App::subscription`]: forwards keyboard events
@@ -399,6 +462,8 @@ impl App {
             compare: None,
             blame: std::collections::HashMap::new(),
             bookmarks: std::collections::BTreeMap::new(),
+            numbered_bookmarks: std::collections::BTreeMap::new(),
+            hidden_tools: None,
             edit_locations: Vec::new(),
             edit_back: 0,
             clipboard_history: Vec::new(),
@@ -709,6 +774,7 @@ impl App {
             Message::CloseTab(i) => self.close_tab(i),
             Message::Edit(action) => self.edit(action),
             Message::Command(cmd) => self.command(cmd),
+            Message::NumberedBookmark(digit, set) => self.numbered_bookmark(digit, set),
             Message::TypeChar('}') => self.edit_with(|d| d.type_close_brace(), Some('}')),
             Message::TypeChar(c) => self.edit_with(|d| d.type_pair_char(c), Some(c)),
             Message::SmartEnter => self.edit_with(|d| d.smart_enter(), None),
@@ -1188,6 +1254,9 @@ impl App {
                 }
                 if captured {
                     return Task::none();
+                }
+                if let Some((digit, set)) = keymap::numbered_bookmark(&key, modifiers) {
+                    return self.numbered_bookmark(digit, set);
                 }
                 if let Some(cmd) = keymap::command(&key, modifiers) {
                     return self.command(cmd);

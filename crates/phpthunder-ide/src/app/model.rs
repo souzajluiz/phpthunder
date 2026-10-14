@@ -69,6 +69,9 @@ pub enum Message {
     Edit(Action),
     /// IDE command resolved from a shortcut or menu.
     Command(Cmd),
+    /// Numbered bookmark `digit`: set or clear it on the caret line
+    /// (`true`, `⌃⇧digit`) or jump to it (`false`, `⌃digit`).
+    NumberedBookmark(u8, bool),
     /// Bracket or quote typed; auto-paired or skipped over.
     TypeChar(char),
     /// Enter with auto-indent.

@@ -156,6 +156,19 @@ impl Document {
         }
     }
 
+    /// Undoes the last `select_next_occurrence` (`⌃⇧G`): the occurrence it
+    /// added is dropped and the previous one becomes the main selection
+    /// again. With no extra carets it just clears the selection.
+    pub fn unselect_occurrence(&mut self) {
+        match self.extra_carets.pop() {
+            Some((start, end)) => self.select(start, end),
+            None => {
+                let head = self.main_caret().1;
+                self.select(head, head);
+            }
+        }
+    }
+
     /// Selects every occurrence of the main selection (the word at the
     /// caret first, when nothing is selected), one caret each.
     pub fn select_all_occurrences(&mut self) {

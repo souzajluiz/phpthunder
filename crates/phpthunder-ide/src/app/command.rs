@@ -197,6 +197,33 @@ impl App {
                 self.about = Some(crate::app::About::new());
                 Task::none()
             }
+            Cmd::ImplementMethods => self.generate(crate::app::Generation::ImplementMethods),
+            Cmd::OverrideMethods => self.generate(crate::app::Generation::OverrideMethods),
+            Cmd::SafeDelete => {
+                self.member_refactoring(crate::language::MemberRefactoring::SafeDelete)
+            }
+            Cmd::NextMethod => self.goto_method(true),
+            Cmd::PreviousMethod => self.goto_method(false),
+            Cmd::NextChange => self.goto_change(true),
+            Cmd::PreviousChange => self.goto_change(false),
+            Cmd::ErrorDescription => self.error_description(),
+            Cmd::ExternalDoc => self.external_doc(),
+            Cmd::CopyPath => self.copy_path(),
+            Cmd::RevealInFileManager => self.reveal_in_file_manager(),
+            Cmd::SelectInTree => self.select_in_tree(),
+            Cmd::ToggleFindPanel => self.toggle_panel(Bottom::Find),
+            Cmd::ToggleDebugPanel => self.toggle_panel(Bottom::Debug),
+            Cmd::ToggleTestsPanel => self.toggle_panel(Bottom::Tests),
+            Cmd::HideToolWindow => self.hide_tool_window(),
+            Cmd::HideAllToolWindows => self.toggle_all_tool_windows(),
+            Cmd::ScrollToCenter => self.scroll_to_center(),
+            Cmd::UnselectOccurrence => self.unselect_occurrence(),
+            Cmd::EvaluateExpression => self.evaluate_expression(),
+            Cmd::ViewBreakpoints => self.view_breakpoints(),
+            Cmd::Settings => self.open_settings(),
+            Cmd::ReloadFromDisk => self.reload_from_disk(),
+            Cmd::ToggleFullScreen => self.toggle_full_screen(),
+            Cmd::Minimize => self.minimize_window(),
             Cmd::IntroduceConstant => {
                 self.introduce_from_selection(crate::app::RefactorAction::IntroduceConstant)
             }

@@ -97,7 +97,7 @@ impl App {
     }
 
     /// The trimmed text of `line` in `path`, from the open tab or the disk.
-    fn line_preview(&self, path: &Path, line: usize) -> String {
+    pub(crate) fn line_preview(&self, path: &Path, line: usize) -> String {
         let from_doc = self
             .docs
             .iter()

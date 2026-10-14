@@ -272,11 +272,61 @@ pub enum Cmd {
     ToggleDistractionFree,
     /// Show the About dialog (version, commit, author, repository).
     About,
+    /// Implement the parent's abstract methods (`⌃I`).
+    ImplementMethods,
+    /// Override parent methods (`⌃O`).
+    OverrideMethods,
+    /// Delete the member at the caret if nothing uses it (`⌘⌦`).
+    SafeDelete,
+    /// Go to the next function or method (`⌃⇧↓`).
+    NextMethod,
+    /// Go to the previous function or method (`⌃⇧↑`).
+    PreviousMethod,
+    /// Go to the next change since the last commit (`⌃⌥⇧↓`).
+    NextChange,
+    /// Go to the previous change since the last commit (`⌃⌥⇧↑`).
+    PreviousChange,
+    /// Show the problem at the caret (`⌘F1`).
+    ErrorDescription,
+    /// Open the PHP manual for the word at the caret (`⇧F1`).
+    ExternalDoc,
+    /// Copy the file's absolute path (`⇧⌘C`).
+    CopyPath,
+    /// Show the file in the system file manager (`⌥⌘F12`).
+    RevealInFileManager,
+    /// Select the file in the project tree (`⌥F1`).
+    SelectInTree,
+    /// Show or hide the Find panel (`⌘3`).
+    ToggleFindPanel,
+    /// Show or hide the Debug panel (`⌘5`).
+    ToggleDebugPanel,
+    /// Show or hide the Tests panel (`⌥⌘8`).
+    ToggleTestsPanel,
+    /// Hide the open tool panel (`⇧⎋`).
+    HideToolWindow,
+    /// Hide every tool panel and the tree, or bring them back (`⇧⌘F12`).
+    HideAllToolWindows,
+    /// Scroll the caret line to the middle (`⌃L`).
+    ScrollToCenter,
+    /// Drop the occurrence added last (`⌃⇧G`).
+    UnselectOccurrence,
+    /// Evaluate the selection in the paused script (`⌥F8`).
+    EvaluateExpression,
+    /// List the line breakpoints (`⇧⌘F8`).
+    ViewBreakpoints,
+    /// Open the settings file (`⌘,`).
+    Settings,
+    /// Reload open files from disk (`⌥⌘Y`).
+    ReloadFromDisk,
+    /// Enter or leave full screen (`⌃⌘F`).
+    ToggleFullScreen,
+    /// Minimize the window (`⌘M`).
+    Minimize,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 130] = {
+    pub const ALL: [Cmd; 155] = {
         use Cmd::*;
         [
             Save,
@@ -409,6 +459,31 @@ impl Cmd {
             QuickDefinition,
             ToggleDistractionFree,
             About,
+            ImplementMethods,
+            OverrideMethods,
+            SafeDelete,
+            NextMethod,
+            PreviousMethod,
+            NextChange,
+            PreviousChange,
+            ErrorDescription,
+            ExternalDoc,
+            CopyPath,
+            RevealInFileManager,
+            SelectInTree,
+            ToggleFindPanel,
+            ToggleDebugPanel,
+            ToggleTestsPanel,
+            HideToolWindow,
+            HideAllToolWindows,
+            ScrollToCenter,
+            UnselectOccurrence,
+            EvaluateExpression,
+            ViewBreakpoints,
+            Settings,
+            ReloadFromDisk,
+            ToggleFullScreen,
+            Minimize,
         ]
     };
 
@@ -463,6 +538,7 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("n", false, true) => InlineVariable,
             ("k", true, false) => Push,
             ("t", false, false) => Pull,
+            ("f", false, false) if m.control() => ToggleFullScreen,
             ("f", false, false) => Find,
             ("r", false, false) => Replace,
             ("g", false, false) if m.control() => SelectAllOccurrences,
@@ -482,7 +558,21 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("p", false, true) => IntroduceParameter,
             ("=", false, false) | ("+", _, false) => ZoomIn,
             ("-", false, false) => ZoomOut,
-            ("0", false, false) => ZoomReset,
+            ("0", false, false) => Commit,
+            ("2", false, false) => ShowBookmarks,
+            ("3", false, false) => ToggleFindPanel,
+            ("5", false, false) => ToggleDebugPanel,
+            ("7", false, false) => FileStructure,
+            ("8", false, true) => ToggleTestsPanel,
+            (",", false, false) => Settings,
+            (";", false, false) => EditProjectSettings,
+            ("m", false, false) => Minimize,
+            ("c", true, false) => CopyPath,
+            ("r", true, false) => FindInPath,
+            ("y", false, true) => ReloadFromDisk,
+            ("l", true, true) => Reformat,
+            ("j", false, true) => SurroundWith,
+            ("i", true, true) => Problems,
             ("e", true, false) => RecentLocations,
             ("v", true, false) => PasteFromHistory,
             ("c", true, true) => CopyReference,
@@ -493,6 +583,54 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("{", true, false) | ("[", true, false) => PrevTab,
             _ => return None,
         },
+        Key::Named(Named::Escape) if shift && !cmd && !alt => HideToolWindow,
+        Key::Named(Named::F12) if cmd && shift => HideAllToolWindows,
+        Key::Named(Named::F12) if cmd && alt => RevealInFileManager,
+        Key::Named(Named::F1) if cmd => ErrorDescription,
+        Key::Named(Named::F1) if shift => ExternalDoc,
+        Key::Named(Named::F1) if alt => SelectInTree,
+        Key::Named(Named::F8) if alt && !cmd && !shift => EvaluateExpression,
+        Key::Named(Named::F8) if cmd && shift => ViewBreakpoints,
+        Key::Named(Named::F7) if shift && !cmd && !alt => StepInto,
+        Key::Named(Named::F4) if m.control() && shift => CloseTab,
+        Key::Named(Named::F4) if !cmd && !alt && !shift && !m.control() => GotoDeclaration,
+        Key::Named(Named::ArrowDown) if m.control() && alt && shift => NextChange,
+        Key::Named(Named::ArrowUp) if m.control() && alt && shift => PreviousChange,
+        Key::Named(Named::ArrowDown) if m.control() && shift && !alt && !cmd => NextMethod,
+        Key::Named(Named::ArrowUp) if m.control() && shift && !alt && !cmd => PreviousMethod,
+        Key::Named(Named::ArrowDown) if cmd && !shift && !alt => GotoDeclaration,
+        Key::Named(Named::ArrowRight) if m.control() && !shift && !alt && !cmd => NextTab,
+        Key::Named(Named::ArrowLeft) if m.control() && !shift && !alt && !cmd => PrevTab,
+        Key::Named(Named::Delete) if cmd && !shift && !alt => SafeDelete,
+        Key::Named(Named::Tab) if m.control() && !cmd && !alt => RecentFiles,
+        Key::Character(c) if m.control() && alt && !cmd && !shift => {
+            match c.to_ascii_lowercase().as_str() {
+                "i" => Reformat,
+                "=" | "+" => ZoomIn,
+                "-" => ZoomOut,
+                "0" => ZoomReset,
+                "o" => OptimizeImports,
+                "c" => Composer,
+                "r" => RunConfiguration,
+                " " => Complete,
+                _ => return None,
+            }
+        }
+        Key::Character(c) if m.control() && !alt && !cmd && !shift => {
+            match c.to_ascii_lowercase().as_str() {
+                "i" => ImplementMethods,
+                "o" => OverrideMethods,
+                "l" => ScrollToCenter,
+                "r" => RunConfiguration,
+                "d" => DebugCurrentFile,
+                _ => return control_letter(c),
+            }
+        }
+        Key::Character(c)
+            if m.control() && shift && !alt && !cmd && c.eq_ignore_ascii_case("g") =>
+        {
+            UnselectOccurrence
+        }
         Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("o") => OptimizeImports,
         Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("c") => Composer,
         Key::Character(c) if m.control() && alt && !cmd && c.eq_ignore_ascii_case("r") => {
@@ -581,6 +719,34 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Character(" ") if m.control() => Complete,
         _ => return None,
     })
+}
+
+/// The existing `⌃`-letter bindings (`⌃H`, `⌃M`, `⌃T`, `⌃G`, `⌃J`, `⌃Space`) for
+/// `command`'s plain-control arm, which handles the new letters first.
+fn control_letter(c: &str) -> Option<Cmd> {
+    Some(match c.to_ascii_lowercase().as_str() {
+        "h" => Cmd::TypeHierarchy,
+        "m" => Cmd::MatchBrace,
+        "t" => Cmd::Transpose,
+        "g" => Cmd::SelectNextOccurrence,
+        "j" => Cmd::QuickDoc,
+        " " => Cmd::Complete,
+        _ => return None,
+    })
+}
+
+/// Numbered bookmark shortcut: `⌃⇧0`–`⌃⇧9` sets (`true`), `⌃0`–`⌃9`
+/// jumps (`false`). Checked by the editor and window key handling before
+/// `command`. Shift may turn the digit into its US symbol, so both match.
+pub fn numbered_bookmark(key: &Key, m: Modifiers) -> Option<(u8, bool)> {
+    if !m.control() || m.alt() || m.command() {
+        return None;
+    }
+    let Key::Character(c) = key.as_ref() else {
+        return None;
+    };
+    let digit = "0123456789".find(c).or_else(|| ")!@#$%^&*(".find(c))?;
+    Some((digit as u8, m.shift()))
 }
 
 /// The glyph label for `cmd`'s shortcut (e.g. `⌘S`), shown in the empty-editor
@@ -706,13 +872,38 @@ pub fn hint(cmd: Cmd) -> &'static str {
         GotoTest => "⇧⌘T",
         ZoomIn => "⌘=",
         ZoomOut => "⌘−",
-        ZoomReset => "⌘0",
+        ZoomReset => "⌃⌥0",
         CompareWithClipboard | LocalHistory | Annotate => "",
         IntroduceConstant => "⌥⌘C",
         IntroduceField => "⌥⌘F",
         IntroduceParameter => "⌥⌘P",
         QuickDefinition => "⌥Space",
         ToggleDistractionFree | About => "",
+        ImplementMethods => "⌃I",
+        OverrideMethods => "⌃O",
+        SafeDelete => "⌘⌦",
+        NextMethod => "⌃⇧↓",
+        PreviousMethod => "⌃⇧↑",
+        NextChange => "⌃⌥⇧↓",
+        PreviousChange => "⌃⌥⇧↑",
+        ErrorDescription => "⌘F1",
+        ExternalDoc => "⇧F1",
+        CopyPath => "⇧⌘C",
+        RevealInFileManager => "⌥⌘F12",
+        SelectInTree => "⌥F1",
+        ToggleFindPanel => "⌘3",
+        ToggleDebugPanel => "⌘5",
+        ToggleTestsPanel => "⌥⌘8",
+        HideToolWindow => "⇧⎋",
+        HideAllToolWindows => "⇧⌘F12",
+        ScrollToCenter => "⌃L",
+        UnselectOccurrence => "⌃⇧G",
+        EvaluateExpression => "⌥F8",
+        ViewBreakpoints => "⇧⌘F8",
+        Settings => "⌘,",
+        ReloadFromDisk => "⌥⌘Y",
+        ToggleFullScreen => "⌃⌘F",
+        Minimize => "⌘M",
     }
 }
 
@@ -727,5 +918,61 @@ mod tests {
             .filter(|c| c.label().starts_with("cmd-"))
             .collect();
         assert_eq!(untranslated, []);
+    }
+
+    /// `command` for a character key with `mods`.
+    fn on(c: &str, mods: Modifiers) -> Option<Cmd> {
+        command(&Key::Character(c.into()), mods)
+    }
+
+    #[test]
+    fn control_space_should_still_complete() {
+        assert_eq!(on(" ", Modifiers::CTRL), Some(Cmd::Complete));
+    }
+
+    #[test]
+    fn control_alt_space_should_complete() {
+        assert_eq!(
+            on(" ", Modifiers::CTRL | Modifiers::ALT),
+            Some(Cmd::Complete)
+        );
+    }
+
+    #[test]
+    fn control_h_should_still_open_the_type_hierarchy() {
+        assert_eq!(on("h", Modifiers::CTRL), Some(Cmd::TypeHierarchy));
+    }
+
+    #[test]
+    fn control_i_should_implement_methods() {
+        assert_eq!(on("i", Modifiers::CTRL), Some(Cmd::ImplementMethods));
+    }
+
+    #[test]
+    fn command_zero_should_open_the_commit_panel() {
+        assert_eq!(on("0", Modifiers::COMMAND), Some(Cmd::Commit));
+    }
+
+    #[test]
+    fn control_alt_zero_should_reset_zoom() {
+        assert_eq!(
+            on("0", Modifiers::CTRL | Modifiers::ALT),
+            Some(Cmd::ZoomReset)
+        );
+    }
+
+    #[test]
+    fn shifted_digit_symbol_should_set_a_numbered_bookmark() {
+        let key = Key::Character("!".into());
+        assert_eq!(
+            numbered_bookmark(&key, Modifiers::CTRL | Modifiers::SHIFT),
+            Some((1, true))
+        );
+    }
+
+    #[test]
+    fn control_digit_should_jump_to_a_numbered_bookmark() {
+        let key = Key::Character("7".into());
+        assert_eq!(numbered_bookmark(&key, Modifiers::CTRL), Some((7, false)));
     }
 }
