@@ -36,6 +36,13 @@ vt100 = "0.16.2"
 # already ships instead of a second async executor.
 notify-rust = { version = "4.18.2", default-features = false, features = ["z-with-tokio"] }
 
+# The macOS app menu's About item (see `native_menu`); same versions winit
+# and rfd already pull in.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6.5"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["std", "NSApplication", "NSMenu", "NSMenuItem", "NSResponder"] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = ["std", "NSString", "NSArray", "NSObject"] }
+
 [dev-dependencies]
 fluent-syntax = "0.12.0"
 

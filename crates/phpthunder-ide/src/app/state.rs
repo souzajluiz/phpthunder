@@ -405,7 +405,10 @@ impl App {
             Some(dir) => Task::done(Message::FolderPicked(Some(dir))),
             None => Task::none(),
         };
-        (app, Task::batch([task, snapshot]))
+        (
+            app,
+            Task::batch([task, snapshot, crate::native_menu::install()]),
+        )
     }
 
     /// Window title: `file — project — PhpThunder`, dropping parts that do
@@ -470,7 +473,10 @@ impl App {
     /// Listens to every keyboard event so shortcuts, double-Shift, and modal
     /// keys work even when the editor does not have focus.
     pub fn subscription(&self) -> Subscription<Message> {
-        let mut subscriptions = vec![event::listen_with(keyboard_events)];
+        let mut subscriptions = vec![
+            event::listen_with(keyboard_events),
+            crate::native_menu::about_requests(),
+        ];
         for session in [&self.terminal, &self.claude].into_iter().flatten() {
             subscriptions.push(
                 Subscription::run_with(session.id, crate::terminal::output_events)

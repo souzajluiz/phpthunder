@@ -16,6 +16,7 @@ mod keymap;
 mod language;
 mod local_history;
 mod log;
+mod native_menu;
 mod notify;
 mod packages;
 mod palette;
