@@ -93,6 +93,7 @@ impl App {
             Cmd::UpdateCopyright => self.update_copyright(),
             Cmd::UpdateCopyrightEverywhere => self.update_copyright_everywhere(),
             Cmd::OpenLog => self.open_log_picker(),
+            Cmd::CopyStructurePath => self.copy_structure_path(),
             Cmd::FileStructure if has_doc => self.open_palette(Mode::Structure),
             Cmd::FileStructure => Task::none(),
             Cmd::ToggleTerminal => self.toggle_terminal(),

@@ -55,6 +55,8 @@ pub enum FileType {
     Ini,
     /// Ignore lists (`.gitignore`, `.dockerignore`, …).
     Ignore,
+    /// Apache configuration (`.htaccess`, `httpd.conf`, virtual hosts).
+    Apache,
     /// Makefile.
     Makefile,
     /// Comma- or tab-separated values.
@@ -86,7 +88,9 @@ const NAMES: &[(&str, FileType)] = &[
     (".gitattributes", FileType::Ini),
     (".gitconfig", FileType::Ini),
     (".gitmodules", FileType::Ini),
-    (".htaccess", FileType::Ini),
+    (".htaccess", FileType::Apache),
+    ("httpd.conf", FileType::Apache),
+    ("apache2.conf", FileType::Apache),
     (".npmrc", FileType::Ini),
     ("license", FileType::Text),
     (".ds_store", FileType::Binary),
@@ -110,6 +114,7 @@ const PATTERNS: &[(&str, FileType)] = &[
     ("*.dockerfile", FileType::Dockerfile),
     ("*ignore", FileType::Ignore),
     ("docker-compose*.yml", FileType::Yaml),
+    ("*.vhost", FileType::Apache),
 ];
 
 /// Extensions, lowercase.
@@ -274,6 +279,7 @@ impl FileType {
             FileType::Makefile => "Makefile",
             FileType::Csv => "CSV",
             FileType::Log => "Log",
+            FileType::Apache => "Apache",
             FileType::Twig => "Twig",
             FileType::Image => "Image",
             FileType::Binary => "Binary",

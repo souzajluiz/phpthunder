@@ -38,6 +38,7 @@ impl App {
                     crate::filetype::FileType::Blade
                         | crate::filetype::FileType::Markdown
                         | crate::filetype::FileType::Text
+                        | crate::filetype::FileType::Yaml
                 )
         }) else {
             return Task::none();
@@ -58,7 +59,9 @@ impl App {
             self.lang.clone(),
             doc.is_php(),
         );
-        let laravel = self.laravel.clone();
+        let yaml = doc.file_type == crate::filetype::FileType::Yaml;
+        let template = php || doc.file_type == crate::filetype::FileType::Blade;
+        let laravel = self.laravel.clone().filter(|_| template);
         let rel = self
             .tree
             .root
@@ -78,8 +81,11 @@ impl App {
                     if let Some(kind) = spelling {
                         found.extend(crate::spelling::diagnostics(&text, kind));
                     }
+                    if yaml {
+                        found.extend(crate::structured::yaml_diagnostics(&text));
+                    }
                     let mut markers = Vec::new();
-                    if let Some(project) = laravel.filter(|_| php || spelling.is_none()) {
+                    if let Some(project) = laravel {
                         found.extend(phpthunder::laravel::key_diagnostics(&project, &text));
                         if php {
                             found.extend(phpthunder::laravel::order_by_diagnostics(&text));

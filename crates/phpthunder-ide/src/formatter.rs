@@ -168,7 +168,7 @@ pub(crate) fn node_bin(root: &Path, name: &str) -> Option<PathBuf> {
 }
 
 /// `name` on `PATH`, if installed.
-fn path_bin(name: &str) -> Option<PathBuf> {
+pub(crate) fn path_bin(name: &str) -> Option<PathBuf> {
     std::env::split_paths(&std::env::var_os("PATH")?)
         .map(|dir| dir.join(name))
         .find(|p| p.is_file())

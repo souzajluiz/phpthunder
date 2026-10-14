@@ -234,3 +234,5 @@ diagnostic-duplicate-class-declaration = Class is also declared in { $detail }
 spelling-typo = Typo: { $word }
 spelling-change-to = Change to { $word }
 spelling-learn = Save { $word } to dictionary
+yaml-tab-indent = Tabs are not allowed in YAML indentation
+yaml-duplicate-key = Duplicate key “{ $key }”: the later value wins

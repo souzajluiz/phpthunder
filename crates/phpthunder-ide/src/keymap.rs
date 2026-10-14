@@ -90,6 +90,8 @@ pub enum Cmd {
     UpdateCopyrightEverywhere,
     /// Pick one of the project's log files to open.
     OpenLog,
+    /// Copy the JSONPath or XPath of the caret.
+    CopyStructurePath,
     /// Popup with the symbols of the current file (`⌘F12`).
     FileStructure,
     /// Show the Problems panel (`⌘6`).
@@ -373,7 +375,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 178] = {
+    pub const ALL: [Cmd; 179] = {
         use Cmd::*;
         [
             Save,
@@ -415,6 +417,7 @@ impl Cmd {
             UpdateCopyright,
             UpdateCopyrightEverywhere,
             OpenLog,
+            CopyStructurePath,
             FileStructure,
             Problems,
             ToggleTerminal,
@@ -882,7 +885,11 @@ pub fn hint(cmd: Cmd) -> &'static str {
         GotoImplementation => "⌥⌘B",
         TypeHierarchy => "⌃H",
         ShowDiagram => "⌥⇧⌘U",
-        ShowDiagramPlantUml | UpdateCopyright | UpdateCopyrightEverywhere | OpenLog => "",
+        ShowDiagramPlantUml
+        | UpdateCopyright
+        | UpdateCopyrightEverywhere
+        | OpenLog
+        | CopyStructurePath => "",
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",

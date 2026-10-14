@@ -331,6 +331,7 @@ pub fn compute_file_highlights(src: &str, file_type: FileType) -> LineSpans {
         FileType::Php => compute_highlights(src),
         FileType::Markdown => to_lines(src, markdown(src)),
         FileType::Log => to_lines(src, log(src)),
+        FileType::Apache => to_lines(src, apache(src)),
         FileType::Twig => compute_twig_highlights(src),
         other => match spec(other) {
             Some(spec) => to_lines(src, scan(src, &spec)),
@@ -703,6 +704,75 @@ fn markdown(src: &str) -> Vec<Span> {
     out
 }
 
+/// Apache configuration highlighting: `# comments`, the directive that
+/// starts each line, `<Section …>` tags, `%{VARIABLE}` and `$1`
+/// references, quoted strings and `[L,R=301]` rewrite flags.
+fn apache(src: &str) -> Vec<Span> {
+    let mut out = Vec::new();
+    let mut offset = 0;
+    for line in src.split_inclusive('\n') {
+        let start = offset;
+        offset += line.len();
+        let body = line.trim_end_matches(['\n', '\r']);
+        let lead = body.len() - body.trim_start().len();
+        let trimmed = &body[lead..];
+        if trimmed.starts_with('#') {
+            out.push((start + lead, start + body.len(), Token::Comment));
+            continue;
+        }
+        let b = body.as_bytes();
+        let mut i = lead;
+        if trimmed.starts_with('<') {
+            let end = body.find('>').map_or(body.len(), |e| e + 1);
+            let name_end = body[i..end]
+                .find(|c: char| c.is_whitespace() || c == '>')
+                .map_or(end, |e| i + e);
+            out.push((start + i, start + name_end, Token::Type));
+            i = name_end;
+        } else {
+            let word_end = body[i..]
+                .find(char::is_whitespace)
+                .map_or(body.len(), |e| i + e);
+            if word_end > i {
+                out.push((start + i, start + word_end, Token::Keyword));
+            }
+            i = word_end;
+        }
+        while i < b.len() {
+            match b[i] {
+                b'"' | b'\'' => {
+                    let quote = b[i];
+                    let end = body[i + 1..]
+                        .find(quote as char)
+                        .map_or(body.len(), |e| i + e + 2);
+                    out.push((start + i, start + end, Token::String));
+                    i = end;
+                }
+                b'%' if b.get(i + 1) == Some(&b'{') => {
+                    let end = body[i..].find('}').map_or(body.len(), |e| i + e + 1);
+                    out.push((start + i, start + end, Token::Variable));
+                    i = end;
+                }
+                b'$' if b.get(i + 1).is_some_and(u8::is_ascii_digit) => {
+                    out.push((start + i, start + i + 2, Token::Variable));
+                    i += 2;
+                }
+                b'[' if body[i..].contains(']') && i > lead => {
+                    let end = body[i..].find(']').map_or(body.len(), |e| i + e + 1);
+                    out.push((start + i, start + end, Token::Number));
+                    i = end;
+                }
+                b'>' | b'<' if trimmed.starts_with('<') => {
+                    out.push((start + i, start + i + 1, Token::Type));
+                    i += 1;
+                }
+                _ => i += 1,
+            }
+        }
+    }
+    out
+}
+
 /// Log highlighting: stack-trace lines dimmed, then per line the
 /// timestamp, the level (errors, warnings, info, debug in their own
 /// colors) and quoted text. Monolog, PHP's error log, nginx and most
@@ -788,6 +858,22 @@ mod tests {
         tokens(src, file_type)
             .iter()
             .any(|(t, k)| t == text && *k == token)
+    }
+
+    #[test]
+    fn apache_should_mark_directives_sections_and_flags() {
+        let src = "# rewrite\n<IfModule mod_rewrite.c>\n  RewriteRule ^(.*)$ index.php?q=$1 [L,QSA]\n  RewriteCond %{REQUEST_FILENAME} !-f\n</IfModule>\n";
+        assert!(has(src, FileType::Apache, "# rewrite", Token::Comment));
+        assert!(has(src, FileType::Apache, "<IfModule", Token::Type));
+        assert!(has(src, FileType::Apache, "RewriteRule", Token::Keyword));
+        assert!(has(src, FileType::Apache, "[L,QSA]", Token::Number));
+        assert!(has(
+            src,
+            FileType::Apache,
+            "%{REQUEST_FILENAME}",
+            Token::Variable
+        ));
+        assert!(has(src, FileType::Apache, "$1", Token::Variable));
     }
 
     #[test]
@@ -899,6 +985,7 @@ mod tests {
             FileType::Html,
             FileType::Twig,
             FileType::Log,
+            FileType::Apache,
             FileType::Text,
         ] {
             let lines = compute_file_highlights(nasty, ft);

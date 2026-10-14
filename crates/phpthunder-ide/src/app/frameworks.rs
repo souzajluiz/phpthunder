@@ -32,6 +32,63 @@ fn hook_sites_in(paths: &[PathBuf], hook: &str, side: HookSide) -> Vec<(PathBuf,
 }
 
 impl App {
+    /// Jumps to the target of the `$ref` on the caret's line (OpenAPI,
+    /// JSON Schema), in this document or the relative file it names;
+    /// `None` when the line has no `$ref`.
+    pub(crate) fn ref_definition(&mut self) -> Option<Task<Message>> {
+        use crate::filetype::FileType;
+        let doc = self.doc()?;
+        if !matches!(doc.file_type, FileType::Json | FileType::Yaml) {
+            return None;
+        }
+        let offset = doc.offset(doc.cursor());
+        let (file, pointer) = crate::structured::ref_at(&doc.text, offset)?;
+        let (path, text) = if file.is_empty() {
+            (doc.path.clone(), doc.text.clone())
+        } else {
+            let path = doc.path.parent()?.join(&file);
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                self.notice = Some(tr!("notice-no-declaration"));
+                return Some(Task::none());
+            };
+            (path, text)
+        };
+        let yaml = FileType::detect(&path, None) == FileType::Yaml;
+        let Some(at) = crate::structured::resolve_pointer(&text, &pointer, yaml) else {
+            self.notice = Some(tr!("notice-no-declaration"));
+            return Some(Task::none());
+        };
+        let pos = LineIndex::new(&text).pos(&text, at);
+        self.close_overlays();
+        self.record_nav();
+        Some(self.open(path, Some(pos)))
+    }
+
+    /// Copies the JSONPath (JSON, YAML) or XPath (XML, HTML) of the caret
+    /// and shows it.
+    pub(crate) fn copy_structure_path(&mut self) -> Task<Message> {
+        use crate::filetype::FileType;
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        let offset = doc.offset(doc.cursor());
+        let path = match doc.file_type {
+            FileType::Json => {
+                crate::structured::json_path(&crate::structured::json_path_at(&doc.text, offset))
+            }
+            FileType::Yaml => {
+                crate::structured::json_path(&crate::structured::yaml_path_at(&doc.text, offset))
+            }
+            FileType::Xml | FileType::Html => crate::structured::xpath_at(&doc.text, offset),
+            _ => {
+                self.notice = Some(tr!("notice-structure-path-unsupported"));
+                return Task::none();
+            }
+        };
+        self.notice = Some(tr!("notice-structure-path-copied", path = path.as_str()));
+        iced::clipboard::write(path)
+    }
+
     /// The declaration task for a Twig name or WordPress hook at the caret;
     /// `None` when the caret is on neither, so the usual lookup runs.
     pub(crate) fn framework_definition(&mut self) -> Option<Task<Message>> {

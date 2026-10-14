@@ -1823,7 +1823,10 @@ impl App {
             crate::packages::open_in_browser(&url);
             return Task::none();
         }
-        if let Some(task) = self.framework_definition() {
+        if let Some(task) = self
+            .framework_definition()
+            .or_else(|| self.ref_definition())
+        {
             return task;
         }
         let Some(doc) = self.doc() else {

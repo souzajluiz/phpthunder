@@ -32,6 +32,8 @@ pub enum Tool {
     Eslint,
     /// Stylelint, for CSS, Sass and Less.
     Stylelint,
+    /// ShellCheck, for shell scripts, when installed on `PATH`.
+    ShellCheck,
 }
 
 /// One finding of a tool in the analysed file.
@@ -46,7 +48,7 @@ pub struct Finding {
 }
 
 /// Every tool, in the order they run.
-pub const TOOLS: [Tool; 8] = [
+pub const TOOLS: [Tool; 9] = [
     Tool::PhpStan,
     Tool::Psalm,
     Tool::Phpcs,
@@ -55,6 +57,7 @@ pub const TOOLS: [Tool; 8] = [
     Tool::Pint,
     Tool::Eslint,
     Tool::Stylelint,
+    Tool::ShellCheck,
 ];
 
 /// Extensions ESLint checks.
@@ -119,6 +122,7 @@ impl Tool {
             Tool::Pint => "Pint",
             Tool::Eslint => "ESLint",
             Tool::Stylelint => "Stylelint",
+            Tool::ShellCheck => "ShellCheck",
         }
     }
 
@@ -132,14 +136,15 @@ impl Tool {
         match self {
             Tool::Eslint => SCRIPT_EXTENSIONS.contains(&ext.as_str()),
             Tool::Stylelint => STYLE_EXTENSIONS.contains(&ext.as_str()),
+            Tool::ShellCheck => matches!(ext.as_str(), "sh" | "bash" | "ksh"),
             _ => ext == "php" && !path.to_string_lossy().ends_with(".blade.php"),
         }
     }
 
-    /// Whether the tool runs from `node_modules` on the host rather than
-    /// through the PHP interpreter.
+    /// Whether the tool runs on the host (from `node_modules` or `PATH`)
+    /// rather than through the PHP interpreter.
     fn is_node(self) -> bool {
-        matches!(self, Tool::Eslint | Tool::Stylelint)
+        matches!(self, Tool::Eslint | Tool::Stylelint | Tool::ShellCheck)
     }
 
     /// The `vendor/bin` script, also its name in `disabled_tools`.
@@ -153,6 +158,7 @@ impl Tool {
             Tool::Pint => "pint",
             Tool::Eslint => "eslint",
             Tool::Stylelint => "stylelint",
+            Tool::ShellCheck => "shellcheck",
         }
     }
 
@@ -180,7 +186,11 @@ impl Tool {
             Tool::Stylelint => {
                 has_config(root, STYLELINT_CONFIGS) || package_json_has(root, "stylelint")
             }
+            Tool::ShellCheck => true,
         };
+        if self == Tool::ShellCheck {
+            return crate::formatter::path_bin(self.bin());
+        }
         if self.is_node() {
             return configured
                 .then(|| crate::formatter::node_bin(root, self.bin()))
@@ -230,6 +240,7 @@ impl Tool {
             Tool::Pint => vec!["--test".into(), "--format=json".into(), file],
             Tool::Eslint => vec!["--format".into(), "json".into(), file],
             Tool::Stylelint => vec!["--formatter".into(), "json".into(), file],
+            Tool::ShellCheck => vec!["--format=json".into(), file],
         };
         args
     }
@@ -357,6 +368,24 @@ impl Tool {
                     }
                 }
             }
+            Tool::ShellCheck => {
+                for c in json.as_array().into_iter().flatten() {
+                    if !same(c["file"].as_str().unwrap_or_default()) {
+                        continue;
+                    }
+                    out.push(Finding {
+                        line: line(&c["line"]),
+                        message: format!("{} (SC{})", text(&c["message"]), c["code"]),
+                        severity: if c["level"] == "error" {
+                            Severity::Error
+                        } else if c["level"] == "warning" {
+                            Severity::Warning
+                        } else {
+                            Severity::Weak
+                        },
+                    });
+                }
+            }
             Tool::PhpCsFixer | Tool::Pint => {
                 for f in json["files"].as_array().into_iter().flatten() {
                     // PHP-CS-Fixer writes `name`/`appliedFixers`, Pint
@@ -479,6 +508,16 @@ mod tests {
                 message: "'x' is unused. (no-unused-vars)".into(),
                 severity: Severity::Warning,
             }]
+        );
+    }
+
+    #[test]
+    fn shellcheck_report_should_yield_coded_findings() {
+        let json = r#"[{"file":"/p/a.sh","line":2,"level":"warning","code":2086,"message":"Double quote to prevent globbing."}]"#;
+        let findings = Tool::ShellCheck.parse(json, Path::new("/p/a.sh")).unwrap();
+        assert_eq!(
+            findings[0].message,
+            "Double quote to prevent globbing. (SC2086)"
         );
     }
 

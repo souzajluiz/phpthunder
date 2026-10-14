@@ -10,6 +10,36 @@ use crate::palette::{Item, Target};
 use crate::tr;
 use iced::Task;
 
+/// Targets of the project's Makefile, in file order: rule names at the
+/// start of a line, without special (`.PHONY`), pattern (`%.o`) and
+/// variable (`A := b`) lines.
+fn make_targets(root: &std::path::Path) -> Vec<String> {
+    let Some(text) = ["Makefile", "makefile", "GNUmakefile"]
+        .iter()
+        .find_map(|n| std::fs::read_to_string(root.join(n)).ok())
+    else {
+        return Vec::new();
+    };
+    let mut targets: Vec<String> = Vec::new();
+    for line in text.lines() {
+        if line.starts_with(['\t', ' ', '#', '.']) {
+            continue;
+        }
+        let Some((head, rest)) = line.split_once(':') else {
+            continue;
+        };
+        if rest.starts_with('=') || head.contains(['=', '%', '$']) {
+            continue;
+        }
+        for name in head.split_whitespace() {
+            if !targets.iter().any(|t| t == name) {
+                targets.push(name.to_string());
+            }
+        }
+    }
+    targets
+}
+
 /// The `scripts` of the project's `package.json` (Vite, webpack, Next and
 /// friends), as (title, command line) with the package manager its lock
 /// file names: pnpm, Yarn, Bun or npm.
@@ -87,6 +117,13 @@ impl App {
                 "▷",
                 "console debug:router".into(),
                 "php bin/console debug:router",
+            ));
+        }
+        for target in make_targets(&root) {
+            items.push(item(
+                "▷",
+                format!("make {target}"),
+                &format!("make {target}"),
             ));
         }
         for (name, line) in package_scripts(&root) {
@@ -173,6 +210,20 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn make_targets_should_skip_special_and_variable_lines() {
+        let dir = std::env::temp_dir().join(format!("phpthunder-make-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("Makefile"),
+            ".PHONY: test\nCC := cc\ntest lint:\n\tphpunit\n%.o: %.c\nbuild: test\n",
+        )
+        .unwrap();
+        let targets = make_targets(&dir);
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert_eq!(targets, ["test", "lint", "build"]);
+    }
 
     #[test]
     fn package_scripts_should_use_the_locked_package_manager() {
