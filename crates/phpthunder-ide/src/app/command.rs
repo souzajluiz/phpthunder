@@ -94,6 +94,8 @@ impl App {
             Cmd::RunTests => self.run_tests(TestTarget::Context),
             Cmd::Reformat => self.reformat(),
             Cmd::Composer => self.open_composer(),
+            Cmd::RunConfiguration => self.open_run_configurations(),
+            Cmd::EditProjectSettings => self.edit_project_settings(),
             Cmd::Generate => self.open_generate(),
             Cmd::InsertTemplate => self.open_templates(),
             Cmd::Commit => self.open_commit_panel(),

@@ -25,6 +25,9 @@ impl App {
                 continue;
             }
             git_changed = true;
+            if path.ends_with(crate::interpreter::PROJECT_FILE) {
+                self.refresh_interpreter();
+            }
             if path.file_name().is_some_and(|n| n == ".editorconfig") {
                 for i in 0..self.docs.len() {
                     let style = self.editorconfig_for(&self.docs[i].path);

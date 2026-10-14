@@ -60,11 +60,13 @@ composer-steps = { $count ->
    *[other] { $count } steps
 }
 
+error-quality-missing = { $tool } is not installed
+error-quality-no-report = { $tool } returned no report
+quality-not-formatted = Not formatted
+quality-not-formatted-rules = Not formatted: { $rules }
 error-run-php = cannot run php: { $error }
 error-no-test-runner = No test runner found (install pestphp/pest or phpunit/phpunit)
 error-formatter-failed = { $formatter } failed: { $error }
-error-phpstan-missing = PHPStan is not installed
-error-phpstan-no-report = PHPStan returned no report
 error-terminal-open = cannot open a terminal: { $error }
 error-terminal-shell = cannot start the shell: { $error }
 error-indexing = indexing failed: { $error }
@@ -234,6 +236,12 @@ cmd-toggle-claude = Claude
 cmd-run-tests = Run tests
 cmd-reformat = Reformat code
 cmd-composer = Composer
+cmd-run-configuration = Run…
+cmd-edit-project-settings = Project settings (interpreter, run configurations)
+run-title = Run
+run-current-file = Run { $file }
+run-builtin-server = PHP built-in web server
+run-edit-configurations = Edit run configurations…
 cmd-generate = Generate
 cmd-insert-template = Insert live template
 cmd-commit = Commit

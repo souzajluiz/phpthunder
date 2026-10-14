@@ -255,7 +255,11 @@ pub enum Message {
         Result<Option<(String, crate::formatter::Formatter)>, String>,
     ),
     /// PHPStan finished analysing a saved file.
-    PhpstanDone(PathBuf, Result<Vec<crate::phpstan::Finding>, String>),
+    QualityDone(
+        crate::quality::Tool,
+        PathBuf,
+        Result<Vec<crate::quality::Finding>, String>,
+    ),
     // Git
     /// Git status arrived (`Err` outside a repository or on git errors).
     GitStatus(Result<crate::git::RepoStatus, String>),

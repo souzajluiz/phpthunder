@@ -19,6 +19,7 @@ mod navigation;
 mod panes;
 mod refactor;
 mod refactorings;
+mod run;
 mod session;
 mod snapshot;
 mod state;

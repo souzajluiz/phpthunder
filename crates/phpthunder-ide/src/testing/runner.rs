@@ -1,6 +1,7 @@
 //! Running the project's test suite (Pest or PHPUnit) and collecting results.
 
 use super::*;
+use crate::interpreter::Interpreter;
 use crate::project::vendor_bin;
 use crate::tr;
 use std::path::{Path, PathBuf};
@@ -83,15 +84,19 @@ pub fn detect_framework(root: &Path) -> Option<(Framework, PathBuf)> {
 /// start. A run with failing tests is a successful `TestRun`.
 pub async fn run_tests(root: PathBuf, scope: Scope) -> Result<TestRun, String> {
     let (_, bin) = detect_framework(&root).ok_or_else(|| tr!("error-no-test-runner"))?;
-    let report = std::env::temp_dir().join(format!("phpthunder-junit-{}.xml", std::process::id()));
+    let interpreter = Interpreter::of(&root);
+    let scratch = interpreter.scratch_dir(&root);
+    let _ = std::fs::create_dir_all(&scratch);
+    let report = scratch.join(format!("junit-{}.xml", std::process::id()));
     let _ = std::fs::remove_file(&report);
-    let mut cmd = tokio::process::Command::new("php");
-    cmd.current_dir(&root)
-        .arg(&bin)
-        .arg("--colors=never")
-        .arg("--log-junit")
-        .arg(&report);
-    cmd.args(scope_arguments(&scope));
+    let mut args: Vec<std::ffi::OsString> = vec![
+        bin.into_os_string(),
+        "--colors=never".into(),
+        "--log-junit".into(),
+        report.clone().into_os_string(),
+    ];
+    args.extend(scope_arguments(&scope));
+    let mut cmd = interpreter.command(&root, "php", &args);
     let started = Instant::now();
     let output = cmd
         .output()
@@ -103,10 +108,15 @@ pub async fn run_tests(root: PathBuf, scope: Scope) -> Result<TestRun, String> {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
-    let cases = match tokio::fs::read_to_string(&report).await {
-        Ok(xml) => parse_junit(&xml)?,
-        Err(_) => Vec::new(),
+    let mut cases = match interpreter.read_back(&root, &report).await {
+        Ok(xml) if !xml.is_empty() => parse_junit(&xml)?,
+        _ => Vec::new(),
     };
+    for case in &mut cases {
+        if let Some(file) = &case.file {
+            case.file = Some(interpreter.to_local(&root, &file.to_string_lossy()));
+        }
+    }
     let _ = std::fs::remove_file(&report);
     Ok(TestRun {
         scope,

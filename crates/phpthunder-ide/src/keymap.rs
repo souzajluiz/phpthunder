@@ -93,6 +93,10 @@ pub enum Cmd {
     Reformat,
     /// Pick a Composer script or command to run (`⌃⌥C`).
     Composer,
+    /// Pick a run configuration to start in the terminal (`⌃⌥R`).
+    RunConfiguration,
+    /// Open the project settings file (interpreter, run configurations).
+    EditProjectSettings,
     /// Generate code in the class at the caret (`⌘N`).
     Generate,
     /// Pick a live template to insert at the caret (`⌘J`).
@@ -246,7 +250,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 115] = {
+    pub const ALL: [Cmd; 117] = {
         use Cmd::*;
         [
             Save,
@@ -290,6 +294,8 @@ impl Cmd {
             RunTests,
             Reformat,
             Composer,
+            RunConfiguration,
+            EditProjectSettings,
             Generate,
             InsertTemplate,
             Commit,
@@ -450,6 +456,9 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         },
         Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("o") => OptimizeImports,
         Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("c") => Composer,
+        Key::Character(c) if m.control() && alt && !cmd && c.eq_ignore_ascii_case("r") => {
+            RunConfiguration
+        }
         Key::Character(c) if m.control() && shift && !cmd && c.eq_ignore_ascii_case("r") => {
             RunTests
         }
@@ -581,6 +590,7 @@ pub fn hint(cmd: Cmd) -> &'static str {
         RunTests => "⌃⇧R",
         Reformat => "⌥⌘L",
         Composer => "⌃⌥C",
+        RunConfiguration => "⌃⌥R",
         Generate => "⌘N",
         InsertTemplate => "⌘J",
         Commit => "⌘K",
@@ -624,7 +634,7 @@ pub fn hint(cmd: Cmd) -> &'static str {
         NextError => "F2",
         PreviousError => "⇧F2",
         QuickDoc => "F1",
-        ToggleWhitespace => "",
+        ToggleWhitespace | EditProjectSettings => "",
         MoveStatementUp => "⇧⌘↑",
         MoveStatementDown => "⇧⌘↓",
         MoveElementLeft => "⌥⇧⌘←",

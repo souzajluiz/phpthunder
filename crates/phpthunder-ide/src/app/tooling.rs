@@ -1,5 +1,5 @@
 //! Project tools: running tests, reformatting with the project's
-//! formatter, PHPStan on save, and Composer commands.
+//! formatter, quality tools on save, and Composer commands.
 
 use super::*;
 use crate::composer::composer_commands;
@@ -7,7 +7,7 @@ use crate::palette::{Item, Target};
 use crate::testing::{Scope, TestRun, run_tests, test_at};
 use crate::tr;
 use iced::Task;
-use phpthunder::inspection::{Code, Diagnostic, Severity};
+use phpthunder::inspection::{Code, Diagnostic};
 use std::path::PathBuf;
 
 impl App {
@@ -165,34 +165,47 @@ impl App {
         self.notice = Some(notice);
     }
 
-    /// Starts PHPStan on a just-saved PHP file when the project uses it.
-    pub(crate) fn phpstan_after_save(&mut self, path: PathBuf) -> Task<Message> {
+    /// Starts every enabled quality tool (see [`crate::quality`]) on a
+    /// just-saved PHP file; saving the project settings file re-reads the
+    /// interpreter instead.
+    pub(crate) fn quality_after_save(&mut self, path: PathBuf) -> Task<Message> {
         let Some(root) = self.tree.root.clone() else {
             return Task::none();
         };
-        if !crate::phpstan::phpstan_available(&root) || path.extension().is_none_or(|e| e != "php")
+        if path.ends_with(crate::interpreter::PROJECT_FILE) {
+            self.refresh_interpreter();
+            return Task::none();
+        }
+        if path.extension().is_none_or(|e| e != "php")
+            || path.to_string_lossy().ends_with(".blade.php")
         {
             return Task::none();
         }
-        self.phpstan_running = true;
-        let file = path.clone();
-        Task::perform(crate::phpstan::analyse(root, file), move |result| {
-            Message::PhpstanDone(path, result)
-        })
+        let tools = crate::quality::enabled_tools(&root);
+        self.quality_running += tools.len();
+        Task::batch(tools.into_iter().map(|tool| {
+            let file = path.clone();
+            let reported = path.clone();
+            Task::perform(
+                crate::quality::analyse(tool, root.clone(), file),
+                move |result| Message::QualityDone(tool, reported, result),
+            )
+        }))
     }
 
-    /// Stores PHPStan findings on their document as external diagnostics
-    /// spanning the reported lines.
-    pub(crate) fn phpstan_done(
+    /// Replaces the problems `tool` reported earlier on the document with
+    /// its new findings, spanning the reported lines.
+    pub(crate) fn quality_done(
         &mut self,
+        tool: crate::quality::Tool,
         path: &std::path::Path,
-        result: Result<Vec<crate::phpstan::Finding>, String>,
+        result: Result<Vec<crate::quality::Finding>, String>,
     ) {
-        self.phpstan_running = false;
+        self.quality_running = self.quality_running.saturating_sub(1);
         let findings = match result {
             Ok(f) => f,
             Err(error) => {
-                self.fail(format!("PHPStan: {error}"));
+                self.fail(format!("{}: {error}", tool.name()));
                 return;
             }
         };
@@ -200,27 +213,27 @@ impl App {
             return;
         };
         let line_count = doc.line_count();
-        doc.external_diagnostics = findings
-            .into_iter()
-            .map(|f| {
-                let line = (f.line.saturating_sub(1) as usize).min(line_count.saturating_sub(1));
-                let text = doc.line_text(line);
-                let indent = text.len() - text.trim_start().len();
-                let (start, end) = (doc.line_start(line) + indent, doc.line_end(line));
-                let span = phpthunder::syntax::Span {
-                    start: doc.utf16_pos(doc.position_of(start)),
-                    end: doc.utf16_pos(doc.position_of(end)),
-                };
-                Diagnostic {
-                    span,
-                    start,
-                    end,
-                    severity: Severity::Error,
-                    message: format!("PHPStan: {}", f.message),
-                    code: Code::External("PHPStan".into()),
-                }
-            })
-            .collect();
+        let name = tool.name();
+        doc.external_diagnostics
+            .retain(|d| !matches!(&d.code, Code::External(t) if t == name));
+        for f in findings {
+            let line = (f.line.saturating_sub(1) as usize).min(line_count.saturating_sub(1));
+            let text = doc.line_text(line);
+            let indent = text.len() - text.trim_start().len();
+            let (start, end) = (doc.line_start(line) + indent, doc.line_end(line));
+            let span = phpthunder::syntax::Span {
+                start: doc.utf16_pos(doc.position_of(start)),
+                end: doc.utf16_pos(doc.position_of(end)),
+            };
+            doc.external_diagnostics.push(Diagnostic {
+                span,
+                start,
+                end,
+                severity: f.severity,
+                message: format!("{name}: {}", f.message),
+                code: Code::External(name.into()),
+            });
+        }
     }
 
     /// Opens a picker with the project's Composer scripts and common
@@ -229,14 +242,18 @@ impl App {
         let Some(root) = self.tree.root.clone() else {
             return Task::none();
         };
+        let interpreter = crate::interpreter::Interpreter::of(&root);
         let items: Vec<Item> = composer_commands(&root)
             .into_iter()
-            .map(|c| Item {
-                badge: "›",
-                title: format!("composer {}", c.args),
-                matched: Vec::new(),
-                detail: c.description,
-                target: Target::Command(format!("composer {}", c.args)),
+            .map(|c| {
+                let args: Vec<String> = c.args.split_whitespace().map(str::to_string).collect();
+                Item {
+                    badge: "›",
+                    title: format!("composer {}", c.args),
+                    matched: Vec::new(),
+                    detail: c.description,
+                    target: Target::Command(interpreter.shell_line(&root, "composer", &args)),
+                }
             })
             .collect();
         if items.is_empty() {

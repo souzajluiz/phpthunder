@@ -150,7 +150,12 @@ pub struct App {
     /// Scope of the last test run, for "run again".
     pub last_test_scope: Option<crate::testing::Scope>,
     /// Whether PHPStan is analysing a saved file.
-    pub phpstan_running: bool,
+    /// Quality tools still analysing the last saved file.
+    pub quality_running: usize,
+    /// Label of the project's PHP interpreter when it is not the local
+    /// `php` (shown in the status bar); refreshed when the project opens
+    /// and when its settings file changes.
+    pub interpreter_label: Option<String>,
     /// Route names, views and config keys of a Laravel project.
     pub laravel: LaravelScan,
     /// Bookmarked lines (0-based) by file (`F3`).
@@ -361,7 +366,8 @@ impl App {
             claude_grid: None,
             tests: None,
             last_test_scope: None,
-            phpstan_running: false,
+            quality_running: 0,
+            interpreter_label: None,
             laravel: None,
             packages: crate::packages::Installs::default(),
             claude_usage: crate::claude_usage::Usage::default(),
@@ -1036,8 +1042,8 @@ impl App {
                 self.formatted(&path, version, result);
                 Task::none()
             }
-            Message::PhpstanDone(path, result) => {
-                self.phpstan_done(&path, result);
+            Message::QualityDone(tool, path, result) => {
+                self.quality_done(tool, &path, result);
                 Task::none()
             }
             Message::TerminalScroll(panel, lines) => {
@@ -1136,6 +1142,7 @@ impl App {
     fn open_folder(&mut self, root: PathBuf) -> Task<Message> {
         let root = root.canonicalize().unwrap_or(root);
         self.tree = FileTree::open(root.clone());
+        self.refresh_interpreter();
         self.branch = git_branch(&root);
         self.docs.clear();
         self.active = None;
@@ -1339,7 +1346,7 @@ impl App {
         // Saved lines changed: annotations would point at the wrong lines.
         self.blame.remove(&path);
         let rescan = self.rescan_laravel_after_save(&path);
-        Task::batch([rescan, self.refresh_git(), self.phpstan_after_save(path)])
+        Task::batch([rescan, self.refresh_git(), self.quality_after_save(path)])
     }
 
     // ----- navigation history -------------------------------------------------

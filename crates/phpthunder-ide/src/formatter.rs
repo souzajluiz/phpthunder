@@ -104,7 +104,9 @@ pub async fn format_php(
     let Some((formatter, bin)) = detect_formatter(&root) else {
         return Ok(None);
     };
-    let dir = std::env::temp_dir().join(format!("phpthunder-format-{}", std::process::id()));
+    let interpreter = crate::interpreter::Interpreter::of(&root);
+    // The formatter must see the copy: in a container, inside the project.
+    let dir = interpreter.scratch_dir(&root).join("format");
     tokio::fs::create_dir_all(&dir)
         .await
         .map_err(|e| e.to_string())?;
@@ -112,19 +114,20 @@ pub async fn format_php(
     tokio::fs::write(&file, &text)
         .await
         .map_err(|e| e.to_string())?;
-    let mut cmd = tokio::process::Command::new("php");
-    cmd.current_dir(&root).arg(&bin);
+    let mut args: Vec<std::ffi::OsString> = vec![bin.into_os_string()];
     match formatter {
-        Formatter::Pint => cmd.arg(&file).arg("--no-interaction"),
-        Formatter::PhpCsFixer => cmd
-            .arg("fix")
-            .arg(&file)
-            .arg("--using-cache=no")
-            .arg("--quiet"),
-        Formatter::Phpcbf => cmd.arg("-q").arg(&file),
+        Formatter::Pint => args.extend([file.clone().into_os_string(), "--no-interaction".into()]),
+        Formatter::PhpCsFixer => args.extend([
+            "fix".into(),
+            file.clone().into_os_string(),
+            "--using-cache=no".into(),
+            "--quiet".into(),
+        ]),
+        Formatter::Phpcbf => args.extend(["-q".into(), file.clone().into_os_string()]),
         // `detect_formatter` only yields the PHP tools above.
-        _ => &mut cmd,
-    };
+        _ => {}
+    }
+    let mut cmd = interpreter.command(&root, "php", &args);
     let output = cmd
         .output()
         .await

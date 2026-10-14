@@ -1636,6 +1636,9 @@ impl App {
         let mut bar = row![
             self.breadcrumb_row(),
             space().width(Fill),
+            self.interpreter_label
+                .as_ref()
+                .map(|l| label(format!("PHP {l}"), 12.0, MUTED)),
             row![
                 icon(Icon::Bolt, 12.0, 2.4, MUTED),
                 label(indexing, 12.0, MUTED)
