@@ -833,17 +833,30 @@ impl App {
                     .on_move(Message::MouseMoved)
                     .on_exit(Message::MouseLeft)
             ])
-            .push_under(current_line)
             .width(Fill);
-        for mark in self.find_marks(doc) {
-            content = content.push_under(mark);
+        // Everything drawn under the text sits in one layer, so the editor
+        // keeps its place in the stack. With each mark as its own layer, a
+        // change in their number (a new diagnostic, another occurrence of
+        // the word at the caret) moved the editor to another index and iced
+        // rebuilt it, dropping its focus and hiding the caret.
+        let mut under = Stack::new().width(Fill).height(Fill);
+        for mark in self.debug_marks(doc) {
+            under = under.push(mark);
         }
-        for mark in self.caret_marks(doc) {
-            content = content.push_under(mark);
+        for mark in self.diagnostic_marks(doc) {
+            under = under.push(mark);
         }
         for mark in self.indent_guides(doc) {
-            content = content.push_under(mark);
+            under = under.push(mark);
         }
+        for mark in self.caret_marks(doc) {
+            under = under.push(mark);
+        }
+        for mark in self.find_marks(doc) {
+            under = under.push(mark);
+        }
+        under = under.push(current_line);
+        content = content.push_under(under);
         for mark in self.whitespace_marks(doc) {
             content = content.push(mark);
         }
@@ -862,17 +875,11 @@ impl App {
         for mark in self.blame_hints(doc) {
             content = content.push(mark);
         }
-        for mark in self.diagnostic_marks(doc) {
-            content = content.push_under(mark);
-        }
         for mark in self.git_gutter_marks(doc) {
             content = content.push(mark);
         }
         for mark in self.laravel_gutter_marks(doc) {
             content = content.push(mark);
-        }
-        for mark in self.debug_marks(doc) {
-            content = content.push_under(mark);
         }
         for mark in self.extra_caret_marks(doc, &layout) {
             content = content.push(mark);
