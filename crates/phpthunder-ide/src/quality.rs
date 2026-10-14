@@ -1,8 +1,9 @@
 //! Quality tools run on save: PHPStan, Psalm, PHP_CodeSniffer,
-//! PHP-CS-Fixer, PHPMD and Laravel Pint, each when the project installs it
-//! (and, for the configurable ones, configures it). Their findings become
-//! problems of the saved file. Processes start through the project's
-//! interpreter, so tools inside a container work too.
+//! PHP-CS-Fixer, PHPMD and Laravel Pint for PHP, ESLint and Stylelint for
+//! scripts and styles, each when the project installs it (and, for the
+//! configurable ones, configures it). Their findings become problems of
+//! the saved file. PHP tools start through the project's interpreter, so
+//! tools inside a container work too; Node tools run from `node_modules`.
 
 use crate::interpreter::Interpreter;
 use crate::project::vendor_bin;
@@ -27,6 +28,10 @@ pub enum Tool {
     Phpmd,
     /// Laravel Pint (dry run).
     Pint,
+    /// ESLint, for JavaScript, TypeScript and single-file components.
+    Eslint,
+    /// Stylelint, for CSS, Sass and Less.
+    Stylelint,
 }
 
 /// One finding of a tool in the analysed file.
@@ -41,14 +46,61 @@ pub struct Finding {
 }
 
 /// Every tool, in the order they run.
-pub const TOOLS: [Tool; 6] = [
+pub const TOOLS: [Tool; 8] = [
     Tool::PhpStan,
     Tool::Psalm,
     Tool::Phpcs,
     Tool::PhpCsFixer,
     Tool::Phpmd,
     Tool::Pint,
+    Tool::Eslint,
+    Tool::Stylelint,
 ];
+
+/// Extensions ESLint checks.
+const SCRIPT_EXTENSIONS: &[&str] = &[
+    "js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts", "vue", "svelte", "astro",
+];
+
+/// Extensions Stylelint checks.
+const STYLE_EXTENSIONS: &[&str] = &["css", "scss", "sass", "less", "pcss", "postcss"];
+
+/// ESLint configuration files (flat and legacy).
+const ESLINT_CONFIGS: &[&str] = &[
+    "eslint.config.js",
+    "eslint.config.mjs",
+    "eslint.config.cjs",
+    "eslint.config.ts",
+    ".eslintrc",
+    ".eslintrc.js",
+    ".eslintrc.cjs",
+    ".eslintrc.json",
+    ".eslintrc.yml",
+    ".eslintrc.yaml",
+];
+
+/// Stylelint configuration files.
+const STYLELINT_CONFIGS: &[&str] = &[
+    ".stylelintrc",
+    ".stylelintrc.json",
+    ".stylelintrc.yml",
+    ".stylelintrc.yaml",
+    ".stylelintrc.js",
+    ".stylelintrc.cjs",
+    ".stylelintrc.mjs",
+    "stylelint.config.js",
+    "stylelint.config.cjs",
+    "stylelint.config.mjs",
+];
+
+/// Whether `package.json` in `root` has the top-level `key` (inline tool
+/// configuration such as `eslintConfig`).
+fn package_json_has(root: &Path, key: &str) -> bool {
+    std::fs::read_to_string(root.join("package.json"))
+        .ok()
+        .and_then(|t| serde_json::from_str::<Value>(&t).ok())
+        .is_some_and(|v| v.get(key).is_some())
+}
 
 /// Whether any of `names` exists in the project root.
 fn has_config(root: &Path, names: &[&str]) -> bool {
@@ -65,7 +117,29 @@ impl Tool {
             Tool::PhpCsFixer => "PHP-CS-Fixer",
             Tool::Phpmd => "PHPMD",
             Tool::Pint => "Pint",
+            Tool::Eslint => "ESLint",
+            Tool::Stylelint => "Stylelint",
         }
+    }
+
+    /// Whether the tool checks files like `path`: PHP tools take `.php`
+    /// (not Blade), ESLint scripts, Stylelint styles.
+    pub fn applies_to(self, path: &Path) -> bool {
+        let ext = path
+            .extension()
+            .map(|e| e.to_string_lossy().to_ascii_lowercase())
+            .unwrap_or_default();
+        match self {
+            Tool::Eslint => SCRIPT_EXTENSIONS.contains(&ext.as_str()),
+            Tool::Stylelint => STYLE_EXTENSIONS.contains(&ext.as_str()),
+            _ => ext == "php" && !path.to_string_lossy().ends_with(".blade.php"),
+        }
+    }
+
+    /// Whether the tool runs from `node_modules` on the host rather than
+    /// through the PHP interpreter.
+    fn is_node(self) -> bool {
+        matches!(self, Tool::Eslint | Tool::Stylelint)
     }
 
     /// The `vendor/bin` script, also its name in `disabled_tools`.
@@ -77,6 +151,8 @@ impl Tool {
             Tool::PhpCsFixer => "php-cs-fixer",
             Tool::Phpmd => "phpmd",
             Tool::Pint => "pint",
+            Tool::Eslint => "eslint",
+            Tool::Stylelint => "stylelint",
         }
     }
 
@@ -98,7 +174,18 @@ impl Tool {
             ),
             Tool::PhpCsFixer => has_config(root, &[".php-cs-fixer.php", ".php-cs-fixer.dist.php"]),
             Tool::Phpmd => has_config(root, &["phpmd.xml", "phpmd.xml.dist", ".phpmd.xml"]),
+            Tool::Eslint => {
+                has_config(root, ESLINT_CONFIGS) || package_json_has(root, "eslintConfig")
+            }
+            Tool::Stylelint => {
+                has_config(root, STYLELINT_CONFIGS) || package_json_has(root, "stylelint")
+            }
         };
+        if self.is_node() {
+            return configured
+                .then(|| crate::formatter::node_bin(root, self.bin()))
+                .flatten();
+        }
         configured.then(|| vendor_bin(root, self.bin())).flatten()
     }
 
@@ -141,6 +228,8 @@ impl Tool {
                 vec![file, "json".into(), ruleset]
             }
             Tool::Pint => vec!["--test".into(), "--format=json".into(), file],
+            Tool::Eslint => vec!["--format".into(), "json".into(), file],
+            Tool::Stylelint => vec!["--formatter".into(), "json".into(), file],
         };
         args
     }
@@ -227,6 +316,47 @@ impl Tool {
                     }
                 }
             }
+            Tool::Eslint => {
+                for f in json.as_array().into_iter().flatten() {
+                    if !same(f["filePath"].as_str().unwrap_or_default()) {
+                        continue;
+                    }
+                    for m in f["messages"].as_array().into_iter().flatten() {
+                        let rule = text(&m["ruleId"]);
+                        out.push(Finding {
+                            line: line(&m["line"]),
+                            message: if rule.is_empty() {
+                                text(&m["message"])
+                            } else {
+                                format!("{} ({rule})", text(&m["message"]))
+                            },
+                            severity: if m["severity"] == 2 {
+                                Severity::Warning
+                            } else {
+                                Severity::Weak
+                            },
+                        });
+                    }
+                }
+            }
+            Tool::Stylelint => {
+                for f in json.as_array().into_iter().flatten() {
+                    if !same(f["source"].as_str().unwrap_or_default()) {
+                        continue;
+                    }
+                    for w in f["warnings"].as_array().into_iter().flatten() {
+                        out.push(Finding {
+                            line: line(&w["line"]),
+                            message: text(&w["text"]),
+                            severity: if w["severity"] == "error" {
+                                Severity::Warning
+                            } else {
+                                Severity::Weak
+                            },
+                        });
+                    }
+                }
+            }
             Tool::PhpCsFixer | Tool::Pint => {
                 for f in json["files"].as_array().into_iter().flatten() {
                     // PHP-CS-Fixer writes `name`/`appliedFixers`, Pint
@@ -295,6 +425,27 @@ pub async fn analyse(tool: Tool, root: PathBuf, file: PathBuf) -> Result<Vec<Fin
     let bin = tool
         .available(&root)
         .ok_or_else(|| tr!("error-quality-missing", tool = tool.name()))?;
+    if tool.is_node() {
+        let output = tokio::process::Command::new(&bin)
+            .args(tool.arguments(&root, &file))
+            .current_dir(&root)
+            .stdin(std::process::Stdio::null())
+            .output()
+            .await
+            .map_err(|e| format!("{}: {e}", tool.name()))?;
+        // Stylelint 16 writes its JSON report to stderr.
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let report = if stdout.trim().is_empty() {
+            stderr
+        } else {
+            stdout
+        };
+        return match tool.parse(&report, &file) {
+            Err(_) if report.trim().is_empty() => Ok(Vec::new()),
+            other => other,
+        };
+    }
     let interpreter = Interpreter::of(&root);
     let mut args = vec![bin.into_os_string()];
     args.extend(tool.arguments(&root, &file));
@@ -316,6 +467,42 @@ pub async fn analyse(tool: Tool, root: PathBuf, file: PathBuf) -> Result<Vec<Fin
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn eslint_report_should_yield_rule_findings() {
+        let json = r#"[{"filePath":"/p/app.js","messages":[{"ruleId":"no-unused-vars","severity":2,"message":"'x' is unused.","line":3}]}]"#;
+        let findings = Tool::Eslint.parse(json, Path::new("/p/app.js")).unwrap();
+        assert_eq!(
+            findings,
+            [Finding {
+                line: 3,
+                message: "'x' is unused. (no-unused-vars)".into(),
+                severity: Severity::Warning,
+            }]
+        );
+    }
+
+    #[test]
+    fn stylelint_report_should_yield_findings() {
+        let json = r#"[{"source":"/p/a.css","warnings":[{"line":2,"text":"Unexpected unit (length-zero-no-unit)","severity":"warning"}]}]"#;
+        let findings = Tool::Stylelint.parse(json, Path::new("/p/a.css")).unwrap();
+        assert_eq!(findings.len(), 1);
+    }
+
+    #[test]
+    fn tools_should_apply_to_their_file_types() {
+        let applies = |t: Tool, f: &str| t.applies_to(Path::new(f));
+        assert_eq!(
+            [
+                applies(Tool::Eslint, "a.vue"),
+                applies(Tool::Stylelint, "a.scss"),
+                applies(Tool::PhpStan, "a.php"),
+                applies(Tool::PhpStan, "a.blade.php"),
+                applies(Tool::Eslint, "a.php"),
+            ],
+            [true, true, true, false, false]
+        );
+    }
 
     #[test]
     fn phpstan_report_should_yield_findings_for_the_file() {

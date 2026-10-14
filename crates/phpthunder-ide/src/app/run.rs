@@ -10,6 +10,33 @@ use crate::palette::{Item, Target};
 use crate::tr;
 use iced::Task;
 
+/// The `scripts` of the project's `package.json` (Vite, webpack, Next and
+/// friends), as (title, command line) with the package manager its lock
+/// file names: pnpm, Yarn, Bun or npm.
+fn package_scripts(root: &std::path::Path) -> Vec<(String, String)> {
+    let Some(json) = std::fs::read_to_string(root.join("package.json"))
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+    else {
+        return Vec::new();
+    };
+    let manager = [
+        ("pnpm-lock.yaml", "pnpm"),
+        ("yarn.lock", "yarn"),
+        ("bun.lockb", "bun run"),
+        ("bun.lock", "bun run"),
+    ]
+    .into_iter()
+    .find(|(lock, _)| root.join(lock).is_file())
+    .map_or("npm run", |(_, m)| m);
+    json["scripts"]
+        .as_object()
+        .into_iter()
+        .flatten()
+        .map(|(name, _)| (name.clone(), format!("{manager} {name}")))
+        .collect()
+}
+
 impl App {
     /// Opens the list of run configurations; the choice runs in the
     /// terminal.
@@ -61,6 +88,16 @@ impl App {
                 "console debug:router".into(),
                 "php bin/console debug:router",
             ));
+        }
+        for (name, line) in package_scripts(&root) {
+            items.push(Item {
+                badge: "▷",
+                title: name,
+                matched: Vec::new(),
+                detail: line.clone(),
+                // Node runs on the host, not through the PHP interpreter.
+                target: Target::Command(line),
+            });
         }
         if root.join("vendor/bin/drush").is_file() {
             items.push(item(
@@ -130,5 +167,21 @@ impl App {
             .map(Interpreter::of)
             .filter(|i| !i.is_local())
             .map(|i| i.label());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn package_scripts_should_use_the_locked_package_manager() {
+        let dir = std::env::temp_dir().join(format!("phpthunder-scripts-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("package.json"), r#"{"scripts":{"dev":"vite"}}"#).unwrap();
+        std::fs::write(dir.join("pnpm-lock.yaml"), "").unwrap();
+        let scripts = package_scripts(&dir);
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert_eq!(scripts, [("dev".to_string(), "pnpm dev".to_string())]);
     }
 }

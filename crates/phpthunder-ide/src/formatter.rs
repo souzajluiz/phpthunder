@@ -151,7 +151,8 @@ pub async fn format_php(
 /// usual IDE scope (scripts, Vue, Astro, JSON). Other types it supports
 /// keep their built-in formatting unless configured otherwise.
 const PRETTIER_EXTENSIONS: &[&str] = &[
-    "js", "ts", "jsx", "tsx", "cjs", "cts", "mjs", "mts", "json", "vue", "astro",
+    "js", "ts", "jsx", "tsx", "cjs", "cts", "mjs", "mts", "json", "vue", "astro", "svelte", "css",
+    "scss", "less",
 ];
 
 /// Extensions the built-in JSON formatter takes (`composer.lock` too).
@@ -161,7 +162,7 @@ const JSON_EXTENSIONS: &[&str] = &["json", "jsonc", "json5", "lock"];
 const XML_EXTENSIONS: &[&str] = &["xml", "dist", "xsd", "xsl", "svg", "xlf", "xliff"];
 
 /// The executable `node_modules/.bin/<name>` of the project, if installed.
-fn node_bin(root: &Path, name: &str) -> Option<PathBuf> {
+pub(crate) fn node_bin(root: &Path, name: &str) -> Option<PathBuf> {
     let path = root.join("node_modules").join(".bin").join(name);
     path.is_file().then_some(path)
 }

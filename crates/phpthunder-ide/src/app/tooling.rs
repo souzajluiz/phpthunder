@@ -213,12 +213,10 @@ impl App {
             self.refresh_composer_problems();
             return Task::none();
         }
-        if path.extension().is_none_or(|e| e != "php")
-            || path.to_string_lossy().ends_with(".blade.php")
-        {
-            return Task::none();
-        }
-        let tools = crate::quality::enabled_tools(&root);
+        let tools: Vec<_> = crate::quality::enabled_tools(&root)
+            .into_iter()
+            .filter(|t| t.applies_to(&path))
+            .collect();
         self.quality_running += tools.len();
         Task::batch(tools.into_iter().map(|tool| {
             let file = path.clone();
