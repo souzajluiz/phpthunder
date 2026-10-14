@@ -11,6 +11,7 @@ mod frameworks;
 mod generate;
 mod git;
 mod history;
+mod http;
 mod inspection;
 mod intention;
 mod laravel;

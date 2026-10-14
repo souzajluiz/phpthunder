@@ -332,6 +332,7 @@ pub fn compute_file_highlights(src: &str, file_type: FileType) -> LineSpans {
         FileType::Markdown => to_lines(src, markdown(src)),
         FileType::Log => to_lines(src, log(src)),
         FileType::Apache => to_lines(src, apache(src)),
+        FileType::Http => to_lines(src, http(src)),
         FileType::Twig => compute_twig_highlights(src),
         other => match spec(other) {
             Some(spec) => to_lines(src, scan(src, &spec)),
@@ -773,6 +774,63 @@ fn apache(src: &str) -> Vec<Span> {
     out
 }
 
+/// HTTP request file highlighting: `###` separators and comments, the
+/// method and URL of request lines, header names, `@variable` lines and
+/// `{{variables}}`.
+fn http(src: &str) -> Vec<Span> {
+    const METHODS: &[&str] = &[
+        "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT",
+    ];
+    let mut out = Vec::new();
+    let mut offset = 0;
+    let mut in_body = false;
+    for line in src.split_inclusive('\n') {
+        let start = offset;
+        offset += line.len();
+        let body = line.trim_end_matches(['\n', '\r']);
+        let trimmed = body.trim_start();
+        let lead = body.len() - trimmed.len();
+        if trimmed.starts_with('#') || trimmed.starts_with("//") {
+            if trimmed.starts_with("###") {
+                in_body = false;
+            }
+            out.push((start + lead, start + body.len(), Token::Comment));
+            continue;
+        }
+        let first = trimmed.split_whitespace().next().unwrap_or_default();
+        if METHODS.contains(&first) {
+            out.push((start + lead, start + lead + first.len(), Token::Keyword));
+            // The URL is a string unless variables (colored below) split it.
+            if !body.contains("{{") {
+                out.push((
+                    start + lead + first.len(),
+                    start + body.len(),
+                    Token::String,
+                ));
+            }
+            in_body = false;
+        } else if trimmed.is_empty() {
+            in_body = true;
+        } else if let Some(rest) = trimmed.strip_prefix('@') {
+            let name_end = rest.find('=').unwrap_or(rest.len());
+            out.push((start + lead, start + lead + 1 + name_end, Token::Variable));
+        } else if !in_body && let Some(colon) = trimmed.find(':') {
+            out.push((start + lead, start + lead + colon, Token::Variable));
+        }
+        let mut from = 0;
+        while let Some(open) = body[from..].find("{{") {
+            let s = from + open;
+            let Some(close) = body[s..].find("}}") else {
+                break;
+            };
+            out.push((start + s, start + s + close + 2, Token::Type));
+            from = s + close + 2;
+        }
+    }
+    out.sort_by_key(|(s, _, _)| *s);
+    out
+}
+
 /// Log highlighting: stack-trace lines dimmed, then per line the
 /// timestamp, the level (errors, warnings, info, debug in their own
 /// colors) and quoted text. Monolog, PHP's error log, nginx and most
@@ -874,6 +932,15 @@ mod tests {
             Token::Variable
         ));
         assert!(has(src, FileType::Apache, "$1", Token::Variable));
+    }
+
+    #[test]
+    fn http_should_mark_requests_headers_and_variables() {
+        let src = "### Users\nGET {{host}}/users\nAccept: application/json\n";
+        assert!(has(src, FileType::Http, "### Users", Token::Comment));
+        assert!(has(src, FileType::Http, "GET", Token::Keyword));
+        assert!(has(src, FileType::Http, "Accept", Token::Variable));
+        assert!(has(src, FileType::Http, "{{host}}", Token::Type));
     }
 
     #[test]
@@ -986,6 +1053,7 @@ mod tests {
             FileType::Twig,
             FileType::Log,
             FileType::Apache,
+            FileType::Http,
             FileType::Text,
         ] {
             let lines = compute_file_highlights(nasty, ft);

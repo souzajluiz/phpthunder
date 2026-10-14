@@ -102,6 +102,8 @@ impl App {
             Cmd::ExportSettings => self.export_settings(),
             Cmd::ImportSettings => self.import_settings(),
             Cmd::SyncSettings => self.sync_settings(),
+            Cmd::RunHttpRequest => self.run_http_request(),
+            Cmd::HttpEnvironment => self.choose_http_environment(),
             Cmd::NewFromTemplate => {
                 let dir = self
                     .doc()
@@ -471,6 +473,7 @@ impl App {
             target @ (Target::ActivateTask(_) | Target::NewTask(_) | Target::ActivateIssue(..)) => {
                 self.activate_task(target)
             }
+            Target::HttpEnvironment(name) => self.set_http_environment(name),
             Target::Paste(text) => self.edit_with(
                 |d| {
                     d.checkpoint();

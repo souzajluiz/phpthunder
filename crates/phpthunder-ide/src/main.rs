@@ -14,6 +14,7 @@ mod filetype;
 mod formatter;
 mod frameworks;
 mod git;
+mod http_client;
 mod i18n;
 mod interpreter;
 mod keymap;

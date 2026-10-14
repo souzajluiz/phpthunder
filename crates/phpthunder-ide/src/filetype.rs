@@ -57,6 +57,8 @@ pub enum FileType {
     Ignore,
     /// Apache configuration (`.htaccess`, `httpd.conf`, virtual hosts).
     Apache,
+    /// HTTP request files (`*.http`, `*.rest`) for the HTTP client.
+    Http,
     /// Makefile.
     Makefile,
     /// Comma- or tab-separated values.
@@ -181,6 +183,8 @@ const EXTENSIONS: &[(&str, FileType)] = &[
     ("mk", FileType::Makefile),
     ("csv", FileType::Csv),
     ("log", FileType::Log),
+    ("http", FileType::Http),
+    ("rest", FileType::Http),
     ("tsv", FileType::Csv),
     ("txt", FileType::Text),
     ("log", FileType::Text),
@@ -280,6 +284,7 @@ impl FileType {
             FileType::Csv => "CSV",
             FileType::Log => "Log",
             FileType::Apache => "Apache",
+            FileType::Http => "HTTP",
             FileType::Twig => "Twig",
             FileType::Image => "Image",
             FileType::Binary => "Binary",

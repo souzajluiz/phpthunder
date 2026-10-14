@@ -118,6 +118,8 @@ pub enum Target {
     NewTask(String),
     /// Track this GitHub issue (number, title, url) and make it active.
     ActivateIssue(u64, String, String),
+    /// Use this environment for `.http` requests.
+    HttpEnvironment(String),
 }
 
 /// One ranked palette result.

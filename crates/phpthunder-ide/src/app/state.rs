@@ -1183,6 +1183,7 @@ impl App {
                 self.settings_synced(result);
                 Task::none()
             }
+            Message::HttpResponse(name, result) => self.http_response(&name, result),
             Message::Profiled(result) => match result {
                 Ok(path) => self.open(path, None),
                 Err(error) => {
