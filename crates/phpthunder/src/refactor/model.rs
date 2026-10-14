@@ -23,6 +23,10 @@ pub struct RenamePlan {
     pub edits: BTreeMap<PathBuf, Vec<Edit>>,
     /// `(old, new)` path when the class file should be renamed too.
     pub file_rename: Option<(PathBuf, PathBuf)>,
+    /// New files to create, with their content (extract interface).
+    pub created: Vec<(PathBuf, String)>,
+    /// Files to delete (safe delete of a class alone in its file).
+    pub deleted: Vec<PathBuf>,
 }
 
 /// A property declared in the class at the caret (declared or promoted).

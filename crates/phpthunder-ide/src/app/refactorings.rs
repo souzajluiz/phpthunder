@@ -3,6 +3,7 @@
 //! the project), from the `⌥↵` menu or their shortcuts.
 
 use super::*;
+use crate::language::MemberRefactoring;
 use crate::tr;
 use iced::Task;
 use iced::widget::{Id, operation};
@@ -206,7 +207,42 @@ impl App {
         if refactor::class_outline(&doc.text, offset).is_some() {
             out.push(Intention::Refactor(RefactorAction::MoveClass));
         }
+        if refactor::class_header_at(&doc.text, offset) {
+            out.push(Intention::Refactor(RefactorAction::ExtractInterface(
+                offset,
+            )));
+        }
+        if refactor::method_header_at(&doc.text, offset) {
+            out.extend(
+                [
+                    MemberRefactoring::MakeStatic,
+                    MemberRefactoring::PullUp,
+                    MemberRefactoring::PushDown,
+                ]
+                .map(Intention::Member),
+            );
+        }
+        if callable || refactor::class_header_at(&doc.text, offset) {
+            out.push(Intention::Member(MemberRefactoring::SafeDelete));
+        }
         out
+    }
+
+    /// Runs a member refactoring that needs no input; failures show as a
+    /// notice.
+    pub(crate) fn member_refactoring(&mut self, kind: MemberRefactoring) -> Task<Message> {
+        let Some(doc) = self.doc().filter(|d| d.is_php()) else {
+            return Task::none();
+        };
+        let offset = doc.offset(doc.cursor());
+        let (path, text) = (doc.path.clone(), doc.text.clone());
+        let open = self.open_texts();
+        Task::perform(
+            self.lang
+                .clone()
+                .member_refactoring(kind, path, text, offset, open),
+            Message::RefactorPlanned,
+        )
     }
 
     /// Introduce constant (`⌥⌘C`), field (`⌥⌘F`) or parameter (`⌥⌘P`)
@@ -320,6 +356,13 @@ impl App {
                 tr!("refactor-move-class-help"),
                 namespace_of(&doc.text),
             ),
+            RefactorAction::ExtractInterface(_) => (
+                tr!("refactor-extract-interface"),
+                tr!("refactor-extract-interface-help"),
+                refactor::class_outline(&doc.text, doc.offset(doc.cursor()))
+                    .map(|o| format!("{}Interface", o.fqn.rsplit('\\').next().unwrap_or("")))
+                    .unwrap_or_default(),
+            ),
         };
         self.close_overlays();
         self.refactor_prompt = Some(RefactorPrompt {
@@ -368,6 +411,13 @@ impl App {
                         .change_signature(text, offset, params, open),
                     Message::RefactorPlanned,
                 );
+            }
+            RefactorAction::ExtractInterface(offset) => {
+                let open = self.open_texts();
+                let plan = self
+                    .lang
+                    .extract_interface(&path, &text, offset, &value, &open);
+                return self.apply_refactor_plan(plan);
             }
             RefactorAction::MoveClass => {
                 let namespace = value.trim_matches('\\').to_string();
@@ -436,8 +486,10 @@ impl App {
                 self.apply_rename(Ok(plan))
             }
             Err(error) => {
-                if let Some(p) = &mut self.refactor_prompt {
-                    p.error = Some(error);
+                match &mut self.refactor_prompt {
+                    Some(p) => p.error = Some(error),
+                    // Refactorings run straight from the menu have no prompt.
+                    None => self.notice = Some(error),
                 }
                 Task::none()
             }

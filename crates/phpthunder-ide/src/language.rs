@@ -89,6 +89,19 @@ impl IndexProgress {
     }
 }
 
+/// A member refactoring run straight from the `⌥↵` menu, without input.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MemberRefactoring {
+    /// Delete the declaration when nothing uses it.
+    SafeDelete,
+    /// Make the method static and update its calls.
+    MakeStatic,
+    /// Move the method to the parent class.
+    PullUp,
+    /// Move the method to the subclasses.
+    PushDown,
+}
+
 /// Reads a file for analysis, preferring the unsaved editor buffer in `open`.
 fn load_with(open: &HashMap<PathBuf, String>, path: &Path) -> Option<String> {
     open.get(path)
@@ -336,6 +349,21 @@ impl Language {
         .map_err(|e| tr!("error-rename", error = e.to_string()))?
     }
 
+    /// Plans extracting interface `name` from the class at `offset`.
+    ///
+    /// # Errors
+    /// Returns why the interface cannot be extracted.
+    pub fn extract_interface(
+        &self,
+        path: &Path,
+        text: &str,
+        offset: usize,
+        name: &str,
+        open: &HashMap<PathBuf, String>,
+    ) -> Result<RenamePlan, String> {
+        refactor::extract_interface(path, text, offset, name, |p| load_with(open, p))
+    }
+
     /// Plans moving the class in `path` to `namespace` (and `new_path`);
     /// runs on a blocking thread.
     ///
@@ -358,6 +386,37 @@ impl Language {
                 new_path,
                 |p| load_with(&open, p),
             )
+        })
+        .await
+        .map_err(|e| tr!("error-rename", error = e.to_string()))?
+    }
+
+    /// Plans a member refactoring that needs no input (safe delete, make
+    /// static, pull up, push down) at `offset`; runs on a blocking thread.
+    ///
+    /// # Errors
+    /// Returns why the refactoring cannot be done.
+    pub async fn member_refactoring(
+        self,
+        kind: MemberRefactoring,
+        path: PathBuf,
+        text: String,
+        offset: usize,
+        open: HashMap<PathBuf, String>,
+    ) -> Result<RenamePlan, String> {
+        tokio::task::spawn_blocking(move || {
+            let index = self.index.read();
+            let load = |p: &Path| load_with(&open, p);
+            match kind {
+                MemberRefactoring::SafeDelete => refactor::safe_delete(&index, &text, offset, load),
+                MemberRefactoring::MakeStatic => {
+                    refactor::make_static(&index, &path, &text, offset, load)
+                }
+                MemberRefactoring::PullUp => refactor::pull_up(&index, &path, &text, offset, load),
+                MemberRefactoring::PushDown => {
+                    refactor::push_down(&index, &path, &text, offset, load)
+                }
+            }
         })
         .await
         .map_err(|e| tr!("error-rename", error = e.to_string()))?

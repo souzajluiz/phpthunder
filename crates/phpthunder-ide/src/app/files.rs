@@ -159,7 +159,7 @@ fn class_source(namespace: Option<&str>, name: &str) -> String {
 ///
 /// # Errors
 /// Returns the I/O error.
-fn move_to_trash(path: &Path) -> std::io::Result<()> {
+pub(crate) fn move_to_trash(path: &Path) -> std::io::Result<()> {
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
         .ok_or_else(|| std::io::Error::other("no HOME"))?;
@@ -358,7 +358,7 @@ impl App {
 
     /// Updates tabs, the index and the tree after `from` was moved to `to`
     /// (or deleted when `to` is `None`). Folders move their open files too.
-    fn after_file_moved(&mut self, from: &Path, to: Option<&Path>) {
+    pub(crate) fn after_file_moved(&mut self, from: &Path, to: Option<&Path>) {
         for doc in &mut self.docs {
             if let (Ok(rest), Some(to)) = (doc.path.strip_prefix(from), to) {
                 let new = if rest.as_os_str().is_empty() {
@@ -405,7 +405,7 @@ impl App {
 ///
 /// # Errors
 /// Returns why it could not be created.
-fn create_file(path: &Path, content: &str) -> Result<Option<PathBuf>, String> {
+pub(crate) fn create_file(path: &Path, content: &str) -> Result<Option<PathBuf>, String> {
     if path.exists() {
         return Err(tr!("file-exists", path = path.display().to_string()));
     }

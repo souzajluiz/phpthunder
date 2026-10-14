@@ -111,6 +111,30 @@ impl App {
         if let Some((from, to)) = &plan.file_rename {
             self.rename_file(from, to);
         }
+        for (path, content) in &plan.created {
+            match super::files::create_file(path, content) {
+                Ok(_) => {
+                    self.lang.update_file(path, content);
+                    if let Some(dir) = path.parent() {
+                        self.tree.refresh(dir);
+                    }
+                    if let Err(at) = self.project_files.binary_search(path) {
+                        self.project_files.insert(at, path.clone());
+                    }
+                }
+                Err(error) => self.fail(error),
+            }
+        }
+        for path in &plan.deleted {
+            match super::files::move_to_trash(path) {
+                Ok(()) => self.after_file_moved(path, None),
+                Err(e) => self.fail(tr!(
+                    "notice-write-failed",
+                    path = path.display().to_string(),
+                    error = e.to_string()
+                )),
+            }
+        }
         self.notice = Some(tr!(
             "notice-renamed",
             occurrences = occurrences,

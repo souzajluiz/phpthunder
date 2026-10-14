@@ -18,10 +18,18 @@ pub(crate) fn intentions_popup(menu: &Intentions) -> (Element<'_, Message>, f32)
     let rows = menu.items.iter().enumerate().map(|(i, item)| {
         let selected = i == menu.selected;
         let (mark, color) = match item {
+            // Context actions rewrite working code; quick fixes repair problems.
+            Intention::Fix(fix)
+                if matches!(fix.kind, phpthunder::inspection::FixKind::Intention(_)) =>
+            {
+                ("✎", SYN_FUNCTION)
+            }
             Intention::Fix(_) => ("◆", ACCENT),
             Intention::ImplementMethods { .. } => ("+", SYN_TYPE),
             Intention::OptimizeImports => ("≡", MUTED),
-            Intention::Refactor(_) | Intention::InlineVariable => ("↻", SYN_FUNCTION),
+            Intention::Refactor(_) | Intention::InlineVariable | Intention::Member(_) => {
+                ("↻", SYN_FUNCTION)
+            }
         };
         button(
             row![

@@ -100,6 +100,7 @@ impl App {
             Intention::OptimizeImports => self.optimize_imports(),
             Intention::Refactor(action) => self.start_refactor(action),
             Intention::InlineVariable => self.inline_variable(),
+            Intention::Member(kind) => self.member_refactoring(kind),
         }
     }
 

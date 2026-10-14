@@ -611,6 +611,8 @@ pub enum Intention {
     Refactor(RefactorAction),
     /// Replace the variable at the caret by its value.
     InlineVariable,
+    /// A member refactoring that needs no input.
+    Member(crate::language::MemberRefactoring),
 }
 
 /// A refactoring that needs input from a prompt.
@@ -630,6 +632,8 @@ pub enum RefactorAction {
     IntroduceParameter(usize, usize),
     /// Move the class of the active file to another namespace.
     MoveClass,
+    /// Extract an interface from the class at this offset (asks its name).
+    ExtractInterface(usize),
 }
 
 /// The modal asking for the input of a [`RefactorAction`].
@@ -673,6 +677,15 @@ impl Intention {
                 tr!("refactor-introduce-parameter")
             }
             Intention::InlineVariable => tr!("refactor-inline-variable"),
+            Intention::Refactor(RefactorAction::ExtractInterface(_)) => {
+                tr!("refactor-extract-interface")
+            }
+            Intention::Member(kind) => match kind {
+                crate::language::MemberRefactoring::SafeDelete => tr!("refactor-safe-delete"),
+                crate::language::MemberRefactoring::MakeStatic => tr!("refactor-make-static"),
+                crate::language::MemberRefactoring::PullUp => tr!("refactor-pull-up"),
+                crate::language::MemberRefactoring::PushDown => tr!("refactor-push-down"),
+            },
         }
     }
 }
