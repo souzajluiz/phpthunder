@@ -979,6 +979,64 @@ pub fn definitions_at(index: &Index, src: &str, byte: usize) -> Vec<Definition> 
         .unwrap_or_default()
 }
 
+/// Expression kinds whose type `expression_type_at` reports.
+const TYPED_EXPRESSIONS: &[&str] = &[
+    "variable_name",
+    "member_call_expression",
+    "nullsafe_member_call_expression",
+    "member_access_expression",
+    "nullsafe_member_access_expression",
+    "scoped_call_expression",
+    "scoped_property_access_expression",
+    "function_call_expression",
+    "object_creation_expression",
+    "subscript_expression",
+    "parenthesized_expression",
+];
+
+/// Inferred type of the innermost expression around byte `byte` of `src`
+/// that has one (`⌃⇧P`), written as PHP would: `App\User`,
+/// `Collection<User>`, `User[]`. `None` when inference knows nothing there.
+pub fn expression_type_at(index: &Index, src: &str, byte: usize) -> Option<String> {
+    let tree = parse(src);
+    let analyzer = Analyzer::new(index, src, &tree);
+    let root = tree.root_node();
+    [byte, byte.saturating_sub(1)].into_iter().find_map(|b| {
+        let mut node = root.named_descendant_for_byte_range(b, b);
+        while let Some(n) = node {
+            if n.kind().ends_with("statement") || n.kind() == "program" {
+                return None;
+            }
+            if TYPED_EXPRESSIONS.contains(&n.kind())
+                && let Some(text) = describe_ty(&analyzer.ty_of(n, 0))
+            {
+                return Some(text);
+            }
+            node = n.parent();
+        }
+        None
+    })
+}
+
+/// `ty` as a type written in PHPDoc, or `None` when it is unknown.
+fn describe_ty(ty: &Ty) -> Option<String> {
+    let short = |fqn: &str| fqn.trim_start_matches('\\').to_string();
+    match (&ty.class, &ty.elem) {
+        (Some(class), _) if !ty.args.is_empty() => {
+            let args: Vec<String> = ty
+                .args
+                .iter()
+                .map(|a| if a.is_empty() { "mixed".into() } else { short(a) })
+                .collect();
+            Some(format!("{}<{}>", short(class), args.join(", ")))
+        }
+        (Some(class), Some(elem)) => Some(format!("{}<{}>", short(class), short(elem))),
+        (Some(class), None) => Some(short(class)),
+        (None, Some(elem)) => Some(format!("{}[]", short(elem))),
+        (None, None) => None,
+    }
+}
+
 /// Template bindings for members declared on `owner` when accessed through
 /// `class` with generic arguments `args`, following `@extends` /
 /// `@implements` / `@use` arguments up the hierarchy.
@@ -1064,6 +1122,25 @@ mod tests {
             .parent()
             .filter(|p| p.kind() == "variable_name")?;
         analyzer.type_of(var, 0)
+    }
+
+    #[test]
+    fn expression_type_at_should_name_the_variable_class() {
+        let mut index = Index::default();
+        index.update(
+            PathBuf::from("/lib.php"),
+            index_source("<?php class Circle { function radius() {} }"),
+        );
+        let src = "<?php $c = new Circle(); $c->radius();";
+        let at = src.rfind("$c").expect("variable") + 1;
+        assert_eq!(expression_type_at(&index, src, at).as_deref(), Some("Circle"));
+    }
+
+    #[test]
+    fn expression_type_at_should_be_none_for_unknown_values() {
+        let index = Index::default();
+        let src = "<?php $n = 1 + 2;";
+        assert_eq!(expression_type_at(&index, src, 7), None);
     }
 
     #[test]

@@ -59,6 +59,9 @@ pub enum DebugCommand {
     AddBreakpoint(PathBuf, usize),
     /// Remove a line breakpoint (0-based line).
     RemoveBreakpoint(PathBuf, usize),
+    /// Run until this 0-based line (or the next breakpoint), through a
+    /// one-shot breakpoint removed at the next pause.
+    RunTo(PathBuf, usize),
     /// Evaluate a PHP expression where execution is paused (Xdebug
     /// evaluates in the innermost frame).
     Eval(String),

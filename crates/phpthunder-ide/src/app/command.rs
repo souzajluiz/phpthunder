@@ -1,6 +1,7 @@
 //! Command handlers: editing commands, navigation popups, find/replace,
 //! and find in path.
 
+use super::shortcuts::Direction;
 use crate::app::{App, Bottom, EDITOR_ID, Message, Search, TestTarget};
 use crate::debug::DebugCommand;
 use crate::editor::{Document, LineTransform, Surround};
@@ -224,6 +225,24 @@ impl App {
             Cmd::ReloadFromDisk => self.reload_from_disk(),
             Cmd::ToggleFullScreen => self.toggle_full_screen(),
             Cmd::Minimize => self.minimize_window(),
+            Cmd::GitBranches => self.git_pick_branch(crate::app::BranchMode::Checkout),
+            Cmd::RollbackChangedLines => self.rollback_changed_lines(),
+            Cmd::NewScratchFile => self.new_scratch_file(),
+            Cmd::SaveAs => self.save_as(),
+            Cmd::RunToCursor => self.run_to_cursor(),
+            Cmd::ShowExecutionPoint => self.show_execution_point(),
+            Cmd::StretchLeft => self.stretch_tool_window(Direction::Left),
+            Cmd::StretchRight => self.stretch_tool_window(Direction::Right),
+            Cmd::StretchUp => self.stretch_tool_window(Direction::Up),
+            Cmd::StretchDown => self.stretch_tool_window(Direction::Down),
+            Cmd::MaximizeToolWindow => self.toggle_maximize_tool_window(),
+            Cmd::ToggleBookmarkWithMnemonic => self.choose_mnemonic(),
+            Cmd::ExpressionTypeInfo => self.expression_type_info(),
+            Cmd::HighlightUsagesInFile => self.highlight_usages_in_file(),
+            Cmd::CallHierarchy => self.call_hierarchy(),
+            Cmd::MethodHierarchy => self.show_method_hierarchy(),
+            Cmd::GotoRelated => self.goto_related(),
+            Cmd::ColumnSelection => self.toggle_column_mode(),
             Cmd::IntroduceConstant => {
                 self.introduce_from_selection(crate::app::RefactorAction::IntroduceConstant)
             }
@@ -424,6 +443,7 @@ impl App {
             Target::Action(cmd) => self.command(cmd),
             Target::LocalVersion(version) => self.open_local_version(version),
             Target::Location(path, line) => self.open_at_line(path, line),
+            Target::Mnemonic(key) => self.toggle_mnemonic(key),
             Target::Paste(text) => self.edit_with(
                 |d| {
                     d.checkpoint();

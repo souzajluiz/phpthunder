@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::editor::MultiEdit;
+use crate::tr;
 use iced::Task;
 use iced::widget::text_editor::{Action, Edit};
 
@@ -10,10 +11,12 @@ impl App {
     /// Handles `message` for a document with several carets, returning
     /// `None` when it is not an edit that needs every caret (the normal
     /// handler then runs). Typing, paste, backspace, delete and Enter go to
-    /// every caret; arrows and Home/End move them all; a plain click or
-    /// selection drag returns to one caret.
+    /// every caret; arrows and Home/End move them all (and in column mode
+    /// `⇧` arrows extend them all); a plain click or selection drag returns
+    /// to one caret.
     pub(crate) fn multi_caret_message(&mut self, message: &Message) -> Option<Task<Message>> {
         let alt = self.modifiers.alt();
+        let column = self.column_mode;
         let doc = self.doc_mut().filter(|d| d.has_extra_carets())?;
         let edit = match message {
             Message::TypeChar(c) => MultiEdit::Insert(c.to_string()),
@@ -34,6 +37,10 @@ impl App {
             }
             Message::Edit(Action::Move(motion)) => {
                 doc.move_extra_carets(*motion);
+                return None;
+            }
+            Message::Edit(Action::Select(motion)) if column => {
+                doc.extend_extra_carets(*motion);
                 return None;
             }
             Message::Edit(
@@ -98,6 +105,27 @@ impl App {
             doc.select_next_occurrence();
         }
         self.reveal_cursor()
+    }
+
+    /// Column selection mode `⇧↑`/`⇧↓`: grows or shrinks the block of
+    /// carets by a line.
+    pub(crate) fn column_extend(&mut self, up: bool) -> Task<Message> {
+        if let Some(doc) = self.doc_mut() {
+            doc.extend_column(up);
+        }
+        self.reveal_cursor()
+    }
+
+    /// `⇧⌘8`: switches column selection mode, where `⇧` arrows grow a block
+    /// of carets. Leaving it keeps the carets already made.
+    pub(crate) fn toggle_column_mode(&mut self) -> Task<Message> {
+        self.column_mode = !self.column_mode;
+        self.notice = Some(if self.column_mode {
+            tr!("notice-column-mode-on")
+        } else {
+            tr!("notice-column-mode-off")
+        });
+        Task::none()
     }
 
     /// Puts a caret on every occurrence of the selection, or of the word

@@ -322,11 +322,47 @@ pub enum Cmd {
     ToggleFullScreen,
     /// Minimize the window (`⌘M`).
     Minimize,
+    /// Pick a branch to check out or create (⇧⌘ plus the backtick key).
+    GitBranches,
+    /// Revert the changed lines at the caret to the last commit (`⌥⌘Z`).
+    RollbackChangedLines,
+    /// Open a new scratch file outside the project (`⇧⌘N`).
+    NewScratchFile,
+    /// Save the file under another name (`⇧⌘S`).
+    SaveAs,
+    /// Run the paused script up to the caret line (`⌥F9`).
+    RunToCursor,
+    /// Go to where the paused script is (`⌥F10`).
+    ShowExecutionPoint,
+    /// Grow the panel next to the editor leftward (`⌃⌥←`).
+    StretchLeft,
+    /// Grow the panel next to the editor rightward (`⌃⌥→`).
+    StretchRight,
+    /// Grow the bottom panel upward (`⌃⌥↑`).
+    StretchUp,
+    /// Shrink the bottom panel downward (`⌃⌥↓`).
+    StretchDown,
+    /// Maximize the bottom panel, or restore it (`⇧⌘'`).
+    MaximizeToolWindow,
+    /// Put a digit or letter bookmark on the caret line (`⌥F3`).
+    ToggleBookmarkWithMnemonic,
+    /// Show the inferred type at the caret (`⌃⇧P`).
+    ExpressionTypeInfo,
+    /// Keep the usages of the word at the caret highlighted (`⇧⌘F7`).
+    HighlightUsagesInFile,
+    /// List the callers of the function at the caret (`⌃⌥H`).
+    CallHierarchy,
+    /// Show which classes define the method at the caret (`⇧⌘H`).
+    MethodHierarchy,
+    /// Go to a related file: the test, its subject, the parent class (`⌃⌘↑`).
+    GotoRelated,
+    /// Switch column (block) selection mode (`⇧⌘8`).
+    ColumnSelection,
 }
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 155] = {
+    pub const ALL: [Cmd; 173] = {
         use Cmd::*;
         [
             Save,
@@ -484,6 +520,24 @@ impl Cmd {
             ReloadFromDisk,
             ToggleFullScreen,
             Minimize,
+            GitBranches,
+            RollbackChangedLines,
+            NewScratchFile,
+            SaveAs,
+            RunToCursor,
+            ShowExecutionPoint,
+            StretchLeft,
+            StretchRight,
+            StretchUp,
+            StretchDown,
+            MaximizeToolWindow,
+            ToggleBookmarkWithMnemonic,
+            ExpressionTypeInfo,
+            HighlightUsagesInFile,
+            CallHierarchy,
+            MethodHierarchy,
+            GotoRelated,
+            ColumnSelection,
         ]
     };
 
@@ -579,6 +633,13 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             ("u", false, false) => GotoSuperMethod,
             ("b", true, false) => GotoTypeDeclaration,
             ("t", true, false) => GotoTest,
+            ("`", true, false) | ("~", true, false) => GitBranches,
+            ("z", false, true) => RollbackChangedLines,
+            ("n", true, false) => NewScratchFile,
+            ("s", true, false) => SaveAs,
+            ("'", true, false) | ("\"", true, false) => MaximizeToolWindow,
+            ("h", true, false) => MethodHierarchy,
+            ("8", true, false) | ("*", true, false) => ColumnSelection,
             ("}", true, false) | ("]", true, false) => NextTab,
             ("{", true, false) | ("[", true, false) => PrevTab,
             _ => return None,
@@ -591,7 +652,16 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Named(Named::F1) if alt => SelectInTree,
         Key::Named(Named::F8) if alt && !cmd && !shift => EvaluateExpression,
         Key::Named(Named::F8) if cmd && shift => ViewBreakpoints,
+        Key::Named(Named::F7) if cmd && shift && !alt => HighlightUsagesInFile,
         Key::Named(Named::F7) if shift && !cmd && !alt => StepInto,
+        Key::Named(Named::F9) if alt && !cmd && !shift => RunToCursor,
+        Key::Named(Named::F10) if alt && !cmd && !shift => ShowExecutionPoint,
+        Key::Named(Named::F3) if alt && !cmd && !shift => ToggleBookmarkWithMnemonic,
+        Key::Named(Named::ArrowUp) if cmd && m.control() && !shift && !alt => GotoRelated,
+        Key::Named(Named::ArrowLeft) if m.control() && alt && !cmd && !shift => StretchLeft,
+        Key::Named(Named::ArrowRight) if m.control() && alt && !cmd && !shift => StretchRight,
+        Key::Named(Named::ArrowUp) if m.control() && alt && !cmd && !shift => StretchUp,
+        Key::Named(Named::ArrowDown) if m.control() && alt && !cmd && !shift => StretchDown,
         Key::Named(Named::F4) if m.control() && shift => CloseTab,
         Key::Named(Named::F4) if !cmd && !alt && !shift && !m.control() => GotoDeclaration,
         Key::Named(Named::ArrowDown) if m.control() && alt && shift => NextChange,
@@ -606,6 +676,7 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
         Key::Character(c) if m.control() && alt && !cmd && !shift => {
             match c.to_ascii_lowercase().as_str() {
                 "i" => Reformat,
+                "h" => CallHierarchy,
                 "=" | "+" => ZoomIn,
                 "-" => ZoomOut,
                 "0" => ZoomReset,
@@ -630,6 +701,11 @@ pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
             if m.control() && shift && !alt && !cmd && c.eq_ignore_ascii_case("g") =>
         {
             UnselectOccurrence
+        }
+        Key::Character(c)
+            if m.control() && shift && !alt && !cmd && c.eq_ignore_ascii_case("p") =>
+        {
+            ExpressionTypeInfo
         }
         Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("o") => OptimizeImports,
         Key::Character(c) if m.control() && alt && c.eq_ignore_ascii_case("c") => Composer,
@@ -904,6 +980,24 @@ pub fn hint(cmd: Cmd) -> &'static str {
         ReloadFromDisk => "⌥⌘Y",
         ToggleFullScreen => "⌃⌘F",
         Minimize => "⌘M",
+        GitBranches => "⇧⌘`",
+        RollbackChangedLines => "⌥⌘Z",
+        NewScratchFile => "⇧⌘N",
+        SaveAs => "⇧⌘S",
+        RunToCursor => "⌥F9",
+        ShowExecutionPoint => "⌥F10",
+        StretchLeft => "⌃⌥←",
+        StretchRight => "⌃⌥→",
+        StretchUp => "⌃⌥↑",
+        StretchDown => "⌃⌥↓",
+        MaximizeToolWindow => "⇧⌘'",
+        ToggleBookmarkWithMnemonic => "⌥F3",
+        ExpressionTypeInfo => "⌃⇧P",
+        HighlightUsagesInFile => "⇧⌘F7",
+        CallHierarchy => "⌃⌥H",
+        MethodHierarchy => "⇧⌘H",
+        GotoRelated => "⌃⌘↑",
+        ColumnSelection => "⇧⌘8",
     }
 }
 

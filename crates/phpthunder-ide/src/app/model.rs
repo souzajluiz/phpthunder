@@ -72,6 +72,11 @@ pub enum Message {
     /// Numbered bookmark `digit`: set or clear it on the caret line
     /// (`true`, `⌃⇧digit`) or jump to it (`false`, `⌃digit`).
     NumberedBookmark(u8, bool),
+    /// Column selection mode: grow the block of carets one line up
+    /// (`true`, `⇧↑`) or down (`⇧↓`).
+    ColumnExtend(bool),
+    /// Target picked in the Save As dialog (`⇧⌘S`); `None` when cancelled.
+    SaveAsPicked(Option<PathBuf>),
     /// Bracket or quote typed; auto-paired or skipped over.
     TypeChar(char),
     /// Enter with auto-indent.

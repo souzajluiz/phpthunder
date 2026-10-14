@@ -102,8 +102,8 @@ fn text_box<'a>(
 
 impl App {
     /// Under-text marks for the caret: both brackets of the pair touching
-    /// it, and every visible occurrence of the identifier at it (when it
-    /// occurs more than once).
+    /// it, every visible occurrence of the identifier at it (when it
+    /// occurs more than once), and the usages `⇧⌘F7` keeps highlighted.
     pub(crate) fn caret_marks<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
         let layout = self.wrap_layout(doc);
         let mut marks = Vec::new();
@@ -152,6 +152,25 @@ impl App {
                         None,
                     ));
                 }
+            }
+        }
+        if let Some((path, word)) = &self.highlighted_usages
+            && *path == doc.path
+        {
+            let (first, last) = self.visible_lines(doc, &layout);
+            let from = doc.line_start(first);
+            let to = doc.line_end(last.min(doc.line_count().saturating_sub(1)));
+            let width = word.chars().count();
+            for at in doc.occurrences_in(word, from, to) {
+                let pos = doc.position_of(at);
+                marks.push(text_box(
+                    &layout,
+                    pos.line,
+                    doc.visual_column(pos),
+                    width,
+                    Color { a: 0.30, ..ACCENT },
+                    Some(Color { a: 0.8, ..ACCENT }),
+                ));
             }
         }
         marks

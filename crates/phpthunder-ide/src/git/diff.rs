@@ -49,6 +49,28 @@ pub fn line_changes(base: &str, current: &str) -> Vec<LineChange> {
         .collect()
 }
 
+/// `current` with the change touching 0-based `line` put back as `base`
+/// has it (`⌥⌘Z`, roll back changed lines); a deletion counts for the line
+/// right below it. `None` when no change touches `line`.
+pub fn revert_change_at(base: &str, current: &str, line: usize) -> Option<String> {
+    let diff = line_ops(base, current);
+    let op = diff.ops().iter().find(|op| {
+        let new = op.new_range();
+        match op {
+            DiffOp::Equal { .. } => false,
+            DiffOp::Delete { .. } => new.start == line,
+            _ => new.contains(&line),
+        }
+    })?;
+    let (old, new) = (op.old_range(), op.new_range());
+    let current_lines: Vec<&str> = current.split_inclusive('\n').collect();
+    let base_lines: Vec<&str> = base.split_inclusive('\n').collect();
+    let mut out: String = current_lines.get(..new.start)?.concat();
+    out.push_str(&base_lines.get(old)?.concat());
+    out.push_str(&current_lines.get(new.end..)?.concat());
+    Some(out)
+}
+
 /// Hunks of a diff from `old` to `new` with a few context lines, for the
 /// Commit panel's diff view.
 pub fn diff_lines(old: &str, new: &str) -> Vec<DiffLine> {
@@ -102,6 +124,29 @@ pub fn diff_lines(old: &str, new: &str) -> Vec<DiffLine> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn revert_change_at_should_restore_a_modified_line() {
+        let reverted = revert_change_at("a\nb\nc\n", "a\nB\nc\nd\n", 1);
+        assert_eq!(reverted.as_deref(), Some("a\nb\nc\nd\n"));
+    }
+
+    #[test]
+    fn revert_change_at_should_bring_back_deleted_lines() {
+        let reverted = revert_change_at("a\nb\nc\n", "a\nc\n", 1);
+        assert_eq!(reverted.as_deref(), Some("a\nb\nc\n"));
+    }
+
+    #[test]
+    fn revert_change_at_should_drop_added_lines() {
+        let reverted = revert_change_at("a\nc\n", "a\nb\nc\n", 1);
+        assert_eq!(reverted.as_deref(), Some("a\nc\n"));
+    }
+
+    #[test]
+    fn revert_change_at_should_skip_unchanged_lines() {
+        assert_eq!(revert_change_at("a\nb\n", "a\nB\n", 0), None);
+    }
 
     #[test]
     fn line_changes_should_mark_added_modified_and_deleted_lines() {

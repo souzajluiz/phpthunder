@@ -311,6 +311,12 @@ impl Language {
         analysis::definitions_at(&self.index.read(), text, offset)
     }
 
+    /// Inferred type of the expression at byte `offset` in `text` (`⌃⇧P`).
+    pub fn expression_type(&self, text: &str, offset: usize) -> Option<String> {
+        self.flush();
+        analysis::expression_type_at(&self.index.read(), text, offset)
+    }
+
     /// Completion candidates at byte `offset` in `text`, for the completion popup.
     pub fn complete(&self, text: &str, offset: usize) -> Vec<Candidate> {
         analysis::complete(&self.index.read(), text, offset)
@@ -573,6 +579,21 @@ impl Language {
                 .next()
                 .map(|(p, s)| (p.to_path_buf(), s.clone()))
         })
+    }
+
+    /// The method `name` as `class` itself declares it (not inherited), for
+    /// the method hierarchy (`⇧⌘H`).
+    pub fn declared_method(&self, class: &str, name: &str) -> Option<(PathBuf, Symbol)> {
+        let index = self.index.read();
+        index
+            .lookup(&phpthunder::index::member_key(
+                class,
+                phpthunder::symbol::MemberTag::Method,
+                name,
+            ))
+            .into_iter()
+            .next()
+            .map(|(p, s)| (p.to_path_buf(), s.clone()))
     }
 
     /// Where class-like `fqn` is declared, if indexed.

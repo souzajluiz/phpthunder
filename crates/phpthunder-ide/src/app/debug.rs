@@ -201,8 +201,8 @@ impl App {
         Task::none()
     }
 
-    /// Opens the selected frame's file at its line.
-    fn show_execution_point(&mut self) -> Task<Message> {
+    /// Opens the selected frame's file at its line; `⌥F10` and every pause.
+    pub(crate) fn show_execution_point(&mut self) -> Task<Message> {
         let Some((path, line)) = self
             .debug
             .as_ref()
@@ -213,6 +213,27 @@ impl App {
         };
         let line = u32::try_from(line).unwrap_or(0);
         self.open(path, Some(Pos { line, col: 0 }))
+    }
+
+    /// `⌥F9`: lets the paused script run to the caret line, stopping
+    /// earlier at a breakpoint on the way.
+    pub(crate) fn run_to_cursor(&mut self) -> Task<Message> {
+        let paused = self
+            .debug
+            .as_ref()
+            .is_some_and(|d| d.state == DebugState::Paused);
+        let caret = self
+            .doc()
+            .filter(|d| d.is_php())
+            .map(|d| (d.path.clone(), d.cursor().line));
+        match (paused, caret) {
+            (true, Some((path, line))) => self.debug_send(DebugCommand::RunTo(path, line)),
+            (false, _) => {
+                self.notice = Some(tr!("notice-debugger-not-paused"));
+                Task::none()
+            }
+            _ => Task::none(),
+        }
     }
 
     /// Selects a stack frame: loads its variables and shows its line.

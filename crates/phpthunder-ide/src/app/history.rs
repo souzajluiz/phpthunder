@@ -349,6 +349,29 @@ impl App {
         }
     }
 
+    /// The tests of the PHP file at `path` (`FooTest.php`, Pest
+    /// `Foo.test.php`), or its subject when it is a test, from the project
+    /// files. Used by `⇧⌘T` and `⌃⌘↑`.
+    pub(crate) fn test_counterparts(&self, path: &Path) -> Vec<PathBuf> {
+        let stem = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let wanted: Vec<String> = match stem.strip_suffix("Test") {
+            Some(subject) => vec![format!("{subject}.php")],
+            None => vec![format!("{stem}Test.php"), format!("{stem}.test.php")],
+        };
+        self.project_files
+            .iter()
+            .filter(|p| *p != path)
+            .filter(|p| {
+                p.file_name()
+                    .is_some_and(|n| wanted.iter().any(|w| n.to_string_lossy() == *w))
+            })
+            .cloned()
+            .collect()
+    }
+
     /// `⇧⌘T`: switches between a class and its test (`FooTest.php`, or a
     /// Pest `FooTest.php`/`Foo.test.php`), searching the project files.
     pub(crate) fn goto_test(&mut self) -> Task<Message> {
@@ -360,21 +383,7 @@ impl App {
             .file_stem()
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let wanted: Vec<String> = match stem.strip_suffix("Test") {
-            Some(subject) => vec![format!("{subject}.php")],
-            None => vec![format!("{stem}Test.php"), format!("{stem}.test.php")],
-        };
-        let here = doc.path.clone();
-        let found: Vec<PathBuf> = self
-            .project_files
-            .iter()
-            .filter(|p| **p != here)
-            .filter(|p| {
-                p.file_name()
-                    .is_some_and(|n| wanted.iter().any(|w| n.to_string_lossy() == *w))
-            })
-            .cloned()
-            .collect();
+        let found = self.test_counterparts(&doc.path);
         match found.len() {
             0 => {
                 self.notice = Some(tr!("notice-no-test", name = stem));

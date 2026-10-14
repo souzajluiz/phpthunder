@@ -128,6 +128,30 @@ impl App {
         self.git_marks.insert(path.to_path_buf(), marks);
     }
 
+    /// `⌥⌘Z`: puts the changed lines at the caret back as the last commit
+    /// has them, as one undo step.
+    pub(crate) fn rollback_changed_lines(&mut self) -> Task<Message> {
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        let reverted = match self.git_base.get(&doc.path) {
+            Some(Some(base)) => git::revert_change_at(base, &doc.text, doc.cursor().line),
+            _ => None,
+        };
+        let Some(text) = reverted else {
+            self.notice = Some(tr!("notice-no-change-at-caret"));
+            return Task::none();
+        };
+        self.edit_with(
+            |d| {
+                d.checkpoint();
+                let cursor = d.cursor();
+                d.set_text(text, cursor);
+            },
+            None,
+        )
+    }
+
     /// Opens the Commit panel and refreshes the status (`⌘K`).
     pub(crate) fn open_commit_panel(&mut self) -> Task<Message> {
         if self.git_root().is_none() {

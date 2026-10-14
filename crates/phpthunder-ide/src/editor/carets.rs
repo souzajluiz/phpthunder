@@ -35,6 +35,11 @@ fn splice(text: &str, ranges: &[(usize, usize)], texts: &[String]) -> (String, V
     (out, carets)
 }
 
+/// Whether `c` belongs to a word for word motions (letters, digits, `_`).
+fn is_ident(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
+}
+
 /// Byte offset of the character boundary before `offset`.
 fn prev_boundary(text: &str, offset: usize) -> usize {
     text[..offset]
@@ -249,40 +254,102 @@ impl Document {
             .collect();
     }
 
-    /// Moves every extra caret like the main caret moves for `motion`
-    /// (left, right, up, down, line start/end); other motions drop them.
+    /// Where a caret head at `head` goes for `motion` (left, right, word
+    /// left/right, up, down, line start/end); `None` for other motions or
+    /// past the first or last line.
+    fn moved_head(&self, head: usize, motion: Motion) -> Option<usize> {
+        let pos = self.position_of(head);
+        Some(match motion {
+            Motion::Left => prev_boundary(&self.text, head),
+            Motion::Right => next_boundary(&self.text, head),
+            Motion::WordLeft => {
+                let before = self.text[..head].trim_end_matches(|c: char| !is_ident(c));
+                before.trim_end_matches(is_ident).len()
+            }
+            Motion::WordRight => {
+                let skipped = head
+                    + self.text[head..]
+                        .find(is_ident)
+                        .unwrap_or(self.text.len() - head);
+                self.text[skipped..]
+                    .find(|c: char| !is_ident(c))
+                    .map_or(self.text.len(), |i| skipped + i)
+            }
+            Motion::Home => self.line_start(pos.line),
+            Motion::End => self.line_end(pos.line),
+            Motion::Up | Motion::Down => {
+                let col = self.visual_column(pos);
+                let line = if motion == Motion::Up {
+                    pos.line.checked_sub(1)?
+                } else {
+                    pos.line + 1
+                };
+                if line >= self.line_count() {
+                    return None;
+                }
+                self.offset(self.position_at_visual(line, col))
+            }
+            _ => return None,
+        })
+    }
+
+    /// Moves every extra caret like the main caret moves for `motion`;
+    /// motions [`Self::moved_head`] does not handle drop them.
     pub fn move_extra_carets(&mut self, motion: Motion) {
         let moved: Option<Vec<(usize, usize)>> = self
             .extra_carets
             .iter()
-            .map(|&(_, head)| {
-                let pos = self.position_of(head);
-                let to = match motion {
-                    Motion::Left => prev_boundary(&self.text, head),
-                    Motion::Right => next_boundary(&self.text, head),
-                    Motion::Home => self.line_start(pos.line),
-                    Motion::End => self.line_end(pos.line),
-                    Motion::Up | Motion::Down => {
-                        let col = self.visual_column(pos);
-                        let line = if motion == Motion::Up {
-                            pos.line.checked_sub(1)?
-                        } else {
-                            pos.line + 1
-                        };
-                        if line >= self.line_count() {
-                            return None;
-                        }
-                        self.offset(self.position_at_visual(line, col))
-                    }
-                    _ => return None,
-                };
-                Some((to, to))
-            })
+            .map(|&(_, head)| self.moved_head(head, motion).map(|to| (to, to)))
             .collect();
         match moved {
             Some(carets) => self.extra_carets = carets,
             None => self.extra_carets.clear(),
         }
+    }
+
+    /// Column selection mode (`⇧⌘8`), `⇧←`/`⇧→` and friends: extends the
+    /// selection of every extra caret like the main one extends, keeping
+    /// each anchor. A motion that cannot apply leaves the carets alone.
+    pub fn extend_extra_carets(&mut self, motion: Motion) {
+        let extended: Option<Vec<(usize, usize)>> = self
+            .extra_carets
+            .iter()
+            .map(|&(anchor, head)| self.moved_head(head, motion).map(|to| (anchor, to)))
+            .collect();
+        if let Some(carets) = extended {
+            self.extra_carets = carets;
+        }
+    }
+
+    /// Column selection mode, `⇧↑`/`⇧↓`: grows the block by one line above
+    /// (`up`) or below, as a caret spanning the main caret's anchor and head
+    /// columns that becomes the main caret. Moving back toward the block
+    /// shrinks it instead, dropping the main caret's row.
+    pub fn extend_column(&mut self, up: bool) {
+        let (anchor, head) = self.main_caret();
+        let (a, h) = (self.position_of(anchor), self.position_of(head));
+        let target = if up {
+            h.line.checked_sub(1)
+        } else {
+            Some(h.line + 1).filter(|l| *l < self.line_count())
+        };
+        let Some(line) = target else {
+            return;
+        };
+        if let Some(i) = self
+            .extra_carets
+            .iter()
+            .rposition(|&(_, head)| self.position_of(head).line == line)
+        {
+            let (anchor, head) = self.extra_carets.remove(i);
+            self.select(anchor, head);
+            return;
+        }
+        let (from, to) = (self.visual_column(a), self.visual_column(h));
+        let new_anchor = self.offset(self.position_at_visual(line, from));
+        let new_head = self.offset(self.position_at_visual(line, to));
+        self.extra_carets.push((anchor, head));
+        self.select(new_anchor, new_head);
     }
 }
 
@@ -329,5 +396,32 @@ mod tests {
         d.add_caret_vertical(false);
         d.multi_edit(MultiEdit::InsertEach(vec!["1".into(), "2".into()]));
         assert_eq!(d.text, "a1\nb2\n");
+    }
+
+    #[test]
+    fn extend_column_should_select_the_same_columns_below() {
+        let mut d = doc("abcd\nefgh\n");
+        d.select(1, 3);
+        d.extend_column(false);
+        assert_eq!(d.caret_ranges(), vec![(1, 3), (6, 8)]);
+    }
+
+    #[test]
+    fn extend_column_should_shrink_when_moving_back() {
+        let mut d = doc("abcd\nefgh\nijkl\n");
+        d.select(1, 3);
+        d.extend_column(false);
+        d.extend_column(false);
+        d.extend_column(true);
+        assert_eq!(d.caret_ranges(), vec![(1, 3), (6, 8)]);
+    }
+
+    #[test]
+    fn extend_extra_carets_should_keep_each_anchor() {
+        let mut d = doc("abcd\nefgh\n");
+        d.move_to(Position { line: 0, column: 1 });
+        d.extend_column(false);
+        d.extend_extra_carets(Motion::Right);
+        assert_eq!(d.extra_carets, vec![(1, 2)]);
     }
 }

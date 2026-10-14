@@ -223,6 +223,39 @@ impl Panes {
         }
     }
 
+    /// Grows (positive `delta`) or shrinks `splitter`'s pane from the
+    /// keyboard (`⌃⌥` arrows), within the same limits as a drag: `room` is
+    /// the editor's current size along the axis. Returns the new size.
+    pub fn nudge(&mut self, splitter: Splitter, delta: f32, room: f32) -> f32 {
+        self.begin(splitter, room);
+        let Some(drag) = self.drag.take() else {
+            return 0.0;
+        };
+        let size = (drag.start + delta)
+            .clamp(Self::min(splitter), drag.max)
+            .round();
+        self.set(splitter, size);
+        size
+    }
+
+    /// Current size of `splitter`'s pane.
+    pub fn size(&self, splitter: Splitter) -> f32 {
+        match splitter {
+            Splitter::Sidebar => self.sizes.sidebar,
+            Splitter::Bottom => self.sizes.bottom,
+            Splitter::Right => self.sizes.right,
+        }
+    }
+
+    /// Sets `splitter`'s pane to `size` as is (restoring a maximized pane).
+    pub fn set(&mut self, splitter: Splitter, size: f32) {
+        match splitter {
+            Splitter::Sidebar => self.sizes.sidebar = size,
+            Splitter::Bottom => self.sizes.bottom = size,
+            Splitter::Right => self.sizes.right = size,
+        }
+    }
+
     /// Smallest size of `splitter`'s pane.
     fn min(splitter: Splitter) -> f32 {
         match splitter {
@@ -325,5 +358,25 @@ mod tests {
             right: 0,
         });
         assert_eq!(sizes.sidebar, SIDEBAR_MIN);
+    }
+
+    #[test]
+    fn nudge_should_grow_the_pane_by_the_step() {
+        let mut panes = Panes::default();
+        panes.nudge(Splitter::Bottom, 40.0, 1000.0);
+        assert_eq!(panes.sizes.bottom, BOTTOM_DEFAULT + 40.0);
+    }
+
+    #[test]
+    fn nudge_should_stop_at_the_minimum() {
+        let mut panes = Panes::default();
+        assert_eq!(panes.nudge(Splitter::Sidebar, -1000.0, 1000.0), SIDEBAR_MIN);
+    }
+
+    #[test]
+    fn nudge_should_leave_the_editor_room() {
+        let mut panes = Panes::default();
+        let size = panes.nudge(Splitter::Right, 1000.0, 500.0);
+        assert_eq!(size, RIGHT_DEFAULT + 500.0 - EDITOR_MIN);
     }
 }

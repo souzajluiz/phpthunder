@@ -1,6 +1,7 @@
-//! Handlers for the smaller keyboard commands: numbered bookmarks, method
-//! and change navigation, tool window toggles, window state, and file
-//! helpers (copy path, reveal in Finder, settings).
+//! Handlers for the smaller keyboard commands: numbered and mnemonic
+//! bookmarks, method and change navigation, tool window toggles and sizes,
+//! window state, usage highlighting, and file helpers (copy path, reveal in
+//! Finder, settings, scratch files, Save As).
 
 use super::*;
 use crate::palette::{Item, Target};
@@ -14,23 +15,31 @@ use std::path::PathBuf;
 /// shown, bottom panel, right panel.
 pub type HiddenTools = (bool, Option<Bottom>, Option<Bottom>);
 
+/// Pixels one `⌃⌥` arrow press grows or shrinks a panel by.
+const STRETCH: f32 = 40.0;
+
+/// Where `⌃⌥` arrow keys stretch a panel.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Direction {
+    /// `⌃⌥←`.
+    Left,
+    /// `⌃⌥→`.
+    Right,
+    /// `⌃⌥↑`.
+    Up,
+    /// `⌃⌥↓`.
+    Down,
+}
+
 impl App {
     /// `⌃⇧0`–`⌃⇧9` (with `set`) puts numbered bookmark `digit` on the caret
     /// line, or takes it off when it is already there; `⌃0`–`⌃9` jumps to it.
     pub(crate) fn numbered_bookmark(&mut self, digit: u8, set: bool) -> Task<Message> {
+        let key = char::from(b'0' + digit.min(9));
         if set {
-            let Some(doc) = self.doc() else {
-                return Task::none();
-            };
-            let mark = (doc.path.clone(), doc.cursor().line);
-            if self.numbered_bookmarks.get(&digit) == Some(&mark) {
-                self.numbered_bookmarks.remove(&digit);
-            } else {
-                self.numbered_bookmarks.insert(digit, mark);
-            }
-            return Task::none();
+            return self.toggle_mnemonic(key);
         }
-        match self.numbered_bookmarks.get(&digit).cloned() {
+        match self.numbered_bookmarks.get(&key).cloned() {
             Some((path, line)) => {
                 self.record_nav();
                 self.open_at_line(path, line)
@@ -40,6 +49,45 @@ impl App {
                 Task::none()
             }
         }
+    }
+
+    /// Puts mnemonic bookmark `key` (a digit or letter) on the caret line,
+    /// moving it from wherever it was, or takes it off when it is already
+    /// there.
+    pub(crate) fn toggle_mnemonic(&mut self, key: char) -> Task<Message> {
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        let mark = (doc.path.clone(), doc.cursor().line);
+        if self.numbered_bookmarks.get(&key) == Some(&mark) {
+            self.numbered_bookmarks.remove(&key);
+        } else {
+            self.numbered_bookmarks.insert(key, mark);
+        }
+        Task::none()
+    }
+
+    /// `⌥F3`: picks the digit or letter for a mnemonic bookmark on the
+    /// caret line; keys in use show where they point.
+    pub(crate) fn choose_mnemonic(&mut self) -> Task<Message> {
+        if self.doc().is_none() {
+            return Task::none();
+        }
+        let items = ('0'..='9')
+            .chain('A'..='Z')
+            .map(|key| Item {
+                badge: "◆",
+                title: key.to_string(),
+                matched: Vec::new(),
+                detail: self
+                    .numbered_bookmarks
+                    .get(&key)
+                    .map(|(path, line)| format!("{}:{}", self.relative(path), line + 1))
+                    .unwrap_or_default(),
+                target: Target::Mnemonic(key),
+            })
+            .collect();
+        self.open_choice(tr!("action-mnemonic-bookmark"), items)
     }
 
     /// `⌃⇧↓` / `⌃⇧↑`: moves the caret to the next (or previous) function or
@@ -304,6 +352,141 @@ impl App {
             }),
             None => Task::none(),
         })
+    }
+
+    /// `⌃⌥` arrows: grows or shrinks the open panel toward `toward`: the
+    /// right panel (else the sidebar) left and right, the bottom panel up
+    /// and down. Sizes are saved like after a drag.
+    pub(crate) fn stretch_tool_window(&mut self, toward: Direction) -> Task<Message> {
+        let (splitter, delta) = match toward {
+            Direction::Up | Direction::Down if self.bottom.is_some() => (
+                Splitter::Bottom,
+                if toward == Direction::Up { STRETCH } else { -STRETCH },
+            ),
+            Direction::Left | Direction::Right if self.right.is_some() => (
+                Splitter::Right,
+                if toward == Direction::Left { STRETCH } else { -STRETCH },
+            ),
+            Direction::Left | Direction::Right if self.sidebar => (
+                Splitter::Sidebar,
+                if toward == Direction::Right { STRETCH } else { -STRETCH },
+            ),
+            _ => return Task::none(),
+        };
+        let room = self.room_beside(splitter);
+        self.panes.nudge(splitter, delta, room);
+        self.maximized_tool = None;
+        SavedLayout::from(self.panes.sizes).save();
+        Task::none()
+    }
+
+    /// `⇧⌘'`: gives the bottom panel (else the right one) all the room the
+    /// editor can spare, or puts back its size from before.
+    pub(crate) fn toggle_maximize_tool_window(&mut self) -> Task<Message> {
+        if let Some((splitter, size)) = self.maximized_tool.take() {
+            self.panes.set(splitter, size);
+            return Task::none();
+        }
+        let splitter = if self.bottom.is_some() {
+            Splitter::Bottom
+        } else if self.right.is_some() {
+            Splitter::Right
+        } else {
+            return Task::none();
+        };
+        let before = self.panes.size(splitter);
+        let room = self.room_beside(splitter);
+        self.panes.nudge(splitter, f32::INFINITY, room);
+        self.maximized_tool = Some((splitter, before));
+        Task::none()
+    }
+
+    /// Pixels the editor has along `splitter`'s axis, for pane limits.
+    fn room_beside(&self, splitter: Splitter) -> f32 {
+        match splitter {
+            Splitter::Sidebar | Splitter::Right => self.editor_width,
+            Splitter::Bottom => self.viewport_height,
+        }
+    }
+
+    /// `⇧⌘F7`: keeps every usage of the word at the caret highlighted in
+    /// this file until Escape, or stops when pressed on the same word.
+    pub(crate) fn highlight_usages_in_file(&mut self) -> Task<Message> {
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        let Some((start, end)) = doc.identifier_at_caret() else {
+            self.highlighted_usages = None;
+            return Task::none();
+        };
+        let word = doc.text[start..end].to_string();
+        let mark = (doc.path.clone(), word);
+        if self.highlighted_usages.as_ref() == Some(&mark) {
+            self.highlighted_usages = None;
+            return Task::none();
+        }
+        let count = doc.occurrences_in(&mark.1, 0, doc.text.len()).len();
+        self.notice = Some(tr!("notice-usages-highlighted", count = count));
+        self.highlighted_usages = Some(mark);
+        Task::none()
+    }
+
+    /// `⇧⌘N`: creates the next free `scratch_N.php` in the user config
+    /// folder and opens it; scratch files live outside every project.
+    pub(crate) fn new_scratch_file(&mut self) -> Task<Message> {
+        let Some(dir) = crate::settings::user_config_dir().map(|d| d.join("scratches")) else {
+            return Task::none();
+        };
+        let path = (1..)
+            .map(|n| dir.join(format!("scratch_{n}.php")))
+            .find(|p| !p.exists())
+            .unwrap_or_else(|| dir.join("scratch.php"));
+        let created = std::fs::create_dir_all(&dir)
+            .and_then(|()| std::fs::write(&path, "<?php\n\n"));
+        if let Err(error) = created {
+            self.fail(tr!("notice-scratch-failed", error = error.to_string()));
+            return Task::none();
+        }
+        self.open(path, Some(phpthunder::syntax::Pos { line: 2, col: 0 }))
+    }
+
+    /// `⇧⌘S`: asks where to save a copy of the active file
+    /// ([`Message::SaveAsPicked`]).
+    pub(crate) fn save_as(&mut self) -> Task<Message> {
+        if self.preview_active() {
+            return Task::none();
+        }
+        let Some(doc) = self.doc() else {
+            return Task::none();
+        };
+        let mut dialog = rfd::AsyncFileDialog::new().set_file_name(crate::app::file_name(&doc.path));
+        if let Some(dir) = doc.path.parent() {
+            dialog = dialog.set_directory(dir);
+        }
+        Task::perform(
+            async move { dialog.save_file().await.map(|h| h.path().to_path_buf()) },
+            Message::SaveAsPicked,
+        )
+    }
+
+    /// Writes the active buffer to `path` (EditorConfig save rules applied)
+    /// and opens it there with the same caret; the original tab is left
+    /// as it was.
+    pub(crate) fn save_as_picked(&mut self, path: Option<PathBuf>) -> Task<Message> {
+        let (Some(path), Some(doc)) = (path, self.doc()) else {
+            return Task::none();
+        };
+        let (_, disk) = doc.text_for_save();
+        let caret = doc.utf16_pos(doc.cursor());
+        if let Err(error) = std::fs::write(&path, disk) {
+            self.fail(tr!(
+                "notice-save-failed",
+                file = crate::app::file_name(&path),
+                error = error.to_string()
+            ));
+            return Task::none();
+        }
+        Task::batch([self.open(path, Some(caret)), self.refresh_git()])
     }
 
     /// `⌘M`: minimizes the window.

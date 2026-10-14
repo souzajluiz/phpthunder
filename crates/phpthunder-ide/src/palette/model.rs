@@ -105,6 +105,8 @@ pub enum Target {
     Action(crate::keymap::Cmd),
     /// Surround the selection with a block construct.
     Surround(crate::editor::Surround),
+    /// Put this mnemonic bookmark (digit or letter) on the caret line.
+    Mnemonic(char),
 }
 
 /// One ranked palette result.

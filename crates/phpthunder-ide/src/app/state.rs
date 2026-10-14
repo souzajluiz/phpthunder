@@ -172,10 +172,21 @@ pub struct App {
     pub laravel: LaravelScan,
     /// Bookmarked lines (0-based) by file (`F3`).
     pub bookmarks: std::collections::BTreeMap<PathBuf, std::collections::BTreeSet<usize>>,
-    /// Numbered bookmarks `0`–`9` (`⌃⇧digit`): file and 0-based line.
-    pub numbered_bookmarks: std::collections::BTreeMap<u8, (PathBuf, usize)>,
+    /// Mnemonic bookmarks: digits `0`–`9` (`⌃⇧digit`) and letters `A`–`Z`
+    /// (`⌥F3`), each a file and 0-based line.
+    pub numbered_bookmarks: std::collections::BTreeMap<char, (PathBuf, usize)>,
     /// What `⇧⌘F12` hid, restored by its next press.
     pub hidden_tools: Option<HiddenTools>,
+    /// Column (block) selection mode (`⇧⌘8`): `⇧` arrows grow a block of
+    /// carets instead of a text selection.
+    pub column_mode: bool,
+    /// Panel maximized by `⇧⌘'` and its size before, restored by the next
+    /// press.
+    pub maximized_tool: Option<(Splitter, f32)>,
+    /// Word whose usages `⇧⌘F7` keeps highlighted in a file, until Escape.
+    pub highlighted_usages: Option<(PathBuf, String)>,
+    /// The running usages search is `⌃⌥H` callers, shown by calling function.
+    pub callers_search: bool,
     /// Latest edit locations as (file, line), oldest first.
     pub edit_locations: Vec<(PathBuf, usize)>,
     /// How far back the last `⇧⌘⌫` went; reset by the next edit.
@@ -226,12 +237,14 @@ pub fn is_ident(c: char) -> bool {
     c == '_' || c.is_alphanumeric()
 }
 
-/// Editor key bindings: popups first, then IDE shortcuts, then smart
-/// editing keys, then iced's defaults.
+/// Editor key bindings: popups first, then the block keys of column
+/// selection mode (`column_mode`), IDE shortcuts, smart editing keys, and
+/// iced's defaults.
 pub fn bindings(
     key: KeyPress,
     completion_open: bool,
     intentions_open: bool,
+    column_mode: bool,
 ) -> Option<Binding<Message>> {
     let m = key.modifiers;
     let custom = |msg| Some(Binding::Custom(msg));
@@ -256,6 +269,13 @@ pub fn bindings(
     }
     if let Some((digit, set)) = keymap::numbered_bookmark(&key.key, m) {
         return custom(Message::NumberedBookmark(digit, set));
+    }
+    if column_mode && m.shift() && !m.command() && !m.alt() && !m.control() {
+        match key.key.as_ref() {
+            Key::Named(Named::ArrowUp) => return custom(Message::ColumnExtend(true)),
+            Key::Named(Named::ArrowDown) => return custom(Message::ColumnExtend(false)),
+            _ => {}
+        }
     }
     if let Some(cmd) = keymap::command(&key.key, m) {
         return custom(Message::Command(cmd));
@@ -464,6 +484,10 @@ impl App {
             bookmarks: std::collections::BTreeMap::new(),
             numbered_bookmarks: std::collections::BTreeMap::new(),
             hidden_tools: None,
+            column_mode: false,
+            maximized_tool: None,
+            highlighted_usages: None,
+            callers_search: false,
             edit_locations: Vec::new(),
             edit_back: 0,
             clipboard_history: Vec::new(),
@@ -775,6 +799,8 @@ impl App {
             Message::Edit(action) => self.edit(action),
             Message::Command(cmd) => self.command(cmd),
             Message::NumberedBookmark(digit, set) => self.numbered_bookmark(digit, set),
+            Message::ColumnExtend(up) => self.column_extend(up),
+            Message::SaveAsPicked(path) => self.save_as_picked(path),
             Message::TypeChar('}') => self.edit_with(|d| d.type_close_brace(), Some('}')),
             Message::TypeChar(c) => self.edit_with(|d| d.type_pair_char(c), Some(c)),
             Message::SmartEnter => self.edit_with(|d| d.smart_enter(), None),
@@ -813,6 +839,7 @@ impl App {
             Message::CompletionReplace => self.accept_completion(true),
             Message::CloseOverlays => {
                 self.close_overlays();
+                self.highlighted_usages = None;
                 if let Some(doc) = self.doc_mut() {
                     doc.clear_extra_carets();
                 }
@@ -1828,6 +1855,7 @@ impl App {
     /// usages panel in a "searching" state; results arrive as
     /// [`Message::UsagesFound`].
     pub fn find_usages(&mut self) -> Task<Message> {
+        self.callers_search = false;
         let Some(doc) = self.doc() else {
             return Task::none();
         };
@@ -1846,6 +1874,42 @@ impl App {
         Task::perform(self.lang.clone().usages(text, offset, open), |found| {
             Message::UsagesFound(found.map(Box::new))
         })
+    }
+
+    /// The usages panel for `⌃⌥H`: each call of `def` labelled with the
+    /// function or method it sits in, declarations left out.
+    fn show_callers(&mut self, def: &Definition, usages: &[Usage]) {
+        let mut symbols: std::collections::HashMap<PathBuf, Vec<Symbol>> =
+            std::collections::HashMap::new();
+        let rows: Vec<UsageRow> = usages
+            .iter()
+            .filter(|u| !u.is_declaration)
+            .map(|u| {
+                let file = symbols
+                    .entry(u.path.clone())
+                    .or_insert_with(|| self.lang.file_symbols(&u.path));
+                let caller = crate::app::navigation::enclosing_function(file, u.span.start)
+                    .map(|s| format!("{}()", qualified(s)))
+                    .unwrap_or_else(|| tr!("callers-top-level"));
+                UsageRow {
+                    path: u.path.clone(),
+                    pos: u.span.start,
+                    label: format!("{}:{}", file_name(&u.path), u.span.start.line + 1),
+                    preview: caller,
+                    is_declaration: false,
+                }
+            })
+            .collect();
+        let title = tr!(
+            "callers-title",
+            name = format!("{}()", qualified(&def.symbol)),
+            count = rows.len()
+        );
+        self.usages = Some(Usages::Found {
+            title,
+            rows,
+            selected: None,
+        });
     }
 
     /// Unsaved editor buffers, which win over disk content.
@@ -1877,6 +1941,10 @@ impl App {
             self.notice = Some(tr!("notice-nothing-to-search"));
             return;
         };
+        if std::mem::take(&mut self.callers_search) {
+            self.show_callers(&def, &usages);
+            return;
+        }
         let mut cache: std::collections::HashMap<PathBuf, String> =
             std::collections::HashMap::new();
         let mut files = std::collections::HashSet::new();

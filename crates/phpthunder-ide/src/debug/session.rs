@@ -376,6 +376,8 @@ async fn drive(
     }
     let mut pending: Vec<DebugCommand> = Vec::new();
     let mut next = Some(first);
+    // One-shot breakpoint of a run to cursor, cleared at the next pause.
+    let mut run_to: Option<String> = None;
     loop {
         if let Some(step) = next.take() {
             let _ = events.send(DebugEvent::Running);
@@ -385,6 +387,12 @@ async fn drive(
             {
                 Paused::Stopped => break,
                 Paused::At => {
+                    if let Some(id) = run_to.take() {
+                        // Already gone when it was the line that paused.
+                        connection
+                            .call("breakpoint_remove", &format!("-d {id}"), None)
+                            .await?;
+                    }
                     let mut frames = parse_stack(&connection.call("stack_get", "", None).await?);
                     for frame in &mut frames {
                         frame.file = map.local(&frame.file);
@@ -441,6 +449,16 @@ async fn drive(
                         .call("breakpoint_remove", &format!("-d {id}"), None)
                         .await?;
                 }
+            }
+            DebugCommand::RunTo(file, line) => {
+                let args = format!(
+                    "-t line -f {} -n {} -r 1",
+                    file_uri(&map.remote(&file)),
+                    line + 1
+                );
+                let response = connection.call("breakpoint_set", &args, None).await?;
+                run_to = response.attr("id").map(str::to_string);
+                next = Some("run");
             }
             DebugCommand::Eval(expression) => {
                 let response = connection.call("eval", "", Some(&expression)).await?;

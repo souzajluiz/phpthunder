@@ -758,6 +758,7 @@ impl App {
             return preview;
         }
         let completion_open = self.completion.is_some();
+        let column_mode = self.column_mode;
         let intentions_open = self.intentions.is_some();
         let cursor_line = doc.cursor().line;
 
@@ -812,7 +813,9 @@ impl App {
                 doc.highlight_settings(),
                 crate::editor::format_token,
             )
-            .key_binding(move |key| bindings(key, completion_open, intentions_open))
+            .key_binding(move |key| {
+                bindings(key, completion_open, intentions_open, column_mode)
+            })
             .style(editor);
 
         let current_line = pin(container(space())
