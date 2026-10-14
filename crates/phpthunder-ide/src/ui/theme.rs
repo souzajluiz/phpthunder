@@ -29,7 +29,7 @@ pub const BORDER_STRONG: Color = rgb(0x4E4C63);
 /// Selected tree/list rows, the active rail button, hovered completion and palette rows.
 pub const SELECTED: Color = rgb(0x34334A);
 /// Selected row in the completion popup and the navigation palette.
-pub const SELECTED_STRONG: Color = rgb(0x5C3A7A);
+pub const SELECTED_STRONG: Color = rgb(0x6E2228);
 /// Wash laid over any surface under the mouse. Translucent, so the same
 /// token reads on the frame (`CHROME`), the islands (`BG`) and popups.
 pub const HOVER: Color = Color {
@@ -60,9 +60,10 @@ pub const TEXT_SOFT: Color = rgb(0xC9C9D1);
 pub const MUTED: Color = rgb(0x8785A6);
 /// Editor line numbers, except the caret line which uses `TEXT`.
 pub const GUTTER: Color = rgb(0x575566);
-/// Lavender accent: active rail icon, fuzzy-match letters, find marks,
-/// enabled toggles and the primary button (dark text on it).
-pub const ACCENT: Color = rgb(0xB98BE8);
+/// Brand red, the app's primary color: active rail icon, fuzzy-match
+/// letters, find marks, enabled toggles and the primary button (dark text
+/// on it).
+pub const ACCENT: Color = rgb(0xFD1B1C);
 
 // Syntax
 /// Keywords, modifiers and PHP tags (`crate::editor::format_token`).
@@ -295,8 +296,8 @@ pub fn primary_button(_: &Theme, status: button::Status) -> button::Style {
         background: Some(
             match status {
                 button::Status::Active => ACCENT,
-                button::Status::Hovered => rgb(0xCBA5F0),
-                button::Status::Pressed => rgb(0xA373D6),
+                button::Status::Hovered => rgb(0xFD4A4B),
+                button::Status::Pressed => rgb(0xD81516),
                 button::Status::Disabled => Color { a: 0.4, ..ACCENT },
             }
             .into(),
