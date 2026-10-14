@@ -349,6 +349,7 @@ impl LanguageServer for Backend {
                     CodeActionOptions {
                         code_action_kinds: Some(vec![
                             CodeActionKind::QUICKFIX,
+                            CodeActionKind::REFACTOR_REWRITE,
                             CodeActionKind::SOURCE_ORGANIZE_IMPORTS,
                         ]),
                         ..Default::default()
@@ -668,6 +669,16 @@ impl LanguageServer for Backend {
                                 ..Default::default()
                             }));
                         }
+                    }
+                }
+                if wants(&CodeActionKind::REFACTOR_REWRITE) {
+                    for fix in phpthunder::intention::intentions(&index, &src, start, end) {
+                        actions.push(CodeActionOrCommand::CodeAction(CodeAction {
+                            title: fix.title.clone(),
+                            kind: Some(CodeActionKind::REFACTOR_REWRITE),
+                            edit: Some(convert::workspace_edit(&path, &fix.edits, |p| s.load(p))),
+                            ..Default::default()
+                        }));
                     }
                 }
                 if wants(&CodeActionKind::SOURCE_ORGANIZE_IMPORTS) {

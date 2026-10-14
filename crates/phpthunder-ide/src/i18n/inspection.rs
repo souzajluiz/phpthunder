@@ -90,6 +90,9 @@ pub fn fix_title(fix: &Fix) -> String {
         FixKind::RemoveStatement => tr!("fix-remove-statement"),
         FixKind::RemoveRedundantElse => tr!("fix-remove-redundant-else"),
         FixKind::Rule(rule) => crate::i18n::translate(&format!("fix-{}", rule.slug()), None),
+        FixKind::Intention(action) => {
+            crate::i18n::translate(&format!("intention-{}", action.slug()), None)
+        }
         FixKind::AddMethod { class, name } => {
             tr!("fix-add-method", name = name.as_str(), class = short(class))
         }

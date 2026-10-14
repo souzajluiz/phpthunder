@@ -10,8 +10,9 @@ use std::path::PathBuf;
 
 impl App {
     /// Opens the `⌥↵` menu at the caret: fixes for diagnostics under it,
-    /// "Implement methods" inside a class that lacks implementations, and
-    /// "Optimize imports". Shows a notice when nothing applies.
+    /// context actions (see `phpthunder::intention`), "Implement methods"
+    /// inside a class that lacks implementations, and "Optimize imports".
+    /// Shows a notice when nothing applies.
     pub(crate) fn open_intentions(&mut self) -> Task<Message> {
         let Some(doc) = self.doc() else {
             return Task::none();
@@ -37,6 +38,16 @@ impl App {
             .flat_map(|d| self.lang.quick_fixes(&doc.text, d, &open))
             .map(Intention::Fix)
             .collect();
+        let (start, end) = doc.selection().unwrap_or((offset, offset));
+        for action in self.lang.intentions(&doc.text, start, end) {
+            // A quick fix may already make the same change.
+            let duplicate = items
+                .iter()
+                .any(|i| matches!(i, Intention::Fix(f) if f.edits == action.edits));
+            if !duplicate {
+                items.push(Intention::Fix(action));
+            }
+        }
         if let Some(class) = phpthunder::refactor::enclosing_class_fqn(&doc.text, offset)
             && !self.lang.missing_implementations(&class).is_empty()
         {

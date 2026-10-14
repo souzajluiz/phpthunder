@@ -1,5 +1,6 @@
 //! The `⌘N` Generate menu: constructor, getters and setters, implementing
-//! and overriding methods in the class at the caret.
+//! and overriding methods, and PHPUnit test methods and fixtures in the
+//! class at the caret.
 
 use super::*;
 use crate::palette::{Item, Target};
@@ -39,6 +40,14 @@ impl App {
         if !self.lang.overridable_methods(&outline).is_empty() {
             entries.push(Generation::OverrideMethods);
         }
+        if self.lang.is_test_class(&outline) {
+            entries.push(Generation::TestMethod);
+            for fixture in ["setUp", "tearDown"] {
+                if refactor::fixture_source(&outline, fixture).is_some() {
+                    entries.push(Generation::Fixture(fixture));
+                }
+            }
+        }
         if entries.is_empty() {
             self.notice = Some(tr!("notice-nothing-to-generate"));
             return Task::none();
@@ -75,6 +84,8 @@ impl App {
                 .iter()
                 .find(|m| m.name == *name)
                 .map(refactor::override_stub),
+            Generation::TestMethod => Some(refactor::test_method_source(&outline)),
+            Generation::Fixture(name) => refactor::fixture_source(&outline, name),
         };
         let Some(source) = source else {
             return Task::none();

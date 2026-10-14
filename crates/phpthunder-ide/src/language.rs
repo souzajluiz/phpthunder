@@ -277,6 +277,17 @@ impl Language {
         inspection::quick_fixes(&self.index.read(), text, diagnostic, |p| load_with(open, p))
     }
 
+    /// Whether the class is a test case (Generate offers test methods).
+    pub fn is_test_class(&self, outline: &refactor::ClassOutline) -> bool {
+        refactor::is_test_class(&self.index.read(), outline)
+    }
+
+    /// Context actions at `start..end` (the caret when equal) of `text`, for
+    /// the `⌥↵` menu.
+    pub fn intentions(&self, text: &str, start: usize, end: usize) -> Vec<Fix> {
+        phpthunder::intention::intentions(&self.index.read(), text, start, end)
+    }
+
     /// Parameter info for the call around `offset`, shown above the caret.
     pub fn signature_help(&self, text: &str, offset: usize) -> Option<SignatureHelp> {
         refactor::signature_help(&self.index.read(), text, offset)

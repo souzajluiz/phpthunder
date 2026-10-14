@@ -572,6 +572,10 @@ pub enum Generation {
     OverrideMethods,
     /// Overrides the named parent method.
     Override(String),
+    /// An empty PHPUnit test method.
+    TestMethod,
+    /// A PHPUnit `setUp` or `tearDown` fixture (the method name).
+    Fixture(&'static str),
 }
 
 impl Generation {
@@ -585,6 +589,8 @@ impl Generation {
             Generation::ImplementMethods => tr!("intention-implement-methods"),
             Generation::OverrideMethods => tr!("generate-override"),
             Generation::Override(name) => name.clone(),
+            Generation::TestMethod => tr!("generate-test-method"),
+            Generation::Fixture(name) => tr!("generate-fixture", name = *name),
         }
     }
 }

@@ -184,6 +184,8 @@ pub enum FixKind {
     RemoveRedundantElse,
     /// The quick fix of a rule-based inspection.
     Rule(Rule),
+    /// A context action (see [`crate::intention`]).
+    Intention(crate::intention::Action),
     /// Adds a property to a class.
     AddProperty {
         /// Class FQN.

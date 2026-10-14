@@ -181,6 +181,42 @@ pub fn accessors_source(outline: &ClassOutline, getters: bool, setters: bool) ->
     (!out.is_empty()).then_some(out)
 }
 
+/// Whether the class is a PHPUnit (or Laravel, Pest-compatible) test
+/// case: its hierarchy reaches a class named `TestCase`.
+pub fn is_test_class(index: &Index, outline: &ClassOutline) -> bool {
+    index.hierarchy(&outline.fqn).iter().skip(1).any(|c| {
+        c.rsplit('\\')
+            .next()
+            .is_some_and(|s| s.eq_ignore_ascii_case("TestCase"))
+    })
+}
+
+/// An empty test method, named `testExample` (numbered when taken), for
+/// the Generate menu of a test class.
+pub fn test_method_source(outline: &ClassOutline) -> String {
+    let name = (1..)
+        .map(|i| {
+            if i == 1 {
+                "testExample".to_string()
+            } else {
+                format!("testExample{i}")
+            }
+        })
+        .find(|n| !outline.declares(n))
+        .unwrap_or_default();
+    format!("\n    public function {name}(): void\n    {{\n    }}\n")
+}
+
+/// A `setUp` or `tearDown` fixture calling its parent; `None` when the
+/// class declares it already.
+pub fn fixture_source(outline: &ClassOutline, name: &str) -> Option<String> {
+    (!outline.declares(name)).then(|| {
+        format!(
+            "\n    protected function {name}(): void\n    {{\n        parent::{name}();\n    }}\n"
+        )
+    })
+}
+
 /// Parent-class methods the class can override: public or protected,
 /// not final, not abstract (those are implemented, not overridden), and
 /// not already declared. Nearest declaration wins; sorted by name.
@@ -298,6 +334,25 @@ mod tests {
 
     fn outline() -> ClassOutline {
         class_outline(CLASS, CLASS.find("private string").unwrap()).unwrap()
+    }
+
+    #[test]
+    fn test_class_should_get_numbered_test_method_and_missing_fixtures() {
+        let src = "<?php\nclass UserTest extends TestCase {\n    public function testExample(): void {}\n    protected function setUp(): void {}\n}\n";
+        let mut index = Index::default();
+        index.update(
+            std::path::PathBuf::from("/t.php"),
+            crate::index::index_source("<?php class TestCase {}"),
+        );
+        index.update(
+            std::path::PathBuf::from("/u.php"),
+            crate::index::index_source(src),
+        );
+        let o = class_outline(src, src.find("testExample").unwrap()).unwrap();
+        assert!(is_test_class(&index, &o));
+        assert!(test_method_source(&o).contains("function testExample2(): void"));
+        assert_eq!(fixture_source(&o, "setUp"), None);
+        assert!(fixture_source(&o, "tearDown").is_some_and(|s| s.contains("parent::tearDown();")));
     }
 
     #[test]
