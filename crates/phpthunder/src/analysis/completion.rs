@@ -35,6 +35,9 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
     let Some(mut node) = root.named_descendant_for_byte_range(byte, byte + 1) else {
         return Vec::new();
     };
+    if in_use_import(node, src, byte) {
+        return complete_use(index, src, byte);
+    }
     if node.kind() != "name" {
         return Vec::new();
     }
@@ -189,6 +192,109 @@ pub fn complete(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
             Vec::new()
         }
         _ => complete_names(&analyzer, node, prefix, src, byte, parent.kind()),
+    }
+}
+
+/// Whether `node` (at `byte` of `src`) is inside a top-level `use`
+/// import, not a trait `use` in a class body. A half-typed import at the
+/// end of a file may not parse as one: then the line is read instead.
+fn in_use_import(node: Node, src: &str, byte: usize) -> bool {
+    let mut cur = Some(node);
+    while let Some(n) = cur {
+        match n.kind() {
+            "namespace_use_declaration" => return true,
+            "use_declaration" | "compound_statement" | "declaration_list" => return false,
+            _ => cur = n.parent(),
+        }
+    }
+    let line = &src[src[..byte].rfind('\n').map_or(0, |i| i + 1)..byte];
+    line.trim_start().starts_with("use ")
+}
+
+/// Proposals inside `use …`: the typed path so far (`App\Mo`) completes
+/// to the classes and sub-namespaces of its namespace; a bare word
+/// (`Us`) to the full name of matching classes and to root namespaces.
+/// Inserted text replaces the last segment only, and no import is added:
+/// this is the import.
+fn complete_use(index: &Index, src: &str, byte: usize) -> Vec<Candidate> {
+    let path_start = src[..byte]
+        .rfind(|c: char| !(c.is_alphanumeric() || c == '_' || c == '\\'))
+        .map_or(0, |i| i + 1);
+    let typed = src[path_start..byte].trim_start_matches('\\');
+    let (namespace, last) = match typed.rsplit_once('\\') {
+        Some((ns, last)) => (Some(ns), last),
+        None => (None, typed),
+    };
+    let matcher = Matcher::new(last);
+    let mut seen = HashSet::new();
+    let mut hits: Vec<(MatchTier, Candidate)> = Vec::new();
+    for (_, s) in index.top_level().filter(|(_, s)| s.kind.is_class_like()) {
+        let (ns, short) = s.fqn.rsplit_once('\\').unwrap_or(("", &s.fqn));
+        match namespace {
+            Some(wanted) => {
+                if ns.eq_ignore_ascii_case(wanted) {
+                    if let Some(m) = matcher.matches(short) {
+                        hits.push((
+                            m.tier,
+                            use_candidate(short, s.kind, &s.fqn, short.to_string()),
+                        ));
+                    }
+                } else if let Some(rest) = ns
+                    .get(..wanted.len())
+                    .filter(|p| p.eq_ignore_ascii_case(wanted))
+                    .and_then(|_| ns[wanted.len()..].strip_prefix('\\'))
+                {
+                    let segment = rest.split('\\').next().unwrap_or(rest);
+                    if seen.insert(segment.to_ascii_lowercase())
+                        && let Some(m) = matcher.matches(segment)
+                    {
+                        hits.push((
+                            m.tier,
+                            namespace_candidate(segment, &format!("{wanted}\\{segment}")),
+                        ));
+                    }
+                }
+            }
+            None => {
+                if !last.is_empty()
+                    && let Some(m) = matcher.matches(short)
+                {
+                    hits.push((m.tier, use_candidate(short, s.kind, &s.fqn, s.fqn.clone())));
+                }
+                let root = s.fqn.split('\\').next().unwrap_or("");
+                if s.fqn.contains('\\')
+                    && seen.insert(root.to_ascii_lowercase())
+                    && let Some(m) = matcher.matches(root)
+                {
+                    hits.push((m.tier, namespace_candidate(root, root)));
+                }
+            }
+        }
+    }
+    hits.sort_by_key(|h| std::cmp::Reverse(h.0));
+    hits.truncate(MAX_NAME_CANDIDATES);
+    hits.into_iter().map(|(_, c)| c).collect()
+}
+
+/// A class proposal inside `use`, inserting `insert`.
+fn use_candidate(short: &str, kind: Kind, fqn: &str, insert: String) -> Candidate {
+    Candidate {
+        label: short.to_string(),
+        kind,
+        detail: fqn.to_string(),
+        insert_text: insert,
+        import: None,
+    }
+}
+
+/// A namespace proposal inside `use`: inserts the segment and a `\` to go on.
+fn namespace_candidate(segment: &str, full: &str) -> Candidate {
+    Candidate {
+        label: format!("{segment}\\"),
+        kind: Kind::Constant,
+        detail: format!("namespace {full}"),
+        insert_text: format!("{segment}\\"),
+        import: None,
     }
 }
 

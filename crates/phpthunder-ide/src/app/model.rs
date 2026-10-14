@@ -249,6 +249,38 @@ pub enum Message {
     OpenTest(usize),
     /// Hide the coverage marks of the last run with coverage.
     ClearCoverage,
+    /// Parameter info computed in the background.
+    SignatureReady {
+        /// Request number; only the latest is shown.
+        generation: u64,
+        /// Document version it was computed for.
+        version: u64,
+        /// Caret offset it was computed for.
+        offset: usize,
+        /// Asked for with `⌘P` (none shows a notice).
+        explicit: bool,
+        /// The parameter info, if the caret is in a call.
+        help: Option<phpthunder::refactor::SignatureHelp>,
+    },
+    /// The session-save timer fired; writes when it is the latest one.
+    SaveSession(u64),
+    /// The session file was written.
+    SessionSaved,
+    /// PHP completion proposals computed in the background.
+    CompletionReady {
+        /// Request number; only the latest is shown.
+        generation: u64,
+        /// Document version they were computed for.
+        version: u64,
+        /// Caret offset they were computed for.
+        offset: usize,
+        /// Asked for with `Cmd::Complete` (empty shows a notice).
+        explicit: bool,
+        /// Where the replaced text starts.
+        start: usize,
+        /// The proposals, unranked.
+        items: Vec<phpthunder::analysis::Candidate>,
+    },
     /// The Xdebug configuration report (or why PHP could not start).
     DebuggerValidated(Result<String, String>),
     /// A profiled run finished: the report's path, or the error.

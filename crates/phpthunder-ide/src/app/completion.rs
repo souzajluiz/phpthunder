@@ -44,6 +44,33 @@ fn has_parameters(signature: &str) -> bool {
         .is_some_and(|(_, rest)| !rest.trim_start().starts_with(')'))
 }
 
+/// PHP proposals at `offset` of `text` and where the replaced text starts:
+/// Laravel key strings, else Eloquent column and relation strings, else
+/// the engine's names, members and variables plus keywords. Runs on a
+/// blocking thread.
+fn php_candidates(
+    lang: &crate::language::Language,
+    laravel: Option<&phpthunder::laravel::LaravelProject>,
+    text: &str,
+    offset: usize,
+) -> (usize, Vec<Candidate>) {
+    if let Some(found) = laravel.and_then(|p| super::laravel::key_candidates(p, text, offset)) {
+        return found;
+    }
+    if let Some(found) = lang.eloquent_completions(text, offset) {
+        return found;
+    }
+    let mut start = phpthunder::analysis::ident_start(text, offset);
+    if start > 0 && text.as_bytes()[start - 1] == b'$' {
+        start -= 1;
+    }
+    let mut items = lang.complete(text, offset);
+    if !text[start..offset].starts_with('$') && offset > start {
+        items.extend(keyword_candidates(text, offset));
+    }
+    (start, items)
+}
+
 /// Templates where Alpine completion applies (Blade, HTML, Vue).
 fn is_markup(file_type: crate::filetype::FileType) -> bool {
     use crate::filetype::FileType;
@@ -115,14 +142,15 @@ impl App {
     /// close the popup.
     pub fn refresh_completion(&mut self, explicit: bool) {
         let Some(doc) = self.doc() else { return };
+        // PHP proposals need parsing and the index: computed in the
+        // background (see `schedule_completion`) so typing never waits.
+        if doc.is_php() {
+            self.completion_request = Some(explicit);
+            return;
+        }
         let offset = doc.offset(doc.cursor());
-        let keys = self
+        let found = self
             .laravel_candidates(&doc.text, offset)
-            .or_else(|| {
-                doc.is_php()
-                    .then(|| self.lang.eloquent_completions(&doc.text, offset))
-                    .flatten()
-            })
             .or_else(|| {
                 is_markup(doc.file_type)
                     .then(|| phpthunder::web::alpine_completions(&doc.text, offset))
@@ -133,21 +161,72 @@ impl App {
                     .then(|| phpthunder::web::javascript_completions(&doc.text, offset, &[]))
             })
             .or_else(|| self.blade_candidates(&doc.text, offset));
-        let (start, items) = match keys {
-            Some(keys) => keys,
-            None if !doc.is_php() => (offset, Vec::new()),
-            None => {
-                let mut start = phpthunder::analysis::ident_start(&doc.text, offset);
-                if start > 0 && doc.text.as_bytes()[start - 1] == b'$' {
-                    start -= 1;
-                }
-                let mut items = self.lang.complete(&doc.text, offset);
-                if doc.is_php() && !doc.text[start..offset].starts_with('$') && offset > start {
-                    items.extend(keyword_candidates(&doc.text, offset));
-                }
-                (start, items)
-            }
+        let (start, items) = found.unwrap_or((offset, Vec::new()));
+        self.show_completion(start, items, explicit);
+    }
+
+    /// Starts computing PHP proposals for a pending request on a blocking
+    /// thread; the newest request wins. Called by `App::update` after
+    /// every message.
+    pub(crate) fn schedule_completion(&mut self) -> Task<Message> {
+        let Some(explicit) = self.completion_request.take() else {
+            return Task::none();
         };
+        let Some((version, offset, text)) = self
+            .doc()
+            .map(|d| (d.version(), d.offset(d.cursor()), d.text.clone()))
+        else {
+            return Task::none();
+        };
+        self.completion_generation += 1;
+        let generation = self.completion_generation;
+        let (lang, laravel) = (self.lang.clone(), self.laravel.clone());
+        Task::perform(
+            async move {
+                tokio::task::spawn_blocking(move || {
+                    php_candidates(&lang, laravel.as_deref(), &text, offset)
+                })
+                .await
+                .unwrap_or((offset, Vec::new()))
+            },
+            move |(start, items)| Message::CompletionReady {
+                generation,
+                version,
+                offset,
+                explicit,
+                start,
+                items,
+            },
+        )
+    }
+
+    /// Shows background proposals if they are the latest asked for and the
+    /// document and caret have not moved since.
+    pub(crate) fn completion_ready(
+        &mut self,
+        generation: u64,
+        version: u64,
+        offset: usize,
+        explicit: bool,
+        start: usize,
+        items: Vec<Candidate>,
+    ) {
+        let current = self
+            .doc()
+            .is_some_and(|d| d.version() == version && d.offset(d.cursor()) == offset);
+        if generation == self.completion_generation && current {
+            self.show_completion(start, items, explicit);
+        }
+    }
+
+    /// Ranks `items` (replacing text from `start`) and opens or updates the
+    /// popup; the selection follows the previously selected proposal when
+    /// it is still listed. `explicit` (`Cmd::Complete`) shows a "No
+    /// suggestions" notice when empty; implicit refreshes just close it.
+    fn show_completion(&mut self, start: usize, items: Vec<Candidate>, explicit: bool) {
+        let Some(doc) = self.doc() else { return };
+        let offset = doc.offset(doc.cursor());
+        let start = start.min(offset);
         let prefix = doc.text[start..offset].to_string();
         let stats = &self.completion_stats;
         let ranked = rank_candidates(

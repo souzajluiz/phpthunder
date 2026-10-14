@@ -26,6 +26,21 @@ const CACHE_BATCH: usize = 512;
 pub struct Language {
     /// Project index, written by indexing and edits and read by every query.
     index: Arc<RwLock<Index>>,
+    /// Edited buffers waiting to be re-indexed by the background worker.
+    edits: Arc<EditQueue>,
+}
+
+/// Buffers to re-index off the UI thread: the latest text per file, picked
+/// up by one worker thread (started on first use), so typing never waits
+/// for parsing or for the index lock that inspections hold.
+#[derive(Default)]
+struct EditQueue {
+    /// Latest unindexed text per file.
+    pending: std::sync::Mutex<HashMap<PathBuf, String>>,
+    /// Signals the worker that `pending` has work.
+    wake: std::sync::Condvar,
+    /// Set once the worker thread runs.
+    started: std::sync::OnceLock<()>,
 }
 
 /// Summary of a finished project indexing run, shown in the status bar.
@@ -86,6 +101,29 @@ impl IndexProgress {
             self.done.load(Ordering::Relaxed),
             self.total.load(Ordering::Relaxed),
         )
+    }
+}
+
+/// The re-indexing worker: waits for queued edits and indexes the latest
+/// text of each file, parsing outside the index lock.
+fn reindex_worker(edits: &EditQueue, index: &RwLock<Index>) {
+    loop {
+        let batch = {
+            let Ok(mut pending) = edits.pending.lock() else {
+                return;
+            };
+            while pending.is_empty() {
+                pending = match edits.wake.wait(pending) {
+                    Ok(p) => p,
+                    Err(_) => return,
+                };
+            }
+            std::mem::take(&mut *pending)
+        };
+        for (path, text) in batch {
+            let entry = index_source(&text);
+            index.write().update(path, entry);
+        }
     }
 }
 
@@ -204,8 +242,42 @@ impl Language {
         .map_err(|e| tr!("error-indexing", error = e.to_string()))
     }
 
-    /// Re-indexes one file from its current (possibly unsaved) text. Called
-    /// after every edit so completion and inspections see the latest code.
+    /// Queues `text` of `path` for re-indexing in the background; the
+    /// latest text wins when edits arrive faster than indexing. Called on
+    /// every edit, so it never blocks.
+    pub fn update_file_later(&self, path: &Path, text: &str) {
+        if let Ok(mut pending) = self.edits.pending.lock() {
+            pending.insert(path.to_path_buf(), text.to_string());
+        }
+        self.edits.wake.notify_one();
+        self.edits.started.get_or_init(|| {
+            let (edits, index) = (self.edits.clone(), self.index.clone());
+            std::thread::Builder::new()
+                .name("phpthunder-reindex".into())
+                .spawn(move || reindex_worker(&edits, &index))
+                .map(|_| ())
+                .unwrap_or(());
+        });
+    }
+
+    /// Indexes queued edits now, on this thread; called before queries
+    /// that need the current file's declarations at their exact positions
+    /// (navigation, refactorings, fixes).
+    pub fn flush(&self) {
+        let pending = self
+            .edits
+            .pending
+            .lock()
+            .map(|mut p| std::mem::take(&mut *p))
+            .unwrap_or_default();
+        for (path, text) in pending {
+            self.update_file(&path, &text);
+        }
+    }
+
+    /// Re-indexes one file from its current text right away, on this
+    /// thread: for files changed on disk or by refactorings. Typing goes
+    /// through [`Language::update_file_later`].
     pub fn update_file(&self, path: &Path, text: &str) {
         let entry = index_source(text);
         self.index.write().update(path.to_path_buf(), entry);
@@ -235,6 +307,7 @@ impl Language {
     /// Declarations of the symbol at byte `offset` in `text`, for
     /// go-to-declaration and hover. Empty when nothing resolves.
     pub fn definitions(&self, text: &str, offset: usize) -> Vec<Definition> {
+        self.flush();
         analysis::definitions_at(&self.index.read(), text, offset)
     }
 
@@ -259,11 +332,6 @@ impl Language {
         phpthunder::laravel::gutter_markers(&self.index.read(), text, rel)
     }
 
-    /// Whether `offset` is inside an Eloquent column or relation string.
-    pub fn in_eloquent_string(&self, text: &str, offset: usize) -> bool {
-        phpthunder::laravel::in_eloquent_string(&self.index.read(), text, offset)
-    }
-
     /// Declaration of the column (migration) or relation (method) named by
     /// the Eloquent string at `offset`.
     pub fn eloquent_definition(
@@ -271,11 +339,14 @@ impl Language {
         text: &str,
         offset: usize,
     ) -> Option<(std::path::PathBuf, phpthunder::syntax::Pos)> {
+        self.flush();
         phpthunder::laravel::eloquent_definition(&self.index.read(), text, offset)
     }
 
     /// Inspections for one buffer, run after edits settle.
     pub fn diagnostics(&self, text: &str) -> Vec<Diagnostic> {
+        // Runs on a background thread: indexing queued edits here is free.
+        self.flush();
         inspection::diagnostics(&self.index.read(), text)
     }
 
@@ -287,6 +358,7 @@ impl Language {
         diagnostic: &Diagnostic,
         open: &HashMap<PathBuf, String>,
     ) -> Vec<Fix> {
+        self.flush();
         inspection::quick_fixes(&self.index.read(), text, diagnostic, |p| load_with(open, p))
     }
 
@@ -328,6 +400,7 @@ impl Language {
     /// Context actions at `start..end` (the caret when equal) of `text`, for
     /// the `⌥↵` menu.
     pub fn intentions(&self, text: &str, start: usize, end: usize) -> Vec<Fix> {
+        self.flush();
         phpthunder::intention::intentions(&self.index.read(), text, start, end)
     }
 
@@ -349,6 +422,7 @@ impl Language {
         new_name: String,
         open: HashMap<PathBuf, String>,
     ) -> Result<RenamePlan, String> {
+        self.flush();
         tokio::task::spawn_blocking(move || {
             refactor::rename(&self.index.read(), &path, &text, offset, &new_name, |p| {
                 load_with(&open, p)
@@ -370,6 +444,7 @@ impl Language {
         params: Vec<refactor::ParamChange>,
         open: HashMap<PathBuf, String>,
     ) -> Result<RenamePlan, String> {
+        self.flush();
         tokio::task::spawn_blocking(move || {
             refactor::change_signature(&self.index.read(), &text, offset, &params, |p| {
                 load_with(&open, p)
@@ -391,6 +466,7 @@ impl Language {
         name: &str,
         open: &HashMap<PathBuf, String>,
     ) -> Result<RenamePlan, String> {
+        self.flush();
         refactor::extract_interface(path, text, offset, name, |p| load_with(open, p))
     }
 
@@ -407,6 +483,7 @@ impl Language {
         new_path: Option<PathBuf>,
         open: HashMap<PathBuf, String>,
     ) -> Result<RenamePlan, String> {
+        self.flush();
         tokio::task::spawn_blocking(move || {
             refactor::move_class(
                 &self.index.read(),
@@ -434,6 +511,7 @@ impl Language {
         offset: usize,
         open: HashMap<PathBuf, String>,
     ) -> Result<RenamePlan, String> {
+        self.flush();
         tokio::task::spawn_blocking(move || {
             let index = self.index.read();
             let load = |p: &Path| load_with(&open, p);
@@ -454,6 +532,7 @@ impl Language {
 
     /// `text` with unused imports removed and import blocks sorted.
     pub fn optimize_imports(&self, text: &str) -> String {
+        self.flush();
         refactor::optimize_imports(&self.index.read(), text)
     }
 
@@ -531,6 +610,7 @@ impl Language {
         offset: usize,
         open: HashMap<PathBuf, String>,
     ) -> Option<(Definition, Vec<Usage>)> {
+        self.flush();
         tokio::task::spawn_blocking(move || {
             let index = self.index.read();
             let defs = analysis::definitions_at(&index, &text, offset);

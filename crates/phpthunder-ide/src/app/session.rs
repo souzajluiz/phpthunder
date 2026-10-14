@@ -6,6 +6,10 @@ use iced::Task;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+/// Quiet time after the last tab or caret change before the session is
+/// written.
+const SESSION_SAVE_DELAY: std::time::Duration = std::time::Duration::from_millis(1500);
+
 /// One open tab as saved: file, caret line and column.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SavedTab {
@@ -70,17 +74,19 @@ impl App {
         }
     }
 
-    /// Writes the session when the open project or its tabs changed since
-    /// the last write. Called after every update; cheap when nothing moved.
-    pub(crate) fn save_session_if_changed(&mut self) {
+    /// Records the open project and its tabs when they changed, and writes
+    /// the session file a moment after the last change, on a blocking
+    /// thread: the caret moves with every key, and writing on each one
+    /// slowed typing down. Called after every update.
+    pub(crate) fn save_session_if_changed(&mut self) -> Task<Message> {
         let Some(root) = self.tree.root.clone() else {
-            return;
+            return Task::none();
         };
         let project = self.current_project();
         let unchanged = self.session.last_project.as_ref() == Some(&root)
             && self.session.projects.get(&root) == Some(&project);
         if unchanged || self.restoring {
-            return;
+            return Task::none();
         }
         self.session.last_project = Some(root.clone());
         self.session.recent.retain(|p| p != &root);
@@ -89,7 +95,24 @@ impl App {
             .recent
             .truncate(crate::settings::settings().recent_projects);
         self.session.projects.insert(root, project);
-        crate::settings::save_session(&self.session);
+        self.session_generation += 1;
+        let generation = self.session_generation;
+        Task::perform(tokio::time::sleep(SESSION_SAVE_DELAY), move |()| {
+            Message::SaveSession(generation)
+        })
+    }
+
+    /// Writes the session if no change came after the timer `generation`
+    /// was started.
+    pub(crate) fn save_session_now(&mut self, generation: u64) -> Task<Message> {
+        if generation != self.session_generation {
+            return Task::none();
+        }
+        let session = self.session.clone();
+        Task::perform(
+            tokio::task::spawn_blocking(move || crate::settings::save_session(&session)),
+            |_| Message::SessionSaved,
+        )
     }
 
     /// Reads the saved tabs of `root` in the background (answered by

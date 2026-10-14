@@ -235,6 +235,27 @@ fn completes_classes_with_auto_import() {
 }
 
 #[test]
+fn completes_use_imports_with_full_names_and_namespaces() {
+    let idx = indexed();
+    let src = "<?php\nnamespace App\\Http;\n\nuse Addr\n";
+    let got = complete(&idx, src, src.find("use Addr").unwrap() + 8);
+    let address = got
+        .iter()
+        .find(|c| c.label == "Address")
+        .expect("Address offered");
+    assert_eq!(address.insert_text, "App\\Models\\Address");
+    assert!(address.import.is_none());
+
+    let src = "<?php\nnamespace App\\Http;\n\nuse App\\M\n";
+    let got = complete(&idx, src, src.find("use App\\M").unwrap() + 9);
+    assert!(
+        got.iter().any(|c| c.insert_text == "Models\\"),
+        "{:?}",
+        got.iter().map(|c| &c.insert_text).collect::<Vec<_>>()
+    );
+}
+
+#[test]
 fn completes_local_variables() {
     let idx = indexed();
     let src = read(CONTROLLER).replace("$status = Status::Active;", "$");

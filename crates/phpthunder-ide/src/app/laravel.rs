@@ -65,7 +65,31 @@ impl App {
         text: &str,
         offset: usize,
     ) -> Option<(usize, Vec<Candidate>)> {
-        let project = self.laravel.as_ref()?;
+        key_candidates(self.laravel.as_ref()?, text, offset)
+    }
+
+    /// Whether the caret of a Laravel project's PHP or Blade document sits
+    /// in a string literal, from the highlight tokens (no parsing): where
+    /// typing may complete route, view or config keys or Eloquent columns.
+    /// The exact check happens in the background completion.
+    pub(crate) fn in_string_of_laravel_project(&self) -> bool {
+        self.laravel.is_some()
+            && self.doc().is_some_and(|d| {
+                let offset = d.offset(d.cursor());
+                offset > 0 && d.token_at(offset - 1) == Some(crate::editor::Token::String)
+            })
+    }
+}
+
+/// Completion inside a key string: where the replaced text starts (the
+/// string's content) and the matching keys. `None` outside key strings.
+/// Runs on any thread (background completion uses it).
+pub(crate) fn key_candidates(
+    project: &laravel::LaravelProject,
+    text: &str,
+    offset: usize,
+) -> Option<(usize, Vec<Candidate>)> {
+    {
         let key = laravel::key_at(text, offset)?;
         let prefix = key.prefix.to_lowercase();
         let mut items: Vec<Candidate> = project
@@ -85,19 +109,9 @@ impl App {
         items.truncate(MAX_KEY_CANDIDATES);
         Some((key.start, items))
     }
+}
 
-    /// Whether the caret is inside a key string of a Laravel project, or an
-    /// Eloquent column or relation string, where typing (dots included)
-    /// keeps completion open.
-    pub(crate) fn in_laravel_key(&self) -> bool {
-        self.laravel.is_some()
-            && self.doc().is_some_and(|d| {
-                let offset = d.offset(d.cursor());
-                laravel::key_at(&d.text, offset).is_some()
-                    || (d.is_php() && self.lang.in_eloquent_string(&d.text, offset))
-            })
-    }
-
+impl App {
     /// Declaration of the key, column or relation named by the string at
     /// `offset`, if any.
     pub(crate) fn laravel_definition(&self, text: &str, offset: usize) -> Option<(PathBuf, Pos)> {

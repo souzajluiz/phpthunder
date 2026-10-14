@@ -67,6 +67,10 @@ pub struct App {
     pub soft_wrap: bool,
     /// Open completion popup.
     pub completion: Option<Completion>,
+    /// A PHP completion asked for since the last update (`Some(explicit)`).
+    pub completion_request: Option<bool>,
+    /// Number of the latest background completion request.
+    pub completion_generation: u64,
     /// Visible hover popup.
     pub hover: Option<Hover>,
     /// Bumped on every mouse move so stale hover timers are ignored.
@@ -110,12 +114,18 @@ pub struct App {
     pub intentions: Option<Intentions>,
     /// Open parameter info popup.
     pub signature: Option<SignatureView>,
+    /// Parameter info asked for since the last update (`Some(explicit)`).
+    pub signature_request: Option<bool>,
+    /// Number of the latest background parameter-info request.
+    pub signature_generation: u64,
     /// Open rename dialog.
     pub rename: Option<RenameDialog>,
     /// Open About dialog.
     pub about: Option<About>,
     /// The remembered session (last project, tabs per project).
     pub session: SavedSession,
+    /// Number of the latest session-save timer.
+    pub session_generation: u64,
     /// Whether saved tabs are being read back (the session is not saved
     /// meanwhile, so the half-restored state never overwrites it).
     pub restoring: bool,
@@ -331,6 +341,8 @@ impl App {
             editor_width: 900.0,
             soft_wrap: crate::settings::settings().soft_wrap,
             completion: None,
+            completion_request: None,
+            completion_generation: 0,
             hover: None,
             hover_generation: 0,
             hover_at: None,
@@ -352,11 +364,14 @@ impl App {
             pending_select: None,
             intentions: None,
             signature: None,
+            signature_request: None,
+            signature_generation: 0,
             rename: None,
             about: None,
             name_prompt: None,
             refactor_prompt: None,
             session: session::load_session(),
+            session_generation: 0,
             restoring: false,
             hierarchy: None,
             inspect_pending: false,
@@ -533,9 +548,11 @@ impl App {
     /// Most arms delegate to the methods below or in the `app` command handlers.
     pub fn update(&mut self, message: Message) -> Task<Message> {
         let task = self.handle(message);
-        self.save_session_if_changed();
+        let session = self.save_session_if_changed();
         let inspection = self.schedule_inspection();
-        Task::batch([task, inspection])
+        let completion = self.schedule_completion();
+        let signature = self.schedule_signature();
+        Task::batch([task, inspection, completion, signature, session])
     }
 
     /// Dispatches one message; [`App::update`] wraps it to schedule
@@ -1058,6 +1075,29 @@ impl App {
                     Task::none()
                 }
             },
+            Message::CompletionReady {
+                generation,
+                version,
+                offset,
+                explicit,
+                start,
+                items,
+            } => {
+                self.completion_ready(generation, version, offset, explicit, start, items);
+                Task::none()
+            }
+            Message::SignatureReady {
+                generation,
+                version,
+                offset,
+                explicit,
+                help,
+            } => {
+                self.signature_ready(generation, version, offset, explicit, help);
+                Task::none()
+            }
+            Message::SaveSession(generation) => self.save_session_now(generation),
+            Message::SessionSaved => Task::none(),
             Message::ClearCoverage => {
                 self.coverage.clear();
                 Task::none()
@@ -1460,7 +1500,7 @@ impl App {
                 (Some(c), _)
                     if is_ident(c)
                         || c == '$'
-                        || self.in_laravel_key()
+                        || self.in_string_of_laravel_project()
                         || self.should_auto_complete(c) =>
                 {
                     self.refresh_completion(false)
@@ -1469,7 +1509,7 @@ impl App {
                 _ => self.completion = None,
             }
         } else if let Some(c) = inserted
-            && (self.should_auto_complete(c) || self.in_laravel_key())
+            && (self.should_auto_complete(c) || self.in_string_of_laravel_project())
         {
             self.refresh_completion(false);
         }
@@ -1503,7 +1543,9 @@ impl App {
         let changed = doc.highlight_version != before;
         self.after_change(changed);
         match typed {
-            Some('\'' | '"') if self.in_laravel_key() => self.refresh_completion(false),
+            Some('\'' | '"') if self.in_string_of_laravel_project() => {
+                self.refresh_completion(false)
+            }
             Some(c) if self.completion.is_some() && !is_ident(c) => self.completion = None,
             _ if typed.is_none() => self.completion = None,
             _ => {}
@@ -1524,7 +1566,7 @@ impl App {
         if let Some(doc) = self.doc()
             && doc.is_php()
         {
-            self.lang.update_file(&doc.path.clone(), &doc.text.clone());
+            self.lang.update_file_later(&doc.path, &doc.text);
         }
         if let Some(path) = self.doc().map(|d| d.path.clone()) {
             self.refresh_git_marks(&path);

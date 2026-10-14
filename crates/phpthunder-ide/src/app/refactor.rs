@@ -14,11 +14,65 @@ impl App {
     /// edit while the popup is open call it; `explicit` (`⌘P`) reports when
     /// the caret is not inside a known call.
     pub(crate) fn refresh_signature(&mut self, explicit: bool) {
-        let Some(doc) = self.doc().filter(|d| d.is_php()) else {
+        if self.doc().is_some_and(|d| d.is_php()) {
+            // Computed in the background (see `schedule_signature`).
+            self.signature_request = Some(explicit);
+        }
+    }
+
+    /// Starts computing parameter info for a pending request on a
+    /// blocking thread; the newest request wins. Called by `App::update`
+    /// after every message.
+    pub(crate) fn schedule_signature(&mut self) -> Task<Message> {
+        let Some(explicit) = self.signature_request.take() else {
+            return Task::none();
+        };
+        let Some((version, offset, text)) = self
+            .doc()
+            .map(|d| (d.version(), d.offset(d.cursor()), d.text.clone()))
+        else {
+            return Task::none();
+        };
+        self.signature_generation += 1;
+        let generation = self.signature_generation;
+        let lang = self.lang.clone();
+        Task::perform(
+            async move {
+                tokio::task::spawn_blocking(move || lang.signature_help(&text, offset))
+                    .await
+                    .ok()
+                    .flatten()
+            },
+            move |help| Message::SignatureReady {
+                generation,
+                version,
+                offset,
+                explicit,
+                help,
+            },
+        )
+    }
+
+    /// Shows background parameter info if it is the latest asked for and
+    /// the document and caret have not moved since.
+    pub(crate) fn signature_ready(
+        &mut self,
+        generation: u64,
+        version: u64,
+        offset: usize,
+        explicit: bool,
+        help: Option<phpthunder::refactor::SignatureHelp>,
+    ) {
+        let Some(doc) = self
+            .doc()
+            .filter(|d| d.version() == version && d.offset(d.cursor()) == offset)
+        else {
             return;
         };
-        let offset = doc.offset(doc.cursor());
-        match self.lang.signature_help(&doc.text, offset) {
+        if generation != self.signature_generation {
+            return;
+        }
+        match help {
             Some(help) => {
                 let pos = doc.cursor();
                 let (line, col) = (pos.line, doc.visual_column(pos));

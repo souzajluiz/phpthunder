@@ -142,10 +142,12 @@ pub fn format_token(token: &Token, _theme: &Theme) -> Format<Font> {
 /// Picks the token for a tree-sitter leaf (or a whole string/comment node)
 /// from its kind and its parent's kind; `None` leaves it uncolored. Anonymous
 /// alphabetic nodes are keywords; `name` nodes are resolved by context
-/// (declaration, call, type position, `Foo::` scope).
-fn classify(node: Node) -> Option<Token> {
+/// (declaration, call, type position, `Foo::` scope). `parent_node` is
+/// passed in by the caller's walk: tree-sitter's `Node::parent` re-walks
+/// from the root, which made highlighting large files slow.
+fn classify(node: Node, parent_node: Option<Node>) -> Option<Token> {
     let kind = node.kind();
-    let parent = node.parent().map(|p| p.kind()).unwrap_or("");
+    let parent = parent_node.map(|p| p.kind()).unwrap_or("");
     if !node.is_named() {
         return match kind {
             "->" | "?->" | "::" | "=>" => Some(Token::Punct),
@@ -180,13 +182,10 @@ fn classify(node: Node) -> Option<Token> {
             | "function_call_expression"
             | "member_call_expression"
             | "nullsafe_member_call_expression"
-            | "scoped_call_expression"
-                if node.next_sibling().is_none_or(|s| s.kind() != "::") =>
-            {
+            | "scoped_call_expression" => {
                 // `Foo::bar()`: the scope is a type, the name is the function.
                 let is_scope = parent == "scoped_call_expression"
-                    && node
-                        .parent()
+                    && parent_node
                         .and_then(|p| p.child_by_field_name("scope"))
                         .is_some_and(|s| s.id() == node.id());
                 if is_scope {
@@ -215,8 +214,7 @@ fn classify(node: Node) -> Option<Token> {
             | "optional_type"
             | "union_type" => Token::Type,
             "class_constant_access_expression" => {
-                let is_scope = node
-                    .parent()
+                let is_scope = parent_node
                     .and_then(|p| p.named_child(0))
                     .is_some_and(|s| s.id() == node.id());
                 if is_scope {
@@ -225,7 +223,6 @@ fn classify(node: Node) -> Option<Token> {
                     Token::Variable
                 }
             }
-            "scoped_call_expression" => Token::Type,
             "const_element" | "enum_case" => Token::Variable,
             _ => return None,
         }),
@@ -430,18 +427,18 @@ pub fn compute_highlights(src: &str) -> LineSpans {
     let mut lines: LineSpans = vec![Vec::new(); starts.len()];
     let tree = parse(src);
     let mut cursor = tree.walk();
-    let mut stack = vec![tree.root_node()];
-    while let Some(node) = stack.pop() {
+    let mut stack: Vec<(Node, Option<Node>)> = vec![(tree.root_node(), None)];
+    while let Some((node, parent)) = stack.pop() {
         // Strings and comments are colored as a whole; their children are not.
         let whole = matches!(
             node.kind(),
             "comment" | "string" | "encapsed_string" | "heredoc" | "nowdoc"
         );
         if node.child_count() > 0 && !whole {
-            stack.extend(node.children(&mut cursor));
+            stack.extend(node.children(&mut cursor).map(|c| (c, Some(node))));
             continue;
         }
-        let Some(token) = classify(node) else {
+        let Some(token) = classify(node, parent) else {
             continue;
         };
         push_span(
