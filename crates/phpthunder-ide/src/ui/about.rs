@@ -28,8 +28,6 @@ const STEPS_PER_SECOND: f32 = 1.6;
 /// Spider drawing scale: the geometry below is authored about 2x the size
 /// it is shown at.
 const SPIDER_SCALE: f32 = 0.62;
-/// Blue of "thunder" in the wordmark.
-const BRAND_BLUE: Color = rgb(0x1083FD);
 /// Short hash of the commit this binary was built from (set by `build.rs`).
 const GIT_HASH: &str = env!("PHPTHUNDER_GIT_HASH");
 
@@ -210,7 +208,7 @@ impl App {
 
         let wordmark = rich_text::<'_, (), _, _, _>([
             Span::new("php").color(TEXT_BRIGHT),
-            Span::new("thunder").color(BRAND_BLUE),
+            Span::new("thunder").color(ACCENT),
         ])
         .size(34)
         .font(UI_BOLD);

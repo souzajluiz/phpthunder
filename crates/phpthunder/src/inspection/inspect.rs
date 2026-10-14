@@ -142,6 +142,29 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
             .parent()
             .filter(|p| matches!(p.kind(), "qualified_name" | "relative_name"))
             .unwrap_or(node);
+        let deprecated = match &target {
+            Target::Class(fqn) => index
+                .classes(fqn)
+                .first()
+                .is_some_and(|(_, s)| s.is_deprecated),
+            Target::Function(candidates) => index
+                .functions(candidates)
+                .first()
+                .is_some_and(|(_, s)| s.is_deprecated),
+            Target::Member { class, tag, name } => index
+                .find_member(class, *tag, name)
+                .first()
+                .is_some_and(|(_, s)| s.is_deprecated),
+        };
+        if deprecated {
+            let name = text(report_node, src).to_string();
+            push(
+                report_node,
+                Rule::DeprecatedUsage.severity(),
+                Rule::DeprecatedUsage.message(&name),
+                Code::Rule(Rule::DeprecatedUsage, name),
+            );
+        }
         match target {
             Target::Class(fqn) => {
                 if index.classes(&fqn).is_empty() && should_report_class(&fqn, &namespaces) {
@@ -240,6 +263,7 @@ pub fn diagnostics(index: &Index, src: &str) -> Vec<Diagnostic> {
     simplify_checks(root, src, &mut findings);
     psr_checks(root, src, &mut findings);
     phpunit_checks(root, src, &mut findings);
+    smell_checks(root, src, &mut findings);
     semantic_checks(index, &analyzer, root, src, &mut findings);
     findings.report(src, &lines, &mut out);
     out.sort_by_key(|d| (d.start, d.severity));
@@ -703,6 +727,24 @@ mod tests {
         ]);
         let src = "<?php trait T { function f() { return $this->belongsTo(); } } function g(I $i) { $i->anything(); return E::A->value; }";
         assert!(codes(&index, src).is_empty());
+    }
+
+    #[test]
+    fn diagnostics_should_flag_deprecated_usage() {
+        let index = index_with(&[
+            ("/b.php", BUILTINS),
+            (
+                "/a.php",
+                "<?php class A { /** @deprecated use g() */ public function f() {} public function g() {} }",
+            ),
+        ]);
+        let deprecated: Vec<Code> =
+            diagnostics(&index, "<?php function h(A $a) { $a->f(); $a->g(); }")
+                .into_iter()
+                .map(|d| d.code)
+                .filter(|c| matches!(c, Code::Rule(Rule::DeprecatedUsage, _)))
+                .collect();
+        assert_eq!(deprecated, [Code::Rule(Rule::DeprecatedUsage, "f".into())]);
     }
 
     #[test]

@@ -148,6 +148,31 @@ fn class_checks(index: &Index, analyzer: &Analyzer, class: Node, src: &str, out:
             }
         }
     }
+    // Declarations of the same class in other project files; this file's
+    // own entry is the one whose name starts where this declaration's does.
+    let declarations: Vec<(&std::path::Path, usize)> = index
+        .classes(&fqn)
+        .into_iter()
+        .filter(|(p, _)| {
+            !p.components().any(|c| c.as_os_str() == "vendor")
+                && !p.to_string_lossy().contains("_ide_helper")
+                && !p.starts_with("<")
+        })
+        .map(|(p, s)| (p, s.name_start))
+        .collect();
+    if declarations.len() > 1 {
+        // Paths relative to the folder all declarations share.
+        let mut common = declarations[0].0.to_path_buf();
+        while !declarations.iter().all(|(p, _)| p.starts_with(&common)) && common.pop() {}
+        let others: Vec<String> = declarations
+            .iter()
+            .filter(|(_, start)| *start != name.start_byte())
+            .map(|(p, _)| p.strip_prefix(&common).unwrap_or(p).display().to_string())
+            .collect();
+        if !others.is_empty() {
+            out.add(name, Rule::DuplicateClassDeclaration, others.join(", "));
+        }
+    }
     if class.kind() == "interface_declaration" || !fully_indexed(index, &fqn) {
         return;
     }

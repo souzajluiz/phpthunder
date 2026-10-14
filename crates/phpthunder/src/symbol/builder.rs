@@ -208,6 +208,7 @@ impl Builder<'_> {
             is_readonly: false,
             params: Vec::new(),
             reads_extra_args: false,
+            is_deprecated: false,
         };
         let index = self.out.len();
         self.out.push(Symbol {
@@ -223,6 +224,11 @@ impl Builder<'_> {
             reads_extra_args: decl
                 .child_by_field_name("body")
                 .is_some_and(|b| text(b, self.src).contains("func_get_arg")),
+            is_deprecated: doc_comment(decl)
+                .is_some_and(|c| text(c, self.src).contains("@deprecated"))
+                || decl
+                    .child_by_field_name("attributes")
+                    .is_some_and(|a| text(a, self.src).contains("Deprecated")),
             ..symbol
         });
         &mut self.out[index]
@@ -442,6 +448,7 @@ impl Builder<'_> {
                 is_readonly: false,
                 params: Vec::new(),
                 reads_extra_args: false,
+                is_deprecated: false,
             });
         }
     }
@@ -478,6 +485,7 @@ impl Builder<'_> {
                 is_readonly: false,
                 params: Vec::new(),
                 reads_extra_args: false,
+                is_deprecated: false,
             });
         }
     }
@@ -516,6 +524,7 @@ impl Builder<'_> {
                 is_readonly: false,
                 params: Vec::new(),
                 reads_extra_args: false,
+                is_deprecated: false,
             });
         }
     }

@@ -11,6 +11,7 @@ mod rewrite;
 mod rules;
 mod semantic;
 mod simplify;
+mod smells;
 mod style;
 
 pub(crate) use bugs::*;
@@ -25,4 +26,5 @@ pub use rules::Rule;
 pub(crate) use rules::*;
 pub(crate) use semantic::*;
 pub(crate) use simplify::*;
+pub(crate) use smells::*;
 pub(crate) use style::*;

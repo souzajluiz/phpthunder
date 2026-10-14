@@ -148,10 +148,11 @@ impl Icon {
 /// Which brand artwork to draw with `logo`; all live in `assets/brand`.
 #[derive(Clone, Copy)]
 pub enum Logo {
-    /// Spider mark alone (`logo-mark.svg`, 1:1): bottom of the tool rail.
+    /// Spider with the wordmark on its body, white for the dark UI
+    /// (`logo-mark.svg`, 1:1): title bar.
     Mark,
-    /// The app tile, spider over the PhpThunder wordmark (`logo.svg`, 1:1):
-    /// welcome screen.
+    /// The same vector spider for large sizes (`logo.svg`, 1:1): welcome
+    /// screen.
     Lockup,
     /// The Claude symbol (`claude.svg`, 1:1, Claude's orange): the Claude
     /// panel button in the rail and its status in the status bar.

@@ -134,6 +134,8 @@ pub struct Symbol {
     /// For functions and methods: the body reads arguments beyond the
     /// declared ones (`func_get_args()`), so extra arguments are expected.
     pub reads_extra_args: bool,
+    /// Marked `@deprecated` or `#[\Deprecated]`; usages are struck out.
+    pub is_deprecated: bool,
 }
 
 /// One declared parameter of a function or method; argument-count and

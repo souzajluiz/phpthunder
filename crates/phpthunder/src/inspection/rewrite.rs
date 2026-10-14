@@ -464,6 +464,27 @@ pub(crate) fn rule_fix(
             }]
         }
         Rule::NewWithoutParentheses => vec![insert(end, "()")],
+        Rule::RedundantMethodOverride => {
+            let method = at(&[])?
+                .parent()
+                .filter(|m| m.kind() == "method_declaration")?;
+            vec![remove_lines_edit(
+                src,
+                method.start_byte(),
+                method.end_byte(),
+            )]
+        }
+        Rule::UnnecessaryFullyQualifiedName => {
+            let name = at(&["qualified_name"])?;
+            vec![replace(name, text(name, src).rsplit('\\').next()?)]
+        }
+        Rule::LeadingBackslashInUse => vec![Edit {
+            path: None,
+            start,
+            end: start + 1,
+            text: String::new(),
+        }],
+        Rule::UnnecessaryStopStatement => vec![remove_lines_edit(src, start, end)],
         Rule::LongTypeCast => vec![replace(at(&["cast_type"])?, detail)],
         Rule::AssertEqualsLiteral
         | Rule::AssertCount
@@ -789,6 +810,28 @@ mod tests {
         assert_eq!(
             fixed("<?php $a = (integer) $b;", Rule::LongTypeCast),
             "<?php $a = (int) $b;"
+        );
+    }
+
+    #[test]
+    fn redundant_override_fix_should_remove_method() {
+        assert_eq!(
+            fixed(
+                "<?php\nclass A extends B\n{\n    public function f($a) { return parent::f($a); }\n}\n",
+                Rule::RedundantMethodOverride
+            ),
+            "<?php\nclass A extends B\n{\n}\n"
+        );
+    }
+
+    #[test]
+    fn fqn_fix_should_use_short_name() {
+        assert_eq!(
+            fixed(
+                "<?php namespace App; $a = new \\App\\Post();",
+                Rule::UnnecessaryFullyQualifiedName
+            ),
+            "<?php namespace App; $a = new Post();"
         );
     }
 

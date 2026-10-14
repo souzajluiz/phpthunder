@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 /// Format tag written first; a cache from another engine version (whose
 /// symbol layout may differ) is ignored.
-const FORMAT: &str = concat!("phpthunder-index/3/", env!("CARGO_PKG_VERSION"));
+const FORMAT: &str = concat!("phpthunder-index/4/", env!("CARGO_PKG_VERSION"));
 
 /// Size and modification time of a file when it was cached; a file whose
 /// stamp is unchanged need not even be read.

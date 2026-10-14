@@ -182,6 +182,28 @@ pub enum Rule {
     ReadonlyModified,
     /// A PHPUnit data provider naming no method.
     UndefinedDataProvider,
+
+    // Smells and redundancies.
+    /// Use of a class, function or member marked `@deprecated`.
+    DeprecatedUsage,
+    /// A method that only calls the parent method with the same arguments.
+    RedundantMethodOverride,
+    /// A fully qualified class name its short name already resolves to.
+    UnnecessaryFullyQualifiedName,
+    /// `use \Foo\Bar;`: the leading backslash does nothing.
+    LeadingBackslashInUse,
+    /// A loop whose body always leaves during the first iteration.
+    LoopNeverIterates,
+    /// A condition already known true from an enclosing `if`.
+    ConditionAlreadyChecked,
+    /// A `case` with the same statements as an earlier one.
+    DuplicateCaseBody,
+    /// A `match` arm returning the same as an earlier one.
+    DuplicateArmBody,
+    /// `return;` ending a function, or `continue;` ending a loop body.
+    UnnecessaryStopStatement,
+    /// A class also declared in another file of the project.
+    DuplicateClassDeclaration,
 }
 
 impl Rule {
@@ -269,6 +291,16 @@ impl Rule {
             Rule::MissingParentConstructorCall => "missing-parent-constructor-call",
             Rule::ReadonlyModified => "readonly-modified",
             Rule::UndefinedDataProvider => "undefined-data-provider",
+            Rule::DeprecatedUsage => "deprecated-usage",
+            Rule::RedundantMethodOverride => "redundant-method-override",
+            Rule::UnnecessaryFullyQualifiedName => "unnecessary-fully-qualified-name",
+            Rule::LeadingBackslashInUse => "leading-backslash-in-use",
+            Rule::LoopNeverIterates => "loop-never-iterates",
+            Rule::ConditionAlreadyChecked => "condition-already-checked",
+            Rule::DuplicateCaseBody => "duplicate-case-body",
+            Rule::DuplicateArmBody => "duplicate-arm-body",
+            Rule::UnnecessaryStopStatement => "unnecessary-stop-statement",
+            Rule::DuplicateClassDeclaration => "duplicate-class-declaration",
         }
     }
 
@@ -313,7 +345,9 @@ impl Rule {
             | Rule::TooManyArguments
             | Rule::VoidResultUsed
             | Rule::CatchOrder
-            | Rule::EnumMatchNotExhaustive => Severity::Warning,
+            | Rule::EnumMatchNotExhaustive
+            | Rule::LoopNeverIterates
+            | Rule::ConditionAlreadyChecked => Severity::Warning,
             _ => Severity::Weak,
         }
     }
@@ -327,6 +361,9 @@ impl Rule {
                 | Rule::UnnecessarySemicolon
                 | Rule::RedundantPromotedAssignment
                 | Rule::RedundantBreakArgument
+                | Rule::RedundantMethodOverride
+                | Rule::UnnecessaryStopStatement
+                | Rule::LeadingBackslashInUse
         )
     }
 
@@ -447,6 +484,18 @@ impl Rule {
             Rule::MissingParentConstructorCall => "Missing parent constructor call".into(),
             Rule::ReadonlyModified => format!("Readonly property {detail} cannot be modified here"),
             Rule::UndefinedDataProvider => format!("Data provider {detail} not found"),
+            Rule::DeprecatedUsage => format!("{detail} is deprecated"),
+            Rule::RedundantMethodOverride => "Method only calls its parent".into(),
+            Rule::UnnecessaryFullyQualifiedName => {
+                format!("{detail} can be written by its short name")
+            }
+            Rule::LeadingBackslashInUse => "Leading backslash in use is unnecessary".into(),
+            Rule::LoopNeverIterates => "Loop never iterates more than once".into(),
+            Rule::ConditionAlreadyChecked => "Condition is always true here".into(),
+            Rule::DuplicateCaseBody => format!("Same statements as case {detail}"),
+            Rule::DuplicateArmBody => format!("Same result as the arm for {detail}"),
+            Rule::UnnecessaryStopStatement => format!("Unnecessary {detail}"),
+            Rule::DuplicateClassDeclaration => format!("Class is also declared in {detail}"),
         }
     }
 
@@ -498,6 +547,10 @@ impl Rule {
             Rule::AssertArgumentsOrder => "Swap arguments",
             Rule::MissingImplementation => "Implement methods",
             Rule::WeakerAccess => "Use the parent's visibility",
+            Rule::RedundantMethodOverride => "Remove method",
+            Rule::UnnecessaryFullyQualifiedName => "Use short name",
+            Rule::LeadingBackslashInUse => "Remove backslash",
+            Rule::UnnecessaryStopStatement => "Remove statement",
             _ => return None,
         })
     }

@@ -1,7 +1,7 @@
 //! Converting engine results to LSP types: diagnostics, text edits across
 //! files, and rename plans with their file rename.
 
-use phpthunder::inspection::{Code, Diagnostic as EngineDiagnostic, Edit, Severity};
+use phpthunder::inspection::{Code, Diagnostic as EngineDiagnostic, Edit, Rule, Severity};
 use phpthunder::refactor::RenamePlan;
 use phpthunder::syntax::{LineIndex, Pos};
 use std::collections::{BTreeMap, HashMap};
@@ -93,7 +93,11 @@ pub fn diagnostic(d: &EngineDiagnostic) -> Diagnostic {
                 | Code::UnusedClosureUse(_)
                 | Code::UnreachableCode
         ) || matches!(&d.code, Code::Rule(rule, _) if rule.unnecessary()))
-        .then(|| vec![DiagnosticTag::UNNECESSARY]),
+        .then(|| vec![DiagnosticTag::UNNECESSARY])
+        .or_else(|| {
+            matches!(d.code, Code::Rule(Rule::DeprecatedUsage, _))
+                .then(|| vec![DiagnosticTag::DEPRECATED])
+        }),
         ..Default::default()
     }
 }

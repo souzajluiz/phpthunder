@@ -417,6 +417,7 @@ mod tests {
             is_readonly: false,
             params: Vec::new(),
             reads_extra_args: false,
+            is_deprecated: false,
         };
         assert!(override_stub(&m).contains("return parent::save($options);"));
         m.signature = "protected function boot(): void".into();
