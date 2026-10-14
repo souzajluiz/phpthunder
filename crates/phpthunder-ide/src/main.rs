@@ -5,6 +5,7 @@
 mod app;
 mod claude_usage;
 mod composer;
+mod copyright;
 mod debug;
 mod editor;
 mod emmet;
@@ -32,6 +33,7 @@ mod terminal;
 mod testing;
 mod ui;
 mod watch;
+mod watchers;
 
 use app::App;
 use iced::window;

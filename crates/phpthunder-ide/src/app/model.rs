@@ -293,6 +293,8 @@ pub enum Message {
     DebuggerValidated(Result<String, String>),
     /// A profiled run finished: the report's path, or the error.
     Profiled(Result<PathBuf, String>),
+    /// A file watcher's command finished; the error names the watcher.
+    WatcherDone(Result<(), String>),
     /// The formatter finished: file, document version, result (`None` when
     /// the project has no formatter).
     Formatted(

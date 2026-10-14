@@ -17,6 +17,7 @@ mod layout;
 mod model;
 mod navigation;
 mod panes;
+mod project_tools;
 mod refactor;
 mod refactorings;
 mod run;

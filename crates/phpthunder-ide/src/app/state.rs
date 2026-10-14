@@ -1166,6 +1166,12 @@ impl App {
                 }
                 Task::none()
             }
+            Message::WatcherDone(result) => {
+                if let Err(error) = result {
+                    self.fail(error);
+                }
+                Task::none()
+            }
             Message::Profiled(result) => match result {
                 Ok(path) => self.open(path, None),
                 Err(error) => {
@@ -1512,7 +1518,13 @@ impl App {
         // Saved lines changed: annotations would point at the wrong lines.
         self.blame.remove(&path);
         let rescan = self.rescan_laravel_after_save(&path);
-        Task::batch([rescan, self.refresh_git(), self.quality_after_save(path)])
+        let watchers = self.run_watchers(&path);
+        Task::batch([
+            rescan,
+            watchers,
+            self.refresh_git(),
+            self.quality_after_save(path),
+        ])
     }
 
     // ----- navigation history -------------------------------------------------

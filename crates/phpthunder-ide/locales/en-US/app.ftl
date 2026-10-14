@@ -20,6 +20,14 @@ notice-replaced = Replaced { $count ->
 notice-caret-class-or-method = Place the caret on a class or method
 notice-caret-in-class = Place the caret on or inside a class
 notice-diagram-empty = No classes to draw here
+copyright-missing = Set a copyright notice in the project settings first
+copyright-current = The copyright header is already current
+copyright-updated = { $count ->
+    [one] Updated the copyright header of 1 file
+   *[other] Updated the copyright headers of { $count } files
+}
+log-none = No log files in storage/logs, var/log or logs
+log-title = Log files
 notice-caret-on-name = Place the caret on a name to rename
 notice-no-implementations = No implementations of { $name } found
 notice-no-parameter-info = No parameter info here
@@ -243,6 +251,9 @@ cmd-goto-implementation = Go to implementation
 cmd-type-hierarchy = Type hierarchy
 cmd-show-diagram = Show class diagram
 cmd-show-diagram-plant-uml = Show class diagram as PlantUML
+cmd-update-copyright = Update copyright header
+cmd-update-copyright-everywhere = Update copyright headers in project
+cmd-open-log = Open log file…
 cmd-file-structure = File structure
 cmd-problems = Problems
 cmd-toggle-terminal = Terminal

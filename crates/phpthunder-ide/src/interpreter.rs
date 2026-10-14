@@ -101,6 +101,11 @@ pub struct ProjectConfig {
     pub run: Vec<RunConfig>,
     /// Quality tools left out of on-save analysis (`phpcs`, `psalm`, …).
     pub disabled_tools: Vec<String>,
+    /// Copyright notice written at the top of files by Update Copyright;
+    /// `$year`, `$project` and `$file` are filled in.
+    pub copyright: Option<String>,
+    /// Commands run when a matching file is saved.
+    pub watcher: Vec<crate::watchers::Watcher>,
 }
 
 /// The project's settings; defaults when the file is missing or invalid
@@ -136,6 +141,15 @@ pub const PROJECT_TEMPLATE: &str = r#"# PhpThunder project settings. Commit this
 
 # Quality tools not to run on save: phpstan, psalm, phpcs, php-cs-fixer, phpmd, pint.
 # disabled_tools = ["phpmd"]
+
+# Copyright notice for Update Copyright; $year, $project and $file are filled in.
+# copyright = "Copyright (c) $year Acme Inc. All rights reserved."
+
+# Commands run when a matching file is saved ($file, $dir, $name, $stem, $root).
+# [[watcher]]
+# name = "Sass"
+# files = "*.scss"
+# command = "npx sass $file $dir/$stem.css"
 "#;
 
 /// Splits a command line into words, honouring single and double quotes.

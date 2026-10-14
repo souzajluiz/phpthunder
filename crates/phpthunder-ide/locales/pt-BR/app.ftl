@@ -19,6 +19,14 @@ notice-replaced = { $count ->
 notice-caret-class-or-method = Posicione o cursor em uma classe ou método
 notice-caret-in-class = Posicione o cursor em uma classe ou dentro dela
 notice-diagram-empty = Nenhuma classe para desenhar aqui
+copyright-missing = Defina primeiro um aviso de copyright nas configurações do projeto
+copyright-current = O cabeçalho de copyright já está atual
+copyright-updated = { $count ->
+    [one] Cabeçalho de copyright atualizado em 1 arquivo
+   *[other] Cabeçalhos de copyright atualizados em { $count } arquivos
+}
+log-none = Nenhum arquivo de log em storage/logs, var/log ou logs
+log-title = Arquivos de log
 notice-caret-on-name = Posicione o cursor em um nome para renomear
 notice-no-implementations = Nenhuma implementação de { $name } encontrada
 notice-no-parameter-info = Sem informação de parâmetros aqui
@@ -242,6 +250,9 @@ cmd-goto-implementation = Ir para implementação
 cmd-type-hierarchy = Hierarquia de tipos
 cmd-show-diagram = Mostrar diagrama de classes
 cmd-show-diagram-plant-uml = Mostrar diagrama de classes em PlantUML
+cmd-update-copyright = Atualizar cabeçalho de copyright
+cmd-update-copyright-everywhere = Atualizar cabeçalhos de copyright no projeto
+cmd-open-log = Abrir arquivo de log…
 cmd-file-structure = Estrutura do arquivo
 cmd-problems = Problemas
 cmd-toggle-terminal = Terminal

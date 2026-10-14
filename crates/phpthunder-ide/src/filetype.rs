@@ -57,6 +57,9 @@ pub enum FileType {
     Makefile,
     /// Comma- or tab-separated values.
     Csv,
+    /// Log files (`*.log`): levels, dates and stack traces highlighted,
+    /// followed while the caret is on the last line.
+    Log,
     /// Raster or vector image shown as a picture, not text (`png`, `jpg`, …).
     Image,
     /// Other binary content: fonts, audio, video, archives, databases.
@@ -158,6 +161,7 @@ const EXTENSIONS: &[(&str, FileType)] = &[
     ("env", FileType::DotEnv),
     ("mk", FileType::Makefile),
     ("csv", FileType::Csv),
+    ("log", FileType::Log),
     ("tsv", FileType::Csv),
     ("txt", FileType::Text),
     ("log", FileType::Text),
@@ -255,6 +259,7 @@ impl FileType {
             FileType::Ignore => "Ignore",
             FileType::Makefile => "Makefile",
             FileType::Csv => "CSV",
+            FileType::Log => "Log",
             FileType::Image => "Image",
             FileType::Binary => "Binary",
             FileType::Text => "Text",

@@ -178,7 +178,7 @@ fn parse(src: &str) -> Parsed {
 /// EditorConfig glob match: a glob without `/` matches the file name at
 /// any depth; `*` stops at `/`, `**` does not, `?` is one character,
 /// `{a,b}` alternatives and `[abc]` / `[!abc]` classes are supported.
-fn matches(glob: &str, rel: &str) -> bool {
+pub(crate) fn matches(glob: &str, rel: &str) -> bool {
     let glob = glob.strip_prefix('/').unwrap_or(glob);
     if glob.contains('/') {
         glob_match(glob.as_bytes(), rel.as_bytes())

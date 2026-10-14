@@ -19,6 +19,7 @@ impl App {
         let mut tasks = Vec::new();
         let mut conflicts = Vec::new();
         let mut git_changed = false;
+        let mut followed = false;
         for path in paths {
             if path.components().any(|c| c.as_os_str() == ".git") {
                 git_changed = true;
@@ -65,8 +66,17 @@ impl App {
                     conflicts.push(doc.title());
                     continue;
                 }
+                // A log tab whose caret sits on the last line follows the
+                // file as it grows.
+                let follow = doc.file_type == crate::filetype::FileType::Log
+                    && doc.cursor().line + 1 >= doc.line_count();
                 let cursor = doc.cursor();
                 doc.set_text(text.clone(), cursor);
+                if follow {
+                    let line = doc.line_count().saturating_sub(1);
+                    doc.move_to(iced::widget::text_editor::Position { line, column: 0 });
+                    followed = true;
+                }
                 doc.mark_saved();
                 self.inspect_pending = true;
             }
@@ -98,6 +108,9 @@ impl App {
                 .as_deref()
                 .and_then(crate::project::git_branch);
             tasks.push(self.refresh_git());
+        }
+        if followed {
+            tasks.push(self.reveal_cursor());
         }
         Task::batch(tasks)
     }

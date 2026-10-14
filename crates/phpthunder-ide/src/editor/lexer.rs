@@ -330,6 +330,7 @@ pub fn compute_file_highlights(src: &str, file_type: FileType) -> LineSpans {
         }
         FileType::Php => compute_highlights(src),
         FileType::Markdown => to_lines(src, markdown(src)),
+        FileType::Log => to_lines(src, log(src)),
         other => match spec(other) {
             Some(spec) => to_lines(src, scan(src, &spec)),
             None => vec![Vec::new(); src.matches('\n').count() + 1],
@@ -701,6 +702,68 @@ fn markdown(src: &str) -> Vec<Span> {
     out
 }
 
+/// Log highlighting: stack-trace lines dimmed, then per line the
+/// timestamp, the level (errors, warnings, info, debug in their own
+/// colors) and quoted text. Monolog, PHP's error log, nginx and most
+/// framework logs follow this shape.
+fn log(src: &str) -> Vec<Span> {
+    use std::sync::OnceLock;
+    static PATTERNS: OnceLock<[regex::Regex; 3]> = OnceLock::new();
+    let [stamp, level, quoted] = PATTERNS.get_or_init(|| {
+        [
+            regex::Regex::new(
+                r"^\[?\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}[^\] ]*\]?|^\[\d{2}-\w{3}-\d{4} [^\]]+\]",
+            )
+            .expect("valid timestamp pattern"),
+            regex::Regex::new(
+                r"(?i)\b(EMERGENCY|ALERT|CRITICAL|ERROR|FATAL|SEVERE|WARNING|WARN|NOTICE|DEPRECATED|INFO|DEBUG|TRACE)\b",
+            )
+            .expect("valid level pattern"),
+            regex::Regex::new(r#""[^"\n]*""#).expect("valid quote pattern"),
+        ]
+    });
+    let mut out = Vec::new();
+    let mut offset = 0;
+    for line in src.split_inclusive('\n') {
+        let start = offset;
+        offset += line.len();
+        let body = line.trim_end_matches(['\n', '\r']);
+        let trimmed = body.trim_start();
+        let is_frame = trimmed.starts_with('#')
+            && trimmed[1..].starts_with(|c: char| c.is_ascii_digit())
+            || trimmed.starts_with("at ")
+            || trimmed.starts_with("Stack trace:")
+            || trimmed.starts_with("[stacktrace]");
+        if is_frame {
+            out.push((start, start + body.len(), Token::Comment));
+            continue;
+        }
+        let mut from = 0;
+        if let Some(m) = stamp.find(body) {
+            out.push((start + m.start(), start + m.end(), Token::Number));
+            from = m.end();
+        }
+        if let Some(m) = level.find_at(body, from) {
+            let token = match m.as_str().to_ascii_uppercase().as_str() {
+                "WARNING" | "WARN" | "NOTICE" | "DEPRECATED" => Token::Function,
+                "INFO" => Token::String,
+                "DEBUG" | "TRACE" => Token::Comment,
+                _ => Token::Keyword,
+            };
+            out.push((start + m.start(), start + m.end(), token));
+            from = m.end();
+        }
+        for m in quoted.find_iter(&body[from..]) {
+            out.push((
+                start + from + m.start(),
+                start + from + m.end(),
+                Token::String,
+            ));
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -724,6 +787,26 @@ mod tests {
         tokens(src, file_type)
             .iter()
             .any(|(t, k)| t == text && *k == token)
+    }
+
+    #[test]
+    fn log_should_mark_dates_levels_and_traces() {
+        let src = "[2026-10-14 10:00:00] local.ERROR: Failed \"x\"\n#0 /app/a.php(3): f()\n[2026-10-14 10:00:01] local.INFO: ok\n";
+        assert!(has(
+            src,
+            FileType::Log,
+            "[2026-10-14 10:00:00]",
+            Token::Number
+        ));
+        assert!(has(src, FileType::Log, "ERROR", Token::Keyword));
+        assert!(has(src, FileType::Log, "\"x\"", Token::String));
+        assert!(has(
+            src,
+            FileType::Log,
+            "#0 /app/a.php(3): f()",
+            Token::Comment
+        ));
+        assert!(has(src, FileType::Log, "INFO", Token::String));
     }
 
     #[test]

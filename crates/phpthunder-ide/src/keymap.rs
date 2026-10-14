@@ -84,6 +84,12 @@ pub enum Cmd {
     ShowDiagram,
     /// Open the same class diagram as PlantUML text.
     ShowDiagramPlantUml,
+    /// Write or refresh the copyright header of the active file.
+    UpdateCopyright,
+    /// Write or refresh the copyright header of every project file.
+    UpdateCopyrightEverywhere,
+    /// Pick one of the project's log files to open.
+    OpenLog,
     /// Popup with the symbols of the current file (`⌘F12`).
     FileStructure,
     /// Show the Problems panel (`⌘6`).
@@ -367,7 +373,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 175] = {
+    pub const ALL: [Cmd; 178] = {
         use Cmd::*;
         [
             Save,
@@ -406,6 +412,9 @@ impl Cmd {
             TypeHierarchy,
             ShowDiagram,
             ShowDiagramPlantUml,
+            UpdateCopyright,
+            UpdateCopyrightEverywhere,
+            OpenLog,
             FileStructure,
             Problems,
             ToggleTerminal,
@@ -873,7 +882,7 @@ pub fn hint(cmd: Cmd) -> &'static str {
         GotoImplementation => "⌥⌘B",
         TypeHierarchy => "⌃H",
         ShowDiagram => "⌥⇧⌘U",
-        ShowDiagramPlantUml => "",
+        ShowDiagramPlantUml | UpdateCopyright | UpdateCopyrightEverywhere | OpenLog => "",
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",
