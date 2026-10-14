@@ -1177,6 +1177,12 @@ impl App {
                 self.issues_loaded(result);
                 Task::none()
             }
+            Message::SettingsExportPicked(path) => self.settings_export_picked(path),
+            Message::SettingsImportPicked(path) => self.settings_import_picked(path),
+            Message::SettingsSynced(result) => {
+                self.settings_synced(result);
+                Task::none()
+            }
             Message::Profiled(result) => match result {
                 Ok(path) => self.open(path, None),
                 Err(error) => {

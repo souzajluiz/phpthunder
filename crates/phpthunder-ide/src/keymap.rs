@@ -1,6 +1,8 @@
 //! Keyboard shortcuts (macOS layout). One table serves both the focused
 //! editor and the window, so a shortcut works wherever focus is.
 
+mod presets;
+
 use iced::keyboard::{Key, Modifiers, key::Named};
 
 /// A shortcut-triggered command. Produced by `command` and dispatched by the
@@ -104,6 +106,12 @@ pub enum Cmd {
     TaskBranch,
     /// Report the time spent per task.
     TaskTimeReport,
+    /// Save the user's settings, templates and dictionaries to a file.
+    ExportSettings,
+    /// Restore settings from an export file.
+    ImportSettings,
+    /// Sync settings with the configured Git repository.
+    SyncSettings,
     /// Popup with the symbols of the current file (`⌘F12`).
     FileStructure,
     /// Show the Problems panel (`⌘6`).
@@ -387,7 +395,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 185] = {
+    pub const ALL: [Cmd; 188] = {
         use Cmd::*;
         [
             Save,
@@ -436,6 +444,9 @@ impl Cmd {
             CloseTask,
             TaskBranch,
             TaskTimeReport,
+            ExportSettings,
+            ImportSettings,
+            SyncSettings,
             FileStructure,
             Problems,
             ToggleTerminal,
@@ -597,6 +608,17 @@ impl Cmd {
 /// keyboard subscription in the `app` module, so a shortcut works wherever focus is.
 /// `⌘` means `Modifiers::command`, which is Ctrl outside macOS.
 pub fn command(key: &Key, m: Modifiers) -> Option<Cmd> {
+    if let Some(chord) = presets::Chord::of(key, m)
+        && let Some(bound) = presets::overrides().get(&chord)
+    {
+        return *bound;
+    }
+    builtin_command(key, m)
+}
+
+/// The built-in binding of a key press, before the keymap preset and the
+/// user's bindings (see [`command`]).
+fn builtin_command(key: &Key, m: Modifiers) -> Option<Cmd> {
     use Cmd::*;
     let cmd = m.command();
     let (shift, alt) = (m.shift(), m.alt());
@@ -913,7 +935,10 @@ pub fn hint(cmd: Cmd) -> &'static str {
         | OpenTask
         | CloseTask
         | TaskBranch
-        | TaskTimeReport => "",
+        | TaskTimeReport
+        | ExportSettings
+        | ImportSettings
+        | SyncSettings => "",
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",

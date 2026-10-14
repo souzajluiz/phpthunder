@@ -23,6 +23,7 @@ mod refactor;
 mod refactorings;
 mod run;
 mod session;
+mod settings_tools;
 mod shortcuts;
 mod snapshot;
 mod state;

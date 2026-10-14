@@ -99,6 +99,9 @@ impl App {
             Cmd::CloseTask => self.close_active_task(),
             Cmd::TaskBranch => self.branch_for_active_task(),
             Cmd::TaskTimeReport => self.task_report(),
+            Cmd::ExportSettings => self.export_settings(),
+            Cmd::ImportSettings => self.import_settings(),
+            Cmd::SyncSettings => self.sync_settings(),
             Cmd::NewFromTemplate => {
                 let dir = self
                     .doc()

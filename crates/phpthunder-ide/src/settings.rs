@@ -57,6 +57,20 @@ hide_dependencies = false
 # sidebar_width = 280
 # bottom_height = 260
 # right_width = 460
+
+# Keyboard shortcuts: "default", or the bindings of "vscode", "eclipse" or
+# "netbeans" on top of the defaults.
+keymap = "default"
+
+# A Git repository to keep these settings in, for Sync Settings.
+# settings_repository = "git@github.com:you/phpthunder-settings.git"
+
+# Your own shortcuts, over the keymap: chord = command name (as in Find
+# Action, without spaces), or "none" to unbind. `mod` is cmd on macOS and
+# ctrl elsewhere. Keep this table last: keys below it belong to it.
+# [keybindings]
+# "mod+shift+p" = "FindAction"
+# "f12" = "none"
 "#;
 
 /// What the user can set in `settings.toml`. Missing keys keep their
@@ -90,6 +104,12 @@ pub struct Settings {
     pub bottom_height: Option<u32>,
     /// Width of the right tool panel; written by the IDE on resize.
     pub right_width: Option<u32>,
+    /// Keyboard shortcut preset: `default`, `vscode`, `eclipse`, `netbeans`.
+    pub keymap: String,
+    /// The user's own shortcuts: chord to command name, or `none`.
+    pub keybindings: std::collections::BTreeMap<String, String>,
+    /// Git repository Sync Settings pushes to and pulls from.
+    pub settings_repository: Option<String>,
 }
 
 impl Default for Settings {
@@ -108,6 +128,9 @@ impl Default for Settings {
             sidebar_width: None,
             bottom_height: None,
             right_width: None,
+            keymap: "default".to_string(),
+            keybindings: std::collections::BTreeMap::new(),
+            settings_repository: None,
         }
     }
 }

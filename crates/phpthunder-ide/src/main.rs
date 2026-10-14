@@ -28,6 +28,7 @@ mod project;
 mod quality;
 mod search;
 mod settings;
+mod settings_sync;
 mod shell_env;
 mod spelling;
 mod structured;
