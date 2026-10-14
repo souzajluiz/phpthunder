@@ -293,6 +293,8 @@ pub enum Message {
     DebuggerValidated(Result<String, String>),
     /// A profiled run finished: the report's path, or the error.
     Profiled(Result<PathBuf, String>),
+    /// Open GitHub issues for the task picker, or why `gh` gave none.
+    IssuesLoaded(Result<Vec<(u64, String, String)>, String>),
     /// Locations found for a framework string (WordPress hook calls), with
     /// the picker title.
     FrameworkSites(String, Vec<(PathBuf, Pos)>),

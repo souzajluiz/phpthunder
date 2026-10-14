@@ -95,6 +95,10 @@ impl App {
             Cmd::OpenLog => self.open_log_picker(),
             Cmd::CopyStructurePath => self.copy_structure_path(),
             Cmd::EvaluateQuery => self.open_palette(Mode::Query),
+            Cmd::OpenTask => self.open_tasks(),
+            Cmd::CloseTask => self.close_active_task(),
+            Cmd::TaskBranch => self.branch_for_active_task(),
+            Cmd::TaskTimeReport => self.task_report(),
             Cmd::NewFromTemplate => {
                 let dir = self
                     .doc()
@@ -461,6 +465,9 @@ impl App {
             Target::LocalVersion(version) => self.open_local_version(version),
             Target::Location(path, line) => self.open_at_line(path, line),
             Target::Mnemonic(key) => self.toggle_mnemonic(key),
+            target @ (Target::ActivateTask(_) | Target::NewTask(_) | Target::ActivateIssue(..)) => {
+                self.activate_task(target)
+            }
             Target::Paste(text) => self.edit_with(
                 |d| {
                     d.checkpoint();

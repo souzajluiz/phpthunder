@@ -112,6 +112,12 @@ pub enum Target {
     Surround(crate::editor::Surround),
     /// Put this mnemonic bookmark (digit or letter) on the caret line.
     Mnemonic(char),
+    /// Make this task (by id) the active one.
+    ActivateTask(String),
+    /// Create a task with this title and make it active.
+    NewTask(String),
+    /// Track this GitHub issue (number, title, url) and make it active.
+    ActivateIssue(u64, String, String),
 }
 
 /// One ranked palette result.

@@ -159,6 +159,11 @@ impl App {
             return Task::none();
         }
         self.show_panel(Bottom::Commit);
+        if self.commit.message.trim().is_empty()
+            && let Some(message) = self.active_task_message()
+        {
+            self.commit.message = message;
+        }
         self.refresh_git()
     }
 

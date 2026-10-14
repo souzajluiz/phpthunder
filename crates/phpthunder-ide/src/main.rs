@@ -31,6 +31,7 @@ mod settings;
 mod shell_env;
 mod spelling;
 mod structured;
+mod tasks;
 mod template;
 mod terminal;
 mod testing;

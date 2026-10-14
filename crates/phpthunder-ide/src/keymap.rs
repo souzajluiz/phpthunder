@@ -96,6 +96,14 @@ pub enum Cmd {
     EvaluateQuery,
     /// Create a file from a template next to the active file.
     NewFromTemplate,
+    /// Pick, create or switch the active task.
+    OpenTask,
+    /// Close the active task.
+    CloseTask,
+    /// Create a Git branch for the active task.
+    TaskBranch,
+    /// Report the time spent per task.
+    TaskTimeReport,
     /// Popup with the symbols of the current file (`⌘F12`).
     FileStructure,
     /// Show the Problems panel (`⌘6`).
@@ -379,7 +387,7 @@ pub enum Cmd {
 
 impl Cmd {
     /// Every command, in the order the Find Action palette lists them.
-    pub const ALL: [Cmd; 181] = {
+    pub const ALL: [Cmd; 185] = {
         use Cmd::*;
         [
             Save,
@@ -424,6 +432,10 @@ impl Cmd {
             CopyStructurePath,
             EvaluateQuery,
             NewFromTemplate,
+            OpenTask,
+            CloseTask,
+            TaskBranch,
+            TaskTimeReport,
             FileStructure,
             Problems,
             ToggleTerminal,
@@ -897,7 +909,11 @@ pub fn hint(cmd: Cmd) -> &'static str {
         | OpenLog
         | CopyStructurePath
         | EvaluateQuery
-        | NewFromTemplate => "",
+        | NewFromTemplate
+        | OpenTask
+        | CloseTask
+        | TaskBranch
+        | TaskTimeReport => "",
         FileStructure => "⌘F12",
         Problems => "⌘6",
         ToggleTerminal => "⌥F12",

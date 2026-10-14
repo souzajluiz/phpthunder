@@ -26,6 +26,7 @@ mod session;
 mod shortcuts;
 mod snapshot;
 mod state;
+mod tasks;
 mod template;
 mod terminal;
 mod tooling;

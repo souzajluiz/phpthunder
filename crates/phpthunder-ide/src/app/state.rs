@@ -1173,6 +1173,10 @@ impl App {
                 Task::none()
             }
             Message::FrameworkSites(title, found) => self.open_found(title, found),
+            Message::IssuesLoaded(result) => {
+                self.issues_loaded(result);
+                Task::none()
+            }
             Message::Profiled(result) => match result {
                 Ok(path) => self.open(path, None),
                 Err(error) => {
