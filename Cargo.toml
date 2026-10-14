@@ -38,6 +38,11 @@ opt-level = 2
 [profile.dev.package.phpthunder]
 opt-level = 2
 
+# The IDE redraws, highlights and edits on every key: unoptimized, typing
+# in a large file lagged. Level 1 keeps rebuilds quick.
+[profile.dev.package.phpthunder-ide]
+opt-level = 1
+
 # Shipped builds: cross-crate inlining and one codegen unit make the engine
 # faster, and stripping symbols keeps the bundle small.
 [profile.release]
