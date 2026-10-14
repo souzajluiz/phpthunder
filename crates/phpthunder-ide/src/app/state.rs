@@ -147,6 +147,8 @@ pub struct App {
     pub claude_grid: Option<(u16, u16)>,
     /// Content of the Tests panel.
     pub tests: Option<Tests>,
+    /// Line coverage of the last run with coverage, per project file.
+    pub coverage: std::collections::HashMap<PathBuf, crate::testing::FileCoverage>,
     /// Scope of the last test run, for "run again".
     pub last_test_scope: Option<crate::testing::Scope>,
     /// Whether PHPStan is analysing a saved file.
@@ -365,6 +367,7 @@ impl App {
             terminal_grid: None,
             claude_grid: None,
             tests: None,
+            coverage: std::collections::HashMap::new(),
             last_test_scope: None,
             quality_running: 0,
             interpreter_label: None,
@@ -1038,6 +1041,10 @@ impl App {
                 Task::none()
             }
             Message::OpenTest(i) => self.open_test(i),
+            Message::ClearCoverage => {
+                self.coverage.clear();
+                Task::none()
+            }
             Message::Formatted(path, version, result) => {
                 self.formatted(&path, version, result);
                 Task::none()

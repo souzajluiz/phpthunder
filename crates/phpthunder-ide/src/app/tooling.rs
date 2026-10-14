@@ -10,23 +10,52 @@ use iced::Task;
 use phpthunder::inspection::{Code, Diagnostic};
 use std::path::PathBuf;
 
+/// The 1-based line of the Behat scenario around 0-based `line`.
+fn scenario_line(text: &str, line: usize) -> Option<usize> {
+    text.lines()
+        .take(line + 1)
+        .enumerate()
+        .filter(|(_, l)| {
+            let t = l.trim_start();
+            t.starts_with("Scenario") || t.starts_with("Example:")
+        })
+        .last()
+        .map(|(i, _)| i + 1)
+}
+
 impl App {
     /// The scope a [`TestTarget`] means right now.
     pub(crate) fn test_scope(&self, target: TestTarget) -> Scope {
         let file = self.doc().filter(|d| d.is_php()).map(|d| d.path.clone());
         let is_test_file = file.as_ref().is_some_and(|p| {
-            p.components().any(|c| c.as_os_str() == "tests")
-                || p.file_stem()
-                    .is_some_and(|s| s.to_string_lossy().ends_with("Test"))
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            p.components()
+                .any(|c| matches!(c.as_os_str().to_str(), Some("tests" | "spec" | "features")))
+                || name.ends_with("Test.php")
+                || name.ends_with("Cest.php")
+                || name.ends_with("Spec.php")
+                || name.ends_with(".feature")
+                || name.ends_with(".phpt")
         });
         match target {
             TestTarget::All => Scope::All,
-            TestTarget::Again => self.last_test_scope.clone().unwrap_or(Scope::All),
+            TestTarget::Again | TestTarget::Coverage => {
+                self.last_test_scope.clone().unwrap_or(Scope::All)
+            }
             TestTarget::File => match file.filter(|_| is_test_file) {
                 Some(path) => Scope::File(path),
                 None => Scope::All,
             },
             TestTarget::Context => match (file, self.doc()) {
+                (Some(path), Some(doc)) if is_test_file && doc.title().ends_with(".feature") => {
+                    match scenario_line(&doc.text, doc.cursor().line) {
+                        Some(line) => Scope::Filter(path, line.to_string()),
+                        None => Scope::File(path),
+                    }
+                }
                 (Some(path), Some(doc)) if is_test_file => {
                     match test_at(&doc.text, doc.offset(doc.cursor())) {
                         Some(name) => Scope::Filter(path, name),
@@ -52,13 +81,17 @@ impl App {
         self.last_test_scope = Some(scope.clone());
         self.tests = Some(Tests::Running(scope.label()));
         self.show_panel(Bottom::Tests);
-        Task::perform(run_tests(root, scope), Message::TestsDone)
+        let coverage = target == TestTarget::Coverage;
+        Task::perform(run_tests(root, scope, coverage), Message::TestsDone)
     }
 
     /// Stores a finished run; a failed start becomes a notice.
     pub(crate) fn tests_done(&mut self, result: Result<TestRun, String>) {
         match result {
             Ok(run) => {
+                if let Some(coverage) = &run.coverage {
+                    self.coverage = coverage.clone();
+                }
                 let (passed, failed, _) = run.counts();
                 self.notify_background(
                     tr!("notify-tests"),
@@ -261,5 +294,18 @@ impl App {
             return Task::none();
         }
         self.open_choice(tr!("composer-title"), items)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scenario_line_should_find_the_enclosing_scenario() {
+        let feature = "Feature: Cart\n\n  Scenario: Add\n    Given a cart\n\n  Scenario: Remove\n    When I remove\n";
+        assert_eq!(scenario_line(feature, 3), Some(3));
+        assert_eq!(scenario_line(feature, 6), Some(6));
+        assert_eq!(scenario_line(feature, 0), None);
     }
 }

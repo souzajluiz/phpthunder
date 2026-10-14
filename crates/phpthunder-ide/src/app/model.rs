@@ -247,6 +247,8 @@ pub enum Message {
     TestsDone(Result<crate::testing::TestRun, String>),
     /// Open the test case at this index of the Tests panel.
     OpenTest(usize),
+    /// Hide the coverage marks of the last run with coverage.
+    ClearCoverage,
     /// The formatter finished: file, document version, result (`None` when
     /// the project has no formatter).
     Formatted(
@@ -433,6 +435,8 @@ pub enum TestTarget {
     All,
     /// The previous run again.
     Again,
+    /// The previous run (or the context) again, collecting coverage.
+    Coverage,
 }
 
 /// Content of the Tests panel.

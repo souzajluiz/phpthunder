@@ -210,6 +210,62 @@ impl App {
             .collect()
     }
 
+    /// Coverage of a run: overall statement coverage, a button hiding the
+    /// editor marks, and the least covered files (click to open).
+    fn coverage_summary<'a>(
+        &'a self,
+        coverage: &'a crate::testing::Coverage,
+    ) -> Element<'a, Message> {
+        let (covered, total) = coverage.values().fold((0, 0), |(c, t), f| {
+            (c + f.covered.len(), t + f.covered.len() + f.uncovered.len())
+        });
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "line counts are far below f32 precision limits"
+        )]
+        let overall = if total > 0 {
+            covered as f32 * 100.0 / total as f32
+        } else {
+            0.0
+        };
+        let mut files: Vec<(&std::path::PathBuf, f32)> = coverage
+            .iter()
+            .filter_map(|(p, f)| f.percent().map(|pc| (p, pc)))
+            .collect();
+        files.sort_by(|a, b| a.1.total_cmp(&b.1));
+        let mut col = column![
+            row![
+                label(
+                    tr!("tests-coverage", percent = format!("{overall:.1}")),
+                    12.0,
+                    TEXT
+                ),
+                space().width(Fill),
+                button(label(tr!("tests-hide-coverage"), 12.0, TEXT_SOFT))
+                    .padding([3, 10])
+                    .style(ghost_button)
+                    .on_press(Message::ClearCoverage),
+            ]
+            .align_y(Center)
+        ]
+        .spacing(1);
+        for (path, percent) in files.into_iter().take(8) {
+            col = col.push(
+                button(row![
+                    label(format!("{percent:>5.1}%"), 12.0, MUTED)
+                        .font(MONO)
+                        .width(60),
+                    label(self.relative(path), 12.0, TEXT_SOFT),
+                ])
+                .on_press(Message::OpenFile(path.clone()))
+                .width(Fill)
+                .padding([2, 8])
+                .style(row_button(false)),
+            );
+        }
+        container(col).padding([4, 8]).into()
+    }
+
     /// The Tests panel: a summary with run buttons, then every test case;
     /// failures show their message.
     pub(crate) fn tests_body(&self) -> Element<'_, Message> {
@@ -224,6 +280,7 @@ impl App {
             action(tr!("tests-run-again"), TestTarget::Again),
             action(tr!("tests-run-file"), TestTarget::File),
             action(tr!("tests-run-all"), TestTarget::All),
+            action(tr!("tests-run-coverage"), TestTarget::Coverage),
             button(label(tr!("debug-test"), 12.0, TEXT_SOFT))
                 .padding([3, 10])
                 .style(ghost_button)
@@ -252,6 +309,9 @@ impl App {
                 ]
                 .spacing(12);
                 let mut rows: Vec<Element<'_, Message>> = Vec::new();
+                if let Some(coverage) = &run.coverage {
+                    rows.push(self.coverage_summary(coverage));
+                }
                 if run.cases.is_empty() {
                     // No report: show what the runner printed (fatal errors, config issues).
                     let tail: String = run

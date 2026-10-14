@@ -850,6 +850,9 @@ impl App {
         for mark in self.bookmark_marks(doc) {
             content = content.push(mark);
         }
+        for mark in self.coverage_marks(doc) {
+            content = content.push(mark);
+        }
         for mark in self.hierarchy_marks(doc) {
             content = content.push(mark);
         }

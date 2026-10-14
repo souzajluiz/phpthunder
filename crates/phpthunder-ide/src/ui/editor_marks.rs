@@ -363,6 +363,38 @@ impl App {
             .collect()
     }
 
+    /// Coverage bars at the left edge of the gutter: green beside
+    /// statements the last run with coverage executed, red beside the ones
+    /// it missed.
+    pub(crate) fn coverage_marks<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
+        let Some(file) = self.coverage.get(&doc.path) else {
+            return Vec::new();
+        };
+        let layout = self.wrap_layout(doc);
+        let bar = |line: u32, color: iced::Color| -> Option<El<'a>> {
+            let line = (line as usize)
+                .checked_sub(1)
+                .filter(|l| *l < doc.line_count())?;
+            Some(
+                pin(container(space())
+                    .width(3)
+                    .height(CODE_LINE)
+                    .style(move |_: &iced::Theme| container::Style {
+                        background: Some(color.into()),
+                        ..Default::default()
+                    }))
+                .x(0.0)
+                .y(row_top(&layout, line, 0))
+                .into(),
+            )
+        };
+        file.covered
+            .iter()
+            .filter_map(|&l| bar(l, rgb(0x9ECE6A)))
+            .chain(file.uncovered.iter().filter_map(|&l| bar(l, rgb(0xF7768E))))
+            .collect()
+    }
+
     /// A bookmark glyph in the gutter beside each bookmarked line.
     pub(crate) fn bookmark_marks<'a>(&'a self, doc: &'a Document) -> Vec<El<'a>> {
         let Some(lines) = self.bookmarks.get(&doc.path) else {
